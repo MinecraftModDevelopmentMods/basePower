@@ -6,6 +6,7 @@ Power Advantage 2.4.8.117011 (Minecraft 1.17.1)
 - Preserve legacy entity state in both terrain chunks and the separate 1.17 entity storage.
 - Use the 1.17 ingredient-predicate format so unrelated items do not unlock recipes.
 - Save machine timers, progress and externally supplied energy after an autosave, without sending extra comparator or client updates.
+- Remap old grass-path blocks/items and the berry-picking sound when loading older Forge registry snapshots.
 - Carry forward the finite-input, cold-restart, migration and rendered GUI checks; automated and manual acceptance remain separate.
 
 Power Advantage 2.4.7.116051 (Minecraft 1.16.5)

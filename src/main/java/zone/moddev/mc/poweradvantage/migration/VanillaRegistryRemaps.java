@@ -3,6 +3,7 @@ package zone.moddev.mc.poweradvantage.migration;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.level.biome.Biome;
@@ -18,6 +19,7 @@ public final class VanillaRegistryRemaps {
     private VanillaRegistryRemaps() {}
 
     public static void register() {
+        MinecraftForge.EVENT_BUS.addGenericListener(Block.class, VanillaRegistryRemaps::blocks);
         MinecraftForge.EVENT_BUS.addGenericListener(Item.class, VanillaRegistryRemaps::items);
         MinecraftForge.EVENT_BUS.addGenericListener(EntityType.class, VanillaRegistryRemaps::entities);
         MinecraftForge.EVENT_BUS.addGenericListener(SoundEvent.class, VanillaRegistryRemaps::sounds);
@@ -25,6 +27,7 @@ public final class VanillaRegistryRemaps {
         MinecraftForge.EVENT_BUS.addGenericListener(MemoryModuleType.class, VanillaRegistryRemaps::memories);
     }
 
+    private static void blocks(RegistryEvent.MissingMappings<Block> event) { remap(event, ForgeRegistries.BLOCKS); }
     private static void items(RegistryEvent.MissingMappings<Item> event) { remap(event, ForgeRegistries.ITEMS); }
     private static void entities(RegistryEvent.MissingMappings<EntityType<?>> event) { remap(event, ForgeRegistries.ENTITIES); }
     private static void sounds(RegistryEvent.MissingMappings<SoundEvent> event) { remap(event, ForgeRegistries.SOUND_EVENTS); }
@@ -62,7 +65,10 @@ public final class VanillaRegistryRemaps {
     static ResourceLocation replacement(ResourceLocation registry, ResourceLocation old) {
         if (!"minecraft".equals(old.getNamespace())) return null;
         String target = null;
-        if (registry.equals(new ResourceLocation("minecraft:entity_type")) && old.getPath().equals("zombie_pigman")) {
+        if ((registry.equals(new ResourceLocation("minecraft:block")) || registry.equals(new ResourceLocation("minecraft:item")))
+                && old.getPath().equals("grass_path")) {
+            target = "dirt_path";
+        } else if (registry.equals(new ResourceLocation("minecraft:entity_type")) && old.getPath().equals("zombie_pigman")) {
             target = "zombified_piglin";
         } else if (registry.equals(new ResourceLocation("minecraft:item")) && old.getPath().equals("zombie_pigman_spawn_egg")) {
             target = "zombified_piglin_spawn_egg";
@@ -74,6 +80,7 @@ public final class VanillaRegistryRemaps {
             }
             // The former single Nether biome becomes Nether Wastes in 1.16.
             if (old.getPath().equals("music.nether")) target = "music.nether.nether_wastes";
+            if (old.getPath().equals("item.sweet_berries.pick_from_bush")) target = "block.sweet_berry_bush.pick_berries";
         }
         return target == null ? null : new ResourceLocation("minecraft", target);
     }

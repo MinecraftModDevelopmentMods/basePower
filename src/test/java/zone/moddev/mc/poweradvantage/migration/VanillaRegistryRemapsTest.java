@@ -5,6 +5,16 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 public class VanillaRegistryRemapsTest {
+    @Test public void retainsBothGrassPathRegistrySnapshots() {
+        expect("block", "grass_path", "dirt_path");
+        expect("item", "grass_path", "dirt_path");
+        assertNull(VanillaRegistryRemaps.replacement(id("entity_type"), id("grass_path")));
+    }
+
+    @Test public void retainsTheRenamedBerryPickingSound() {
+        expect("sound_event", "item.sweet_berries.pick_from_bush", "block.sweet_berry_bush.pick_berries");
+        assertNull(VanillaRegistryRemaps.replacement(id("item"), id("item.sweet_berries.pick_from_bush")));
+    }
     @Test public void retainsTheRenamedPigmanEntity() {
         expect("entity_type", "zombie_pigman", "zombified_piglin");
     }
