@@ -20,7 +20,7 @@
       "file": "AdvantageWorksTestHarness-1.1.0.117011.jar",
       "path": "build/native117-artifacts/CDFD54D66855CAF97AB8C20626F2046E6118FECE829FE41F9A1AB030AD816AC5/AdvantageWorksTestHarness-1.1.0.117011.jar",
       "sha256": "CDFD54D66855CAF97AB8C20626F2046E6118FECE829FE41F9A1AB030AD816AC5",
-      "sourceRef": null,
+      "sourceRef": "5062435c9e4a1320ae556316494a5659d371ccd2",
       "workspaceProduced": true,
       "pinStatus": "PINNED_UNQUALIFIED"
     },
@@ -164,5 +164,5 @@
   "portStatus": "PORTED_UNQUALIFIED",
   "qualificationStatus": "UNQUALIFIED",
   "legacySourceProfile": "../../../PA113/PowerAdvantage/test-rig/profiles/worldgen-advantage.json",
-  "inputStatus": "ARTIFACTS_PINNED_SOURCE_CHECKPOINT_PENDING"
+  "inputStatus": "ARTIFACTS_AND_SOURCES_PINNED_QUALIFICATION_PENDING"
 }
