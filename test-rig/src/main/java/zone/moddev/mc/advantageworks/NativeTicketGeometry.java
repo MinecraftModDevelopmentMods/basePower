@@ -6,34 +6,34 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
-import net.minecraft.world.chunk.ChunkStatus;
-import net.minecraft.world.server.ChunkHolder;
-import net.minecraft.world.server.ChunkManager;
-import net.minecraft.world.server.Ticket;
-import net.minecraft.world.server.TicketManager;
-import net.minecraft.world.server.TicketType;
-import net.minecraft.world.server.ServerWorld;
-import net.minecraft.world.server.ServerChunkProvider;
-import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
+import net.minecraft.world.level.chunk.ChunkStatus;
+import net.minecraft.server.level.ChunkHolder;
+import net.minecraft.server.level.ChunkMap;
+import net.minecraft.server.level.Ticket;
+import net.minecraft.server.level.DistanceManager;
+import net.minecraft.server.level.TicketType;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerChunkCache;
+import net.minecraftforge.fml.util.ObfuscationReflectionHelper;
 
 /** Read-only engine observations; never adds tickets or loads witness chunks. */
 final class NativeTicketGeometry {
     private NativeTicketGeometry() {}
 
-    static Map<String, Object> observe(ServerWorld world) {
+    static Map<String, Object> observe(ServerLevel world) {
         try {
             int fullLevel = -1, entityTickingLevel = -1;
-            for (int level = 0; level <= ChunkManager.MAX_CHUNK_DISTANCE; level++) {
+            for (int level = 0; level <= ChunkMap.MAX_CHUNK_DISTANCE; level++) {
                 if (ChunkHolder.getStatus(level) == ChunkStatus.FULL) fullLevel = level;
-                if (ChunkHolder.getFullChunkStatus(level) == ChunkHolder.LocationType.ENTITY_TICKING)
+                if (ChunkHolder.getFullChunkStatus(level) == ChunkHolder.FullChunkStatus.ENTITY_TICKING)
                     entityTickingLevel = level;
             }
-            ServerChunkProvider provider = world.getChunkSource();
-            TicketManager manager = ObfuscationReflectionHelper.getPrivateValue(
-                    ServerChunkProvider.class, provider, "field_217240_d");
+            ServerChunkCache provider = world.getChunkSource();
+            DistanceManager manager = ObfuscationReflectionHelper.getPrivateValue(
+                    ServerChunkCache.class, provider, "f_8327_");
             // Forge 36 adds a second map, forcedTickets; observe the vanilla tickets map only.
             Long2ObjectOpenHashMap<?> tickets = ObfuscationReflectionHelper.getPrivateValue(
-                    TicketManager.class, manager, "field_219377_e");
+                    DistanceManager.class, manager, "f_140761_");
             Set<Integer> forcedLevels = new TreeSet<>();
             for (Object value : tickets.values()) {
                 for (Object entry : (Iterable<?>) value) {
@@ -45,8 +45,8 @@ final class NativeTicketGeometry {
             result.put("fullLevel", fullLevel);
             result.put("entityTickingLevel", entityTickingLevel);
             result.put("maxDistance", ChunkStatus.maxDistance());
-            result.put("lastHolderLevel", ChunkManager.MAX_CHUNK_DISTANCE);
-            result.put("holderRadius", ChunkManager.MAX_CHUNK_DISTANCE - entityTickingLevel);
+            result.put("lastHolderLevel", ChunkMap.MAX_CHUNK_DISTANCE);
+            result.put("holderRadius", ChunkMap.MAX_CHUNK_DISTANCE - entityTickingLevel);
             result.put("observedForcedLevels", new ArrayList<>(forcedLevels));
             return result;
         } catch (Exception error) {

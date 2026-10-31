@@ -3,21 +3,21 @@ package zone.moddev.mc.advantageworks;
 import java.util.List;
 import java.util.UUID;
 import com.mojang.authlib.GameProfile;
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.ai.attributes.Attributes;
-import net.minecraft.entity.item.ItemEntity;
-import net.minecraft.entity.monster.HuskEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.inventory.IInventory;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.Direction;
-import net.minecraft.state.properties.BlockStateProperties;
-import net.minecraft.scoreboard.ScorePlayerTeam;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.math.AxisAlignedBB;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.GameRules;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.monster.Husk;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.Container;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.core.Direction;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.scores.PlayerTeam;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.GameRules;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler;
@@ -212,7 +212,7 @@ public final class ElectricOperationalCases {
                 + "mutation. The 48 finite mB then operate on natural ticks, making 24 mB refined oil for 384 electricity.", 80, c -> {
                     c.block(8, Y, Z, EA + "electric_still");
                     c.electricSupply(7, Y, Z, 1000);
-                    net.minecraft.fluid.Fluid oil = ForgeRegistries.FLUIDS.getValue(new ResourceLocation("poweradvantage:crude_oil"));
+                    net.minecraft.world.level.material.Fluid oil = ForgeRegistries.FLUIDS.getValue(new ResourceLocation("poweradvantage:crude_oil"));
                     c.require(oil != null, "Crude oil exists for faced automation");
                     int stored = 0;
                     for (Direction face : Direction.values()) {
@@ -323,7 +323,7 @@ public final class ElectricOperationalCases {
                     equal(c, "scarce.output", output(c, 9, 3, 6, "minecraft:sugar_cane"), 0);
                     equal(c, "full.seed", slotCount(c, 23, 0, "minecraft:sugar_cane"), 1);
                     equal(c, "full.output", output(c, 23, 3, 6, "minecraft:sugar_cane"), 384);
-                    AxisAlignedBB bay = new AxisAlignedBB(c.at(0, 0, 0), c.at(31, 31, 31));
+                    AABB bay = new AABB(c.at(0, 0, 0), c.at(31, 31, 31));
                     equal(c, "overflowItems", c.world.getEntitiesOfClass(ItemEntity.class, bay).size(), 0);
                     float soil = ((Number)c.invoke(8, Y, Z, "getSoil", new Class<?>[0])).floatValue();
                     close(c, "scarce.convertedGrowth", 1000 - soil, 799, 0.1f);
@@ -394,7 +394,7 @@ public final class ElectricOperationalCases {
                     c.block(27, Y, 22, EA + "hydroelectric_generator");
                 }, c -> {
                     c.require(!c.world.getFluidState(c.at(8, 1, Z)).isEmpty(), "Water reached the turbine");
-                    net.minecraft.util.math.vector.Vector3d flow = c.world.getFluidState(c.at(8, 1, Z)).getFlow(c.world, c.at(8, 1, Z));
+                    net.minecraft.world.phys.Vec3 flow = c.world.getFluidState(c.at(8, 1, Z)).getFlow(c.world, c.at(8, 1, Z));
                     c.require(flow.x * flow.x + flow.z * flow.z > 0,
                             "Turbine sees actual horizontal flow");
                     float generated = c.energy(8, Y, Z, ELECTRICITY) + c.energy(8, Y + 1, Z, ELECTRICITY);
@@ -407,7 +407,7 @@ public final class ElectricOperationalCases {
                     close(c, "dry.generated", c.energy(27, Y, 22, ELECTRICITY), 0, 0.001f);
                     int turbines = 0;
                     for (Entity actor : c.world.getEntitiesOfClass(Entity.class,
-                            new AxisAlignedBB(c.at(0, 0, 0), c.at(31, 31, 31)))) {
+                            new AABB(c.at(0, 0, 0), c.at(31, 31, 31)))) {
                         if (!new ResourceLocation(EA + "hydroturbine").equals(actor.getType().getRegistryName())) continue;
                         turbines++;
                         c.record("hydro.motion/" + actor.getUUID(), actor.getDeltaMovement().toString());
@@ -577,7 +577,7 @@ public final class ElectricOperationalCases {
     private static void turret(List<MachineScenario> cases) {
         for (int variant = 0; variant < 4; variant++) {
             final int mode = variant;
-            final HuskEntity[] target = new HuskEntity[1];
+            final Husk[] target = new Husk[1];
             cases.add(new MachineScenario("electric/turret-" + new String[] {"hit", "no-power", "scarce", "occluded"}[mode],
                     "Natural turret acquisition must damage a real stationary hostile entity and debit a 1000-unit "
                     + "shot plus tracking energy. No electricity, sub-shot reserve and a solid wall cannot damage it.", 80, c -> {
@@ -586,7 +586,7 @@ public final class ElectricOperationalCases {
                         if (mode != 1) c.power(8, 1, Z, ELECTRICITY, mode == 2 ? 999 : 1500);
                         if (mode == 3) for (int y = 1; y <= 4; y++) for (int z = Z - 2; z <= Z + 2; z++)
                             c.block(12, y, z, "minecraft:stone");
-                        HuskEntity husk = EntityType.HUSK.create(c.world);
+                        Husk husk = EntityType.HUSK.create(c.world);
                         c.require(husk != null, "Created a real hostile target");
                         husk.moveTo(c.at(16, 1, Z).getX() + 0.5, c.at(16, 1, Z).getY(), c.at(16, 1, Z).getZ() + 0.5, 0, 0);
                         husk.setNoAi(true);
@@ -596,13 +596,13 @@ public final class ElectricOperationalCases {
                         husk.getAttribute(Attributes.ARMOR).setBaseValue(0);
                         equal(c, "target.fixtureArmor", husk.getArmorValue(), 0);
                         // Fire immunity isolates the seven-point laser impact from its burn side effect.
-                        husk.addEffect(new net.minecraft.potion.EffectInstance(net.minecraft.potion.Effects.FIRE_RESISTANCE, 200, 0));
+                        husk.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.FIRE_RESISTANCE, 200, 0));
                         c.require(c.world.addFreshEntity(husk), "Spawned target into the real server world");
                         target[0] = husk;
                         c.record("target.initialHealth", husk.getHealth());
                         c.record("target.entityUuid", husk.getUUID().toString());
                     }, c -> {
-                        HuskEntity husk = target[0];
+                        Husk husk = target[0];
                         try {
                             c.require(husk != null && husk.isAlive(), "Hostile target survives for impact measurement");
                             c.record("target.health", husk.getHealth());
@@ -618,14 +618,14 @@ public final class ElectricOperationalCases {
                                 if (mode == 3) between(c, "occluded.trackingDebit", 1500 - c.energy(8, 1, Z, ELECTRICITY), 70, 80);
                             }
                         } finally {
-                            if (husk != null) husk.remove();
+                            if (husk != null) husk.discard();
                             target[0] = null;
                         }
                     }));
         }
         final FakePlayer[] owner = new FakePlayer[1];
-        final ScorePlayerTeam[] team = new ScorePlayerTeam[1];
-        final HuskEntity[] victim = new HuskEntity[1];
+        final PlayerTeam[] team = new PlayerTeam[1];
+        final Husk[] victim = new Husk[1];
         cases.add(new MachineScenario("electric/turret-owner-credit",
                 "A real naturally acquired hostile target is hit and its last attacking mob is the turret's "
                 + "registered owner, proving ownership has a gameplay effect beyond saved owner NBT.", 40, c -> {
@@ -640,8 +640,8 @@ public final class ElectricOperationalCases {
                     team[0] = c.world.getScoreboard().addPlayerTeam(name);
                     c.world.getScoreboard().addPlayerToTeam(player.getScoreboardName(), team[0]);
                     c.world.addNewPlayer(player);
-                    c.invoke(8, 1, Z, "setOwner", new Class<?>[] {PlayerEntity.class}, player);
-                    HuskEntity husk = EntityType.HUSK.create(c.world);
+                    c.invoke(8, 1, Z, "setOwner", new Class<?>[] {Player.class}, player);
+                    Husk husk = EntityType.HUSK.create(c.world);
                     c.require(husk != null, "Created ownership target");
                     victim[0] = husk;
                     husk.moveTo(c.at(16, 1, Z).getX() + 0.5, c.at(16, 1, Z).getY(), c.at(16, 1, Z).getZ() + 0.5, 0, 0);
@@ -651,7 +651,7 @@ public final class ElectricOperationalCases {
                     c.require(husk.getAttribute(Attributes.ARMOR) != null, "Ownership target has an armor attribute");
                     husk.getAttribute(Attributes.ARMOR).setBaseValue(0);
                     equal(c, "ownerCredit.fixtureArmor", husk.getArmorValue(), 0);
-                    husk.addEffect(new net.minecraft.potion.EffectInstance(net.minecraft.potion.Effects.FIRE_RESISTANCE, 200, 0));
+                    husk.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.FIRE_RESISTANCE, 200, 0));
                     c.require(c.world.addFreshEntity(husk), "Ownership target is in the real world");
                     c.record("owner.profile", name);
                 }, c -> {
@@ -663,9 +663,9 @@ public final class ElectricOperationalCases {
                         c.record("ownerCredit.attacker", victim[0].getLastHurtByMob().getUUID().toString());
                         between(c, "ownerCredit.energyDebit", 1500 - c.energy(8, 1, Z, ELECTRICITY), 1024, 1032);
                     } finally {
-                        if (victim[0] != null) victim[0].remove();
+                        if (victim[0] != null) victim[0].discard();
                         if (owner[0] != null) {
-                            owner[0].remove();
+                            owner[0].discard();
                             c.world.players().remove(owner[0]);
                         }
                         if (team[0] != null) c.world.getScoreboard().removePlayerTeam(team[0]);
@@ -719,7 +719,7 @@ public final class ElectricOperationalCases {
     }
 
     private static int output(MachineContext c, int x, int first, int slots, String id) {
-        IInventory inventory = c.inventory(x, Y, Z);
+        Container inventory = c.inventory(x, Y, Z);
         int count = 0;
         for (int slot = first; slot < first + slots; slot++) count += stackCount(inventory.getItem(slot), id);
         return count;
@@ -743,7 +743,7 @@ public final class ElectricOperationalCases {
     private static void reserve(MachineContext c, int x, int y, int z, String method, String id, int amount) {
         cyano.poweradvantage.api.fluid.FluidTank tank = (cyano.poweradvantage.api.fluid.FluidTank)
                 c.invoke(x, y, z, method, new Class<?>[0]);
-        net.minecraft.fluid.Fluid fluid = ForgeRegistries.FLUIDS.getValue(new ResourceLocation(id));
+        net.minecraft.world.level.material.Fluid fluid = ForgeRegistries.FLUIDS.getValue(new ResourceLocation(id));
         c.require(fluid != null && amount >= 0 && amount <= tank.getCapacity(), "Valid finite fluid reserve " + id);
         tank.setFluid(new cyano.poweradvantage.api.fluid.FluidStack(fluid, amount));
         c.tile(x, y, z).setChanged();
@@ -767,7 +767,7 @@ public final class ElectricOperationalCases {
     }
 
     private static void rejectFluid(MachineContext c, int x, String id, int amount) {
-        net.minecraft.fluid.Fluid fluid = ForgeRegistries.FLUIDS.getValue(new ResourceLocation(id));
+        net.minecraft.world.level.material.Fluid fluid = ForgeRegistries.FLUIDS.getValue(new ResourceLocation(id));
         c.require(fluid != null, "Negative-control fluid exists: " + id);
         equal(c, "invalidFluid.accepted", fluids(c, x).fill(new FluidStack(fluid, amount), IFluidHandler.FluidAction.EXECUTE), 0);
     }

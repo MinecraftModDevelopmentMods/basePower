@@ -6,23 +6,23 @@ import cyano.poweradvantage.api.PowerRequest;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.UUID;
-import net.minecraft.enchantment.Enchantment;
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.ai.attributes.Attributes;
-import net.minecraft.entity.passive.CowEntity;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.network.IPacket;
-import net.minecraft.network.NetworkManager;
-import net.minecraft.network.PacketDirection;
-import net.minecraft.network.play.ServerPlayNetHandler;
-import net.minecraft.network.play.server.SEntityVelocityPacket;
-import net.minecraft.util.ActionResultType;
-import net.minecraft.util.Hand;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.vector.Vector3d;
-import net.minecraft.world.GameType;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.animal.Cow;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.Connection;
+import net.minecraft.network.protocol.PacketFlow;
+import net.minecraft.server.network.ServerGamePacketListenerImpl;
+import net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.level.GameType;
 import net.minecraftforge.common.util.FakePlayer;
 import net.minecraftforge.registries.ForgeRegistries;
 
@@ -80,7 +80,7 @@ final class SteamOperationalSupplementalCases {
 
     private static final class Shot {
         FakePlayer player;
-        CowEntity impact, collateral;
+        Cow impact, collateral;
         ItemStack weapon;
         float configuredDamage;
         int velocityPackets, immediateCollateralFire;
@@ -98,7 +98,7 @@ final class SteamOperationalSupplementalCases {
                     fire(c, shot);
                 }, c -> {
                     verifyShot(c, shot, false, false);
-                    Vector3d motion = shot.player.getDeltaMovement();
+                    Vec3 motion = shot.player.getDeltaMovement();
                     c.record("recoil/deltaX", motion.x); c.record("recoil/deltaY", motion.y); c.record("recoil/deltaZ", motion.z);
                     c.record("recoil/velocityPackets", shot.velocityPackets);
                     c.require(Math.abs(motion.x) < 0.00001 && Math.abs(motion.y) < 0.00001
@@ -152,7 +152,7 @@ final class SteamOperationalSupplementalCases {
                     fire(c, shot);
                 }, c -> {
                     verifyShot(c, shot, false, true);
-                    c.require(c.world.getBlockState(c.at(16, 9, 13)).getBlock() == net.minecraft.block.Blocks.STONE,
+                    c.require(c.world.getBlockState(c.at(16, 9, 13)).getBlock() == net.minecraft.world.level.block.Blocks.STONE,
                             "Nonexplosive shot preserves the real stone obstruction");
                 }));
     }
@@ -161,17 +161,17 @@ final class SteamOperationalSupplementalCases {
         BlockPos muzzle = c.at(16, 8, 10);
         UUID uuid = UUID.nameUUIDFromBytes(("SteamOperationalExtra/" + id + "/" + muzzle).getBytes(StandardCharsets.UTF_8));
         shot.player = new FakePlayer(c.world, new GameProfile(uuid, "SteamOpExtras"));
-        shot.player.connection = new ServerPlayNetHandler(c.world.getServer(), new NetworkManager(PacketDirection.SERVERBOUND), shot.player) {
-            @Override public void send(IPacket<?> packet) {
-                if (packet instanceof SEntityVelocityPacket) shot.velocityPackets++;
+        shot.player.connection = new ServerGamePacketListenerImpl(c.world.getServer(), new Connection(PacketFlow.SERVERBOUND), shot.player) {
+            @Override public void send(Packet<?> packet) {
+                if (packet instanceof ClientboundSetEntityMotionPacket) shot.velocityPackets++;
             }
         };
-        shot.player.gameMode.setGameModeForPlayer(GameType.SURVIVAL);
+        shot.player.gameMode.changeGameModeForPlayer(GameType.SURVIVAL);
         shot.player.moveTo(muzzle.getX() + 0.5, muzzle.getY(), muzzle.getZ() + 0.5, 0, 0);
-        shot.player.setDeltaMovement(Vector3d.ZERO);
+        shot.player.setDeltaMovement(Vec3.ZERO);
         shot.weapon = new ItemStack(item(c, "steamadvantage:musket"));
-        shot.player.setItemInHand(Hand.MAIN_HAND, shot.weapon);
-        shot.player.inventory.setItem(1, new ItemStack(item(c, "steamadvantage:blackpowder_cartridge"), 2));
+        shot.player.setItemInHand(InteractionHand.MAIN_HAND, shot.weapon);
+        shot.player.getInventory().setItem(1, new ItemStack(item(c, "steamadvantage:blackpowder_cartridge"), 2));
         enchant(c, shot.weapon, "steamadvantage:rapid_reload", 1);
         try {
             shot.configuredDamage = Class.forName("zone.moddev.mc.steamadvantage.SteamAdvantage", false,
@@ -191,8 +191,8 @@ final class SteamOperationalSupplementalCases {
         for (int y = 8; y <= 11; y++) c.block(16, y, 24, "minecraft:obsidian");
     }
 
-    private static CowEntity target(MachineContext c, double x, double y, double z) {
-        CowEntity target = EntityType.COW.create(c.world);
+    private static Cow target(MachineContext c, double x, double y, double z) {
+        Cow target = EntityType.COW.create(c.world);
         c.require(target != null, "Native living target is available");
         BlockPos origin = c.at(0, 0, 0);
         target.getAttribute(Attributes.MAX_HEALTH).setBaseValue(1000);
@@ -205,11 +205,11 @@ final class SteamOperationalSupplementalCases {
 
     private static void fire(MachineContext c, Shot shot) {
         Item weapon = shot.weapon.getItem();
-        c.require(weapon.use(c.world, shot.player, Hand.MAIN_HAND).getResult() == ActionResultType.SUCCESS,
+        c.require(weapon.use(c.world, shot.player, InteractionHand.MAIN_HAND).getResult() == InteractionResult.SUCCESS,
                 "Native rapid reload interaction succeeds");
-        c.require(shot.player.inventory.getItem(1).getCount() == 1
+        c.require(shot.player.getInventory().getItem(1).getCount() == 1
                 && shot.weapon.getOrCreateTag().getByte("loaded") == 1, "Exactly one finite cartridge loads the chamber");
-        c.require(weapon.use(c.world, shot.player, Hand.MAIN_HAND).getResult() == ActionResultType.SUCCESS
+        c.require(weapon.use(c.world, shot.player, InteractionHand.MAIN_HAND).getResult() == InteractionResult.SUCCESS
                 && shot.player.isUsingItem(), "Native use interaction enters the aiming lifecycle");
         shot.player.releaseUsingItem();
     }
@@ -217,7 +217,7 @@ final class SteamOperationalSupplementalCases {
     private static void verifyShot(MachineContext c, Shot shot, boolean explosive, boolean occluded) {
         c.record("impact/finalHealth", shot.impact.getHealth());
         c.record("impact/naturalTicks", shot.impact.tickCount);
-        c.record("musket/ammo", shot.player.inventory.getItem(1).getCount());
+        c.record("musket/ammo", shot.player.getInventory().getItem(1).getCount());
         c.record("musket/durabilityDebit", shot.weapon.getDamageValue());
         c.require(shot.impact.isAlive() && shot.impact.tickCount >= 35, "Impact target survives real natural server ticks");
         if (occluded) c.require(shot.impact.getHealth() == 1000, "Solid wall completely prevents target damage");
@@ -225,13 +225,13 @@ final class SteamOperationalSupplementalCases {
                 "Explosive shot delivers at least configured direct impact damage");
         else c.require(Math.abs(shot.impact.getHealth() - (1000 - shot.configuredDamage)) < 0.001F,
                 "Unenchanted damage is exactly the configured direct impact");
-        c.require(shot.weapon.getDamageValue() == 1 && shot.player.inventory.getItem(1).getCount() == 1,
+        c.require(shot.weapon.getDamageValue() == 1 && shot.player.getInventory().getItem(1).getCount() == 1,
                 "Each shot consumes one durability and exactly one cartridge, without duplicating debit");
         c.require(shot.weapon.getOrCreateTag().getByte("loaded") == 0, "Shot leaves an empty chamber");
         inside(c, shot.impact);
     }
 
-    private static void inside(MachineContext c, CowEntity target) {
+    private static void inside(MachineContext c, Cow target) {
         BlockPos min = c.at(0, 0, 0), max = c.at(31, 31, 31);
         c.record("target/position/" + target.getUUID(), new double[]{target.getX(), target.getY(), target.getZ()});
         c.require(target.getX() >= min.getX() && target.getX() < max.getX() + 1
@@ -242,7 +242,7 @@ final class SteamOperationalSupplementalCases {
 
     private static Item item(MachineContext c, String id) {
         Item item = ForgeRegistries.ITEMS.getValue(new ResourceLocation(id));
-        c.require(item != null && item != net.minecraft.item.Items.AIR, "Registered item " + id);
+        c.require(item != null && item != net.minecraft.world.item.Items.AIR, "Registered item " + id);
         return item;
     }
 

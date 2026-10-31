@@ -12,31 +12,33 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.fluid.Fluid;
-import net.minecraft.inventory.IInventory;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.state.Property;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.server.ServerWorld;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.Container;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.block.state.properties.Property;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraftforge.registries.ForgeRegistries;
 
 final class MachineContext {
-    public final ServerWorld world;
+    public final ServerLevel world;
     final BlockPos origin;
     final Set<BlockPos> positions = new LinkedHashSet<>();
     final List<Map<String, Object>> actions = new ArrayList<>(), checks = new ArrayList<>();
     final Map<String, Object> measurements = new LinkedHashMap<>();
     boolean settingUp = true;
+    private boolean foundationLaid;
+    private boolean foundationRequested;
     long activationTick;
     int verified;
 
-    MachineContext(ServerWorld world, int index) {
+    MachineContext(ServerLevel world, int index) {
         this.world = world;
         origin = new BlockPos(50000 + index * 64, 80, 50000);
     }
@@ -58,16 +60,34 @@ final class MachineContext {
         actions.add(row);
     }
 
-    void floor() {
+    void requestFoundation() {
         if (!settingUp) throw new IllegalStateException("Foundation construction after setup");
+        if (foundationRequested) return;
         for (int x = origin.getX() >> 4; x <= (origin.getX() + 31) >> 4; x++) {
             for (int z = origin.getZ() >> 4; z <= (origin.getZ() + 31) >> 4; z++) {
                 world.setChunkForced(x, z, true);
-                world.getChunk(x, z);
             }
         }
+        foundationRequested = true;
+    }
+
+    void floor() {
+        if (!settingUp || !foundationRequested) throw new IllegalStateException("Foundation tickets were not prepared");
+        if (foundationLaid) return;
+        requireTickingFoundation();
         for (int x = 0; x < 32; x++) for (int z = 0; z < 32; z++) {
-            world.setBlock(at(x, -1, z), net.minecraft.block.Blocks.BEDROCK.defaultBlockState(), 2);
+            world.setBlock(at(x, -1, z), net.minecraft.world.level.block.Blocks.BEDROCK.defaultBlockState(), 2);
+        }
+        foundationLaid = true;
+    }
+
+    void requireTickingFoundation() {
+        for (int x = origin.getX() >> 4; x <= (origin.getX() + 31) >> 4; x++) {
+            for (int z = origin.getZ() >> 4; z <= (origin.getZ() + 31) >> 4; z++) {
+                BlockPos position = new BlockPos(x * 16 + 8, origin.getY(), z * 16 + 8);
+                require(world.isPositionTickingWithEntitiesLoaded(position) && world.isPositionEntityTicking(position),
+                        "Native block and entity sections are ticking before fixture construction: " + x + "," + z);
+            }
         }
     }
 
@@ -93,25 +113,25 @@ final class MachineContext {
         throw new IllegalArgumentException("No facing on " + state);
     }
 
-    TileEntity tile(int x, int y, int z) {
+    BlockEntity tile(int x, int y, int z) {
         BlockPos pos = at(x, y, z);
         positions.add(pos.immutable());
-        TileEntity tile = world.getBlockEntity(pos);
+        BlockEntity tile = world.getBlockEntity(pos);
         if (tile == null) throw new IllegalArgumentException("Missing fixture tile at " + pos);
         return tile;
     }
 
-    IInventory inventory(int x, int y, int z) {
-        TileEntity value = tile(x, y, z);
-        if (!(value instanceof IInventory)) throw new IllegalArgumentException("Not an inventory: " + value);
-        return (IInventory) value;
+    Container inventory(int x, int y, int z) {
+        BlockEntity value = tile(x, y, z);
+        if (!(value instanceof Container)) throw new IllegalArgumentException("Not an inventory: " + value);
+        return (Container) value;
     }
 
     void put(int x, int y, int z, int slot, String item, int count) {
         ResourceLocation id = new ResourceLocation(item);
         if (!ForgeRegistries.ITEMS.containsKey(id) || count < 0 || count > 64) throw new IllegalArgumentException("Invalid stock " + item);
         mutation("inventory", at(x, y, z), slot + ":" + item + ":" + count);
-        IInventory inventory = inventory(x, y, z);
+        Container inventory = inventory(x, y, z);
         if (slot < 0 || slot >= inventory.getContainerSize()) throw new IllegalArgumentException("Invalid fixture slot");
         inventory.setItem(slot, count == 0 ? ItemStack.EMPTY : new ItemStack(ForgeRegistries.ITEMS.getValue(id), count));
         inventory.setChanged();
@@ -120,7 +140,7 @@ final class MachineContext {
     int count(int x, int y, int z, String item) {
         Item expected = ForgeRegistries.ITEMS.getValue(new ResourceLocation(item));
         if (!ForgeRegistries.ITEMS.containsKey(new ResourceLocation(item))) throw new IllegalArgumentException("Missing item " + item);
-        IInventory inventory = inventory(x, y, z);
+        Container inventory = inventory(x, y, z);
         int total = 0;
         for (int slot = 0; slot < inventory.getContainerSize(); slot++) {
             ItemStack stack = inventory.getItem(slot);
@@ -175,19 +195,19 @@ final class MachineContext {
         return amount;
     }
 
-    CompoundNBT nbt(int x, int y, int z) { return tile(x, y, z).save(new CompoundNBT()); }
+    CompoundTag nbt(int x, int y, int z) { return tile(x, y, z).save(new CompoundTag()); }
 
-    void seed(int x, int y, int z, CompoundNBT patch) {
+    void seed(int x, int y, int z, CompoundTag patch) {
         mutation("nbt", at(x, y, z), patch.toString());
-        TileEntity tile = tile(x, y, z);
-        CompoundNBT nbt = tile.save(new CompoundNBT());
+        BlockEntity tile = tile(x, y, z);
+        CompoundTag nbt = tile.save(new CompoundTag());
         nbt.merge(patch.copy());
-        tile.load(world.getBlockState(at(x, y, z)), nbt);
+        tile.load(nbt);
         tile.setChanged();
     }
 
     Object invoke(int x, int y, int z, String method, Class<?>[] types, Object... arguments) {
-        TileEntity tile = tile(x, y, z);
+        BlockEntity tile = tile(x, y, z);
         try { return tile.getClass().getMethod(method, types).invoke(tile, arguments); }
         catch (InvocationTargetException error) { throw new IllegalStateException("Fixture method failed: " + method, error.getCause()); }
         catch (ReflectiveOperationException error) { throw new IllegalStateException("Missing fixture method: " + method, error); }
@@ -213,8 +233,8 @@ final class MachineContext {
             BlockState state = world.getBlockState(pos);
             row.addProperty("block", state.getBlock().getRegistryName().toString());
             row.addProperty("state", state.toString());
-            TileEntity tile = world.getBlockEntity(pos);
-            if (tile != null) row.addProperty("nbt", tile.save(new CompoundNBT()).toString());
+            BlockEntity tile = world.getBlockEntity(pos);
+            if (tile != null) row.addProperty("nbt", tile.save(new CompoundTag()).toString());
             rows.add(row);
         }
         return rows;
@@ -222,10 +242,10 @@ final class MachineContext {
 
     JsonArray entities() {
         JsonArray result = new JsonArray();
-        net.minecraft.util.math.AxisAlignedBB bounds = new net.minecraft.util.math.AxisAlignedBB(at(0, -1, 0), at(31, 31, 31)).inflate(.5);
-        for (net.minecraft.entity.Entity entity : world.getEntitiesOfClass(net.minecraft.entity.Entity.class, bounds)) {
-            if (entity instanceof net.minecraft.entity.player.PlayerEntity) continue;
-            CompoundNBT nbt = new CompoundNBT();
+        net.minecraft.world.phys.AABB bounds = new net.minecraft.world.phys.AABB(at(0, -1, 0), at(31, 31, 31)).inflate(.5);
+        for (net.minecraft.world.entity.Entity entity : world.getEntitiesOfClass(net.minecraft.world.entity.Entity.class, bounds)) {
+            if (entity instanceof net.minecraft.world.entity.player.Player) continue;
+            CompoundTag nbt = new CompoundTag();
             if (!entity.save(nbt)) throw new IllegalStateException("Test actor could not be saved: " + entity);
             JsonObject row = new JsonObject();
             row.addProperty("uuid", entity.getUUID().toString()); row.addProperty("nbt", nbt.toString());

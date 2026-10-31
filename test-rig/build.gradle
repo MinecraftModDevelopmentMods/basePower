@@ -23,15 +23,15 @@ version = project.harness_version
 base.archivesName = 'AdvantageWorksTestHarness'
 
 java {
-    toolchain.languageVersion = JavaLanguageVersion.of(8)
+    toolchain.languageVersion = JavaLanguageVersion.of(16)
 }
 
 tasks.withType(JavaCompile).configureEach {
     javaCompiler = javaToolchains.compilerFor {
-        languageVersion = JavaLanguageVersion.of(8)
+        languageVersion = JavaLanguageVersion.of(16)
     }
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
+    sourceCompatibility = JavaVersion.VERSION_16
+    targetCompatibility = JavaVersion.VERSION_16
     options.encoding = 'UTF-8'
 }
 
@@ -66,7 +66,7 @@ repositories {
 }
 
 def powerCompileJar = file(project.findProperty('powerAdvantageDeobfJar')
-        ?: '../build/libs-dev/PowerAdvantage-2.4.7.116051-deobf.jar')
+        ?: '../build/libs-dev/PowerAdvantage-2.4.8.117011-deobf.jar')
 
 dependencies {
     implementation minecraft.dependency(
@@ -77,6 +77,23 @@ dependencies {
     compileOnly files(powerCompileJar)
 }
 
+def compileUnitBootstrap = tasks.register('compileUnitBootstrap', JavaCompile) {
+    source fileTree('unit-bootstrap')
+    classpath = files()
+    destinationDirectory = layout.buildDirectory.dir('unit-bootstrap/classes')
+}
+def unitBootstrapJar = tasks.register('unitBootstrapJar', Jar) {
+    dependsOn compileUnitBootstrap
+    archiveFileName = 'forge-native-unit-bootstrap.jar'
+    destinationDirectory = layout.buildDirectory.dir('unit-bootstrap')
+    from compileUnitBootstrap.flatMap { it.destinationDirectory }
+    manifest.attributes('Premain-Class': 'zone.moddev.mc.advantageworks.unit.ForgeCapabilityBootstrap')
+}
+tasks.withType(Test).configureEach {
+    dependsOn unitBootstrapJar
+    doFirst { jvmArgs "-javaagent:${unitBootstrapJar.get().archiveFile.get().asFile}" }
+}
+
 tasks.register('verifyWorksCompileInputPin') {
     group = 'verification'
     description = 'Checks the exact parent-supplied Power API artifact before harness compilation.'
@@ -84,14 +101,14 @@ tasks.register('verifyWorksCompileInputPin') {
     inputs.property('sha256', project.poweradvantage_deobf_sha256)
     inputs.property('sourceCommit', project.poweradvantage_source_commit)
     doLast {
-        if (!powerCompileJar.isFile()) throw new GradleException("Missing native116 Power compile input: ${powerCompileJar}")
+        if (!powerCompileJar.isFile()) throw new GradleException("Missing native117 Power compile input: ${powerCompileJar}")
         String actual = java.security.MessageDigest.getInstance('SHA-256')
                 .digest(powerCompileJar.bytes).encodeHex().toString().toUpperCase(Locale.ROOT)
         if (actual != project.poweradvantage_deobf_sha256) {
-            throw new GradleException("Native116 Power compile input changed: ${actual}; obtain a new parent pin")
+            throw new GradleException("Native117 Power compile input changed: ${actual}; obtain a new parent pin")
         }
-        if (project.poweradvantage_source_commit != 'bcb75bfa91c14751ebf1e31865e1ec0ffa82c0b7') {
-            throw new GradleException('Native116 Power source pin changed; obtain a new parent candidate')
+        if (project.poweradvantage_source_commit != '5b9abe578b053d2ef59b1962cf9e04f6880c91b9') {
+            throw new GradleException('Native117 Power source pin changed; obtain a new parent candidate')
         }
     }
 }
@@ -157,7 +174,7 @@ def registerWorksRunner = { String taskName, String profileName, boolean automat
         classpath = sourceSets.runner.runtimeClasspath
         mainClass = 'zone.moddev.mc.advantageworks.runner.WorksRunner'
         if (!automated) standardInput = System.in
-        args '--profile', file("profiles/native116/${profileName}.json").absolutePath
+        args '--profile', file("profiles/native117/${profileName}.json").absolutePath
         if (automated) args '--automated'
         if (project.hasProperty('worksStations')) {
             args '--stations', project.property('worksStations').toString()
@@ -172,7 +189,7 @@ def registerWorksRunner = { String taskName, String profileName, boolean automat
 }
 
 registerWorksRunner('runWorksDev', 'dev-core', false,
-        'Builds and launches a disposable interactive 1.16.5 Advantage Works development server.')
+        'Builds and launches a disposable interactive 1.17.1 Advantage Works development server.')
 registerWorksRunner('verifyWorksDev', 'dev-core', true,
         'Generates, checks, restarts, and rechecks the disposable development works.')
 registerWorksRunner('verifyWorksTechProgression', 'dev-core-tech-progression', true,
@@ -196,13 +213,13 @@ registerWorksRunner('verifyWorksWorldgenLegacyImport', 'worldgen-legacy-import',
 registerWorksRunner('runWorksPackagedCurrent', 'packaged-current', false,
         'Launches the complete packaged works on localhost for manual inspection.')
 
-tasks.register('verifyWorksNative116Inputs', JavaExec) {
+tasks.register('verifyWorksNative117Inputs', JavaExec) {
     group = 'verification'
-    description = 'Checks native116 candidate identities and hashes without creating or opening a world.'
+    description = 'Checks native117 candidate identities and hashes without creating or opening a world.'
     dependsOn tasks.named('runnerClasses'), tasks.named('jar'), releaseJar
     classpath = sourceSets.runner.runtimeClasspath
     mainClass = 'zone.moddev.mc.advantageworks.runner.WorksRunner'
-    args '--profile', file("profiles/native116/${project.findProperty('worksProfile') ?: 'packaged-current'}.json").absolutePath,
+    args '--profile', file("profiles/native117/${project.findProperty('worksProfile') ?: 'packaged-current'}.json").absolutePath,
             '--validate-only'
 }
 
@@ -211,7 +228,7 @@ tasks.register('verifyHarnessIsolation') {
     description = 'Confirms the PowerAdvantage release contains no test-harness content.'
     doLast {
         File powerJar = file(project.findProperty('powerAdvantageReleaseJar')
-                ?: '../build/libs/PowerAdvantage-2.4.7.116051.jar')
+                ?: '../build/libs/PowerAdvantage-2.4.8.117011.jar')
         if (!powerJar.isFile()) {
             throw new GradleException("Build PowerAdvantage first: ${powerJar}")
         }
@@ -230,4 +247,38 @@ tasks.register('verifyHarnessIsolation') {
 
 tasks.named('check') {
     dependsOn tasks.named('verifyHarnessIsolation')
+}
+
+def nativeControlClasspath = configurations.compileClasspath.minus(files(powerCompileJar))
+def compilePlatformControls = tasks.register('compilePlatformControls', JavaCompile) {
+    source fileTree('platform-controls')
+    classpath = nativeControlClasspath
+    destinationDirectory = layout.buildDirectory.dir('platform-controls/classes')
+}
+tasks.register('verifyNativeWolfPlatform', JavaExec) {
+    group = 'verification'
+    dependsOn compilePlatformControls, unitBootstrapJar
+    classpath = files(compilePlatformControls.flatMap { it.destinationDirectory }) + nativeControlClasspath
+    mainClass = 'NativeWolfPlatformControl'
+    javaLauncher = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(16) }
+    doFirst {
+        def output = providers.gradleProperty('nativeControlOutput').orNull
+        if (!output || file(output).exists()) throw new GradleException('Supply a new -PnativeControlOutput directory')
+        args file(output).absolutePath
+        jvmArgs "-javaagent:${unitBootstrapJar.get().archiveFile.get().asFile}"
+    }
+}
+
+tasks.register('verifyNativeLeashKnotPlatform', JavaExec) {
+    group = 'verification'
+    dependsOn compilePlatformControls, unitBootstrapJar
+    classpath = files(compilePlatformControls.flatMap { it.destinationDirectory }) + nativeControlClasspath
+    mainClass = 'NativeLeashKnotPlatformControl'
+    javaLauncher = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(16) }
+    doFirst {
+        def output = providers.gradleProperty('nativeControlOutput').orNull
+        if (!output || file(output).exists()) throw new GradleException('Supply a new -PnativeControlOutput directory')
+        args file(output).absolutePath
+        jvmArgs "-javaagent:${unitBootstrapJar.get().archiveFile.get().asFile}"
+    }
 }

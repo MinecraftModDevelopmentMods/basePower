@@ -2,28 +2,28 @@ package zone.moddev.mc.advantageworks.client;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import com.mojang.blaze3d.matrix.MatrixStack;
-import com.mojang.blaze3d.vertex.IVertexBuilder;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.datafixers.util.Pair;
 import cyano.poweradvantage.api.PoweredEntity;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.BufferBuilder;
-import net.minecraft.client.renderer.IRenderTypeBuffer;
-import net.minecraft.client.renderer.RenderState;
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderStateShard;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.client.renderer.tileentity.TileEntityRenderer;
-import net.minecraft.client.renderer.tileentity.TileEntityRendererDispatcher;
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
-import net.minecraft.client.renderer.vertex.VertexFormat;
-import net.minecraft.client.renderer.vertex.VertexFormatElement;
-import net.minecraft.entity.EntityType;
-import net.minecraft.resources.IResource;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.tileentity.TileEntityType;
-import net.minecraft.util.Direction;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
+import net.minecraft.client.renderer.blockentity.BlockEntityRenderDispatcher;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.blaze3d.vertex.VertexFormatElement;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.server.packs.resources.Resource;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.core.Direction;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.registries.ForgeRegistries;
 
 import javax.imageio.ImageIO;
@@ -104,7 +104,7 @@ final class ChildRendererGeometryProbe {
         for (Direction facing : Direction.values()) {
             final List<List<float[]>> frames = new ArrayList<>();
             for (float partial : new float[]{0F, 0.5F}) run(cases, "steam-drillbit-" + facing + "-" + partial, row -> {
-                TileEntity tile = tile("steamadvantage:drillbit");
+                BlockEntity tile = tile("steamadvantage:drillbit");
                 tile.getClass().getMethod("setDirection", Direction.class).invoke(tile, facing);
                 set(tile, "rotation", 0F);
                 List<float[]> vertices = render(minecraft, tile, STEAM_RENDERER, partial,
@@ -122,7 +122,7 @@ final class ChildRendererGeometryProbe {
 
     private static void drill(Minecraft minecraft, JsonArray cases) {
         for (Direction facing : Direction.values()) run(cases, "electric-drill-" + facing, row -> {
-            TileEntity tile = tile("electricadvantage:electric_drill");
+            BlockEntity tile = tile("electricadvantage:electric_drill");
             // These are the production tile's synchronized renderer inputs, not replacement methods.
             set(tile, "facingCache", facing);
             set(tile, "laserLength", 4);
@@ -138,7 +138,7 @@ final class ChildRendererGeometryProbe {
 
     private static void turret(Minecraft minecraft, JsonArray cases) {
         run(cases, "turret-idle", row -> {
-            TileEntity tile = tile("electricadvantage:laser_turret");
+            BlockEntity tile = tile("electricadvantage:laser_turret");
             set(tile, "rotYaw", -90F);
             set(tile, "rotOldYaw", -90F);
             List<float[]> vertices = render(minecraft, tile, TURRET_RENDERER, 0.5F,
@@ -150,7 +150,7 @@ final class ChildRendererGeometryProbe {
             for (int i = 0; i < 4; i++) require(vertices.get(i)[4] >= 0.5F - EPSILON, "Idle turret uses the active optic UVs");
         });
         for (Direction facing : Direction.values()) run(cases, "turret-target-" + facing, row -> {
-            TileEntity tile = tile("electricadvantage:laser_turret");
+            BlockEntity tile = tile("electricadvantage:laser_turret");
             PoweredEntity machine = (PoweredEntity) tile;
             machine.setEnergy(2000F, machine.getTypes()[0]);
             float yaw = facing == Direction.EAST ? 0F : facing == Direction.SOUTH ? 90F : facing == Direction.WEST ? 180F : -90F;
@@ -174,24 +174,27 @@ final class ChildRendererGeometryProbe {
         });
     }
 
-    private static TileEntity tile(String id) {
-        TileEntityType<?> type = ForgeRegistries.TILE_ENTITIES.getValue(new ResourceLocation(id));
+    private static BlockEntity tile(String id) {
+        BlockEntityType<?> type = ForgeRegistries.BLOCK_ENTITIES.getValue(new ResourceLocation(id));
         require(type != null, "Missing registered tile type " + id);
-        TileEntity tile = type.create();
+        net.minecraft.world.level.block.state.BlockState state = ForgeRegistries.BLOCKS.getValues().stream()
+                .map(net.minecraft.world.level.block.Block::defaultBlockState).filter(type::isValid).findFirst()
+                .orElseThrow(() -> new IllegalStateException("No valid native block state for " + id));
+        BlockEntity tile = type.create(net.minecraft.core.BlockPos.ZERO, state);
         require(tile != null && tile.getLevel() == null, "Tile factory must create a worldless native fixture");
         return tile;
     }
 
-    private static List<float[]> render(Minecraft minecraft, TileEntity tile, String expectedRenderer,
+    private static List<float[]> render(Minecraft minecraft, BlockEntity tile, String expectedRenderer,
             float partial, String expectedTexture, JsonObject row) throws Exception {
-        TileEntityRenderer<TileEntity> renderer = TileEntityRendererDispatcher.instance.getRenderer(tile);
+        BlockEntityRenderer<BlockEntity> renderer = minecraft.getBlockEntityRenderDispatcher().getRenderer(tile);
         require(renderer != null && expectedRenderer.equals(renderer.getClass().getName()), "Dispatcher has no expected production renderer: " + expectedRenderer);
         row.addProperty("renderer", renderer.getClass().getName());
         row.addProperty("partial_tick", partial);
-        MatrixStack matrices = new MatrixStack();
-        MatrixStack.Entry original = matrices.last();
-        net.minecraft.util.math.vector.Matrix4f position = original.pose().copy();
-        net.minecraft.util.math.vector.Matrix3f normal = original.normal().copy();
+        PoseStack matrices = new PoseStack();
+        PoseStack.Pose original = matrices.last();
+        com.mojang.math.Matrix4f position = original.pose().copy();
+        com.mojang.math.Matrix3f normal = original.normal().copy();
         Capture buffers = new Capture(minecraft, new ResourceLocation(expectedTexture), row);
         boolean balanced;
         Throwable renderFailure = null;
@@ -218,7 +221,7 @@ final class ChildRendererGeometryProbe {
         return buffers.vertices;
     }
 
-    private static final class Capture implements IRenderTypeBuffer {
+    private static final class Capture implements MultiBufferSource {
         private final Minecraft minecraft;
         private final ResourceLocation expectedTexture;
         private final JsonArray batches = new JsonArray();
@@ -231,8 +234,8 @@ final class ChildRendererGeometryProbe {
             row.add("native_buffers", batches);
         }
 
-        @Override public IVertexBuilder getBuffer(RenderType type) {
-            require(type.mode() == 7 && type.format().equals(DefaultVertexFormats.NEW_ENTITY), "Unexpected production renderer vertex format/mode");
+        @Override public VertexConsumer getBuffer(RenderType type) {
+            require(type.mode() == com.mojang.blaze3d.vertex.VertexFormat.Mode.QUADS && type.format().equals(DefaultVertexFormat.NEW_ENTITY), "Unexpected production renderer vertex format/mode");
             BufferBuilder buffer = buffers.get(type);
             if (buffer == null) {
                 require(buffers.size() < 8, "Renderer requested too many buffers");
@@ -275,8 +278,8 @@ final class ChildRendererGeometryProbe {
                     raw.add(values);
                 }
                 // Inspect the texture actually selected by the production RenderType, not a substitute type.
-                Object state = valueOfType(entry.getKey(), RenderType.State.class);
-                Object textureState = valueOfType(state, RenderState.TextureState.class);
+                Object state = valueOfType(entry.getKey(), RenderType.CompositeState.class);
+                Object textureState = valueOfType(state, RenderStateShard.EmptyTextureStateShard.class);
                 Optional<?> selected = (Optional<?>) valueOfType(textureState, Optional.class);
                 require(selected.isPresent() && selected.get() instanceof ResourceLocation, "Production render type has no texture");
                 ResourceLocation selectedTexture = (ResourceLocation) selected.get();
@@ -319,7 +322,7 @@ final class ChildRendererGeometryProbe {
     }
 
     private static void texture(Minecraft minecraft, ResourceLocation location, JsonObject row) throws IOException {
-        try (IResource resource = minecraft.getResourceManager().getResource(location)) {
+        try (Resource resource = minecraft.getResourceManager().getResource(location)) {
             BufferedImage image = ImageIO.read(resource.getInputStream());
             require(image != null && image.getWidth() > 0 && image.getHeight() > 0, "Renderer texture is not a readable image: " + location);
             row.addProperty("texture", location.toString());

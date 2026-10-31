@@ -22,17 +22,17 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.imageio.ImageIO;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.recipebook.RecipeWidget;
-import net.minecraft.client.gui.recipebook.RecipeList;
+import net.minecraft.client.gui.screens.recipebook.RecipeButton;
+import net.minecraft.client.gui.screens.recipebook.RecipeCollection;
 import com.mojang.blaze3d.systems.RenderSystem;
-import net.minecraft.client.shader.Framebuffer;
-import net.minecraft.client.util.ClientRecipeBook;
-import net.minecraft.item.crafting.IRecipe;
-import net.minecraft.item.crafting.RecipeBook;
-import net.minecraft.item.crafting.RecipeItemHelper;
-import net.minecraft.item.crafting.RecipeManager;
-import net.minecraft.network.PacketBuffer;
-import net.minecraft.network.play.server.SUpdateRecipesPacket;
+import com.mojang.blaze3d.pipeline.RenderTarget;
+import net.minecraft.client.ClientRecipeBook;
+import net.minecraft.world.item.crafting.Recipe;
+import net.minecraft.stats.RecipeBook;
+import net.minecraft.world.entity.player.StackedContents;
+import net.minecraft.world.item.crafting.RecipeManager;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.protocol.game.ClientboundUpdateRecipesPacket;
 
 /** Decodes actual server recipe packets and exercises Minecraft's real cell grouping. */
 final class RecipeBookGroupingProbe {
@@ -49,20 +49,20 @@ final class RecipeBookGroupingProbe {
         try (Stream<Path> files = Files.list(root)) {
             // A separate main-menu client has not performed Forge's registry handshake.
             // Import only the generated server fixture's ID snapshot, never a user world.
-            Map<net.minecraft.util.ResourceLocation, net.minecraftforge.registries.ForgeRegistry.Snapshot> registry =
+            Map<net.minecraft.resources.ResourceLocation, net.minecraftforge.registries.ForgeRegistry.Snapshot> registry =
                     net.minecraftforge.registries.RegistryManager.ACTIVE.takeSnapshot(false);
-            net.minecraft.nbt.CompoundNBT saved;
+            net.minecraft.nbt.CompoundTag saved;
             try (java.io.InputStream input = Files.newInputStream(root.resolve("server-registries.dat"))) {
-                net.minecraft.nbt.CompoundNBT level = net.minecraft.nbt.CompressedStreamTools.readCompressed(input);
-                require("1.16.5".equals(level.getCompound("Data").getCompound("Version").getString("Name")),
-                        "Recipe fixture is not a native 1.16.5 server export");
-                net.minecraft.nbt.ListNBT mods = level.getCompound("fml").getList("LoadingModList", 10);
+                net.minecraft.nbt.CompoundTag level = net.minecraft.nbt.NbtIo.readCompressed(input);
+                require("1.17.1".equals(level.getCompound("Data").getCompound("Version").getString("Name")),
+                        "Recipe fixture is not a native 1.17.1 server export");
+                net.minecraft.nbt.ListTag mods = level.getCompound("fml").getList("LoadingModList", 10);
                 boolean nativeForge = false;
                 for (int i = 0; i < mods.size(); i++) {
-                    net.minecraft.nbt.CompoundNBT mod = mods.getCompound(i);
-                    if ("forge".equals(mod.getString("ModId"))) nativeForge = "36.2.34".equals(mod.getString("ModVersion"));
+                    net.minecraft.nbt.CompoundTag mod = mods.getCompound(i);
+                    if ("forge".equals(mod.getString("ModId"))) nativeForge = "37.1.1".equals(mod.getString("ModVersion"));
                 }
-                require(nativeForge, "Recipe fixture was not saved by Forge 36.2.34");
+                require(nativeForge, "Recipe fixture was not saved by Forge 37.1.1");
                 saved = level.getCompound("fml").getCompound("Registries");
             }
             String itemRegistry = net.minecraftforge.registries.ForgeRegistries.ITEMS.getRegistryName().toString();
@@ -70,7 +70,7 @@ final class RecipeBookGroupingProbe {
             require(saved.contains(itemRegistry, 10) && saved.contains(blockRegistry, 10)
                     && !saved.getCompound(itemRegistry).getList("ids", 10).isEmpty()
                     && !saved.getCompound(blockRegistry).getList("ids", 10).isEmpty(), "Missing native server registry snapshot");
-            for (String key : saved.getAllKeys()) registry.put(new net.minecraft.util.ResourceLocation(key),
+            for (String key : saved.getAllKeys()) registry.put(new net.minecraft.resources.ResourceLocation(key),
                     net.minecraftforge.registries.ForgeRegistry.Snapshot.read(saved.getCompound(key)));
             require(net.minecraftforge.registries.GameData.injectSnapshot(registry, false, false).isEmpty(),
                     "Client lacks a server registry entry");
@@ -83,20 +83,20 @@ final class RecipeBookGroupingProbe {
                 Map<String, JsonObject> expected = new HashMap<>();
                 manifest.getAsJsonArray("bookRecipes").forEach(row -> require(expected.put(row.getAsJsonObject().get("id").getAsString(),
                         row.getAsJsonObject()) == null, "Duplicate recipe in packet manifest"));
-                SUpdateRecipesPacket packet = new SUpdateRecipesPacket();
-                PacketBuffer buffer = new PacketBuffer(Unpooled.wrappedBuffer(Files.readAllBytes(file)));
-                try { packet.read(buffer); require(!buffer.isReadable(), "Trailing recipe packet bytes"); }
+                FriendlyByteBuf buffer = new FriendlyByteBuf(Unpooled.wrappedBuffer(Files.readAllBytes(file)));
+                ClientboundUpdateRecipesPacket packet;
+                try { packet = new ClientboundUpdateRecipesPacket(buffer); require(!buffer.isReadable(), "Trailing recipe packet bytes"); }
                 finally { buffer.release(); }
                 RecipeManager manager = new RecipeManager();
                 Set<String> cellKeys = new HashSet<>();
-                for (IRecipe<?> recipe : packet.getRecipes()) {
+                for (Recipe<?> recipe : packet.getRecipes()) {
                     JsonObject row = expected.get(recipe.getId().toString());
                     require(row != null, "Unexpected network recipe " + recipe.getId());
                     String output = recipe.getResultItem().getItem().getRegistryName().toString();
                     require(output.equals(row.get("output").getAsString()) && recipe.getResultItem().getCount() == row.get("count").getAsInt(),
                             "Client/server item registry mismatch for " + recipe.getId());
                     require(recipe.getGroup().equals(row.get("group").getAsString()) && recipe.getGroup().equals(output), "Group changed in recipe packet");
-                    String type = net.minecraft.util.registry.Registry.RECIPE_TYPE.getKey(recipe.getType()).toString();
+                    String type = net.minecraft.core.Registry.RECIPE_TYPE.getKey(recipe.getType()).toString();
                     require(type.equals(row.get("type").getAsString()), "Recipe type changed in packet");
                     cellKeys.add(type + "|" + output);
                 }
@@ -106,13 +106,13 @@ final class RecipeBookGroupingProbe {
                 manager.getRecipes().forEach(book::add);
                 book.setupCollections(manager.getRecipes());
                 int counted = 0;
-                for (RecipeList cell : book.getCollections()) {
+                for (RecipeCollection cell : book.getCollections()) {
                     Set<String> outputs = cell.getRecipes().stream().map(recipe -> recipe.getResultItem().getItem().getRegistryName().toString())
                             .collect(Collectors.toSet());
                     require(outputs.size() == 1 && cell.hasSingleResultItem(), "Mixed items share a native recipe-book cell: " + outputs);
                     counted += cell.getRecipes().size();
                     cell.updateKnownRecipes(book);
-                    cell.canCraft(new RecipeItemHelper(), 3, 3, book);
+                    cell.canCraft(new StackedContents(), 3, 3, book);
                     require(cell.getRecipes(false).size() == cell.getRecipes().size(), "Unlocked variants hidden in native cell");
                 }
                 require(counted == expected.size() && book.getCollections().size() == cellKeys.size(), "Missing or split native cells");
@@ -129,47 +129,42 @@ final class RecipeBookGroupingProbe {
     }
 
     private static void render(Minecraft minecraft, ClientRecipeBook book) throws Exception {
-        List<RecipeList> shown = new ArrayList<>();
+        List<RecipeCollection> shown = new ArrayList<>();
         Set<String> selected = new HashSet<>(java.util.Arrays.asList("electricadvantage:blank_circuit_board",
                 "electricadvantage:integrated_circuit", "electricadvantage:control_circuit", "electricadvantage:psu", "poweradvantage:item_conveyor"));
-        for (RecipeList cell : book.getCollections()) {
-            IRecipe<?> recipe = cell.getRecipes().get(0);
+        for (RecipeCollection cell : book.getCollections()) {
+            Recipe<?> recipe = cell.getRecipes().get(0);
             String id = recipe.getResultItem().getItem().getRegistryName().toString();
             if (selected.contains(id) || id.startsWith("poweradvantage:item_filter_")) shown.add(cell);
         }
         shown.sort(java.util.Comparator.comparing(cell -> cell.getRecipes().get(0).getResultItem().getItem().getRegistryName().toString()));
         require(shown.size() == 13, "The thirteen reported circuit/conveyor cells must be separate");
         int width = 1000, height = 180;
-        Framebuffer target = new Framebuffer(width, height, true, Minecraft.ON_OSX);
+        RenderTarget target = new com.mojang.blaze3d.pipeline.TextureTarget(width, height, true, Minecraft.ON_OSX);
         target.bindWrite(true);
-        RenderSystem.matrixMode(GL_PROJECTION);
-        RenderSystem.pushMatrix(); RenderSystem.loadIdentity();
-        RenderSystem.ortho(0, width, height, 0, -1000, 1000);
-        RenderSystem.matrixMode(GL_MODELVIEW);
-        RenderSystem.pushMatrix(); RenderSystem.loadIdentity();
+        NativeGuiProjection projection = new NativeGuiProjection(width, height, -1000, 1000, 0);
         RenderSystem.disableDepthTest();
         try {
             RenderSystem.clearColor(0.12F, 0.12F, 0.12F, 1F);
             RenderSystem.clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, Minecraft.ON_OSX);
-            net.minecraft.inventory.container.WorkbenchContainer menu = new net.minecraft.inventory.container.WorkbenchContainer(0, new net.minecraft.entity.player.PlayerInventory(null));
-            require(menu.getRecipeBookType() == net.minecraft.item.crafting.RecipeBookCategory.CRAFTING, "Wrong native crafting menu type");
+            net.minecraft.world.inventory.CraftingMenu menu = new net.minecraft.world.inventory.CraftingMenu(0, new net.minecraft.world.entity.player.Inventory(null));
+            require(menu.getRecipeBookType() == net.minecraft.world.inventory.RecipeBookType.CRAFTING, "Wrong native crafting menu type");
             for (int i = 0; i < shown.size(); i++) {
                 int x = 10 + (i % 5) * 198, y = 12 + (i / 5) * 55;
-                RecipeWidget button = new RecipeWidget();
+                RecipeButton button = new RecipeButton();
                 // Supply the native menu type without opening a world or connecting a player.
-                for (Field field : RecipeWidget.class.getDeclaredFields()) {
-                    if (field.getType() == RecipeList.class || field.getType() == RecipeBook.class) {
+                for (Field field : RecipeButton.class.getDeclaredFields()) {
+                    if (field.getType() == RecipeCollection.class || field.getType() == RecipeBook.class) {
                         field.setAccessible(true);
-                        field.set(button, field.getType() == RecipeList.class ? shown.get(i) : book);
-                    } else if (field.getType() == net.minecraft.inventory.container.RecipeBookContainer.class) {
+                        field.set(button, field.getType() == RecipeCollection.class ? shown.get(i) : book);
+                    } else if (field.getType() == net.minecraft.world.inventory.RecipeBookMenu.class) {
                         field.setAccessible(true);
                         field.set(button, menu);
                     }
                 }
                 button.setPosition(x, y);
-                button.render(new com.mojang.blaze3d.matrix.MatrixStack(), -1, -1, 1F);
-                RenderSystem.disableLighting();
-                minecraft.font.draw(new com.mojang.blaze3d.matrix.MatrixStack(), shown.get(i).getRecipes().get(0).getResultItem().getDisplayName().getString(), x + 30, y + 8, 0xFFFFFF);
+                button.render(new com.mojang.blaze3d.vertex.PoseStack(), -1, -1, 1F);
+                minecraft.font.draw(new com.mojang.blaze3d.vertex.PoseStack(), shown.get(i).getRecipes().get(0).getResultItem().getDisplayName().getString(), x + 30, y + 8, 0xFFFFFF);
             }
             ByteBuffer pixels = ByteBuffer.allocateDirect(width * height * 4);
             RenderSystem.readPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
@@ -184,8 +179,7 @@ final class RecipeBookGroupingProbe {
             ImageIO.write(image, "png", new File("recipe-book-cells.png"));
             require(colored > 1000, "Native recipe buttons rendered blank");
         } finally {
-            RenderSystem.popMatrix(); RenderSystem.matrixMode(GL_PROJECTION);
-            RenderSystem.popMatrix(); RenderSystem.matrixMode(GL_MODELVIEW);
+            projection.close();
             target.destroyBuffers(); minecraft.getMainRenderTarget().bindWrite(true);
             RenderSystem.enableDepthTest();
         }

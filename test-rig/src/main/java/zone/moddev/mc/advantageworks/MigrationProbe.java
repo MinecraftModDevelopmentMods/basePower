@@ -11,13 +11,13 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Locale;
 import java.util.Map;
-import net.minecraft.state.Property;
-import net.minecraft.block.BlockState;
-import net.minecraft.command.Commands;
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
+import net.minecraft.world.level.block.state.properties.Property;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.commands.Commands;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.world.WorldEvent;
@@ -33,17 +33,21 @@ final class MigrationProbe {
         MigrationProbe probe = new MigrationProbe();
         MinecraftForge.EVENT_BUS.addListener(probe::load);
         MinecraftForge.EVENT_BUS.addListener(probe::tick);
+        MinecraftForge.EVENT_BUS.addListener(probe::chunkLoaded);
         MinecraftForge.EVENT_BUS.addListener(probe::starting);
     }
 
     private void load(WorldEvent.Load event) {
-        if (event.getWorld() instanceof World) freeze((World) event.getWorld());
+        if (event.getWorld() instanceof Level) freeze((Level) event.getWorld());
     }
     private void tick(TickEvent.WorldTickEvent event) {
         if (event.phase == TickEvent.Phase.START) freeze(event.world);
     }
-    private void freeze(World world) {
-        if (!world.isClientSide && !new File("migration-operate.allow").isFile()) world.tickableBlockEntities.clear();
+    private void chunkLoaded(net.minecraftforge.event.world.ChunkEvent.Load event) {
+        if (event.getWorld() instanceof Level) freeze((Level) event.getWorld());
+    }
+    private void freeze(Level world) {
+        if (!world.isClientSide && !new File("migration-operate.allow").isFile()) NativeBlockEntityTicks.drain(world);
     }
 
     private void starting(RegisterCommandsEvent event) {
@@ -59,7 +63,7 @@ final class MigrationProbe {
                         }))));
     }
 
-    private void snapshot(World world, String label) throws Exception {
+    private void snapshot(Level world, String label) throws Exception {
         if (!MARKER.isFile() || !world.getServer().getWorldData().getLevelName().equals("AdvantageWorksMigration")) {
             throw new IllegalStateException("Refusing an unmarked or unexpected world");
         }
@@ -77,13 +81,13 @@ final class MigrationProbe {
                 properties.addProperty(property.getName(), state.getValue(property).toString().toLowerCase(Locale.ROOT));
             }
             entry.add("properties", properties);
-            TileEntity tile = world.getBlockEntity(pos);
+            BlockEntity tile = world.getBlockEntity(pos);
             if (tile != null) {
                 tile.setChanged();
-                CompoundNBT nbt = tile.save(new CompoundNBT());
+                CompoundTag nbt = tile.save(new CompoundTag());
                 entry.addProperty("nbt", nbt.toString());
                 java.io.ByteArrayOutputStream bytes = new java.io.ByteArrayOutputStream();
-                net.minecraft.nbt.CompressedStreamTools.writeCompressed(nbt, bytes);
+                net.minecraft.nbt.NbtIo.writeCompressed(nbt, bytes);
                 entry.addProperty("nbtBase64", java.util.Base64.getEncoder().encodeToString(bytes.toByteArray()));
             }
             result.add(entry);

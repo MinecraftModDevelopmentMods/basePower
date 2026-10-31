@@ -1,17 +1,17 @@
 package zone.moddev.mc.advantageworks.client;
 
 import com.google.gson.JsonObject;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.model.BakedQuad;
-import net.minecraft.client.renderer.model.IBakedModel;
-import net.minecraft.client.resources.I18n;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.Direction;
-import net.minecraft.util.NonNullList;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.client.renderer.block.model.BakedQuad;
+import net.minecraft.client.resources.model.BakedModel;
+import net.minecraft.client.resources.language.I18n;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.core.Direction;
+import net.minecraft.core.NonNullList;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.event.TickEvent;
@@ -45,8 +45,8 @@ public final class ClientResourceProbe {
         try {
             result.addProperty("minecraft", net.minecraftforge.versions.mcp.MCPVersion.getMCVersion());
             result.addProperty("forge", net.minecraftforge.versions.forge.ForgeVersion.getVersion());
-            require("1.16.5".equals(result.get("minecraft").getAsString())
-                    && "36.2.34".equals(result.get("forge").getAsString()), "Wrong native client target");
+            require("1.17.1".equals(result.get("minecraft").getAsString())
+                    && "37.1.1".equals(result.get("forge").getAsString()), "Wrong native client target");
             require(minecraft.level == null && minecraft.player == null && !minecraft.hasSingleplayerServer(),
                     "Resource probe must not open a world or connect to a server");
             verifyNetworkBootstrap(result);
@@ -65,22 +65,22 @@ public final class ClientResourceProbe {
             result.add("mod_versions", versions);
             require(versions.has("poweradvantage") && zone.moddev.mc.poweradvantage.PowerAdvantage.VERSION
                     .equals(versions.get("poweradvantage").getAsString()), "Power metadata does not match the compiled version");
-            require("2.4.7.116051".equals(versions.get("poweradvantage").getAsString()), "Wrong native Power candidate");
+            require("2.4.8.117011".equals(versions.get("poweradvantage").getAsString()), "Wrong native Power candidate");
             for (String id : new String[]{"steamadvantage", "electricadvantage"}) {
-                if (versions.has(id)) require("2.2.8.116051".equals(versions.get(id).getAsString()), "Wrong native expansion candidate: " + id);
+                if (versions.has(id)) require("2.2.9.117011".equals(versions.get(id).getAsString()), "Wrong native expansion candidate: " + id);
             }
             require(minecraft.getModelManager().getMissingModel() != null, "Timed out before model baking");
             require(minecraft.getOverlay() == null, "Timed out before native resource loading completed");
             int items = 0;
             int states = 0;
-            IBakedModel missing = minecraft.getModelManager().getMissingModel();
+            BakedModel missing = minecraft.getModelManager().getMissingModel();
             for (Item item : ForgeRegistries.ITEMS) {
                 ResourceLocation id = item.getRegistryName();
                 if (id == null || !included(id.getNamespace())) continue;
                 ItemStack stack = new ItemStack(item);
                 String key = item.getDescriptionId(stack);
                 require(!I18n.get(key).equals(key), "Untranslated item: " + id + " -> " + key);
-                IBakedModel model = minecraft.getItemRenderer().getModel(stack, null, null);
+                BakedModel model = minecraft.getItemRenderer().getModel(stack, null, null, 0);
                 verifyModel(model, missing, null, id.toString(), true);
                 items++;
             }
@@ -88,8 +88,8 @@ public final class ClientResourceProbe {
                 ResourceLocation id = block.getRegistryName();
                 if (id == null || !included(id.getNamespace())) continue;
                 for (BlockState state : block.getStateDefinition().getPossibleStates()) {
-                    IBakedModel model = minecraft.getModelManager().getBlockModelShaper().getBlockModel(state);
-                    verifyModel(model, missing, state, state.toString(), !(block instanceof net.minecraft.block.FlowingFluidBlock));
+                    BakedModel model = minecraft.getModelManager().getBlockModelShaper().getBlockModel(state);
+                    verifyModel(model, missing, state, state.toString(), !(block instanceof net.minecraft.world.level.block.LiquidBlock));
                     states++;
                 }
             }
@@ -130,8 +130,8 @@ public final class ClientResourceProbe {
 
     private static void verifyNetworkBootstrap(JsonObject result) {
         try {
-            Class.forName("net.minecraft.network.play.client.CMoveVehiclePacket");
-            Class<?> protocol = Class.forName("net.minecraft.network.ProtocolType");
+            Class.forName("net.minecraft.network.protocol.game.ServerboundMoveVehiclePacket");
+            Class<?> protocol = Class.forName("net.minecraft.network.ConnectionProtocol");
             require(protocol.isEnum() && protocol.getEnumConstants().length > 0,
                     "Vanilla network protocols did not initialise");
             result.addProperty("network_bootstrap_status", "PASS");
@@ -140,9 +140,9 @@ public final class ClientResourceProbe {
         }
     }
 
-    private static void verifyModel(IBakedModel model, IBakedModel missing, BlockState state, String id, boolean requireQuads) {
+    private static void verifyModel(BakedModel model, BakedModel missing, BlockState state, String id, boolean requireQuads) {
         require(model != missing, "Missing baked model: " + id);
-        require(!"missingno".equals(model.getParticleTexture(net.minecraftforge.client.model.data.EmptyModelData.INSTANCE).getName().getPath()), "Missing particle texture: " + id);
+        require(!"missingno".equals(model.getParticleIcon(net.minecraftforge.client.model.data.EmptyModelData.INSTANCE).getName().getPath()), "Missing particle texture: " + id);
         Random random = new Random(42L);
         List<BakedQuad> quads = new ArrayList<>(model.getQuads(state, null, random));
         for (Direction side : Direction.values()) quads.addAll(model.getQuads(state, side, random));

@@ -2,14 +2,20 @@ package zone.moddev.mc.advantageworks;
 
 import java.util.IdentityHashMap;
 import java.util.Map;
-import net.minecraft.entity.Entity;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.server.level.ServerLevel;
 
 /** Holds native entity ticks without removing actors from the world's tracking indexes. */
 final class NativeEntityHold {
     private final Map<Entity, State> held = new IdentityHashMap<>();
 
     void hold(Entity entity) {
-        if (!held.containsKey(entity)) held.put(entity, new State(entity));
+        if (!(entity.level instanceof ServerLevel)) throw new AssertionError("Entity hold requires a native server world");
+        if (!held.containsKey(entity)) {
+            State state = new State(entity);
+            held.put(entity, state);
+            state.gate.hold(entity, this);
+        }
         entity.canUpdate(false);
     }
 
@@ -17,20 +23,19 @@ final class NativeEntityHold {
         for (Map.Entry<Entity, State> entry : held.entrySet()) {
             Entity entity = entry.getKey();
             State state = entry.getValue();
-            // ServerWorld increments this even when canUpdate() is false.
-            entity.tickCount = state.ticks;
-            entity.canUpdate(state.updating);
+            if (entity.tickCount != state.ticks) throw new AssertionError("Entity ticked while held: " + entity.getUUID());
+            state.gate.release(entity, this);
         }
         held.clear();
     }
 
     private static final class State {
-        final boolean updating;
         final int ticks;
+        final NativeEntityTickGate gate;
 
         State(Entity entity) {
-            updating = entity.canUpdate();
             ticks = entity.tickCount;
+            gate = NativeEntityTickGate.of((ServerLevel) entity.level);
         }
     }
 }

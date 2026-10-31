@@ -24,7 +24,7 @@ public class MeasurementDefinitionTest {
     }
 
     private void rejects(Consumer<WorksDefinition.Station> corrupt) throws Exception {
-        WorksDefinition.Station station = WorksDefinitionLoader.loadNative116().stations.get(0);
+        WorksDefinition.Station station = WorksDefinitionLoader.loadNative117().stations.get(0);
         corrupt.accept(station);
         Method validate = WorksDefinitionLoader.class.getDeclaredMethod("validatePlacements", WorksDefinition.Station.class);
         validate.setAccessible(true);

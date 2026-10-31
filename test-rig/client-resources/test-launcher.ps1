@@ -76,32 +76,33 @@ if ($CrossVersionEvidenceRoots) {
 
 $native = @'
 modLoader="javafml"
-loaderVersion="[36,)" # native Forge
+loaderVersion="[37,)" # native Forge
 [[mods]] # mandatory header
 modId="poweradvantage" # inline comment
-version="2.4.7.116051" # native candidate
+version="2.4.8.117011" # native candidate
 [[dependencies.poweradvantage]]
 modId="minecraft"
 mandatory=true
-versionRange="[1.16.5]"
+versionRange="[1.17.1]"
 '@
 Assert-NativeMetadata $native 'poweradvantage'
 $checks++
-Assert-Throws { Assert-NativeMetadata ($native.Replace('2.4.7.116051','2.4.4.113021')) 'poweradvantage' }
-Assert-Throws { Assert-NativeMetadata ($native.Replace('2.4.7.116051','2.4.5.114041')) 'poweradvantage' }
-Assert-Throws { Assert-NativeMetadata ($native.Replace('2.4.7.116051','2.4.5.115021')) 'poweradvantage' }
-Assert-Throws { Assert-NativeMetadata ($native.Replace('[36,)','[31,)')) 'poweradvantage' }
-Assert-Throws { Assert-NativeMetadata ($native.Replace('2.4.7.116051','${version}')) 'poweradvantage' }
+Assert-Throws { Assert-NativeMetadata ($native.Replace('2.4.8.117011','2.4.4.113021')) 'poweradvantage' }
+Assert-Throws { Assert-NativeMetadata ($native.Replace('2.4.8.117011','2.4.5.114041')) 'poweradvantage' }
+Assert-Throws { Assert-NativeMetadata ($native.Replace('2.4.8.117011','2.4.5.115021')) 'poweradvantage' }
+Assert-Throws { Assert-NativeMetadata ($native.Replace('[37,)','[36,)')) 'poweradvantage' }
+Assert-Throws { Assert-NativeMetadata ($native.Replace('2.4.8.117011','2.4.7.116051')) 'poweradvantage' }
+Assert-Throws { Assert-NativeMetadata ($native.Replace('2.4.8.117011','${version}')) 'poweradvantage' }
 Assert-Throws { Assert-NativeMetadata $native 'electricadvantage' }
 Assert-Throws { Assert-NativeMetadata '' 'poweradvantage' }
 foreach ($id in 'steamadvantage','electricadvantage') {
-    $expansion = $native.Replace('poweradvantage', $id).Replace('2.4.7.116051','2.2.8.116051')
+    $expansion = $native.Replace('poweradvantage', $id).Replace('2.4.8.117011','2.2.9.117011')
     Assert-NativeMetadata $expansion $id
     $checks++
-    Assert-Throws { Assert-NativeMetadata ($expansion.Replace('2.2.8.116051','2.2.6.115021')) $id }
+    Assert-Throws { Assert-NativeMetadata ($expansion.Replace('2.2.9.117011','2.2.6.115021')) $id }
 }
-$environment = @{ MC_VERSION = '1.16.5'; FORGE_VERSION = '36.2.34'; MCP_MAPPINGS = 'official_1.16.5'; MCP_VERSION = '20210115.111550'; target = 'fmluserdevclient' }
-$attributes = @{ 'org.eclipse.jdt.launching.PROGRAM_ARGUMENTS' = '--main net.minecraftforge.userdev.LaunchTesting --cache D:\native\1.16.5-36.2.34 --'; 'org.eclipse.jdt.launching.MAIN_TYPE' = 'net.minecraftforge.launcher.Main' }
+$environment = @{ MC_VERSION = '1.17.1'; FORGE_VERSION = '37.1.1'; MCP_MAPPINGS = 'official_1.17.1'; MCP_VERSION = '20210706.113038'; target = 'fmluserdevclient' }
+$attributes = @{ 'org.eclipse.jdt.launching.PROGRAM_ARGUMENTS' = '--main cpw.mods.bootstraplauncher.BootstrapLauncher --cache D:\native\1.17.1-37.1.1 -- --launchTarget forgeclientuserdev --gameDir .'; 'org.eclipse.jdt.launching.MAIN_TYPE' = 'net.minecraftforge.launcher.Main' }
 Assert-NativeLaunch $environment $attributes
 $checks++
 foreach ($key in 'MC_VERSION','FORGE_VERSION','MCP_MAPPINGS','MCP_VERSION','target') {
@@ -117,9 +118,9 @@ foreach ($argument in '--server localhost','--port 25565','--gameDir D:\protecte
 $invalid = $attributes.Clone()
 $invalid['org.eclipse.jdt.launching.MAIN_TYPE'] = 'net.minecraft.client.main.Main'
 Assert-Throws { Assert-NativeLaunch $environment $invalid }
-Assert-NativeArchive 'D:\native\forge-1.16.5-36.2.34.jar'
+Assert-NativeArchive 'D:\native\forge-1.17.1-37.1.1.jar'
 $checks++
-foreach ($path in 'D:\PA114\client.jar','D:\PA113\client.jar','D:\native\forge-1.14.4-28.2.26.jar','D:\native\client-extra-1.13.2.jar') {
+foreach ($path in 'D:\PA114\client.jar','D:\PA113\client.jar','D:\PA116\client.jar','D:\native\forge-1.16.5-36.2.34.jar','D:\native\forge-1.14.4-28.2.26.jar','D:\native\client-extra-1.13.2.jar') {
     Assert-Throws { Assert-NativeArchive $path }
 }
 if ((Quote-Argument 'D:\native path\') -ne '"D:\native path\\"') { throw 'Trailing-backslash command-line quoting changed.' }
@@ -134,7 +135,7 @@ if ($StaticOnly) {
     return
 }
 $project = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
-$power = Join-Path $project 'build/libs-dev/PowerAdvantage-2.4.7.116051-deobf.jar'
+$power = Join-Path $project 'build/libs-dev/PowerAdvantage-2.4.8.117011-deobf.jar'
 Assert-NativeMetadata (Read-JarMetadata $power) 'poweradvantage'
 $checks++
 [xml]$launch = Get-Content -LiteralPath (Join-Path $project 'runClientAllAdvantage.launch') -Raw

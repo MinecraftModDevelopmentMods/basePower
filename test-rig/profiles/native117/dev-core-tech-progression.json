@@ -1,0 +1,58 @@
+{
+  "name": "dev-core-tech-progression",
+  "mode": "development",
+  "runtimeBase": "build/works-native117",
+  "serverPort": 25565,
+  "startupTimeoutSeconds": 180,
+  "shutdownTimeoutSeconds": 60,
+  "stationRunSeconds": 5,
+  "recipeMode": "TECH_PROGRESSION",
+  "sourceCommit": "5b9abe578b053d2ef59b1962cf9e04f6880c91b9",
+  "sourceVersion": "2.4.8.117011",
+  "lifecycleStations": [],
+  "mods": [
+    {
+      "id": "advantageworkstest",
+      "version": "1.1.0.117011",
+      "file": "AdvantageWorksTestHarness-1.1.0.117011-deobf.jar",
+      "path": "build/native117-artifacts/A6C9AF6BB604FD9D299FD1967B4DDD217EFC8EE0ACA46016522A8554E72A709C/AdvantageWorksTestHarness-1.1.0.117011-deobf.jar",
+      "sha256": "A6C9AF6BB604FD9D299FD1967B4DDD217EFC8EE0ACA46016522A8554E72A709C",
+      "sourceRef": null,
+      "workspaceProduced": true,
+      "pinStatus": "PINNED_UNQUALIFIED"
+    },
+    {
+      "id": "steamadvantage",
+      "version": "2.2.9.117011",
+      "file": "SteamAdvantage-2.2.9.117011-deobf.jar",
+      "path": "build/native117-artifacts/D191239E95EEFA2F215F9D0FBC2C34939AF3321FBBE5282851416CF6A709F991/SteamAdvantage-2.2.9.117011-deobf.jar",
+      "sha256": "D191239E95EEFA2F215F9D0FBC2C34939AF3321FBBE5282851416CF6A709F991",
+      "sourceRef": "3348ebfd8f7ac7cfc04d50aab9f1cbfbc6ad7861",
+      "workspaceProduced": true,
+      "pinStatus": "PINNED_UNQUALIFIED"
+    },
+    {
+      "id": "electricadvantage",
+      "version": "2.2.9.117011",
+      "file": "ElectricAdvantage-2.2.9.117011-deobf.jar",
+      "path": "build/native117-artifacts/BEAA8CD23DBBC0C7E956B0304EAEE65251341908E69B60B2C9E4D24F08C31547/ElectricAdvantage-2.2.9.117011-deobf.jar",
+      "sha256": "BEAA8CD23DBBC0C7E956B0304EAEE65251341908E69B60B2C9E4D24F08C31547",
+      "sourceRef": "9e6be35d86ac77721a6ca52e9a3990664f04849f",
+      "workspaceProduced": true,
+      "pinStatus": "PINNED_UNQUALIFIED"
+    }
+  ],
+  "minecraftVersion": "1.17.1",
+  "portStatus": "PORTED_UNQUALIFIED",
+  "qualificationStatus": "UNQUALIFIED",
+  "legacySourceProfile": "../../../PA113/PowerAdvantage/test-rig/profiles/dev-core-tech-progression.json",
+  "forge": {
+    "version": "1.17.1-37.1.1",
+    "installerPath": "build/native117-artifacts/31F2319B1B9CA491AACCC020887240F8524A4FF2A8E0F8B795E17E889CBC043B/forge-1.17.1-37.1.1-installer.jar",
+    "url": "https://maven.minecraftforge.net/net/minecraftforge/forge/1.17.1-37.1.1/forge-1.17.1-37.1.1-installer.jar",
+    "sha256": "31F2319B1B9CA491AACCC020887240F8524A4FF2A8E0F8B795E17E889CBC043B"
+  },
+  "generatorSettings": "",
+  "inputStatus": "ARTIFACTS_PINNED_SOURCE_CHECKPOINT_PENDING",
+  "powerDeobfSha256": "799B59B06EB2AC3FC4682AA64BF42C3A2A2C1D89D7FFFE9C72745DEC7DFBE0D8"
+}

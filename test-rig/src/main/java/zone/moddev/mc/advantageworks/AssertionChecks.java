@@ -2,7 +2,7 @@ package zone.moddev.mc.advantageworks;
 
 import java.util.List;
 import java.util.Map;
-import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.nbt.CompoundTag;
 
 /** Fail closed when a measurement is unavailable, malformed or not finite. */
 final class AssertionChecks {
@@ -43,9 +43,9 @@ final class AssertionChecks {
         }
     }
 
-    static int fluidAmount(CompoundNBT tile, String key, String expectedFluid) {
+    static int fluidAmount(CompoundTag tile, String key, String expectedFluid) {
         if (!tile.contains(key, 10)) throw new IllegalArgumentException("Missing tank compound " + key);
-        CompoundNBT tank = tile.getCompound(key);
+        CompoundTag tank = tile.getCompound(key);
         // Forge writes an explicit empty marker; a missing tank is not an empty tank.
         if (tank.contains("Empty", 1) && tank.getBoolean("Empty")
                 && !tank.contains("Amount") && !tank.contains("FluidName")) return 0;

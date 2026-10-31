@@ -1,7 +1,7 @@
 package zone.moddev.mc.advantageworks;
 
 import java.util.List;
-import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.nbt.CompoundTag;
 
 /** One real loaded-machine tick, with exact work, control and resource observations. */
 final class SteamReloadControlCases {
@@ -44,7 +44,7 @@ final class SteamReloadControlCases {
                     c.block(X, Y, Z, "steamadvantage:steam_crusher");
                     if (signalled) c.block(X - 1, Y, Z, "minecraft:redstone_block");
                     c.put(X, Y, Z, 0, "minecraft:stone", 1);
-                    CompoundNBT tag = new CompoundNBT(); tag.putShort("progress", (short)106); c.seed(X, Y, Z, tag);
+                    CompoundTag tag = new CompoundTag(); tag.putShort("progress", (short)106); c.seed(X, Y, Z, tag);
                     c.power(X, Y, Z, "steam", steam);
                     c.require(c.nbt(X, Y, Z).getShort("progress") == 106, "Loaded work is 106 before the first native tick");
                 }, holding(new int[]{X}, c -> {
@@ -69,7 +69,7 @@ final class SteamReloadControlCases {
                     c.block(X, Y, Z, "steamadvantage:steam_furnace");
                     if (signalled) c.block(X - 1, Y, Z, "minecraft:redstone_block");
                     c.put(X, Y, Z, 1, "minecraft:sand", 1);
-                    CompoundNBT tag = new CompoundNBT();
+                    CompoundTag tag = new CompoundTag();
                     tag.putIntArray("Data", new int[]{Float.floatToRawIntBits(.25F), 0, 0, 10, 10, Float.floatToRawIntBits(1000)});
                     c.seed(X, Y, Z, tag); c.power(X, Y, Z, "steam", 40);
                     c.require(c.nbt(X, Y, Z).getIntArray("Data")[3] == 10, "Loaded burning state exists before any tick");
@@ -112,10 +112,10 @@ final class SteamReloadControlCases {
     private static void stopMeasuredTiles(MachineContext c, int... columns) {
         java.util.List<java.util.Map<String, Object>> held = new java.util.ArrayList<>();
         for (int x : columns) {
-            net.minecraft.tileentity.TileEntity actual = c.tile(x, Y, Z);
+            net.minecraft.world.level.block.entity.BlockEntity actual = c.tile(x, Y, Z);
             Object before = c.nbt(x, Y, Z);
-            removeMeasuredTile(c.world.tickableBlockEntities, actual);
-            c.require(!c.world.tickableBlockEntities.contains(actual), "Measured control tile is no longer tickable");
+            NativeBlockEntityTicks.remove(c.world, actual);
+            c.require(!NativeBlockEntityTicks.contains(c.world, actual), "Measured control tile is no longer tickable");
             c.require(c.tile(x, Y, Z) == actual, "Holding preserves the same tile in the world and chunk indexes");
             c.require(before.equals(c.nbt(x, Y, Z)), "Holding writes no NBT or expected state");
             java.util.Map<String, Object> witness = new java.util.LinkedHashMap<>();

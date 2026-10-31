@@ -1,12 +1,12 @@
 package zone.moddev.mc.advantageworks;
 
 import java.util.List;
-import net.minecraft.entity.item.ItemEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.util.Direction;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.AxisAlignedBB;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.core.Direction;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.AABB;
 
 final class PowerOperationalCases {
     static void register(List<MachineScenario> cases) {
@@ -16,7 +16,7 @@ final class PowerOperationalCases {
                 "Automation must not bypass a vanilla chest lock, at either end of the belt", 160,
                 c -> {
                     conveyor(c, "poweradvantage:item_conveyor"); c.put(4, 2, 5, 0, "minecraft:dirt", 16);
-                    net.minecraft.nbt.CompoundNBT lock = new net.minecraft.nbt.CompoundNBT(); lock.putString("Lock", "Works key");
+                    net.minecraft.nbt.CompoundTag lock = new net.minecraft.nbt.CompoundTag(); lock.putString("Lock", "Works key");
                     c.seed(sourceLocked ? 4 : 6, 2, 5, lock);
                 }, c -> {
                     c.require(c.count(6, 2, 5, "minecraft:dirt") == 0, "locked route delivers no stock");
@@ -56,7 +56,7 @@ final class PowerOperationalCases {
                     c.world.addFreshEntity(dropped);
                 }, c -> {
                     c.require(c.count(6, 2, 5, "minecraft:dirt") == 16, "dropped input delivered");
-                    c.require(c.world.getEntitiesOfClass(ItemEntity.class, new AxisAlignedBB(c.at(3, 0, 4), c.at(8, 5, 7))).isEmpty(), "no duplicate/lost item entity remains");
+                    c.require(c.world.getEntitiesOfClass(ItemEntity.class, new AABB(c.at(3, 0, 4), c.at(8, 5, 7))).isEmpty(), "no duplicate/lost item entity remains");
                 }));
         cases.add(new MachineScenario("power/conveyor/nbt-preserved", "Distinct custom item data must not merge into or overwrite another stack", 200,
                 c -> {
@@ -130,8 +130,8 @@ final class PowerOperationalCases {
         cases.add(new MachineScenario("power/drain/non-source", "Flowing water without a source cannot create a bucket", 80,
                 c -> {
                     drain(c, "minecraft:water", "poweradvantage:fluid_storage_tank", false);
-                    c.world.setBlock(c.at(5, 2, 5), net.minecraft.block.Blocks.WATER.defaultBlockState()
-                            .setValue(net.minecraft.block.FlowingFluidBlock.LEVEL, 7), 3);
+                    c.world.setBlock(c.at(5, 2, 5), net.minecraft.world.level.block.Blocks.WATER.defaultBlockState()
+                            .setValue(net.minecraft.world.level.block.LiquidBlock.LEVEL, 7), 3);
                 }, c -> c.require(c.fluidAmount(5, 1, 5) + c.fluidAmount(7, 1, 5) == 0, "no source means no collected millibuckets")));
         for (boolean matching : new boolean[]{true, false}) cases.add(new MachineScenario("power/tank/filter-" + matching,
                 "A bucket reference admits matching water or rejects it without losing the source volume", 80,
@@ -164,7 +164,7 @@ final class PowerOperationalCases {
                     c.tank(5, 2, 5, "minecraft:water", 1000);
                 }, c -> {
                     c.require(c.fluidAmount(5, 2, 5) == (blocked ? 1000 : 0), "discharge respects available placement space");
-                    c.require(blocked ? c.world.getBlockState(c.at(5, 1, 5)).is(net.minecraft.block.Blocks.BEDROCK)
+                    c.require(blocked ? c.world.getBlockState(c.at(5, 1, 5)).is(net.minecraft.world.level.block.Blocks.BEDROCK)
                             : c.world.getFluidState(c.at(5, 1, 5)).isSource(), "solid host preserved or actual source placed");
                 }));
     }
@@ -180,8 +180,8 @@ final class PowerOperationalCases {
                         zone.moddev.mc.poweradvantage.machines.fluidmachines.StillTileEntity still =
                                 (zone.moddev.mc.poweradvantage.machines.fluidmachines.StillTileEntity)c.tile(8, 4, 8);
                         still.getInputTank().setFluid(new cyano.poweradvantage.api.fluid.FluidStack(
-                                mode.equals("invalid") ? net.minecraft.fluid.Fluids.WATER
-                                        : net.minecraftforge.registries.ForgeRegistries.FLUIDS.getValue(new net.minecraft.util.ResourceLocation("poweradvantage:crude_oil")), 1000));
+                                mode.equals("invalid") ? net.minecraft.world.level.material.Fluids.WATER
+                                        : net.minecraftforge.registries.ForgeRegistries.FLUIDS.getValue(new net.minecraft.resources.ResourceLocation("poweradvantage:crude_oil")), 1000));
                         if (!mode.equals("no-fuel")) c.put(8, 4, 8, 0, "minecraft:coal", 1);
                         if (output > 0) c.tank(8, 4, 8, "poweradvantage:refined_oil", output);
                         if (mode.equals("redstone")) c.block(9, 4, 8, "minecraft:redstone_block");

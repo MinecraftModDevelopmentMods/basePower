@@ -1,62 +1,88 @@
 # Native Client Resource Check
 
-This build-only Minecraft 1.16.5 / Forge 36.2.34 probe checks PowerAdvantage, or all three Advantage mods in the combined profile, after Minecraft bakes its models and stitches its textures. It uses official 1.16.5 mappings with MCP `20210115.111550`. It registers no gameplay content, opens no world, and shuts down its own disposable client when finished. It is not included in release jars or ordinary Eclipse launches.
+This disposable Minecraft 1.17.1 / Forge 37.1.1 client checks models, textures,
+translations, recipe-book cells and machine screens after Minecraft loads them.
+It registers no gameplay content, opens no world and closes when finished.
+The probe is excluded from release jars and ordinary Eclipse launches.
+See [port status](../../docs/1.17/PORT-STATUS.md) for current qualification.
+Earlier-version results do not qualify this version.
 
-Compilation and static preservation checks pass. The new native graphical run
-and its fresh recipe fixtures are still pending. The accepted 1.15 source is
-hash-checked; all original assertions and the complete recipe/tank captures are
-compared after an explicit native API-name translation. Four negative controls
-prove that weaker pixel, tank, bucket and missing-model checks are rejected.
-See [the 1.16 status](../../docs/1.16/PORT-STATUS.md).
-Use matching native jars/hashes. Run Gradle only when the shared cache is free
-of other builds; start the client only when authorized.
+Use Java 17 for Gradle and the configured Java 16 compilation toolchain. Supply
+Java 16 to the client and server runners. The target is official 1.17.1 mappings
+with MCP `20210706.113038`. Keep the shared Gradle cache free of other builds.
 
-For native recipe-book grouping, supply a **new native 1.16.5 server export**
-containing `recipes-{normal,tech,apocalyptic}-sweep.bin`, their matching successful
-JSON reports with `bookRecipes`, and `AdvantageWorksMigration/level.dat`.
-The copied convenience `migration/recipe_unlocks.py` still targets 1.13.2; do
-not use its outputs or historical qualification as 1.16.5 evidence. Native
-fixture generation uses the separate server harness.
-The separate native campaign retains the five unlock/persistence boots and all
-18 progression checks. It reads recipes and advancements from the packaged
-candidate jars, validates target hashes, creates new loopback runtimes only,
-and fingerprints the installed server seed before and after. It needs an
-existing Python 3.11+ environment with `migration/requirements.txt`, plus Java 8;
-it does not invoke Gradle:
+## Build And Run
 
 ```powershell
-<python.exe> -B test-rig/migration/native116_recipes.py --target-manifest '<native116 target manifest>' --java8 '<Java 8 home>/bin/java.exe' --port 25577 --output test-rig/build/native116-recipes-new
+./gradlew.bat check clientResourceProbeJar verifyEclipseProductionClasspath prepareCombinedEclipseLaunch
+./test-rig/client-resources/test-launcher.ps1
+./test-rig/client-resources/run.ps1 -JavaHome '<Java 16 home>' -LaunchProfile runClientAllAdvantage.launch -RequireExtensions -MachineGuiLayouts -ChildRendererGeometry -RecipeBookFixtures '<native 1.17 recipe run>/unlock' -PreflightOnly
+./test-rig/client-resources/run.ps1 -JavaHome '<Java 16 home>' -LaunchProfile runClientAllAdvantage.launch -RequireExtensions -MachineGuiLayouts -ChildRendererGeometry -RecipeBookFixtures '<native 1.17 recipe run>/unlock'
 ```
 
-`--campaign unlock` or `--campaign progression` selects a single campaign.
-Native vanilla logs saved recipe IDs removed by a recipe-mode change at ERROR
-level. The unlock audit checks the exact set against the difference between
-the preceding and current actual recipe packets, retains all log events, and
-fails on any unrelated error or a mismatched removal set. It never erases a
-saved book to avoid that persistence check.
+The combined launch requires Power `2.4.8.117011`, Steam `2.2.9.117011` and
+Electric `2.2.9.117011`. Pin the exact rebuilt jars in `profiles/native117`
+before regenerating it. Omitting the combined profile retains Power-only
+scope. Normal Eclipse launches contain production code only.
 
-After native exports are available, pass the campaign's `unlock` subdirectory:
+Each run has a new directory under `run-client-resource-runs/`. It retains
+the launch, production-file manifest, exact dependency and candidate hashes,
+logs, framebuffer images and `client-resources.json`. Missing output, failed
+assertions and Advantage model/texture errors fail the run. A runner failure
+is retained separately without replacing partial native results. Existing
+saves and earlier reports are untouched. `-PreflightOnly` starts no client and
+does not claim a graphical pass.
+
+The default `-OutputSource Gradle` snapshots compiled classes and processed
+resources. `-OutputSource Eclipse` copies `bin/main` without overlaying Gradle
+resources. `-PowerCandidate` selects an explicit native deobf jar; its hash
+is provenance, not proof that the selected loose output equals that jar.
+
+## Recipe Fixtures
+
+Generate fresh exports from the packaged 1.17 candidates, not a historical run:
 
 ```powershell
-./test-rig/client-resources/run.ps1 -JavaHome '<Java 8 home>' -LaunchProfile runClientAllAdvantage.launch -RequireExtensions -RecipeBookFixtures '<new native116 fixture directory>/unlock'
+<python.exe> -B test-rig/migration/native117_recipes.py --target-manifest '<native117 manifest>' --java16 '<Java 16 home>/bin/java.exe' --port 25577 --output test-rig/build/native117-recipes-new
 ```
 
-The server exports its actual recipe packets and matching metadata. The client
-imports the generated world's Forge registry snapshot before decoding those
-packets, reproducing the item-ID synchronization normally supplied by Forge's
-connection handshake. The saved header must identify Minecraft 1.16.5 and
-Forge 36.2.34; a legacy fixture is rejected. It then rebuilds native
-`ClientRecipeBook`/`RecipeList`
-cells for Normal, Tech and Apocalyptic modes: each cell must contain exactly one
-output identity, all loaded variants must remain accessible, and same-output
-alternatives must not split into extra cells. A framebuffer image,
-`recipe-book-cells.png`, renders the actual Minecraft recipe buttons for the
-four electronics and nine conveyor/filter outputs reported hidden by users.
-The probe reads only the disposable fixture's saved registry data; it never
-opens that world or a user's world in Minecraft. This is a native cell-model and
-button-rendering check, not manual navigation or notification acceptance.
+Use an existing Python 3.11+ environment with `migration/requirements.txt`.
+This runs five unlock/persistence boots and 18 progression checks across all
+recipe modes, with rubber enabled and disabled. `--campaign unlock` or
+`--campaign progression` selects one part. Mode changes legitimately prune
+removed recipe IDs from saved books: the audit retains those log events and
+requires their exact set to match the preceding and current recipe packets.
+Unrelated errors still fail.
 
-The static checks do not require artifacts, Gradle, Java or a graphical client:
+Pass the resulting `unlock` directory to the client. It must contain the three
+`recipes-*-sweep.bin` packets, matching successful JSON reports with
+`bookRecipes` and the generated world's `level.dat`. The client reads its
+registry snapshot before decoding the packets; it does not open the world.
+Historical or mismatched headers fail. Native recipe-book collections must
+group only identical outputs, retain every variant and render thirteen separate
+example cells with more than 1,000 colored framebuffer pixels. Without fixtures
+this is explicitly `NOT_RUN_NO_NATIVE_FIXTURES`.
+
+## What Is Checked
+
+- Every registered Advantage item and valid block state: geometry, missing
+  models/sprites, English names, creative-tab contents and GUI translation keys.
+  Native fluid-block models are intentionally particle-only.
+- Actual tank screen rendering, full/empty 10,000 mB update packets, fluid
+  capability simulation/execution and neighbour-face culling. The water-gauge
+  pixel at `(88,39)` must satisfy `blue > red + 20` and `blue > green + 10`.
+- Native bucket fluids and fluid-renderer vertices for crude/refined oil,
+  with water/lava controls, actual atlas sprites and tint.
+- With `-MachineGuiLayouts`, real screen rendering at nine window/GUI-scale
+  combinations, caption pixels, slot/frame placement and deliberately broken
+  controls. Screenshots are retained before assertions.
+- With `-ChildRendererGeometry`, registered drill-bit, beam and turret geometry
+  buffers. Hydroturbine registration and texture are checked; its live
+  orientation and spin still require a disposable world.
+
+The probes preserve their earlier pixel, packet and missing-model assertions
+through explicit native API translations. Run the static preservation and
+negative controls without launching Minecraft:
 
 ```powershell
 ./test-rig/client-resources/test-launcher.ps1 -StaticOnly
@@ -66,44 +92,6 @@ The static checks do not require artifacts, Gradle, Java or a graphical client:
 ./test-rig/client-resources/test-probe-contract-negative-controls.ps1
 ```
 
-Before running Gradle, check that the shared `D:/GradleCaches/minecraft-mods-shared`
-cache is free of other builds. Use the repository's Gradle 9.6.1 / ForgeGradle 7 setup with Java 17
-for Gradle and the configured Java 8 compilation toolchain. Supply Java 8 to
-the disposable launcher. Do not launch the actual client until authorized:
-
-```powershell
-./gradlew.bat check clientResourceProbeJar verifyEclipseProductionClasspath
-./gradlew.bat prepareCombinedEclipseLaunch
-./test-rig/client-resources/test-launcher.ps1
-./test-rig/client-resources/run.ps1 -JavaHome '<Java 8 home>' -LaunchProfile runClientAllAdvantage.launch -RequireExtensions -RecipeBookFixtures '<new native116 fixture directory>/unlock' -PreflightOnly
-# Only after authorization for the graphical run:
-./test-rig/client-resources/run.ps1 -JavaHome '<Java 8 home>' -LaunchProfile runClientAllAdvantage.launch -RequireExtensions -RecipeBookFixtures '<new native116 fixture directory>/unlock'
-```
-
-Each run gets a new directory under `run-client-resource-runs/`. The runner snapshots production classes/resources, uses the audited native launch dependencies, and loads only the probe as an additional mod. Helpers launch hidden, with separate stdout/stderr logs and a bounded timeout. It retains logs, images and `client-resources.json`; missing reports, failed assertions, and model/texture errors fail the run. A runner failure gets a separate `runner-failure.json`, without replacing partial native results. Existing saves, configuration, and prior reports are untouched. `-PreflightOnly` creates an input snapshot without starting Java or claiming a graphical pass.
-
-New GUI captures are kept outside Gradle's `build/` directory so `clean` cannot remove them. This does not recreate any historical captures already lost from the former build-based location.
-
-The default `-OutputSource Gradle` merges Gradle's classes and processed resources. To test the actual Eclipse output instead, pass `-OutputSource Eclipse`; this copies `bin/main` verbatim and does not overlay Gradle resources. `production-files.json` hashes every selected class/resource. `client-input.json` records that manifest's hash, the Java binary, probe, launch, production metadata, every dependency archive, expansion candidate hashes and optional fixture hashes. The current Power deobf candidate is recorded separately, defaulting to `build/libs-dev/PowerAdvantage-2.4.6.115021-deobf.jar`; `-PowerCandidate` selects an explicit native candidate. That jar hash is provenance, not a claim that Eclipse/Gradle output equals the jar. Missing/unexpanded metadata or a legacy target fails preflight. The native result records actual discovered mod versions and the exact game/Forge target. Refresh candidate hashes after any production rebuild before final evidence is taken. The [historical Eclipse metadata regression](../../docs/1.13/ECLIPSE-METADATA.md) explains the original failure, not native 1.15 acceptance.
-
-For the combined run, use `gradlew.bat prepareCombinedEclipseLaunch`, then add `-LaunchProfile runClientAllAdvantage.launch -RequireExtensions` to the probe command. The report's `advantage_mods` must list all three mods. With this flag, resource and item-name assertions cover Power, Steam and Electric, and model/blockstate errors from any of their namespaces fail the run. Without it, the original Power-only scope is unchanged. Power must be `2.4.6.115021`; Steam and Electric must each be `2.2.7.115021`. Pin every rebuilt expansion jar in the native116 profiles before regenerating the combined launch. Recipe grouping requires that combined scope; without fixtures it explicitly reports `NOT_RUN_NO_NATIVE_FIXTURES`, not a full combined resource/recipe pass.
-
-Assertions cover every registered item and valid block state in the selected Advantage namespaces, nonempty item/machine geometry, missing-model and missing-texture sprites, English item names, the shared creative tab and its icon, and agreement between Power's modern block and legacy GUI translation keys. Native fluid block models are intentionally particle-only. This test does not certify machine operation, animated entity rendering, or third-party resource packs.
-
-The `ClientResourceContractTest` checks cover literal model paths, removed legacy blockstate selectors, model parents/textures (including vanilla assets), oil item models, locale aliases, and English block/bucket coverage. Their historical 1.13 red/green results do not qualify this destination.
-
-Tank visual regressions use Minecraft's actual neighbour-face culling beneath both tanks, native Forge fluid capability simulation/execution, full 10,000 mB and empty tank update packets, and a native registered `ContainerType` screen initialized without a player/world. The actual filtered-tank gauge and frame render into an OpenGL framebuffer through the production GUI. The pixel at `(88,39)` must remain blue with the original thresholds (`blue > red + 20`, `blue > green + 10`); `tank-water-gauge.png` is written before assertions. Historical hidden-floor/untinted `ADADAD` observations remain 1.13 evidence only. No test-world loading or fluid-network changes are required.
-
-Oil regressions verify both buckets through native `BucketItem.getFluid()` and Forge's fluid-item capability, then call the initialized native `BlockRendererDispatcher` / `FluidBlockRenderer` against a read-only synthetic `ILightReader`. Still and flowing crude/refined oil must emit vertices using their own atlas sprites and `FFFFFF` top-face tint. Vanilla water and lava remain controls. Forge 31 reads sprites/tint from `FluidAttributes`; no removed oil transformer or 1.13 hook is assumed. Completed vertices are inspected through `BufferBuilder.getNextBuffer()` and the actual native format element offsets; atlas lookup uses `getAtlasSpriteGetter(AtlasTexture.LOCATION_BLOCKS_TEXTURE)`. The probe temporarily supplies native vanilla water/lava tags at the main menu and restores them afterward; no production tags or saves are written. `fluid_rendering` retains case results. The historical water-sprite/`3F76E4` failure is not native 1.15 evidence.
-
-The native recipe image still requires exactly thirteen separate cells and more
-than 1,000 colored framebuffer pixels. A blank image is retained before failure.
-Compilation and input preflight are not graphical acceptance, recipe discovery
-acceptance, manual GUI navigation or server-to-client menu-handshake acceptance.
-
-The optional `-ChildRendererGeometry` combined-run switch adds actual registered
-Steam drill-bit and Electric beam/turret buffer checks after these primary
-oracles. It does not alter their capture logic or thresholds. Hydroturbine
-registration/texture are checked, but orientation/spin geometry remains an
-explicit disposable-world gap. See [Additional Renderer Geometry](../../docs/1.15/CLIENT-RESOURCES.md#additional-renderer-geometry)
-for scope, the static wiring test and the completed native run evidence.
+These checks do not certify machine operation, live animated entities,
+multiplayer menu handshakes, manual recipe discovery or third-party resource
+packs. Those remain separate from compilation and graphical qualification.

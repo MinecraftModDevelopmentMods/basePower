@@ -44,8 +44,17 @@ public class SteamOperationalSourceContractTest {
         Set<String> families = new LinkedHashSet<>();
         for (MethodNode method : readClass("SteamOperationalSupplementalCases").methods) {
             for (AbstractInsnNode instruction : method.instructions.toArray()) {
-                if (!(instruction instanceof LdcInsnNode)) continue;
-                Object value = ((LdcInsnNode) instruction).cst;
+                Object value = instruction instanceof LdcInsnNode ? ((LdcInsnNode)instruction).cst : null;
+                if (instruction instanceof org.objectweb.asm.tree.InvokeDynamicInsnNode) {
+                    org.objectweb.asm.tree.InvokeDynamicInsnNode concat = (org.objectweb.asm.tree.InvokeDynamicInsnNode)instruction;
+                    if (concat.bsm.getOwner().equals("java/lang/invoke/StringConcatFactory")) {
+                        for (Object argument : concat.bsmArgs) if (argument instanceof String) {
+                            String template = (String)argument;
+                            int dynamic = template.indexOf('\u0001');
+                            value = dynamic < 0 ? template : template.substring(0, dynamic);
+                        }
+                    }
+                }
                 if (!(value instanceof String)) continue;
                 String text = (String) value;
                 assertFalse("Supplemental IDs must not escape the steam group", text.startsWith("steam-extra/"));

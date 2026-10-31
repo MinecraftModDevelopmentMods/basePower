@@ -3,7 +3,7 @@ package zone.moddev.mc.advantageworks;
 import cyano.poweradvantage.api.ConduitType;
 import cyano.poweradvantage.api.PoweredEntity;
 import java.util.List;
-import net.minecraft.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 
 final class BatteryOperationalCases {
     static void register(List<MachineScenario> cases) {
@@ -23,7 +23,7 @@ final class BatteryOperationalCases {
                         PoweredEntity array = (PoweredEntity)c.tile(7, 4, 8);
                         c.require(array.getEnergyCapacity(new ConduitType("electricity")) == capacity, "rated battery capacity retained");
                         c.require(c.world.getBlockState(c.at(8, 4, 8)).getValue(BlockStateProperties.LIT), "battery powers the live LED");
-                        net.minecraft.util.math.BlockPos source = c.at(7, 4, 8), sink = c.at(8, 4, 8);
+                        net.minecraft.core.BlockPos source = c.at(7, 4, 8), sink = c.at(8, 4, 8);
                         float debit = ElectricOperationalRates.ledDebit(c.activationTick,
                                 ElectricOperationalRates.offset(source.getX(), source.getY(), source.getZ()),
                                 ElectricOperationalRates.offset(sink.getX(), sink.getY(), sink.getZ()), 160, 10);

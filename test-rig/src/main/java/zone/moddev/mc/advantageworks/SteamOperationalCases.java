@@ -4,10 +4,10 @@ import cyano.poweradvantage.api.fluid.FluidStack;
 import cyano.poweradvantage.api.fluid.FluidTank;
 import java.util.List;
 import java.util.function.Consumer;
-import net.minecraft.fluid.Fluid;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.Direction;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.core.Direction;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.registries.ForgeRegistries;
@@ -296,7 +296,7 @@ final class SteamOperationalCases {
                     IFluidHandler handler = c.tile(X, Y, Z).getCapability(
                             CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, Direction.UP)
                             .orElseThrow(() -> new IllegalStateException("Missing still fluid capability"));
-                    int accepted = handler.fill(new net.minecraftforge.fluids.FluidStack(net.minecraft.fluid.Fluids.WATER, 100),
+                    int accepted = handler.fill(new net.minecraftforge.fluids.FluidStack(net.minecraft.world.level.material.Fluids.WATER, 100),
                             IFluidHandler.FluidAction.EXECUTE);
                     c.record("capability/rejected-water", accepted);
                     c.require(accepted == 0, "Water is rejected by the still input capability"); },

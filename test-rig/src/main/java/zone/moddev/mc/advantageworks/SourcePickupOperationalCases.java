@@ -1,8 +1,8 @@
 package zone.moddev.mc.advantageworks;
 
 import java.util.List;
-import net.minecraft.block.Blocks;
-import net.minecraft.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 
 final class SourcePickupOperationalCases {
     static void register(List<MachineScenario> cases) {
@@ -28,7 +28,7 @@ final class SourcePickupOperationalCases {
                         }
                     }, c -> {
                         boolean drain = machine.equals("power-drain");
-                        net.minecraft.util.math.BlockPos source = drain ? c.at(8, 3, 8) : c.at(9, 0, 8);
+                        net.minecraft.core.BlockPos source = drain ? c.at(8, 3, 8) : c.at(9, 0, 8);
                         c.require(c.world.getBlockState(source).is(Blocks.OAK_SLAB), "Water pickup must never delete the host slab");
                         c.require(!c.world.getBlockState(source).getValue(BlockStateProperties.WATERLOGGED), "Host is genuinely drained, not an unchanged water source");
                         int stored = drain ? amount(c, 8, 2, 8) + amount(c, 10, 2, 8)

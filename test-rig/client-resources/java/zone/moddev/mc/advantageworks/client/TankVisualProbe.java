@@ -2,19 +2,19 @@ package zone.moddev.mc.advantageworks.client;
 
 import com.google.gson.JsonObject;
 import cyano.poweradvantage.api.simple.SimpleMachineGUI;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.client.Minecraft;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
-import net.minecraft.client.shader.Framebuffer;
-import net.minecraft.entity.player.PlayerInventory;
-import net.minecraft.fluid.FluidState;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.Direction;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.IBlockReader;
+import com.mojang.blaze3d.pipeline.RenderTarget;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.level.material.FluidState;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.core.Direction;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.BlockGetter;
 import zone.moddev.mc.poweradvantage.gui.FilteredFluidTankGUI;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
@@ -42,14 +42,16 @@ final class TankVisualProbe {
         result.addProperty("metal_tank_floor_visible", metalFloor);
         result.addProperty("portable_tank_floor_visible", portableFloor);
 
-        MetalTankTileEntity serverTank = new MetalTankTileEntity();
+        MetalTankTileEntity serverTank = new MetalTankTileEntity(BlockPos.ZERO,
+                zone.moddev.mc.poweradvantage.init.Blocks.metal_storage_tank.defaultBlockState());
         IFluidHandler handler = serverTank.getCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, Direction.UP)
                 .orElseThrow(() -> new IllegalStateException("Metal tank has no native Forge fluid capability"));
-        require(handler.fill(new FluidStack(net.minecraft.fluid.Fluids.WATER, 10000), FluidAction.SIMULATE) == 10000
+        require(handler.fill(new FluidStack(net.minecraft.world.level.material.Fluids.WATER, 10000), FluidAction.SIMULATE) == 10000
                 && serverTank.getTank().getFluidAmount() == 0, "Native simulated fill changed the tank");
-        require(handler.fill(new FluidStack(net.minecraft.fluid.Fluids.WATER, 10000), FluidAction.EXECUTE) == 10000,
+        require(handler.fill(new FluidStack(net.minecraft.world.level.material.Fluids.WATER, 10000), FluidAction.EXECUTE) == 10000,
                 "Native capability did not fill the tank");
-        MetalTankTileEntity clientTank = new MetalTankTileEntity();
+        MetalTankTileEntity clientTank = new MetalTankTileEntity(BlockPos.ZERO,
+                zone.moddev.mc.poweradvantage.init.Blocks.metal_storage_tank.defaultBlockState());
         clientTank.onDataPacket(null, serverTank.getUpdatePacket());
         result.addProperty("synced_tank_amount", clientTank.getTank().getFluidAmount());
         require(clientTank.getTank().getFluidAmount() == 10000, "Filled tank packet lost water");
@@ -67,42 +69,37 @@ final class TankVisualProbe {
     }
 
     private static boolean floorVisible(final BlockState tank) {
-        IBlockReader world = new IBlockReader() {
-            @Override public TileEntity getBlockEntity(BlockPos pos) { return null; }
+        BlockGetter world = new BlockGetter() {
+            @Override public int getHeight() { return 256; }
+            @Override public int getMinBuildHeight() { return 0; }
+            @Override public BlockEntity getBlockEntity(BlockPos pos) { return null; }
             @Override public BlockState getBlockState(BlockPos pos) {
-                return pos.equals(BlockPos.ZERO.above()) ? tank : net.minecraft.block.Blocks.GRASS_BLOCK.defaultBlockState();
+                return pos.equals(BlockPos.ZERO.above()) ? tank : net.minecraft.world.level.block.Blocks.GRASS_BLOCK.defaultBlockState();
             }
             @Override public FluidState getFluidState(BlockPos pos) { return getBlockState(pos).getFluidState(); }
         };
-        return Block.shouldRenderFace(net.minecraft.block.Blocks.GRASS_BLOCK.defaultBlockState(), world, BlockPos.ZERO, Direction.UP);
+        return Block.shouldRenderFace(net.minecraft.world.level.block.Blocks.GRASS_BLOCK.defaultBlockState(), world, BlockPos.ZERO, Direction.UP, BlockPos.ZERO.above());
     }
 
     private static int renderWater(Minecraft minecraft, MetalTankTileEntity tile) {
         FilteredFluidTankGUI definition = new FilteredFluidTankGUI(new ResourceLocation("poweradvantage", "textures/gui/container/fluid_metal_tank_gui.png"));
         final int width = 128, height = 96;
-        PlayerInventory inventory = new PlayerInventory(null);
+        Inventory inventory = new Inventory(null);
         SimpleMachineGUI.Container container = definition.createMenu(1, inventory, tile);
         require(container.getType() == MachineGUIRegistry.TYPE && MachineGUIRegistry.TYPE != null,
                 "Tank GUI is not backed by the registered native container type");
-        SimpleMachineGUI.GUIContainer screen = container.createScreen(inventory, new net.minecraft.util.text.StringTextComponent("Tank probe"));
+        SimpleMachineGUI.GUIContainer screen = container.createScreen(inventory, new net.minecraft.network.chat.TextComponent("Tank probe"));
         screen.init(minecraft, width, height);
         require(screen.getMinecraft() == minecraft, "Native tank screen was not initialized");
-        tile.getTank().setFluid(new cyano.poweradvantage.api.fluid.FluidStack(net.minecraft.fluid.Fluids.WATER, 10000));
-        Framebuffer framebuffer = new Framebuffer(width, height, true, Minecraft.ON_OSX);
+        tile.getTank().setFluid(new cyano.poweradvantage.api.fluid.FluidStack(net.minecraft.world.level.material.Fluids.WATER, 10000));
+        RenderTarget framebuffer = new com.mojang.blaze3d.pipeline.TextureTarget(width, height, true, Minecraft.ON_OSX);
         framebuffer.bindWrite(true);
-        RenderSystem.matrixMode(GL_PROJECTION);
-        RenderSystem.pushMatrix();
-        RenderSystem.loadIdentity();
-        RenderSystem.ortho(0.0D, width, height, 0.0D, -1.0D, 1.0D);
-        RenderSystem.matrixMode(GL_MODELVIEW);
-        RenderSystem.pushMatrix();
-        RenderSystem.loadIdentity();
-        RenderSystem.disableLighting();
+        NativeGuiProjection projection = new NativeGuiProjection(width, height, -1, 1, 0);
         RenderSystem.disableDepthTest();
         RenderSystem.enableBlend();
         RenderSystem.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
         RenderSystem.enableTexture();
-        RenderSystem.color4f(1F, 1F, 1F, 1F);
+        RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
         try {
             RenderSystem.clearColor(0F, 0F, 0F, 1F);
             RenderSystem.clear(GL_COLOR_BUFFER_BIT, Minecraft.ON_OSX);
@@ -122,10 +119,7 @@ final class TankVisualProbe {
         } catch (IOException failure) {
             throw new IllegalStateException("Could not retain the native tank gauge image", failure);
         } finally {
-            RenderSystem.popMatrix();
-            RenderSystem.matrixMode(GL_PROJECTION);
-            RenderSystem.popMatrix();
-            RenderSystem.matrixMode(GL_MODELVIEW);
+            projection.close();
             framebuffer.destroyBuffers();
             minecraft.getMainRenderTarget().bindWrite(true);
             RenderSystem.enableDepthTest();

@@ -7,6 +7,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -243,12 +244,24 @@ public class WorldgenSamplingJobTest {
             return region && (y == 64 || ((x + z) & 1) != 0);
         }
 
-        @Override public void populateChunk(int x, int z) {
+        @Override public CompletableFuture<WorldgenSamplingJob.SampleChunk> requestChunk(int x, int z, boolean counting) {
+            if (counting) return CompletableFuture.completedFuture(sampleChunk(x, z));
+            populateChunk(x, z);
+            return CompletableFuture.completedFuture(new WorldgenSamplingJob.SampleChunk() {
+                @Override public boolean centerMatches(String expected) { throw new AssertionError("Population was counted"); }
+                @Override public String blockName(int bx, int y, int bz) { throw new AssertionError("Population was counted"); }
+            });
+        }
+
+        @Override public void releaseChunk(int x, int z) { }
+        @Override public void close() { }
+
+        public void populateChunk(int x, int z) {
             if (failPopulation) throw new IllegalStateException("population failed");
             populated.add(pack(x, z));
         }
 
-        @Override public WorldgenSamplingJob.SampleChunk sampleChunk(int chunkX, int chunkZ) {
+        public WorldgenSamplingJob.SampleChunk sampleChunk(int chunkX, int chunkZ) {
             sampled.add(pack(chunkX, chunkZ));
             return new WorldgenSamplingJob.SampleChunk() {
                 @Override public boolean centerMatches(String expected) {

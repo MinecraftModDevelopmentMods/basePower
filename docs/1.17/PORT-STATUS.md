@@ -14,10 +14,14 @@ now receive their real position and block state, and native tickers dispatch
 the existing machine update logic. Configured material aliases are additive
 server data-pack tags. Legacy migration also covers separate entity chunks.
 
-Qualification is in progress. The handover will list the tested artifact hashes,
+Qualification is in progress; see the [current test record](CURRENT-QUALIFICATION.md).
+The handover will list the tested artifact hashes,
 completed checks, failures and remaining manual checks. Compilation, saved-state
 presence, animation or a green result from an older port is not evidence that a
 machine has done useful work in 1.17.
 
 Use disposable copies for every upgrade test. Never open the only copy of a
 valuable world with a port candidate.
+
+The [manual checklist](MANUAL-TESTING.md) gives the Eclipse project paths and
+the remaining visual, interaction and copied-world checks.

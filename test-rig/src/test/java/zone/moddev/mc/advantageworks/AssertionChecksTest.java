@@ -3,7 +3,7 @@ package zone.moddev.mc.advantageworks;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
-import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.nbt.CompoundTag;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -27,24 +27,24 @@ public class AssertionChecksTest {
     }
 
     @Test(expected = IllegalArgumentException.class) public void missingTankCannotSatisfyZero() {
-        AssertionChecks.fluidAmount(new CompoundNBT(), "Tank", null);
+        AssertionChecks.fluidAmount(new CompoundTag(), "Tank", null);
     }
 
     @Test(expected = IllegalArgumentException.class) public void missingAmountCannotSatisfyZero() {
-        CompoundNBT tile = new CompoundNBT();
-        tile.put("Tank", new CompoundNBT());
+        CompoundTag tile = new CompoundTag();
+        tile.put("Tank", new CompoundTag());
         AssertionChecks.fluidAmount(tile, "Tank", null);
     }
 
     @Test(expected = IllegalArgumentException.class) public void emptyFalseIsNotAnEmptyTank() {
-        CompoundNBT tile = new CompoundNBT(), tank = new CompoundNBT();
+        CompoundTag tile = new CompoundTag(), tank = new CompoundTag();
         tank.putBoolean("Empty", false);
         tile.put("Tank", tank);
         AssertionChecks.fluidAmount(tile, "Tank", null);
     }
 
     @Test public void explicitEmptyAndMeasuredFluidAreDifferentFromMissingEvidence() {
-        CompoundNBT tile = new CompoundNBT(), tank = new CompoundNBT();
+        CompoundTag tile = new CompoundTag(), tank = new CompoundTag();
         tank.putBoolean("Empty", true);
         tile.put("Tank", tank);
         assertEquals(0, AssertionChecks.fluidAmount(tile, "Tank", null));
