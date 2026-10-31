@@ -54,7 +54,7 @@ public class RecipeUnlockContractTest {
                 assertEquals("Finding ONE ingredient must be enough: " + file, 1, items.size());
                 JsonObject predicate = items.get(0).getAsJsonObject();
                 assertEquals("Only an item or tag predicate is expected", 1, predicate.size());
-                actual.add(predicateKey(predicate));
+                actual.add(unlockPredicateKey(predicate));
             }
             List<JsonObject> choices = new ArrayList<>();
             if (recipe.has("key")) {
@@ -109,6 +109,28 @@ public class RecipeUnlockContractTest {
     private static String predicateKey(JsonObject predicate) {
         String type = predicate.has("tag") ? "tag" : "item";
         return type + ":" + predicate.get(type).getAsString();
+    }
+
+    private static String unlockPredicateKey(JsonObject predicate) {
+        assertEquals("One explicit native ingredient predicate is required", 1, predicate.size());
+        if (predicate.has("tag")) return "tag:" + predicate.get("tag").getAsString();
+        assertTrue("Minecraft 1.17 ignores the old singular item advancement field", predicate.has("items"));
+        JsonArray items = predicate.getAsJsonArray("items");
+        assertEquals("Each criterion discovers exactly one recipe ingredient", 1, items.size());
+        return "item:" + items.get(0).getAsString();
+    }
+
+    @Test public void nativeParserDoesNotUnlockStarchForAnUnrelatedItem() throws IOException {
+        net.minecraft.SharedConstants.tryDetectVersion();
+        net.minecraft.server.Bootstrap.bootStrap();
+        JsonObject criterion = read(DATA.resolve("advancements/recipes/starch_from_potato.json"))
+                .getAsJsonObject("criteria").getAsJsonObject("has_ingredient_1");
+        JsonObject predicate = criterion.getAsJsonObject("conditions").getAsJsonArray("items").get(0).getAsJsonObject();
+        net.minecraft.advancements.critereon.ItemPredicate nativePredicate =
+                net.minecraft.advancements.critereon.ItemPredicate.fromJson(predicate);
+        assertTrue(nativePredicate.matches(new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.POTATO)));
+        assertFalse("An unrelated dirt stack must not satisfy the real native predicate",
+                nativePredicate.matches(new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.DIRT)));
     }
 
     private static void collect(JsonElement element, List<JsonObject> result) {

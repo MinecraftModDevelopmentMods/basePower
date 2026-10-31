@@ -6,7 +6,9 @@
       "conditions": {
         "items": [
           {
-            "item": "minecraft:ender_pearl"
+            "items": [
+              "minecraft:ender_pearl"
+            ]
           }
         ]
       }
@@ -26,7 +28,9 @@
       "conditions": {
         "items": [
           {
-            "item": "minecraft:redstone_block"
+            "items": [
+              "minecraft:redstone_block"
+            ]
           }
         ]
       }

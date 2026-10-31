@@ -6,7 +6,9 @@
       "conditions": {
         "items": [
           {
-            "item": "poweradvantage:starch"
+            "items": [
+              "poweradvantage:starch"
+            ]
           }
         ]
       }

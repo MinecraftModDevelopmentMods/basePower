@@ -292,10 +292,10 @@ public abstract class PoweredEntity extends BlockEntity implements IPowerMachine
 		return tagRoot;
 	}
 
-	/** @deprecated Minecraft now calls {@link #load(BlockState, CompoundNBT)}. */
+	/** @deprecated Minecraft now calls {@link #load(CompoundTag)}. */
 	@Deprecated public void read(CompoundTag tag) { load(tag); }
 
-	/** @deprecated Minecraft now calls {@link #save(CompoundNBT)}. */
+	/** @deprecated Minecraft now calls {@link #save(CompoundTag)}. */
 	@Deprecated public CompoundTag write(CompoundTag tag) { return save(tag); }
 
 

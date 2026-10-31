@@ -6,7 +6,9 @@
       "conditions": {
         "items": [
           {
-            "item": "poweradvantage:item_conveyor"
+            "items": [
+              "poweradvantage:item_conveyor"
+            ]
           }
         ]
       }
@@ -16,7 +18,9 @@
       "conditions": {
         "items": [
           {
-            "item": "minecraft:bread"
+            "items": [
+              "minecraft:bread"
+            ]
           }
         ]
       }
@@ -26,7 +30,9 @@
       "conditions": {
         "items": [
           {
-            "item": "minecraft:oak_pressure_plate"
+            "items": [
+              "minecraft:oak_pressure_plate"
+            ]
           }
         ]
       }

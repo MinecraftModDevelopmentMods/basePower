@@ -4,6 +4,7 @@ Power Advantage 2.4.8.117011 (Minecraft 1.17.1)
 - Use native block-entity factories and tickers for machines and conveyors, retaining their saved position and facing.
 - Supply configured rubber and solder aliases through an additive server data pack instead of replacing vanilla tag readers.
 - Preserve legacy entity state in both terrain chunks and the separate 1.17 entity storage.
+- Use the 1.17 ingredient-predicate format so unrelated items do not unlock recipes.
 - Carry forward the finite-input, cold-restart, migration and rendered GUI checks; automated and manual acceptance remain separate.
 
 Power Advantage 2.4.7.116051 (Minecraft 1.16.5)
