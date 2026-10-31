@@ -1,15 +1,15 @@
 package zone.moddev.mc.poweradvantage.migration;
 
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.nbt.ListNBT;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
 public class RetiredProfessionSnapshotTest {
     @Test public void removesOnlyRetiredVanillaIndexAndIsIdempotent() {
         for (String namespace : new String[] {"FML", "fml"}) {
-            CompoundNBT root = world(namespace, "minecraft:farmer");
-            CompoundNBT player = new CompoundNBT();
+            CompoundTag root = world(namespace, "minecraft:farmer");
+            CompoundTag player = new CompoundTag();
             player.putInt("XpLevel", 34);
             root.put("Player", player);
             assertTrue(LegacyWorldDataHook.removeRetiredVanillaProfessionRegistry(root));
@@ -20,25 +20,25 @@ public class RetiredProfessionSnapshotTest {
     }
 
     @Test public void preservesCustomProfessionIndexInsteadOfHidingMissingMappings() {
-        CompoundNBT root = world("fml", "othermod:machinist");
-        CompoundNBT before = root.copy();
+        CompoundTag root = world("fml", "othermod:machinist");
+        CompoundTag before = root.copy();
         assertFalse(LegacyWorldDataHook.removeRetiredVanillaProfessionRegistry(root));
         assertEquals(before, root);
     }
 
-    private static CompoundNBT world(String namespace, String profession) {
-        CompoundNBT entry = new CompoundNBT();
+    private static CompoundTag world(String namespace, String profession) {
+        CompoundTag entry = new CompoundTag();
         entry.putString("K", profession);
         entry.putInt("V", 1);
-        ListNBT ids = new ListNBT();
+        ListTag ids = new ListTag();
         ids.add(entry);
-        CompoundNBT snapshot = new CompoundNBT();
+        CompoundTag snapshot = new CompoundTag();
         snapshot.put("ids", ids);
-        CompoundNBT registries = new CompoundNBT();
+        CompoundTag registries = new CompoundTag();
         registries.put("minecraft:villagerprofessions", snapshot);
-        CompoundNBT fml = new CompoundNBT();
+        CompoundTag fml = new CompoundTag();
         fml.put("Registries", registries);
-        CompoundNBT root = new CompoundNBT();
+        CompoundTag root = new CompoundTag();
         root.put(namespace, fml);
         return root;
     }

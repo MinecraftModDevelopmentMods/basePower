@@ -1,6 +1,6 @@
 package zone.moddev.mc.poweradvantage.machines.conveyors;
 
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.item.ItemStack;
 import zone.moddev.mc.poweradvantage.init.Entities;
 
 public class TileEntityInventoryFilter extends TileEntityConveyorFilter {
@@ -8,8 +8,8 @@ public class TileEntityInventoryFilter extends TileEntityConveyorFilter {
 
 	public static final int NUM_FILTER_SLOTS = 9;
 
-	public TileEntityInventoryFilter() {
-		super(Entities.FILTER_INVENTORY, NUM_FILTER_SLOTS + 1);
+	public TileEntityInventoryFilter(net.minecraft.core.BlockPos pos, net.minecraft.world.level.block.state.BlockState state) {
+		super(Entities.FILTER_INVENTORY, pos, state, NUM_FILTER_SLOTS + 1);
 	}
 
 	@Override

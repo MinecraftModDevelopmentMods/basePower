@@ -1,14 +1,14 @@
 package zone.moddev.mc.poweradvantage.math;
 
-import net.minecraft.nbt.INBT;
-import net.minecraft.nbt.IntArrayNBT;
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.util.Direction;
-import net.minecraft.util.RegistryKey;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.registry.Registry;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
+import net.minecraft.nbt.Tag;
+import net.minecraft.nbt.IntArrayTag;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.core.Direction;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.core.Registry;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
 
 /**
  * This class is used to store 4D integer coordinates
@@ -19,7 +19,7 @@ public class BlockPos4D {
 	/**
 	 * 4th dimension coordinate
 	 */
-	public final RegistryKey<World> dimension;
+	public final ResourceKey<Level> dimension;
 	/**
 	 * X,Y,Z coordinate
 	 */
@@ -30,7 +30,7 @@ public class BlockPos4D {
 	 *
 	 * @return The dimension of the coordinate (e.g. 0 for overworld, -1 for nether, 1 for the end)
 	 */
-	public RegistryKey<World> getDim() {
+	public ResourceKey<Level> getDim() {
 		return dimension;
 	}
 
@@ -71,7 +71,7 @@ public class BlockPos4D {
 	 * @param y Y-coordinate of D,X,Y,Z coordinate tuple
 	 * @param z Z-coordinate of D,X,Y,Z coordinate tuple
 	 */
-	public BlockPos4D(RegistryKey<World> d, int x, int y, int z) {
+	public BlockPos4D(ResourceKey<Level> d, int x, int y, int z) {
 		this(d, new BlockPos(x, y, z));
 	}
 
@@ -81,7 +81,7 @@ public class BlockPos4D {
 	 * @param dimension Dimension of the block
 	 * @param bp        location of the block
 	 */
-	public BlockPos4D(RegistryKey<World> dimension, BlockPos bp) {
+	public BlockPos4D(ResourceKey<Level> dimension, BlockPos bp) {
 		this.dimension = java.util.Objects.requireNonNull(dimension, "dimension");
 		this.pos = bp.immutable();
 		hashCache = (((dimension.hashCode() * 31 + pos.getZ()) * 31 + pos.getX()) * 31 + pos.getY());
@@ -264,7 +264,7 @@ public class BlockPos4D {
 	 *                     1 for the end)
 	 * @return A new BlockPos4D representing the new position
 	 */
-	public BlockPos4D toDimension(RegistryKey<World> newDimension) {
+	public BlockPos4D toDimension(ResourceKey<Level> newDimension) {
 		return new BlockPos4D(newDimension, this.pos);
 	}
 
@@ -276,32 +276,32 @@ public class BlockPos4D {
 		return n;
 	}
 
-	public INBT toNBT() {
-		CompoundNBT data = new CompoundNBT();
+	public Tag toNBT() {
+		CompoundTag data = new CompoundTag();
 		data.putString("Dimension", dimension.location().toString());
 		data.putIntArray("Pos", new int[] {pos.getX(), pos.getY(), pos.getZ()});
 		return data;
 	}
 
-	public static BlockPos4D fromNBT(INBT tag) {
-		if (tag instanceof IntArrayNBT) {
-			int[] data = ((IntArrayNBT) tag).getAsIntArray();
+	public static BlockPos4D fromNBT(Tag tag) {
+		if (tag instanceof IntArrayTag) {
+			int[] data = ((IntArrayTag) tag).getAsIntArray();
 			if (data.length != 4) throw new IllegalArgumentException("Invalid legacy position");
 			return new BlockPos4D(legacyDimension(data[0]), data[1], data[2], data[3]);
 		}
-		CompoundNBT data = (CompoundNBT) tag;
+		CompoundTag data = (CompoundTag) tag;
 		int[] pos = data.getIntArray("Pos");
 		if (pos.length != 3) throw new IllegalArgumentException("Invalid position");
-		return new BlockPos4D(RegistryKey.create(Registry.DIMENSION_REGISTRY,
+		return new BlockPos4D(ResourceKey.create(Registry.DIMENSION_REGISTRY,
 				new ResourceLocation(data.getString("Dimension"))), pos[0], pos[1], pos[2]);
 	}
 
 	/** Only the three vanilla numeric IDs have an unambiguous legacy meaning. */
-	public static RegistryKey<World> legacyDimension(int dimension) {
+	public static ResourceKey<Level> legacyDimension(int dimension) {
 		switch (dimension) {
-			case 0: return World.OVERWORLD;
-			case -1: return World.NETHER;
-			case 1: return World.END;
+			case 0: return Level.OVERWORLD;
+			case -1: return Level.NETHER;
+			case 1: return Level.END;
 			default: throw new IllegalArgumentException("No registry key for legacy dimension " + dimension);
 		}
 	}

@@ -33,13 +33,14 @@ public class BuildWorkflowContractTest {
             int policy = workflow.indexOf("run: git config --global core.autocrlf false");
             int checkout = workflow.indexOf("- name: Check out pinned Base Metals");
             assertTrue(name, policy >= 0 && checkout > policy);
-            assertTrue(name, workflow.contains("ref: 995f6cc4dd2d5eecc628a42e5c43fa5390c24bca"));
-            assertTrue(name, workflow.contains("BaseMetals-3.1.1.116051-deobf.jar"));
-            assertTrue(name, workflow.contains("ref: a113e5d767169189f0e35ade1e173a12d550b00e"));
-            assertTrue(name, workflow.contains("master-1.16.5"));
+            assertTrue(name, workflow.contains("ref: dacfaa3af2e3310d5cb6b081da79f09260ae103d"));
+            assertTrue(name, workflow.contains("BaseMetals-3.1.0.117011-deobf.jar"));
+            assertTrue(name, workflow.contains("ref: b56e2b62a1a6ea4d1dd96f8646a87801a817dbdf"));
+            assertTrue(name, workflow.contains("master-1.17.1"));
             assertTrue(name, workflow.contains("java-version: '25.0.3+9.0.LTS'"));
             assertTrue(name, workflow.contains("java-version: '17.0.1+12'"));
             assertTrue(name, workflow.contains("java-version: '8.0.502+7'"));
+            assertTrue(name, workflow.contains("java-version: '16.0.2+7'"));
             assertTrue(name, workflow.contains("-Porg.gradle.java.installations.paths="));
             assertTrue(name, workflow.contains("-Porg.gradle.java.installations.auto-detect=false"));
             assertTrue(name, workflow.contains("-Porg.gradle.java.installations.auto-download=false"));

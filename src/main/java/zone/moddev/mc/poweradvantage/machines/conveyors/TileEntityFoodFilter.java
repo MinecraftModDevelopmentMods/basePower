@@ -1,10 +1,10 @@
 package zone.moddev.mc.poweradvantage.machines.conveyors;
 
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.item.ItemStack;
 import zone.moddev.mc.poweradvantage.init.Entities;
 
 public class TileEntityFoodFilter extends TileEntityConveyorFilter {
-	public TileEntityFoodFilter() { super(Entities.FILTER_FOOD, 1); }
+	public TileEntityFoodFilter(net.minecraft.core.BlockPos pos, net.minecraft.world.level.block.state.BlockState state) { super(Entities.FILTER_FOOD, pos, state, 1); }
 
 	@Override
 	public boolean matchesFilter(ItemStack item) {

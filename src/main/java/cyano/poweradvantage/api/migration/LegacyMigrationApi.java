@@ -7,10 +7,10 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.resources.ResourceLocation;
 
 /**
  * Registration surface for Advantage add-ons that need pre-flattening world
@@ -25,7 +25,7 @@ public final class LegacyMigrationApi {
 
     @FunctionalInterface
     public interface NbtMigration {
-        boolean migrate(CompoundNBT compound);
+        boolean migrate(CompoundTag compound);
     }
 
     private static final Set<String> NAMESPACES = new LinkedHashSet<>();
@@ -129,7 +129,7 @@ public final class LegacyMigrationApi {
         return DURABLE_ITEMS.contains(id) || DURABLE_ITEMS.contains(itemTarget(id));
     }
 
-    public static synchronized boolean migrateRegisteredNbt(CompoundNBT compound) {
+    public static synchronized boolean migrateRegisteredNbt(CompoundTag compound) {
         boolean changed = false;
         for (NbtMigration migration : NBT_MIGRATIONS.values()) changed |= migration.migrate(compound);
         return changed;

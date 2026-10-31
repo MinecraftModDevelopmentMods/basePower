@@ -3,9 +3,9 @@ package zone.moddev.mc.poweradvantage.util;
 import java.lang.reflect.Constructor;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicBoolean;
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.nbt.INBT;
-import net.minecraft.util.Direction;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
+import net.minecraft.core.Direction;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
@@ -21,26 +21,11 @@ import zone.moddev.mc.poweradvantage.machines.fluidmachines.MetalTankTileEntity;
 import static org.junit.Assert.*;
 
 public class MachineCapabilitiesLifecycleTest {
-    private static Capability<IFluidHandler> oldFluid;
-    private static Capability<IItemHandler> oldItem;
-    private static Capability<IEnergyStorage> oldEnergy;
-
     @BeforeClass public static void nativeCapabilityTokens() throws Exception {
-        net.minecraft.util.registry.Bootstrap.bootStrap();
-        oldFluid = CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY;
-        oldItem = CapabilityItemHandler.ITEM_HANDLER_CAPABILITY;
-        oldEnergy = CapabilityEnergy.ENERGY;
-        // Forge injects these in a real process. Headless tests install distinct real
-        // Capability tokens without running a mod loader or changing registrations.
-        CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY = token(IFluidHandler.class.getName());
-        CapabilityItemHandler.ITEM_HANDLER_CAPABILITY = token(IItemHandler.class.getName());
-        CapabilityEnergy.ENERGY = token(IEnergyStorage.class.getName());
-    }
-
-    @AfterClass public static void restoreTokens() {
-        CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY = oldFluid;
-        CapabilityItemHandler.ITEM_HANDLER_CAPABILITY = oldItem;
-        CapabilityEnergy.ENERGY = oldEnergy;
+        net.minecraft.SharedConstants.tryDetectVersion(); net.minecraft.server.Bootstrap.bootStrap();
+        assertNotNull(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY);
+        assertNotNull(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY);
+        assertNotNull(CapabilityEnergy.ENERGY);
     }
 
     @Test public void chunkUnloadCannotRecreateAdaptersOnAnUnremovedTile() {
@@ -70,7 +55,7 @@ public class MachineCapabilitiesLifecycleTest {
 
     @Test public void clearRemovedCreatesFreshOptionalsWithoutRevivingOldOnes() {
         TestTank tank = new TestTank();
-        tank.getTank().setFluid(new cyano.poweradvantage.api.fluid.FluidStack(net.minecraft.fluid.Fluids.WATER, 500));
+        tank.getTank().setFluid(new cyano.poweradvantage.api.fluid.FluidStack(net.minecraft.world.level.material.Fluids.WATER, 500));
         LazyOptional<IFluidHandler> old = tank.getCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, null);
         tank.onChunkUnloaded();
         tank.clearRemoved();
@@ -107,7 +92,7 @@ public class MachineCapabilitiesLifecycleTest {
 
     @Test public void conveyorsFollowTheSameUnloadAndRevivalContract() {
         zone.moddev.mc.poweradvantage.machines.conveyors.TileEntityConveyor conveyor =
-                new zone.moddev.mc.poweradvantage.machines.conveyors.TileEntityConveyor();
+                new zone.moddev.mc.poweradvantage.machines.conveyors.TileEntityConveyor(net.minecraft.core.BlockPos.ZERO, net.minecraft.world.level.block.Blocks.HOPPER.defaultBlockState());
         LazyOptional<IItemHandler> old = conveyor.getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, null);
         assertTrue(old.isPresent());
         conveyor.onChunkUnloaded();
@@ -148,24 +133,14 @@ public class MachineCapabilitiesLifecycleTest {
         assertFalse(reacquired.get());
     }
 
-    @SuppressWarnings("unchecked")
-    private static <T> Capability<T> token(String name) throws Exception {
-        Constructor<?> constructor = Capability.class.getDeclaredConstructor(String.class, Capability.IStorage.class, Callable.class);
-        constructor.setAccessible(true);
-        Capability.IStorage<T> storage = new Capability.IStorage<T>() {
-            @Override public INBT writeNBT(Capability<T> cap, T instance, Direction side) { return new CompoundNBT(); }
-            @Override public void readNBT(Capability<T> cap, T instance, Direction side, INBT data) {}
-        };
-        return (Capability<T>) constructor.newInstance(name, storage, (Callable<T>) () -> null);
-    }
-
     private static final class TestTank extends MetalTankTileEntity {
+        TestTank() { super(net.minecraft.core.BlockPos.ZERO, net.minecraft.world.level.block.Blocks.IRON_BLOCK.defaultBlockState()); }
         void invalidateNow() { invalidateCaps(); }
         void reviveNow() { reviveCaps(); }
     }
 
     private static final class TestConverter extends cyano.poweradvantage.api.modsupport.rf.TileEntityRFConverter {
-        TestConverter() { super(null, new cyano.poweradvantage.api.ConduitType("test-power"), 100, 1000, "test"); }
+        TestConverter() { super(null, net.minecraft.core.BlockPos.ZERO, net.minecraft.world.level.block.Blocks.IRON_BLOCK.defaultBlockState(), new cyano.poweradvantage.api.ConduitType("test-power"), 100, 1000, "test"); }
         void reviveNow() { reviveCaps(); }
     }
 }

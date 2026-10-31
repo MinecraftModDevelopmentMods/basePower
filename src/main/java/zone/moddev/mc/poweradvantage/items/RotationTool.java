@@ -1,26 +1,26 @@
 package zone.moddev.mc.poweradvantage.items;
 
-import net.minecraft.block.BlockState;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.util.ActionResultType;
-import net.minecraft.util.Direction;
-import net.minecraft.util.Hand;
-import net.minecraft.util.Rotation;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemUseContext;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.core.Direction;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.level.block.Rotation;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.context.UseOnContext;
 
-public class RotationTool extends net.minecraft.item.Item {
+public class RotationTool extends net.minecraft.world.item.Item {
 
 	public RotationTool(Item.Properties properties) {
 		super(properties);
 	}
 
 	@Override
-	public ActionResultType useOn(ItemUseContext context) {
-		final PlayerEntity player = context.getPlayer();
-		final World w = context.getLevel();
+	public InteractionResult useOn(UseOnContext context) {
+		final Player player = context.getPlayer();
+		final Level w = context.getLevel();
 		final BlockPos coord = context.getClickedPos();
 		final Direction facing = context.getClickedFace();
 		BlockState bs = w.getBlockState(coord);
@@ -41,10 +41,10 @@ public class RotationTool extends net.minecraft.item.Item {
 		BlockState rotated = bs.rotate(w, coord, Rotation.COUNTERCLOCKWISE_90);
 		if (rotated != bs) {
 			w.setBlock(coord, rotated, 3);
-			return ActionResultType.SUCCESS;
+			return InteractionResult.SUCCESS;
 		}
 
 
-		return ActionResultType.PASS;
+		return InteractionResult.PASS;
 	}
 }

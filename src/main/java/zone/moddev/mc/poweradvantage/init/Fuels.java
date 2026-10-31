@@ -1,7 +1,7 @@
 package zone.moddev.mc.poweradvantage.init;
 
 import zone.moddev.mc.poweradvantage.registry.FuelRegistry;
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.item.ItemStack;
 
 
 
@@ -21,9 +21,9 @@ public abstract class Fuels {
 		FuelRegistry.getInstance().registerFuel(Items.refined_oil_bucket,
 				(short) Math.min(Short.MAX_VALUE, 1000 * REFINED_OIL_FUEL_PER_FLUID_UNIT));
 		FuelRegistry.getInstance().registerPostBurnItem(Items.crude_oil_bucket,
-				(ItemStack stack) -> new ItemStack(net.minecraft.item.Items.BUCKET));
+				(ItemStack stack) -> new ItemStack(net.minecraft.world.item.Items.BUCKET));
 		FuelRegistry.getInstance().registerPostBurnItem(Items.refined_oil_bucket,
-				(ItemStack stack) -> new ItemStack(net.minecraft.item.Items.BUCKET));
+				(ItemStack stack) -> new ItemStack(net.minecraft.world.item.Items.BUCKET));
 
 
 		initDone = true;

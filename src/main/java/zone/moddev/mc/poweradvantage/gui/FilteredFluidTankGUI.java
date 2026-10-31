@@ -4,7 +4,7 @@ import cyano.poweradvantage.api.fluid.FluidPoweredEntity;
 import cyano.poweradvantage.api.simple.SimpleMachineGUI;
 import zone.moddev.mc.poweradvantage.math.Integer2D;
 import com.mojang.blaze3d.platform.GlStateManager;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.resources.ResourceLocation;
 import cyano.poweradvantage.api.fluid.FluidStack;
 
 public class FilteredFluidTankGUI extends SimpleMachineGUI {
@@ -27,8 +27,8 @@ public class FilteredFluidTankGUI extends SimpleMachineGUI {
 						guiDisplayImage, guiContainer, x, y, z);
 			}
 		}
-		com.mojang.blaze3d.systems.RenderSystem.color4f(1f, 1f, 1f, 1f); // reset tint
-		guiContainer.getMinecraft().getTextureManager().bind(guiDisplayImage);
+		com.mojang.blaze3d.systems.RenderSystem.setShaderColor(1f, 1f, 1f, 1f); // reset tint
+		com.mojang.blaze3d.systems.RenderSystem.setShaderTexture(0, guiDisplayImage);
 		guiContainer.blit(x + 77, y + 6, 176, 0, 22, 66); // x, y, textureOffsetX, textureOffsetY, width, height)
 	}
 
@@ -46,7 +46,7 @@ public class FilteredFluidTankGUI extends SimpleMachineGUI {
 		FluidTankGUI.drawFluidFilledRectangle(guiContainer, fs, x + xPos, y + yPos + barSlotHeight - h, w, h, zLevel);
 		//guiContainer.drawModalRectWithCustomSizedTexture(x+xPos, y+yPos+barSlotHeight-h, 0, 0, w, h, 16, h);//h * texPerPixel); // x, y, u, v, width, height, textureWidth, textureHeight
 
-		guiContainer.getMinecraft().getTextureManager().bind(displayImage);
+		com.mojang.blaze3d.systems.RenderSystem.setShaderTexture(0, displayImage);
 		guiContainer.blit(x + xPos - 3, y + yPos - 3, 176, 0, 22, 66); // x, y, textureOffsetX, textureOffsetY, width, height)
 	}
 }

@@ -4,19 +4,19 @@ import java.util.IdentityHashMap;
 import java.util.Map;
 
 import cyano.poweradvantage.api.ConduitType;
-import net.minecraft.block.FlowingFluidBlock;
-import net.minecraft.block.BlockState;
-import net.minecraft.fluid.FlowingFluid;
-import net.minecraft.fluid.Fluid;
-import net.minecraft.fluid.FluidState;
-import net.minecraft.item.Item;
-import net.minecraft.state.StateContainer;
-import net.minecraft.util.Direction;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.registry.Registry;
-import net.minecraft.world.IWorld;
-import net.minecraft.world.IWorldReader;
+import net.minecraft.world.level.block.LiquidBlock;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.material.FlowingFluid;
+import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.material.FluidState;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.core.Direction;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Registry;
+import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.LevelReader;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.event.RegistryEvent;
@@ -45,8 +45,8 @@ public final class Fluids {
 
     public static synchronized void init() {
         if (initialized) return;
-        fluidConduit_water = registerNewFluid(net.minecraft.fluid.Fluids.WATER);
-        fluidConduit_lava = registerNewFluid(net.minecraft.fluid.Fluids.LAVA);
+        fluidConduit_water = registerNewFluid(net.minecraft.world.level.material.Fluids.WATER);
+        fluidConduit_lava = registerNewFluid(net.minecraft.world.level.material.Fluids.LAVA);
 
         flowing_crude_oil = new PowerFluid.Flowing(Kind.CRUDE);
         crude_oil = new PowerFluid.Source(Kind.CRUDE);
@@ -143,7 +143,7 @@ public final class Fluids {
 
         public static final class Flowing extends PowerFluid {
             public Flowing(Kind kind) { super(kind); }
-            @Override protected void createFluidStateDefinition(StateContainer.Builder<Fluid, FluidState> builder) {
+            @Override protected void createFluidStateDefinition(StateDefinition.Builder<Fluid, FluidState> builder) {
                 super.createFluidStateDefinition(builder);
                 builder.add(LEVEL);
             }

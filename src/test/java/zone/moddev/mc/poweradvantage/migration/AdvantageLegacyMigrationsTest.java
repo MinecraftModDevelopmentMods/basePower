@@ -6,7 +6,7 @@ import static org.junit.Assert.assertTrue;
 
 import cyano.poweradvantage.api.migration.LegacyMigrationApi;
 import java.util.Arrays;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.resources.ResourceLocation;
 import org.junit.Test;
 
 public class AdvantageLegacyMigrationsTest {

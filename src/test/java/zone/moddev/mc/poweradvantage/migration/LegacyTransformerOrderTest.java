@@ -24,9 +24,9 @@ public class LegacyTransformerOrderTest {
 
     private static void check(boolean baseFirst, boolean productionNames) throws Exception {
         String[][] targets = {
-                {"net/minecraft/world/storage/SaveFormat", "legacy_world_info", "prepareLegacyWorld"},
-                {"net/minecraft/world/chunk/storage/ChunkLoader", "legacy_chunk_status", "prepareLegacyChunk"},
-                {"net/minecraft/world/gen/WorldGenRegion", "legacy_worldgen_guard", "shouldBlockWorldgenWrite"}
+                {"net/minecraft/world/level/storage/LevelStorageSource", "legacy_world_info", "prepareLegacyWorld"},
+                {"net/minecraft/world/level/chunk/storage/ChunkStorage", "legacy_chunk_status", "prepareLegacyChunk"},
+                {"net/minecraft/server/level/WorldGenRegion", "legacy_worldgen_guard", "shouldBlockWorldgenWrite"}
         };
         for (String[] target : targets) {
             ClassNode node = new ClassNode();
@@ -62,7 +62,7 @@ public class LegacyTransformerOrderTest {
                     assertEquals("Both mod item migrations must precede entity DFU", 2, preparations);
                     entitiesPrepared = true;
                 }
-                if (call.owner.equals(node.name) && call.desc.equals("(Lnet/minecraft/nbt/CompoundNBT;)I")) {
+                if (call.owner.equals(node.name) && call.desc.equals("(Lnet/minecraft/nbt/CompoundTag;)I")) {
                     assertTrue("Entity staging must precede native version handling", entitiesPrepared);
                 }
             }
@@ -71,9 +71,9 @@ public class LegacyTransformerOrderTest {
 
     private static void transform(ClassNode node, String target, boolean base) throws Exception {
         String mod = base ? "basemetals" : "poweradvantage";
-        String path = base ? "/coremods/basemetals_116_compatibility.js" : "/coremods/poweradvantage_116_migration.js";
+        String path = base ? "/coremods/basemetals_117_compatibility.js" : "/coremods/poweradvantage_116_migration.js";
         ScriptEngine engine = new ScriptEngineManager().getEngineByName("nashorn");
-        assertNotNull("Transformer tests require the Java 8 test toolchain", engine);
+        assertNotNull("Transformer tests require Forge's bundled Nashorn engine", engine);
         try (InputStreamReader reader = new InputStreamReader(getResource(path), StandardCharsets.UTF_8)) { engine.eval(reader); }
         engine.put("targetClass", node);
         assertSame(node, engine.eval("initializeCoreMod()." + mod + "_" + target + ".transformer(targetClass)"));

@@ -2,15 +2,15 @@ package zone.moddev.mc.poweradvantage.init;
 
 import zone.moddev.mc.poweradvantage.PowerAdvantage;
 import zone.moddev.mc.poweradvantage.gui.FunctionalCreativeTab;
-import net.minecraft.item.ItemGroup;
-import net.minecraft.item.Item;
-import net.minecraft.item.BlockItem;
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.item.CreativeModeTab;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.registries.ForgeRegistries;
 
 public class ItemGroups {
 
-	public static ItemGroup tab_powerAdvantage;
+	public static CreativeModeTab tab_powerAdvantage;
 
 	private static boolean initDone = false;
 
@@ -42,7 +42,7 @@ public class ItemGroups {
 		Item item = i.getItem();
 		sb.append(ForgeRegistries.ITEMS.getKey(item).getNamespace());
 		if (item instanceof BlockItem) {
-			if (((BlockItem) item).getBlock().hasTileEntity(((BlockItem) item).getBlock().defaultBlockState())) {
+			if (((BlockItem) item).getBlock().defaultBlockState().hasBlockEntity()) {
 				sb.append("A");
 			} else {
 				sb.append("B");

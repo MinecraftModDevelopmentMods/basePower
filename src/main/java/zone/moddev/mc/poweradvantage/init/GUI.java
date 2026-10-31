@@ -1,6 +1,6 @@
 package zone.moddev.mc.poweradvantage.init;
 
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.resources.ResourceLocation;
 import zone.moddev.mc.poweradvantage.PowerAdvantage;
 import cyano.poweradvantage.api.simple.SimpleMachineGUI;
 import zone.moddev.mc.poweradvantage.gui.*;

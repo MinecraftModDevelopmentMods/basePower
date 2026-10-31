@@ -1,20 +1,10 @@
 # PowerAdvantage
 
-**Minecraft 1.16.5, version 2.4.7.116051. Source port candidate.**
+**Minecraft 1.17.1, version 2.4.8.117011. Source port candidate.**
 
-See the [1.16 port record](docs/1.16/PORT-STATUS.md) for current checks and remaining
-work. The accepted [1.15 test record](docs/1.15/CURRENT-QUALIFICATION.md) is retained
-as historical evidence, not a pass for this version. Manual 1.16 acceptance is
-still required.
-
-The [test-suite review](docs/1.16/TEST-SUITE-AUDIT.md) separates operating checks
-from saved-state and presence checks. It records the remaining machine coverage
-gaps; a green build does not qualify every machine setup.
-
-The follow-up [machine operating checks](docs/1.16/OPERATING-TESTS.md) use finite
-inputs, real server ticks, blocked and starved controls, and full-process
-restarts. They check useful output and retained resources, not just animation
-or a rising progress counter.
+See the [1.17 port record](docs/1.17/PORT-STATUS.md) for this candidate's
+validation status. The retained 1.16 and earlier reports are historical evidence,
+not passes for 1.17. Manual testing follows the current automated qualification.
 
 Power Advantage provides shared power, fluids, item transport and compatibility APIs for Steam Advantage and Electric Advantage.
 
@@ -29,21 +19,21 @@ Recipe-book discovery now follows relevant ingredients. See the [all-Advantage m
 
 The [manufacturing progression audit](docs/1.13/MANUFACTURING-PROGRESSION.md) traces survival parts from raw resources, including configured material aliases, processing, loot-only parts and automated restart checks.
 
-## Building Minecraft 1.16.5
+## Building Minecraft 1.17.1
 
-The `master-1.16.5` build uses Forge 36.2.34, official `1.16.5` mappings,
-MCP `20210115.111550`, ForgeGradle 7.0.34 and Gradle 9.6.1.
-Run Gradle with Java 17 and compile production code with Java 8. Mavenizer also
-needs Java 25. CI pins all three JDKs. Pass the installed homes using
-`-Porg.gradle.java.installations.paths=<java8>,<java17>,<java25>` and disable
+The `master-1.17.1` build uses Forge 37.1.1, official `1.17.1` mappings,
+MCP `20210706.113038`, ForgeGradle 7.0.34 and Gradle 9.6.1.
+Run Gradle with Java 17 and compile and run production code with Java 16. Mavenizer also
+needs Java 25. CI pins these JDKs and Java 8 for the legacy renamer. Pass the installed homes using
+`-Porg.gradle.java.installations.paths=<java8>,<java16>,<java17>,<java25>` and disable
 automatic discovery and downloads for a reproducibility check.
 
-Build the pinned Base Metals `3.1.1.116051` and OreSpawn `4.1.0.116051` deobf jars first.
+Build the pinned Base Metals `3.1.0.117011` and OreSpawn `4.1.0.117011` deobf jars first.
 The exact Base Metals source is
-`995f6cc4dd2d5eecc628a42e5c43fa5390c24bca`. CI builds that dependency first;
+`dacfaa3af2e3310d5cb6b081da79f09260ae103d`. CI builds that dependency first;
 the checksums and complete source pins are in `gradle.properties`.
 
-Then run from `D:\PowerAdvantage\PA116\PowerAdvantage`:
+Then run from `D:\PowerAdvantage\PA117\PowerAdvantage`:
 
 ```text
 gradlew.bat clean check build javadoc verifyReleaseDependencies verifyReleaseArtifacts writeReleaseChecksums verifyEclipseProductionClasspath
@@ -52,8 +42,8 @@ gradlew.bat clean check build javadoc verifyReleaseDependencies verifyReleaseArt
 The default dependency jars are:
 
 ```text
-D:\BaseMetals\BaseMetals 116\BaseMetals\build\libs-dev\BaseMetals-3.1.1.116051-deobf.jar
-D:\MinecraftMineralogy\OS116\OreSpawn\build\libs-dev\OreSpawn-4.1.0.116051-deobf.jar
+D:\BaseMetals\BaseMetals 117\BaseMetals\build\libs-dev\BaseMetals-3.1.0.117011-deobf.jar
+D:\MinecraftMineralogy\OS117\OreSpawn\build\libs-dev\OreSpawn-4.1.0.117011-deobf.jar
 ```
 
 Other layouts can pass `-PbaseMetalsDeobfJar=<path>` and `-PoreSpawnDeobfJar=<path>`.
@@ -75,7 +65,7 @@ Refresh the project in Eclipse, allow its Java build to finish, and launch the g
 
 Eclipse copies production resources from `build/resources/main`, not directly from `src/main/resources`. This prevents its builder from overwriting the expanded `mods.toml` with raw `${version}` placeholders. After updating this setup, use **Gradle > Refresh Gradle Project**, then **Project > Clean** before relaunching. After editing resources or version properties, run `processResources` or refresh the Gradle project before the Eclipse build. See the [metadata regression notes](docs/1.13/ECLIPSE-METADATA.md).
 
-To prepare a combined client, build the Steam/Electric `2.2.8.116051` deobf jars,
+To prepare a combined client, build the Steam/Electric `2.2.9.117011` deobf jars,
 run `gradlew.bat prepareCombinedEclipseLaunch`, refresh Eclipse, then launch
 `runClientAllAdvantage.launch`. Inputs must match
 `test-rig/profiles/native116/dev-core.json`; alternative layouts can pass

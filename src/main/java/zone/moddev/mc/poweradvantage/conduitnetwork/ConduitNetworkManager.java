@@ -11,10 +11,10 @@ import cyano.poweradvantage.api.ConduitType;
 import cyano.poweradvantage.api.PowerConnectorContext;
 import zone.moddev.mc.poweradvantage.math.BlockPos4D;
 import zone.moddev.mc.poweradvantage.util.PowerHelper;
-import net.minecraft.block.BlockState;
-import net.minecraft.util.Direction;
-import net.minecraft.util.math.ChunkPos;
-import net.minecraft.world.World;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.core.Direction;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.Level;
 
 /**
  * This class manages a global (trans-dimensional) cache of power networks of a single power type.
@@ -131,7 +131,7 @@ public class ConduitNetworkManager {
 	 * @param dimension dimension containing the changed chunk
 	 * @param chunk changed chunk position
 	 */
-	public void invalidateChunk(net.minecraft.util.RegistryKey<World> dimension, ChunkPos chunk) {
+	public void invalidateChunk(net.minecraft.resources.ResourceKey<Level> dimension, ChunkPos chunk) {
 		lock.writeLock().lock();
 		try {
 			int minX = (chunk.x << 4) - 1;
@@ -155,7 +155,7 @@ public class ConduitNetworkManager {
 	 * @param type  The energy type that is triggering the revalidation (should be the same type as
 	 *              this manager)
 	 */
-	public void revalidate(BlockPos4D coord, World w, ConduitType type) {
+	public void revalidate(BlockPos4D coord, Level w, ConduitType type) {
 		lock.writeLock().lock();
 		try {
 			invalidate(coord);
@@ -193,7 +193,7 @@ public class ConduitNetworkManager {
 	 * @param src   The block from which we are scanning
 	 * @param type  The type of energy that will flow throught the scanned network
 	 */
-	protected void recursiveScan(World w, BlockPos4D coord, BlockState src, ConduitType type) {
+	protected void recursiveScan(Level w, BlockPos4D coord, BlockState src, ConduitType type) {
 		for (int i = 0; i < Direction.values().length; i++) {
 			Direction face = Direction.values()[i];
 			BlockPos4D n = coord.relative(face);

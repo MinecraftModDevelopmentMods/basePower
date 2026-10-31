@@ -1,20 +1,20 @@
 package zone.moddev.mc.poweradvantage.machines.conveyors;
 
-import net.minecraft.inventory.Inventory;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.text.StringTextComponent;
-import net.minecraft.item.crafting.IRecipeType;
+import net.minecraft.world.SimpleContainer;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.network.chat.TextComponent;
+import net.minecraft.world.item.crafting.RecipeType;
 import zone.moddev.mc.poweradvantage.init.Entities;
 
 public class TileEntitySmeltableFilter extends TileEntityConveyorFilter {
-	public TileEntitySmeltableFilter() { super(Entities.FILTER_SMELT, 1); }
+	public TileEntitySmeltableFilter(net.minecraft.core.BlockPos pos, net.minecraft.world.level.block.state.BlockState state) { super(Entities.FILTER_SMELT, pos, state, 1); }
 
 	@Override
 	public boolean matchesFilter(ItemStack item) {
 		if (item == null || item.isEmpty() || level == null) return false;
-		Inventory probe = new Inventory(1);
+		SimpleContainer probe = new SimpleContainer(1);
 		probe.setItem(0, item.copy());
-		return level.getRecipeManager().getRecipeFor(IRecipeType.SMELTING, probe, level).isPresent();
+		return level.getRecipeManager().getRecipeFor(RecipeType.SMELTING, probe, level).isPresent();
 	}
 
 }

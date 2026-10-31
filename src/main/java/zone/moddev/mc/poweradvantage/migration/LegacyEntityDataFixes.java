@@ -5,13 +5,13 @@ import com.mojang.datafixers.DataFixer;
 import com.mojang.serialization.Dynamic;
 import java.util.Set;
 import java.util.UUID;
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.nbt.ListNBT;
-import net.minecraft.nbt.NBTDynamicOps;
-import net.minecraft.util.SharedConstants;
-import net.minecraft.util.datafix.DataFixesManager;
-import net.minecraft.util.datafix.TypeReferences;
-import net.minecraft.util.datafix.fixes.EntityUUID;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.NbtOps;
+import net.minecraft.SharedConstants;
+import net.minecraft.util.datafix.DataFixers;
+import net.minecraft.util.datafix.fixes.References;
+import net.minecraft.util.datafix.fixes.EntityUUIDFix;
 
 /** Isolates vanilla entity choices from mod choices during the chunk datafix. */
 final class LegacyEntityDataFixes {
@@ -26,41 +26,42 @@ final class LegacyEntityDataFixes {
 
     private LegacyEntityDataFixes() {}
 
-    static void prepare(CompoundNBT root) {
+    static void prepare(CompoundTag root) {
         if (root.contains(STAGED)) return;
         int version = root.contains("DataVersion", 99) ? root.getInt("DataVersion") : -1;
         int current = SharedConstants.getCurrentVersion().getWorldVersion();
-        if (version >= current || !root.contains("Level", 10)) return;
-        CompoundNBT level = root.getCompound("Level");
+        if (version >= current) return;
+        CompoundTag level = entityOwner(root);
+        if (level == null) return;
         if (!level.contains("Entities")) return;
         requireCompoundList(level, "Entities");
-        ListNBT entities = level.getList("Entities", 10);
+        ListTag entities = level.getList("Entities", 10);
         if (entities.isEmpty()) return;
-        DataFixer fixer = DataFixesManager.getDataFixer();
+        DataFixer fixer = DataFixers.getDataFixer();
         Set<?> vanillaIds = fixer.getSchema(DataFixUtils.makeKey(version))
-                .findChoiceType(TypeReferences.ENTITY).types().keySet();
-        ListNBT fixed = new ListNBT();
+                .findChoiceType(References.ENTITY).types().keySet();
+        ListTag fixed = new ListTag();
         for (int index = 0; index < entities.size(); index++) {
             fixed.add(upgrade(entities.getCompound(index), version, current, fixer, vanillaIds));
         }
         // Keep these out of vanilla's mixed-choice traversal and avoid fixing them twice.
         root.put(STAGED, fixed);
-        level.put("Entities", new ListNBT());
+        level.put("Entities", new ListTag());
     }
 
-    private static CompoundNBT upgrade(CompoundNBT source, int version, int current,
+    private static CompoundTag upgrade(CompoundTag source, int version, int current,
             DataFixer fixer, Set<?> vanillaIds) {
-        CompoundNBT entity = source.copy();
+        CompoundTag entity = source.copy();
         renameForgeAttributes(entity);
         boolean hasPassengers = source.contains("Passengers");
-        ListNBT passengers = source.getList("Passengers", 10);
+        ListTag passengers = source.getList("Passengers", 10);
         entity.remove("Passengers");
-        Dynamic<?> dynamic = new Dynamic<>(NBTDynamicOps.INSTANCE, entity);
+        Dynamic<?> dynamic = new Dynamic<>(NbtOps.INSTANCE, entity);
         if (vanillaIds.contains(entity.getString("id"))) {
-            entity = (CompoundNBT) fixer.update(TypeReferences.ENTITY, dynamic, version, current).getValue();
+            entity = (CompoundTag) fixer.update(References.ENTITY, dynamic, version, current).getValue();
         } else {
             // All entities inherit this root UUID format, including unknown mod types.
-            entity = (CompoundNBT) EntityUUID.updateEntityUUID(dynamic).getValue();
+            entity = (CompoundTag) EntityUUIDFix.updateEntityUUID(dynamic).getValue();
         }
         // Vanilla's UUID fixer rejects zero halves, although they are valid UUID bits.
         if (source.hasUUID("UUID")) {
@@ -74,7 +75,7 @@ final class LegacyEntityDataFixes {
         }
         if (hasPassengers) {
             requireCompoundList(source, "Passengers");
-            ListNBT fixed = new ListNBT();
+            ListTag fixed = new ListTag();
             for (int index = 0; index < passengers.size(); index++) {
                 fixed.add(upgrade(passengers.getCompound(index), version, current, fixer, vanillaIds));
             }
@@ -83,35 +84,35 @@ final class LegacyEntityDataFixes {
         return entity;
     }
 
-    static void preparePlayerAttributes(CompoundNBT player) {
+    static void preparePlayerAttributes(CompoundTag player) {
         renameForgeAttributes(player);
         if (!player.contains("RootVehicle")) return;
         if (!player.contains("RootVehicle", 10)) throw new IllegalStateException("Malformed player RootVehicle");
-        CompoundNBT vehicle = player.getCompound("RootVehicle");
+        CompoundTag vehicle = player.getCompound("RootVehicle");
         if (!vehicle.contains("Entity")) return;
         if (!vehicle.contains("Entity", 10)) throw new IllegalStateException("Malformed player RootVehicle.Entity");
         prepareAttributeTree(vehicle.getCompound("Entity"));
     }
 
-    private static void prepareAttributeTree(CompoundNBT entity) {
+    private static void prepareAttributeTree(CompoundTag entity) {
         renameForgeAttributes(entity);
         if (!entity.contains("Passengers")) return;
         requireCompoundList(entity, "Passengers");
-        ListNBT passengers = entity.getList("Passengers", 10);
+        ListTag passengers = entity.getList("Passengers", 10);
         for (int index = 0; index < passengers.size(); index++) {
             prepareAttributeTree(passengers.getCompound(index));
         }
     }
 
-    private static void renameForgeAttributes(CompoundNBT entity) {
+    private static void renameForgeAttributes(CompoundTag entity) {
         if (!entity.contains("Attributes")) return;
         requireCompoundList(entity, "Attributes");
-        ListNBT attributes = entity.getList("Attributes", 10);
+        ListTag attributes = entity.getList("Attributes", 10);
         for (String[] alias : FORGE_ATTRIBUTES) {
-            CompoundNBT legacy = null;
+            CompoundTag legacy = null;
             int identities = 0;
             for (int index = 0; index < attributes.size(); index++) {
-                CompoundNBT attribute = attributes.getCompound(index);
+                CompoundTag attribute = attributes.getCompound(index);
                 if (attribute.getString("Name").equals(alias[0])) {
                     legacy = attribute;
                     identities++;
@@ -124,13 +125,13 @@ final class LegacyEntityDataFixes {
         }
     }
 
-    static void finish(CompoundNBT root) {
+    static void finish(CompoundTag root) {
         if (root == null || !root.contains(STAGED)) return;
-        if (!root.contains(STAGED, 9) || !root.contains("Level", 10)) {
+        if (!root.contains(STAGED, 9) || entityOwner(root) == null) {
             throw new IllegalStateException("Malformed staged Advantage entity migration");
         }
         requireCompoundList(root, STAGED);
-        CompoundNBT level = root.getCompound("Level");
+        CompoundTag level = entityOwner(root);
         if (level.contains("Entities")) requireCompoundList(level, "Entities");
         if (!level.getList("Entities", 10).isEmpty()) {
             throw new IllegalStateException("Entity data appeared during isolated Advantage migration");
@@ -139,9 +140,18 @@ final class LegacyEntityDataFixes {
         root.remove(STAGED);
     }
 
-    private static void requireCompoundList(CompoundNBT owner, String key) {
+    private static CompoundTag entityOwner(CompoundTag root) {
+        if (root.contains("Level", 10)) return root.getCompound("Level");
+        if (!root.contains("Position", 11)) return null;
+        if (root.getIntArray("Position").length != 2) {
+            throw new IllegalStateException("Saved entity chunk has no containing chunk coordinates");
+        }
+        return root;
+    }
+
+    private static void requireCompoundList(CompoundTag owner, String key) {
         if (!owner.contains(key, 9)) throw new IllegalStateException("Malformed entity list: " + key);
-        ListNBT list = (ListNBT) owner.get(key);
+        ListTag list = (ListTag) owner.get(key);
         if (!list.isEmpty() && list.getElementType() != 10) {
             throw new IllegalStateException("Non-compound entity list: " + key);
         }

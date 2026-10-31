@@ -1,6 +1,6 @@
 package zone.moddev.mc.poweradvantage.registry.still.recipe;
 
-import net.minecraft.fluid.Fluid;
+import net.minecraft.world.level.material.Fluid;
 import cyano.poweradvantage.api.fluid.FluidStack;
 /**
  * This is a simple class used to identify fluids by either registry name or explicit object 

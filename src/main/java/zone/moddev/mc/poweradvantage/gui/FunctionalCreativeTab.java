@@ -1,9 +1,9 @@
 package zone.moddev.mc.poweradvantage.gui;
 
-import net.minecraft.item.ItemGroup;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.NonNullList;
+import net.minecraft.world.item.CreativeModeTab;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.core.NonNullList;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 /**
@@ -11,7 +11,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
  * @author DrCyano
  *
  */
-public class FunctionalCreativeTab  extends ItemGroup {
+public class FunctionalCreativeTab  extends CreativeModeTab {
 
 	private final java.util.function.Supplier<Item> itemSupplier;
 	private final java.util.Comparator<ItemStack> itemSortingAlgorithm;

@@ -2,7 +2,7 @@ package cyano.poweradvantage.api.modsupport.techreborn;
 
 import cyano.poweradvantage.api.ConduitType;
 import cyano.poweradvantage.api.modsupport.rf.TileEntityRFConverter;
-import net.minecraft.tileentity.TileEntityType;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import zone.moddev.mc.poweradvantage.PowerAdvantage;
 
 /**
@@ -10,8 +10,8 @@ import zone.moddev.mc.poweradvantage.PowerAdvantage;
  * Forge Energy is the common energy API from 1.13 onward.
  */
 public abstract class TileEntityTRConverter extends TileEntityRFConverter {
-    protected TileEntityTRConverter(TileEntityType<?> type, ConduitType conduitType, String translationKey) {
-        super(type, conduitType, 1024F, 2048, translationKey);
+    protected TileEntityTRConverter(BlockEntityType<?> type, net.minecraft.core.BlockPos pos, net.minecraft.world.level.block.state.BlockState state, ConduitType conduitType, String translationKey) {
+        super(type, pos, state, conduitType, 1024F, 2048, translationKey);
     }
 
     @Override public boolean canConvertEnergy(ConduitType type) {

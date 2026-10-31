@@ -2,8 +2,8 @@ package zone.moddev.mc.poweradvantage.migration;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.nbt.ListNBT;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -14,10 +14,10 @@ public class LegacyEnchantmentsTest {
         saved.put(11, "steamadvantage:powderless");
         saved.put(12, "steamadvantage:rapid_reload");
         saved.put(13, "steamadvantage:recoil");
-        CompoundNBT tag = new CompoundNBT();
-        ListNBT list = new ListNBT();
+        CompoundTag tag = new CompoundTag();
+        ListTag list = new ListTag();
         for (Integer id : saved.keySet()) {
-            CompoundNBT entry = new CompoundNBT();
+            CompoundTag entry = new CompoundTag();
             entry.putShort("id", id.shortValue());
             entry.putShort("lvl", (short) 3);
             list.add(entry);
@@ -35,9 +35,9 @@ public class LegacyEnchantmentsTest {
     @Test public void honorsWorldSpecificIdsAndPreservesStoredEnchantments() {
         Map<Integer, String> saved = new LinkedHashMap<>();
         saved.put(173, "steamadvantage:rapid_reload");
-        CompoundNBT book = new CompoundNBT();
-        ListNBT list = new ListNBT();
-        CompoundNBT entry = new CompoundNBT();
+        CompoundTag book = new CompoundTag();
+        ListTag list = new ListTag();
+        CompoundTag entry = new CompoundTag();
         entry.putShort("id", (short) 173);
         entry.putShort("lvl", (short) 2);
         list.add(entry);
@@ -51,9 +51,9 @@ public class LegacyEnchantmentsTest {
     public void refusesIncompleteOldListInsteadOfSilentlyDroppingAnEnchantment() {
         Map<Integer, String> saved = new LinkedHashMap<>();
         saved.put(10, "steamadvantage:high_explosive");
-        CompoundNBT tag = new CompoundNBT();
-        ListNBT list = new ListNBT();
-        CompoundNBT entry = new CompoundNBT();
+        CompoundTag tag = new CompoundTag();
+        ListTag list = new ListTag();
+        CompoundTag entry = new CompoundTag();
         entry.putShort("id", (short) 99);
         list.add(entry);
         tag.put("ench", list);

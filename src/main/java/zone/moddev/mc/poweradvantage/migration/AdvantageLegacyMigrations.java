@@ -2,10 +2,10 @@ package zone.moddev.mc.poweradvantage.migration;
 
 import cyano.poweradvantage.api.migration.LegacyMigrationApi;
 import cyano.poweradvantage.api.simple.BlockSimplePowerMachine;
-import net.minecraft.block.Block;
-import net.minecraft.block.FlowingFluidBlock;
-import net.minecraft.block.BlockState;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.LiquidBlock;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.resources.ResourceLocation;
 import zone.moddev.mc.poweradvantage.PowerAdvantage;
 import zone.moddev.mc.poweradvantage.blocks.BlockPowerSwitch;
 import zone.moddev.mc.poweradvantage.machines.conveyors.BlockConveyor;
@@ -80,8 +80,8 @@ public final class AdvantageLegacyMigrations {
         if (block instanceof BlockSimplePowerMachine) {
             return ((BlockSimplePowerMachine) block).getStateFromMeta(metadata);
         }
-        if (block instanceof FlowingFluidBlock) {
-            return block.defaultBlockState().setValue(FlowingFluidBlock.LEVEL, Integer.valueOf(metadata & 15));
+        if (block instanceof LiquidBlock) {
+            return block.defaultBlockState().setValue(LiquidBlock.LEVEL, Integer.valueOf(metadata & 15));
         }
         return block.defaultBlockState();
     }

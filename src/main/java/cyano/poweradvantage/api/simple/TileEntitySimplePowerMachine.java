@@ -5,18 +5,20 @@ import cyano.poweradvantage.api.PowerConnectorContext;
 import cyano.poweradvantage.api.PowerRequest;
 import cyano.poweradvantage.api.PoweredEntity;
 import zone.moddev.mc.poweradvantage.conduitnetwork.ConduitRegistry;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.inventory.ISidedInventory;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.nbt.ListNBT;
-import net.minecraft.network.NetworkManager;
-import net.minecraft.network.play.server.SUpdateTileEntityPacket;
-import net.minecraft.tileentity.TileEntityType;
-import net.minecraft.util.Direction;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.StringTextComponent;
-import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.WorldlyContainer;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.network.Connection;
+import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
+import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.core.Direction;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.TranslatableComponent;
 
 import java.util.Arrays;
 
@@ -31,7 +33,7 @@ import java.util.Arrays;
  * @author DrCyano
  *
  */
-public abstract class TileEntitySimplePowerMachine extends PoweredEntity implements ISidedInventory, net.minecraft.util.INameable {
+public abstract class TileEntitySimplePowerMachine extends PoweredEntity implements WorldlyContainer, net.minecraft.world.Nameable {
 	private final ConduitType[] types;
 	private final float[] energyBufferSizes;
 	private final float[] energyBuffers;
@@ -50,8 +52,9 @@ public abstract class TileEntitySimplePowerMachine extends PoweredEntity impleme
 	 * @param unlocalizedName The string used for language look-up and 
 	 * entity registration. 
 	 */
-	public TileEntitySimplePowerMachine(TileEntityType<?> tileType, ConduitType type, float energyBufferSize, String unlocalizedName){
-		super(tileType);
+	public TileEntitySimplePowerMachine(BlockEntityType<?> tileType, BlockPos pos, BlockState state,
+            ConduitType type, float energyBufferSize, String unlocalizedName){
+		super(tileType, pos, state);
 		this.types = new ConduitType[1];
 		this.types[0] = type;
 		this.energyBufferSizes = new float[1];
@@ -69,8 +72,9 @@ public abstract class TileEntitySimplePowerMachine extends PoweredEntity impleme
 	 * @param unlocalizedName The string used for language look-up and
 	 * entity registration.
 	 */
-	public TileEntitySimplePowerMachine(TileEntityType<?> tileType, ConduitType[] typeList, float[] energyBufferSize, String unlocalizedName){
-		super(tileType);
+	public TileEntitySimplePowerMachine(BlockEntityType<?> tileType, BlockPos pos, BlockState state,
+            ConduitType[] typeList, float[] energyBufferSize, String unlocalizedName){
+		super(tileType, pos, state);
 		if(typeList.length != energyBufferSize.length) throw new IllegalArgumentException("Array length mismatch. Number of ConduitTypes and number of buffer sizes must be equal.");
 		this.types = Arrays.copyOf(typeList,typeList.length);
 		this.energyBufferSizes = Arrays.copyOf(energyBufferSize,energyBufferSize.length);
@@ -288,14 +292,14 @@ public abstract class TileEntitySimplePowerMachine extends PoweredEntity impleme
 	 * @param tagRoot The root of the NBT
 	 */
 	@Override
-	public void load(net.minecraft.block.BlockState state, final CompoundNBT tagRoot) {
-		super.load(state, tagRoot);
+	public void load(final CompoundTag tagRoot) {
+		super.load(tagRoot);
 		ItemStack[] inventory = this.getInventory();
 		if(inventory != null ){
 			Arrays.fill(inventory, null);
-			final ListNBT nbttaglist = tagRoot.getList("Items", 10);
+			final ListTag nbttaglist = tagRoot.getList("Items", 10);
 			for (int i = 0; i < nbttaglist.size() && i < inventory.length; ++i) {
-				final CompoundNBT nbttagcompound1 = nbttaglist .getCompound(i);
+				final CompoundTag nbttagcompound1 = nbttaglist .getCompound(i);
 				final byte n = nbttagcompound1.getByte("Slot");
 				if (n >= 0 && n < inventory.length) {
 					ItemStack stack = ItemStack.of(nbttagcompound1);
@@ -315,14 +319,14 @@ public abstract class TileEntitySimplePowerMachine extends PoweredEntity impleme
 	 * @param tagRoot The root of the NBT
 	 */
 	@Override
-	public CompoundNBT save(final CompoundNBT tagRoot) {
+	public CompoundTag save(final CompoundTag tagRoot) {
 		super .save(tagRoot);
 		ItemStack[] inventory = this.getInventory();
 		if(inventory != null ){
-			final ListNBT nbttaglist = new ListNBT();
+			final ListTag nbttaglist = new ListTag();
 			for (int i = 0; i < inventory.length; ++i) {
 				if (inventory[i] != null && !inventory[i].isEmpty()) {
-					final CompoundNBT nbttagcompound1 = new CompoundNBT();
+					final CompoundTag nbttagcompound1 = new CompoundTag();
 					nbttagcompound1.putByte("Slot", (byte)i);
 					inventory[i] .save(nbttagcompound1);
 					nbttaglist .add(nbttagcompound1);
@@ -400,10 +404,10 @@ public abstract class TileEntitySimplePowerMachine extends PoweredEntity impleme
 	 * @return A synchronization NBT holding values from the 
 	 * <code>getDataFieldArray()</code> array
 	 */
-	public CompoundNBT createDataFieldUpdateTag(){
+	public CompoundTag createDataFieldUpdateTag(){
 		this.prepareDataFieldsForSync();
 		int[] dataFields = this.getDataFieldArray();
-		CompoundNBT nbtTag = new CompoundNBT();
+		CompoundTag nbtTag = new CompoundTag();
 		nbtTag.putIntArray("[]", dataFields);
 		return nbtTag;
 	}
@@ -415,7 +419,7 @@ public abstract class TileEntitySimplePowerMachine extends PoweredEntity impleme
 	 * @param tag A synchronization NBT holding values from the 
 	 * <code>getDataFieldArray()</code> array
 	 */
-	public void readDataFieldUpdateTag(CompoundNBT tag){
+	public void readDataFieldUpdateTag(CompoundTag tag){
 		int[] newData = tag.getIntArray("[]");
 		System.arraycopy(newData, 0, this.getDataFieldArray(), 0, Math.min(newData.length, this.getDataFieldArray().length));
 		this.onDataFieldUpdate();
@@ -426,16 +430,16 @@ public abstract class TileEntitySimplePowerMachine extends PoweredEntity impleme
 	 * Turns the data field NBT into a network packet
 	 */
 	@Override 
-	public SUpdateTileEntityPacket getUpdatePacket(){
-		CompoundNBT nbtTag = createDataFieldUpdateTag();
-		return new SUpdateTileEntityPacket(this.worldPosition, 0, nbtTag);
+	public ClientboundBlockEntityDataPacket getUpdatePacket(){
+		CompoundTag nbtTag = createDataFieldUpdateTag();
+		return new ClientboundBlockEntityDataPacket(this.worldPosition, 0, nbtTag);
 	}
 
 	/**
 	 * Receives the network packet made by <code>getDescriptionPacket()</code>
 	 */
 	@Override
-	public void onDataPacket(NetworkManager net, SUpdateTileEntityPacket packet) {
+	public void onDataPacket(Connection net, ClientboundBlockEntityDataPacket packet) {
 		readDataFieldUpdateTag(packet.getTag());
 	}
 	
@@ -466,7 +470,7 @@ public abstract class TileEntitySimplePowerMachine extends PoweredEntity impleme
 	 * executes when a player right-clicks and opens the inventory GUI
 	 */
 	@Override
-	public void startOpen(PlayerEntity arg0) {
+	public void startOpen(Player arg0) {
 		// do nothing
 		
 	}
@@ -475,7 +479,7 @@ public abstract class TileEntitySimplePowerMachine extends PoweredEntity impleme
 	 * executes when a player stops interacting with this machine 
 	 */
 	@Override
-	public void stopOpen(PlayerEntity arg0) {
+	public void stopOpen(Player arg0) {
 		// do nothing
 		
 	}
@@ -610,7 +614,7 @@ public abstract class TileEntitySimplePowerMachine extends PoweredEntity impleme
 	 * boilerplate inventory code
 	 */
 	@Override
-	public boolean stillValid(final PlayerEntity p_isUseableByPlayer_1_) {
+	public boolean stillValid(final Player p_isUseableByPlayer_1_) {
 		return this.level.getBlockEntity(this.worldPosition) == this && p_isUseableByPlayer_1_.distanceToSqr((double)this.worldPosition.getX() + 0.5, (double)this.worldPosition.getY() + 0.5, (double)this.worldPosition.getZ() + 0.5) <= 64.0;
 	}
 
@@ -637,7 +641,7 @@ public abstract class TileEntitySimplePowerMachine extends PoweredEntity impleme
 	 * boilerplate inventory code
 	 */
 	@Override
-	public ITextComponent getDisplayName() {
+	public Component getDisplayName() {
 		return getName();
 	}
 
@@ -647,14 +651,14 @@ public abstract class TileEntitySimplePowerMachine extends PoweredEntity impleme
 	 * given by the player (i.e. with an anvil)
 	 */
 	@Override
-	public ITextComponent getName() {
-		return this.hasCustomName() ? new StringTextComponent(this.customName)
-				: new TranslationTextComponent(unlocalizedName);
+	public Component getName() {
+		return this.hasCustomName() ? new TextComponent(this.customName)
+				: new TranslatableComponent(unlocalizedName);
 	}
 
 	@Override
-	public ITextComponent getCustomName() {
-		return this.hasCustomName() ? new StringTextComponent(this.customName) : null;
+	public Component getCustomName() {
+		return this.hasCustomName() ? new TextComponent(this.customName) : null;
 	}
 
 	/**

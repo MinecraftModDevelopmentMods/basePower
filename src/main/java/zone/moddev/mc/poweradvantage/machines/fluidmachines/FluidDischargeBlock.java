@@ -4,14 +4,14 @@ import cyano.poweradvantage.api.ConduitType;
 import cyano.poweradvantage.api.PoweredEntity;
 import cyano.poweradvantage.api.simple.BlockSimpleFluidMachine;
 import cyano.poweradvantage.api.simple.TileEntitySimplePowerMachine;
-import net.minecraft.block.material.Material;
-import net.minecraft.block.BlockState;
-import net.minecraft.inventory.IInventory;
-import net.minecraft.inventory.InventoryHelper;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.IBlockReader;
-import net.minecraft.world.World;
+import net.minecraft.world.level.material.Material;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.Container;
+import net.minecraft.world.Containers;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.Level;
 
 public class FluidDischargeBlock extends BlockSimpleFluidMachine {
 
@@ -20,8 +20,8 @@ public class FluidDischargeBlock extends BlockSimpleFluidMachine {
 	}
 
 	@Override
-	public PoweredEntity newBlockEntity(IBlockReader w) {
-		return new FluidDischargeTileEntity();
+	public PoweredEntity newBlockEntity(net.minecraft.core.BlockPos pos, net.minecraft.world.level.block.state.BlockState state) {
+		return new FluidDischargeTileEntity(pos, state);
 	}
 
 	/**
@@ -29,11 +29,11 @@ public class FluidDischargeBlock extends BlockSimpleFluidMachine {
 	 * breaks.
 	 */
 	@Override
-	public void onRemove(BlockState state, World world, BlockPos coord, BlockState newState, boolean isMoving) {
+	public void onRemove(BlockState state, Level world, BlockPos coord, BlockState newState, boolean isMoving) {
 		if (state.getBlock() != newState.getBlock()) {
-			final TileEntity tileEntity = world.getBlockEntity(coord);
+			final BlockEntity tileEntity = world.getBlockEntity(coord);
 			if (tileEntity instanceof TileEntitySimplePowerMachine) {
-				InventoryHelper.dropContents(world, coord, (IInventory) tileEntity);
+				Containers.dropContents(world, coord, (Container) tileEntity);
 				world .updateNeighbourForOutputSignal(coord, this);
 			}
 		}
@@ -46,8 +46,8 @@ public class FluidDischargeBlock extends BlockSimpleFluidMachine {
 	}
 
 	@Override
-	public int getAnalogOutputSignal(BlockState state, World world, BlockPos coord) {
-		TileEntity te = world.getBlockEntity(coord);
+	public int getAnalogOutputSignal(BlockState state, Level world, BlockPos coord) {
+		BlockEntity te = world.getBlockEntity(coord);
 		if (te != null && te instanceof FluidDischargeTileEntity) {
 			return ((FluidDischargeTileEntity) te).getRedstoneOutput();
 		}

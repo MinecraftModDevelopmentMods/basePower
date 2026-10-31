@@ -5,15 +5,15 @@ import cyano.poweradvantage.api.fluid.FluidStack;
 import cyano.poweradvantage.api.fluid.FluidTank;
 import cyano.poweradvantage.api.fluid.IAdvantageFluidHandler;
 import cyano.poweradvantage.api.simple.TileEntitySimpleFluidMachine;
-import net.minecraft.fluid.Fluid;
-import net.minecraft.fluid.FluidState;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.network.NetworkManager;
-import net.minecraft.network.play.server.SUpdateTileEntityPacket;
-import net.minecraft.util.Direction;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
+import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.material.FluidState;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.Connection;
+import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
+import net.minecraft.core.Direction;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
 import zone.moddev.mc.poweradvantage.init.Entities;
 import zone.moddev.mc.poweradvantage.util.FluidHandlerHelper;
 
@@ -21,8 +21,8 @@ import zone.moddev.mc.poweradvantage.util.FluidHandlerHelper;
 public class FluidDischargeTileEntity extends TileEntitySimpleFluidMachine {
     private int oldLevel = -1;
 
-    public FluidDischargeTileEntity() {
-        super(Entities.FLUID_DISCHARGE, FluidTank.BUCKET_VOLUME, "tile.poweradvantage.fluid_discharge.name");
+    public FluidDischargeTileEntity(net.minecraft.core.BlockPos pos, net.minecraft.world.level.block.state.BlockState state) {
+        super(Entities.FLUID_DISCHARGE, pos, state, FluidTank.BUCKET_VOLUME, "tile.poweradvantage.fluid_discharge.name");
     }
 
     @Override
@@ -47,7 +47,7 @@ public class FluidDischargeTileEntity extends TileEntitySimpleFluidMachine {
         super.powerUpdate();
     }
 
-    private static BlockPos findPlacement(World world, BlockPos initial, Fluid fluid, int range) {
+    private static BlockPos findPlacement(Level world, BlockPos initial, Fluid fluid, int range) {
         BlockPos position = initial;
         Direction[] directions = { Direction.DOWN, Direction.NORTH, Direction.WEST, Direction.SOUTH, Direction.EAST };
         while (range-- > 0) {
@@ -81,26 +81,26 @@ public class FluidDischargeTileEntity extends TileEntitySimpleFluidMachine {
     @Override public boolean isFluidSource() { return false; }
     @Override public boolean isFluidSink() { return true; }
 
-    @Override public CompoundNBT getUpdateTag() {
-        CompoundNBT tag = new CompoundNBT();
+    @Override public CompoundTag getUpdateTag() {
+        CompoundTag tag = new CompoundTag();
         getTank().writeToNBT(tag);
         return tag;
     }
-    @Override public void handleUpdateTag(net.minecraft.block.BlockState state, CompoundNBT tag) { getTank().readFromNBT(tag); }
-    @Override public SUpdateTileEntityPacket getUpdatePacket() {
-        return new SUpdateTileEntityPacket(getBlockPos(), 0, getUpdateTag());
+    @Override public void handleUpdateTag(CompoundTag tag) { getTank().readFromNBT(tag); }
+    @Override public ClientboundBlockEntityDataPacket getUpdatePacket() {
+        return new ClientboundBlockEntityDataPacket(getBlockPos(), 0, getUpdateTag());
     }
-    @Override public void onDataPacket(NetworkManager net, SUpdateTileEntityPacket packet) {
-        handleUpdateTag(getBlockState(), packet.getTag());
+    @Override public void onDataPacket(Connection net, ClientboundBlockEntityDataPacket packet) {
+        handleUpdateTag(packet.getTag());
     }
 
-    public static BlockPos scanFluidSpaceForNonsourceBlock(World world, BlockPos initial, Fluid fluid, int range) {
+    public static BlockPos scanFluidSpaceForNonsourceBlock(Level world, BlockPos initial, Fluid fluid, int range) {
         return findPlacement(world, initial, fluid, range);
     }
-    public static boolean isFluidBlock(net.minecraft.block.Block block, Fluid fluid) {
+    public static boolean isFluidBlock(net.minecraft.world.level.block.Block block, Fluid fluid) {
         return FluidDrainTileEntity.isFluidBlock(block, fluid);
     }
-    public static boolean isFluidSourceBlock(net.minecraft.block.Block block, Fluid fluid, World world, BlockPos pos) {
+    public static boolean isFluidSourceBlock(net.minecraft.world.level.block.Block block, Fluid fluid, Level world, BlockPos pos) {
         return FluidDrainTileEntity.isFluidSourceBlock(block, fluid, world, pos);
     }
 }

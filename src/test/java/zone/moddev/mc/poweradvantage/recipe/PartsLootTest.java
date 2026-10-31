@@ -1,7 +1,7 @@
 package zone.moddev.mc.poweradvantage.recipe;
 
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.loot.LootTable;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.storage.loot.LootTable;
 import org.junit.Test;
 import static org.junit.Assert.*;
 

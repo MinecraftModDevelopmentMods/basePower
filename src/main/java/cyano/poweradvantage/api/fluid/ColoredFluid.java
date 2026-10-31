@@ -1,6 +1,6 @@
 package cyano.poweradvantage.api.fluid;
 
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.resources.ResourceLocation;
 
 /**
  * Legacy description of a colored fluid.

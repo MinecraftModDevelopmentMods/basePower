@@ -16,15 +16,15 @@ import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.MethodNode;
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.util.datafix.DataFixesManager;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.util.datafix.DataFixers;
 import static org.junit.Assert.*;
 
 public class LegacyPlayerTransformerTest {
-    private static final String NATIVE = "net/minecraft/nbt/NBTUtil";
+    private static final String NATIVE = "net/minecraft/nbt/NbtUtils";
     private static final String WRAPPER = "zone/moddev/mc/poweradvantage/migration/LegacyPlayerDataFixes";
-    private static final String DESC = "(Lcom/mojang/datafixers/DataFixer;Lnet/minecraft/util/datafix/DefaultTypeReferences;"
-            + "Lnet/minecraft/nbt/CompoundNBT;I)Lnet/minecraft/nbt/CompoundNBT;";
+    private static final String DESC = "(Lcom/mojang/datafixers/DataFixer;Lnet/minecraft/util/datafix/DataFixTypes;"
+            + "Lnet/minecraft/nbt/CompoundTag;I)Lnet/minecraft/nbt/CompoundTag;";
     private static final String[][] TARGETS = {{"PlayerData", "legacy_player_file"}, {"ServerWorldInfo", "legacy_embedded_player"}};
 
     @Test public void exactNativeLoosePlayerLoadAndEmbeddedUpdateArePatched() throws Exception {
@@ -58,7 +58,7 @@ public class LegacyPlayerTransformerTest {
     }
 
     @Test public void transformedNativeEmbeddedGetterExecutesAndDoesNotReconvert() throws Exception {
-        net.minecraft.util.registry.Bootstrap.bootStrap();
+        net.minecraft.SharedConstants.tryDetectVersion(); net.minecraft.server.Bootstrap.bootStrap();
         ClassNode node = nativeClass("ServerWorldInfo");
         transform(node, "legacy_embedded_player");
         ClassWriter writer = new ClassWriter(0);
@@ -68,11 +68,11 @@ public class LegacyPlayerTransformerTest {
             Class<?> define() { return defineClass(null, bytes, 0, bytes.length); }
         }.define();
         for (int version : new int[] {512, 1343}) {
-            CompoundNBT source = LegacyPlayerDataFixesTest.player("Inventory", LegacyPlayerDataFixesTest
+            CompoundTag source = LegacyPlayerDataFixesTest.player("Inventory", LegacyPlayerDataFixesTest
                     .enchanted("minecraft:enchanted_book", "StoredEnchantments", true));
-            CompoundNBT before = source.copy();
+            CompoundTag before = source.copy();
             Object info = embeddedInfo(type, source, version);
-            CompoundNBT result = (CompoundNBT) type.getMethod("getLoadedPlayerTag").invoke(info);
+            CompoundTag result = (CompoundTag) type.getMethod("getLoadedPlayerTag").invoke(info);
             assertEquals("steamadvantage:steam_capacity", LegacyPlayerDataFixesTest.enchantment(
                     LegacyPlayerDataFixesTest.item(result, "Inventory", 0), "StoredEnchantments").getString("id"));
             assertSame("The native upgraded flag must prevent repeat conversion", result,
@@ -163,13 +163,14 @@ public class LegacyPlayerTransformerTest {
 
     private static ClassNode nativeClass(String name) throws Exception {
         ClassNode node = new ClassNode();
-        try (InputStream input = resource("/net/minecraft/world/storage/" + name + ".class")) {
+        String nativeName = name.equals("PlayerData") ? "PlayerDataStorage" : "PrimaryLevelData";
+        try (InputStream input = resource("/net/minecraft/world/level/storage/" + nativeName + ".class")) {
             new ClassReader(input).accept(node, 0);
         }
         return node;
     }
 
-    private static Object embeddedInfo(Class<?> type, CompoundNBT source, int version) throws Exception {
+    private static Object embeddedInfo(Class<?> type, CompoundTag source, int version) throws Exception {
         // The real private constructor only assigns fields. The getter needs its
         // fixer/version/player arguments, not a world, generator, or live server.
         for (Constructor<?> constructor : type.getDeclaredConstructors()) {
@@ -182,7 +183,7 @@ public class LegacyPlayerTransformerTest {
                 if (types[i] == long.class) args[i] = 0L;
                 if (types[i] == float.class) args[i] = 0F;
             }
-            args[0] = DataFixesManager.getDataFixer();
+            args[0] = DataFixers.getDataFixer();
             args[1] = version;
             args[2] = source;
             constructor.setAccessible(true);

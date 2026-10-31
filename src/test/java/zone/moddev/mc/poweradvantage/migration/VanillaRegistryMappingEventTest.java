@@ -2,7 +2,7 @@ package zone.moddev.mc.poweradvantage.migration;
 
 import java.lang.reflect.Proxy;
 import java.util.Collections;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.event.RegistryEvent.MissingMappings;
 import net.minecraftforge.registries.ForgeRegistryEntry;
 import net.minecraftforge.registries.IForgeRegistry;

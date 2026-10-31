@@ -1,13 +1,13 @@
 package zone.moddev.mc.poweradvantage.blocks;
 
-import net.minecraft.block.Block;
-import net.minecraft.block.SoundType;
-import net.minecraft.block.material.Material;
-import net.minecraft.block.BlockState;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
-import net.minecraft.world.IWorldReader;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.SoundType;
+import net.minecraft.world.level.material.Material;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelReader;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
@@ -28,7 +28,7 @@ public class BlockFrame extends Block {
 		return false;
 	}
 
-	public boolean canSilkHarvest(BlockState state, IWorldReader world, BlockPos pos, PlayerEntity player) {
+	public boolean canSilkHarvest(BlockState state, LevelReader world, BlockPos pos, Player player) {
 		return true;
 	}
 

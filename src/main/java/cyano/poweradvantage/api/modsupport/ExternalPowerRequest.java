@@ -1,7 +1,7 @@
 package cyano.poweradvantage.api.modsupport;
 
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.core.BlockPos;
 import cyano.poweradvantage.api.PowerRequest;
 
 /**
@@ -11,7 +11,7 @@ import cyano.poweradvantage.api.PowerRequest;
  */
 public class ExternalPowerRequest extends PowerRequest {
 
-	public final TileEntity externalPowerAcceptor;
+	public final BlockEntity externalPowerAcceptor;
 	public final BlockPos pos;
 
 	/**
@@ -20,7 +20,7 @@ public class ExternalPowerRequest extends PowerRequest {
 	 * @param requestSize Amount of energy requested
 	 * @param source      The source TileEntity (which does not extend PoweredEntity)
 	 */
-	public ExternalPowerRequest(float requestSize, TileEntity source) {
+	public ExternalPowerRequest(float requestSize, BlockEntity source) {
 		super(0, requestSize, null);
 		externalPowerAcceptor = source;
 		pos = source.getBlockPos();

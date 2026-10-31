@@ -3,7 +3,7 @@ package zone.moddev.mc.poweradvantage.util;
 import cyano.poweradvantage.api.fluid.FluidStack;
 import cyano.poweradvantage.api.fluid.FluidTankInfo;
 import cyano.poweradvantage.api.fluid.IAdvantageFluidHandler;
-import net.minecraft.util.Direction;
+import net.minecraft.core.Direction;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 
 /** Exposes the stable Advantage contract through Forge's native fluid capability. */

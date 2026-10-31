@@ -4,8 +4,8 @@ import cyano.poweradvantage.api.ConduitType;
 import cyano.poweradvantage.api.PowerRequest;
 import cyano.poweradvantage.api.fluid.FluidRequest;
 import cyano.poweradvantage.api.simple.TileEntitySimpleFluidMachine;
-import net.minecraft.item.ItemStack;
-import net.minecraft.fluid.Fluid;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.material.Fluid;
 import cyano.poweradvantage.api.fluid.FluidStack;
 import cyano.poweradvantage.api.fluid.FluidTank;
 import zone.moddev.mc.poweradvantage.init.Entities;
@@ -14,8 +14,8 @@ import zone.moddev.mc.poweradvantage.util.FluidContainerHelper;
 @SuppressWarnings("deprecation")
 public class MetalTankTileEntity  extends TileEntitySimpleFluidMachine {
 
-	public MetalTankTileEntity() {
-		super(Entities.METAL_TANK, FluidTank.BUCKET_VOLUME * 10, "tile.poweradvantage.fluid_metal_tank.name");
+	public MetalTankTileEntity(net.minecraft.core.BlockPos pos, net.minecraft.world.level.block.state.BlockState state) {
+		super(Entities.METAL_TANK, pos, state, FluidTank.BUCKET_VOLUME * 10, "tile.poweradvantage.fluid_metal_tank.name");
 	}
 
 

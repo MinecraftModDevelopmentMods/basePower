@@ -1,35 +1,31 @@
 package zone.moddev.mc.poweradvantage.machines.conveyors;
 
 import zone.moddev.mc.poweradvantage.util.InventoryWrapper;
-import net.minecraft.block.BlockState;
-import net.minecraft.entity.item.ItemEntity;
-import net.minecraft.inventory.IInventory;
-import net.minecraft.inventory.ISidedInventory;
-import net.minecraft.item.ItemStack;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.tileentity.HopperTileEntity;
-import net.minecraft.tileentity.TileEntityType;
-import net.minecraft.util.Direction;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.Container;
+import net.minecraft.world.WorldlyContainer;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.HopperBlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.core.Direction;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
 import zone.moddev.mc.poweradvantage.PowerAdvantage;
 import zone.moddev.mc.poweradvantage.init.Entities;
 
 public abstract class TileEntityConveyorFilter extends TileEntityConveyor {
 
-	public TileEntityConveyorFilter() {
-		this(Entities.FILTER_BLOCK, 1);
-	}
-
-	protected TileEntityConveyorFilter(TileEntityType<?> type, int slots) {
-		super(type, slots);
+	protected TileEntityConveyorFilter(BlockEntityType<?> type, BlockPos pos, BlockState state, int slots) {
+		super(type, pos, state, slots);
 	}
 
 	public abstract boolean matchesFilter(ItemStack item);
 
 	@Override
 	public void tick() {
-		World w = getLevel();
+		Level w = getLevel();
 		if (w.isClientSide) return;
 		if (transferCooldown > 0) transferCooldown--;
 		if (transferCooldown == 0) {
@@ -40,10 +36,10 @@ public abstract class TileEntityConveyorFilter extends TileEntityConveyor {
 				Direction myDir = dir.getOpposite();
 				Direction theirDir = dir;
 				BlockPos targetPos = getBlockPos().relative(myDir);
-				TileEntity target = w.getBlockEntity(targetPos);
+				BlockEntity target = w.getBlockEntity(targetPos);
 				if (target != null) {
-					if (target instanceof IInventory) {
-						ISidedInventory them = InventoryWrapper.wrap(HopperTileEntity.getContainerAt(getLevel(), targetPos.getX(), targetPos.getY(), targetPos.getZ()));
+					if (target instanceof Container) {
+						WorldlyContainer them = InventoryWrapper.wrap(HopperBlockEntity.getContainerAt(getLevel(), targetPos));
 						if (transferItem(them, theirDir, this, myDir)) {
 							this.setChanged();
 						}
@@ -53,15 +49,15 @@ public abstract class TileEntityConveyorFilter extends TileEntityConveyor {
 				Direction myDir = dir;
 				Direction theirDir = dir.getOpposite();
 				BlockPos targetPos = getBlockPos().relative(myDir);
-				TileEntity target = w.getBlockEntity(targetPos);
-				TileEntity dropTarget = w.getBlockEntity(getBlockPos().relative(Direction.DOWN));
+				BlockEntity target = w.getBlockEntity(targetPos);
+				BlockEntity dropTarget = w.getBlockEntity(getBlockPos().relative(Direction.DOWN));
 				if (matchesFilter(this.getInventory()[0])) {
 					if (isValidItemFor(getInventory()[0], dropTarget, Direction.UP)) {
 						dropItem(dropTarget);
 						return;
 					}
-				} else if (target instanceof IInventory) {
-					ISidedInventory them = InventoryWrapper.wrap(HopperTileEntity.getContainerAt(getLevel(), targetPos.getX(), targetPos.getY(), targetPos.getZ()));
+				} else if (target instanceof Container) {
+					WorldlyContainer them = InventoryWrapper.wrap(HopperBlockEntity.getContainerAt(getLevel(), targetPos));
 					if (transferItem(this, myDir, them, theirDir)) {
 						this.setChanged();
 					}
@@ -72,11 +68,11 @@ public abstract class TileEntityConveyorFilter extends TileEntityConveyor {
 		}
 	}
 
-	protected boolean isValidItemFor(ItemStack item, TileEntity target, Direction side) {
+	protected boolean isValidItemFor(ItemStack item, BlockEntity target, Direction side) {
 		if (item == null) return false;
-		if (target instanceof IInventory) {
+		if (target instanceof Container) {
 			BlockPos targetPos = target.getBlockPos();
-			ISidedInventory dt = InventoryWrapper.wrap(HopperTileEntity.getContainerAt(getLevel(), targetPos.getX(), targetPos.getY(), targetPos.getZ()));
+			WorldlyContainer dt = InventoryWrapper.wrap(HopperBlockEntity.getContainerAt(getLevel(), targetPos));
 			int[] slots = dt.getSlotsForFace(side);
 			for (int i = 0; i < slots.length; i++) {
 				int slot = slots[i];
@@ -90,8 +86,8 @@ public abstract class TileEntityConveyorFilter extends TileEntityConveyor {
 		}
 	}
 
-	private void dropItem(TileEntity target) {
-		World w = getLevel();
+	private void dropItem(BlockEntity target) {
+		Level w = getLevel();
 		BlockState bs = w.getBlockState(getBlockPos().below());
 		if (target == null && !(bs.getMaterial().blocksMotion())) {
 			// drop item in the air
@@ -101,12 +97,12 @@ public abstract class TileEntityConveyorFilter extends TileEntityConveyor {
 			getInventory()[0] = null;
 			transferCooldown = transferInvterval;
 			this.setChanged();
-		} else if (target instanceof IInventory) {
+		} else if (target instanceof Container) {
 			// add item to inventory
 			Direction myDir = Direction.DOWN;
 			Direction theirDir = Direction.UP;
 			BlockPos targetPos = target.getBlockPos();
-			ISidedInventory targetInv = InventoryWrapper.wrap(HopperTileEntity.getContainerAt(getLevel(), targetPos.getX(), targetPos.getY(), targetPos.getZ()));
+			WorldlyContainer targetInv = InventoryWrapper.wrap(HopperBlockEntity.getContainerAt(getLevel(), targetPos));
 			if (transferItem(this, myDir, targetInv, theirDir)) {
 				transferCooldown = transferInvterval;
 				this.setChanged();

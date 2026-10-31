@@ -6,23 +6,23 @@ import cyano.poweradvantage.api.fluid.FluidTank;
 import cyano.poweradvantage.api.fluid.FluidTankInfo;
 import cyano.poweradvantage.api.fluid.IAdvantageFluidHandler;
 import cyano.poweradvantage.api.simple.TileEntitySimpleFluidMachine;
-import net.minecraft.fluid.Fluid;
-import net.minecraft.fluid.FluidState;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.IBucketPickupHandler;
-import net.minecraft.world.IWorld;
-import net.minecraft.item.ItemStack;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.Direction;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
+import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.material.FluidState;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.BucketPickup;
+import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.core.Direction;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
 import zone.moddev.mc.poweradvantage.init.Entities;
 import zone.moddev.mc.poweradvantage.util.FluidHandlerHelper;
 
 /** Pulls source blocks or adjacent Advantage tanks into the pipe network. */
 public class FluidDrainTileEntity extends TileEntitySimpleFluidMachine {
-    public FluidDrainTileEntity() {
-        super(Entities.FLUID_DRAIN, FluidTank.BUCKET_VOLUME, "tile.poweradvantage.fluid_drain.name");
+    public FluidDrainTileEntity(net.minecraft.core.BlockPos pos, net.minecraft.world.level.block.state.BlockState state) {
+        super(Entities.FLUID_DRAIN, pos, state, FluidTank.BUCKET_VOLUME, "tile.poweradvantage.fluid_drain.name");
     }
 
     @Override
@@ -54,17 +54,18 @@ public class FluidDrainTileEntity extends TileEntitySimpleFluidMachine {
             BlockPos source = scanFluidSpaceForSourceBlock(getLevel(), getBlockPos().above(), 32);
             if (source != null) {
                 Fluid fluid = pickupSource(getLevel(), source, getLevel().getBlockState(source));
-                if (fluid != net.minecraft.fluid.Fluids.EMPTY)
+                if (fluid != net.minecraft.world.level.material.Fluids.EMPTY)
                     getTank().fill(new FluidStack(fluid, FluidTank.BUCKET_VOLUME), true);
             }
         }
         super.powerUpdate();
     }
 
-    static Fluid pickupSource(IWorld world, BlockPos position, BlockState state) {
-        if (!(state.getBlock() instanceof IBucketPickupHandler)) return net.minecraft.fluid.Fluids.EMPTY;
-        Fluid picked = ((IBucketPickupHandler)state.getBlock()).takeLiquid(world, position, state);
-        return picked == null ? net.minecraft.fluid.Fluids.EMPTY : picked;
+    static Fluid pickupSource(LevelAccessor world, BlockPos position, BlockState state) {
+        if (!(state.getBlock() instanceof BucketPickup)) return net.minecraft.world.level.material.Fluids.EMPTY;
+        Fluid fluid = state.getFluidState().getType();
+        ItemStack bucket = ((BucketPickup)state.getBlock()).pickupBlock(world, position, state);
+        return bucket.isEmpty() ? net.minecraft.world.level.material.Fluids.EMPTY : fluid;
     }
 
     private void tryPushFluid(BlockPos position, Direction face) {
@@ -88,13 +89,13 @@ public class FluidDrainTileEntity extends TileEntitySimpleFluidMachine {
     @Override public boolean isFluidSource() { return true; }
     @Override public boolean isFluidSink() { return false; }
 
-    public static BlockPos scanFluidSpaceForSourceBlock(World world, BlockPos initial, int range) {
+    public static BlockPos scanFluidSpaceForSourceBlock(Level world, BlockPos initial, int range) {
         BlockPos position = initial;
         Direction[] directions = { Direction.UP, Direction.NORTH, Direction.WEST, Direction.SOUTH, Direction.EAST };
         while (range-- > 0) {
             FluidState state = world.getFluidState(position);
             if (!state.isEmpty() && state.isSource()
-                    && world.getBlockState(position).getBlock() instanceof IBucketPickupHandler) return position;
+                    && world.getBlockState(position).getBlock() instanceof BucketPickup) return position;
             java.util.List<BlockPos> candidates = new java.util.ArrayList<>();
             for (Direction direction : directions) {
                 BlockPos candidate = position.relative(direction);
@@ -108,11 +109,11 @@ public class FluidDrainTileEntity extends TileEntitySimpleFluidMachine {
         return null;
     }
 
-    public static boolean isFluidBlock(net.minecraft.block.Block block, Fluid fluid) {
+    public static boolean isFluidBlock(net.minecraft.world.level.block.Block block, Fluid fluid) {
         return block.defaultBlockState().getFluidState().getType().isSame(fluid);
     }
 
-    public static boolean isFluidSourceBlock(net.minecraft.block.Block block, Fluid fluid, World world, BlockPos pos) {
+    public static boolean isFluidSourceBlock(net.minecraft.world.level.block.Block block, Fluid fluid, Level world, BlockPos pos) {
         FluidState state = world.getFluidState(pos);
         return !state.isEmpty() && state.isSource() && state.getType().isSame(fluid);
     }

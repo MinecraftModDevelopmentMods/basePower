@@ -1,14 +1,14 @@
 package zone.moddev.mc.poweradvantage.machines.conveyors;
 
-import net.minecraft.block.Block;
-import net.minecraft.block.IGrowable;
-import net.minecraft.item.BlockItem;
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.BonemealableBlock;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.common.IPlantable;
 import zone.moddev.mc.poweradvantage.init.Entities;
 
 public class TileEntityPlantFilter extends TileEntityConveyorFilter {
-	public TileEntityPlantFilter() { super(Entities.FILTER_PLANT, 1); }
+	public TileEntityPlantFilter(net.minecraft.core.BlockPos pos, net.minecraft.world.level.block.state.BlockState state) { super(Entities.FILTER_PLANT, pos, state, 1); }
 
 	@Override
 	public boolean matchesFilter(ItemStack item) {
@@ -17,7 +17,7 @@ public class TileEntityPlantFilter extends TileEntityConveyorFilter {
 		if (item.getItem() instanceof BlockItem) {
 			Block b = ((BlockItem) item.getItem()).getBlock();
 			if (b instanceof IPlantable) return true;
-			if (b instanceof IGrowable) return true;
+			if (b instanceof BonemealableBlock) return true;
 
 		}
 		return false;

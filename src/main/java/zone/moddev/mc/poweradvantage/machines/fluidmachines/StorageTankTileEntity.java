@@ -3,9 +3,9 @@ package zone.moddev.mc.poweradvantage.machines.fluidmachines;
 import cyano.poweradvantage.api.PowerRequest;
 import cyano.poweradvantage.api.fluid.FluidRequest;
 import cyano.poweradvantage.api.simple.TileEntitySimpleFluidMachine;
-import net.minecraft.item.ItemStack;
-import net.minecraft.fluid.Fluid;
-import net.minecraft.fluid.Fluid;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.material.Fluid;
 import cyano.poweradvantage.api.fluid.FluidStack;
 import cyano.poweradvantage.api.fluid.FluidTank;
 import zone.moddev.mc.poweradvantage.init.Entities;
@@ -13,8 +13,8 @@ import zone.moddev.mc.poweradvantage.init.Entities;
 @SuppressWarnings("deprecation")
 public class StorageTankTileEntity  extends TileEntitySimpleFluidMachine {
 
-	public StorageTankTileEntity() {
-		super(Entities.STORAGE_TANK, FluidTank.BUCKET_VOLUME * 4, "tile.poweradvantage.fluid_storage_tank.name");
+	public StorageTankTileEntity(net.minecraft.core.BlockPos pos, net.minecraft.world.level.block.state.BlockState state) {
+		super(Entities.STORAGE_TANK, pos, state, FluidTank.BUCKET_VOLUME * 4, "tile.poweradvantage.fluid_storage_tank.name");
 	}
 
 	/**

@@ -3,19 +3,19 @@ package zone.moddev.mc.poweradvantage.util;
 import cyano.poweradvantage.api.fluid.FluidStack;
 import cyano.poweradvantage.api.fluid.FluidTankInfo;
 import cyano.poweradvantage.api.fluid.IAdvantageFluidHandler;
-import net.minecraft.fluid.Fluid;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.Direction;
+import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.core.Direction;
 import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
 
 /** A side-bound foreign capability; reacquire it after removal or capability invalidation. */
 final class AdvantageFluidAdapter implements IAdvantageFluidHandler {
-    private final TileEntity tile;
+    private final BlockEntity tile;
     private final Direction side;
 
-    AdvantageFluidAdapter(TileEntity tile, Direction side) {
+    AdvantageFluidAdapter(BlockEntity tile, Direction side) {
         this.tile = tile;
         this.side = side;
     }

@@ -26,18 +26,18 @@ public class NativePlatformContractTest {
     }
 
     @Test public void pinnedForgeFiresTagEventAfterBindingNativeCollections() throws Exception {
-        ClassNode node = read("net/minecraft/tags/ITagCollectionSupplier");
+        ClassNode node = read("net/minecraft/tags/TagContainer");
         int events = 0;
         for (MethodNode method : node.methods) {
             boolean installed = false;
             for (AbstractInsnNode instruction : method.instructions.toArray()) {
                 if (instruction instanceof MethodInsnNode) {
                     MethodInsnNode call = (MethodInsnNode) instruction;
-                    if (call.owner.equals("net/minecraft/tags/TagRegistryManager")
+                    if (call.owner.equals("net/minecraft/tags/StaticTags")
                             && call.name.equals("resetAll")) installed = true;
                 }
                 if (instruction instanceof TypeInsnNode
-                        && ((TypeInsnNode) instruction).desc.equals("net/minecraftforge/event/TagsUpdatedEvent$VanillaTagTypes")) {
+                        && ((TypeInsnNode) instruction).desc.equals("net/minecraftforge/event/TagsUpdatedEvent")) {
                     assertTrue("Bind tags before notifying observers", installed);
                     events++;
                 }
@@ -47,16 +47,16 @@ public class NativePlatformContractTest {
     }
 
     @Test public void nativeLootLoaderCallsForgeJsonHookAndNotTheRemovedAdvantageBridge() throws Exception {
-        ClassNode node = read("net/minecraft/loot/LootTableManager");
+        ClassNode node = read("net/minecraft/world/level/storage/loot/LootTables");
         int calls = 0;
         for (MethodNode method : node.methods) for (AbstractInsnNode instruction : method.instructions.toArray()) {
             if (!(instruction instanceof MethodInsnNode)) continue;
             MethodInsnNode call = (MethodInsnNode) instruction;
             assertNotEquals("zone/moddev/mc/poweradvantage/recipe/PartsLoot", call.owner);
             if (call.owner.equals("net/minecraftforge/common/ForgeHooks") && call.name.equals("loadLootTable")) {
-                assertEquals("(Lcom/google/gson/Gson;Lnet/minecraft/util/ResourceLocation;"
-                        + "Lcom/google/gson/JsonElement;ZLnet/minecraft/loot/LootTableManager;)"
-                        + "Lnet/minecraft/loot/LootTable;", call.desc);
+                assertEquals("(Lcom/google/gson/Gson;Lnet/minecraft/resources/ResourceLocation;"
+                        + "Lcom/google/gson/JsonElement;ZLnet/minecraft/world/level/storage/loot/LootTables;)"
+                        + "Lnet/minecraft/world/level/storage/loot/LootTable;", call.desc);
                 calls++;
             }
         }

@@ -9,12 +9,12 @@ import cyano.poweradvantage.api.modsupport.ExternalPowerRequest;
 import cyano.poweradvantage.api.modsupport.LightWeightPowerRegistry;
 import cyano.poweradvantage.api.modsupport.Wrappers;
 import zone.moddev.mc.poweradvantage.math.BlockPos4D;
-import net.minecraft.block.Block;
-import net.minecraft.block.ITileEntityProvider;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.Direction;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.EntityBlock;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.core.Direction;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.energy.CapabilityEnergy;
 import net.minecraftforge.energy.IEnergyStorage;
@@ -32,7 +32,7 @@ import java.util.concurrent.locks.ReentrantLock;
 public class ConduitRegistry {
 
 	private final Map<ConduitType, ConduitNetworkManager> networkManagers = new HashMap<>();
-	private final Map<net.minecraft.util.RegistryKey<World>, World> activeWorlds = new HashMap<>();
+	private final Map<net.minecraft.resources.ResourceKey<Level>, Level> activeWorlds = new HashMap<>();
 
 	// thread-safe singleton instantiation
 	private static ConduitRegistry instance = null;
@@ -73,7 +73,7 @@ public class ConduitRegistry {
 	 * @return A list of PowerRequest instances, sorted in order of highest priority to lowest
 	 * priority.
 	 */
-	public List<PowerRequest> getRequestsForPower(World w, BlockPos coord, ConduitType conduitType) {
+	public List<PowerRequest> getRequestsForPower(Level w, BlockPos coord, ConduitType conduitType) {
 		return getRequestsForPower(w, coord, conduitType, conduitType);
 	}
 
@@ -90,9 +90,9 @@ public class ConduitRegistry {
 	 * @return A list of PowerRequest instances, sorted in order of highest priority to lowest
 	 * priority.
 	 */
-	public List<PowerRequest> getRequestsForPower(World w, BlockPos coord, ConduitType conduitType, ConduitType energyType) {
+	public List<PowerRequest> getRequestsForPower(Level w, BlockPos coord, ConduitType conduitType, ConduitType energyType) {
 		if (!w.hasChunkAt(coord)) return Collections.emptyList();
-		net.minecraft.util.RegistryKey<World> dimension = w.dimension();
+		net.minecraft.resources.ResourceKey<Level> dimension = w.dimension();
 		clearIfWorldChanged(w, dimension);
 		ConduitNetworkManager manager = getConduitNetworkManager(conduitType);
 		BlockPos4D bp = new BlockPos4D(dimension, coord);
@@ -109,13 +109,13 @@ public class ConduitRegistry {
 		return requests;
 	}
 
-	private List<PowerRequest> collectRequests(World w, List<BlockPos4D> net, ConduitType conduitType, ConduitType energyType) {
+	private List<PowerRequest> collectRequests(Level w, List<BlockPos4D> net, ConduitType conduitType, ConduitType energyType) {
 		List<PowerRequest> requests = new ArrayList<>();
 		for (BlockPos4D pos : net) {
 			if (!w.hasChunkAt(pos.pos)) continue;
 			Block b = w.getBlockState(pos.pos).getBlock();
-			if (b instanceof ITileEntityProvider) {
-				TileEntity e = w.getBlockEntity(pos.pos);
+			if (b instanceof EntityBlock) {
+				BlockEntity e = w.getBlockEntity(pos.pos);
 				if (e instanceof IPowerMachine && ((ITypedConduit) e).isPowerSink(energyType)) {
 					PowerRequest req = ((IPowerMachine) e).getPowerRequest(energyType);
 					if (req != PowerRequest.REQUEST_NOTHING) requests.add(req);
@@ -156,7 +156,7 @@ public class ConduitRegistry {
 	 */
 	public static float transmitPowerToConsumers(
 			final float availableEnergy, ConduitType powerType, byte minimumPriority,
-			TileEntity provider
+			BlockEntity provider
 	) {
 		return transmitPowerToConsumers(availableEnergy, powerType, powerType, minimumPriority, provider.getLevel(), provider.getBlockPos(), provider);
 	}
@@ -180,14 +180,14 @@ public class ConduitRegistry {
 	 */
 	public static float transmitPowerToConsumers(
 			final float availableEnergy, ConduitType networkType, ConduitType powerType, byte minimumPriority,
-			World world, BlockPos srcPos, Object providerInstance
+			Level world, BlockPos srcPos, Object providerInstance
 	) {
 		List<PowerRequest> requests = ConduitRegistry.getInstance().getRequestsForPower(world, srcPos, networkType, powerType);
 		return distributePower(availableEnergy, powerType, minimumPriority, world, providerInstance, requests);
 	}
 
 	static float distributePower(float availableEnergy, ConduitType powerType, byte minimumPriority,
-			World world, Object providerInstance, List<PowerRequest> requests) {
+			Level world, Object providerInstance, List<PowerRequest> requests) {
 		if (!Float.isFinite(availableEnergy) || availableEnergy <= 0) return 0;
 		float e = availableEnergy;
 		for (PowerRequest req : requests) {
@@ -218,9 +218,9 @@ public class ConduitRegistry {
 	 * @param location  The position of the block being added
 	 * @param type      The native energy type of the added conduit block
 	 */
-	public void conduitBlockPlacedEvent(World w, BlockPos location, ConduitType type) {
+	public void conduitBlockPlacedEvent(Level w, BlockPos location, ConduitType type) {
 		if (w.isClientSide) return; // ignore client-side
-		net.minecraft.util.RegistryKey<World> dimension = w.dimension();
+		net.minecraft.resources.ResourceKey<Level> dimension = w.dimension();
 		clearIfWorldChanged(w, dimension);
 		BlockPos4D coord = new BlockPos4D(dimension, location);
 		ConduitNetworkManager manager = getConduitNetworkManager(type);
@@ -239,7 +239,7 @@ public class ConduitRegistry {
 	 * @param location  The position of the block being added
 	 * @param types     The native energy type of the added conduit block
 	 */
-	public void conduitBlockPlacedEvent(World w, BlockPos location, ConduitType... types) {
+	public void conduitBlockPlacedEvent(Level w, BlockPos location, ConduitType... types) {
 		for (int i = 0; i < types.length; i++) {
 			conduitBlockPlacedEvent(w, location, types[i]);
 		}
@@ -253,7 +253,7 @@ public class ConduitRegistry {
 	 * @param w world containing the loaded tile
 	 * @param types power types whose cached networks must be rebuilt
 	 */
-	public void conduitBlockLoadedEvent(World w, ConduitType... types) {
+	public void conduitBlockLoadedEvent(Level w, ConduitType... types) {
 		if (w.isClientSide) return;
 		clearIfWorldChanged(w, w.dimension());
 		for (ConduitType type : types) {
@@ -272,10 +272,10 @@ public class ConduitRegistry {
 	}
 
 	private void invalidateChunk(ChunkEvent event) {
-		if (!(event.getWorld() instanceof World)) return;
-		World world = (World) event.getWorld();
+		if (!(event.getWorld() instanceof Level)) return;
+		Level world = (Level) event.getWorld();
 		if (world.isClientSide) return;
-		net.minecraft.util.RegistryKey<World> dimension = world.dimension();
+		net.minecraft.resources.ResourceKey<Level> dimension = world.dimension();
 		clearIfWorldChanged(world, dimension);
 		for (ConduitNetworkManager manager : networkManagers.values()) {
 			manager.invalidateChunk(dimension, event.getChunk().getPos());
@@ -289,9 +289,9 @@ public class ConduitRegistry {
 	 * @param location  The position of the block being removed
 	 * @param type      The native energy type of the removed conduit block
 	 */
-	public void conduitBlockRemovedEvent(World w, BlockPos location, ConduitType type) {
+	public void conduitBlockRemovedEvent(Level w, BlockPos location, ConduitType type) {
 		if (w.isClientSide) return; // ignore client-side
-		net.minecraft.util.RegistryKey<World> dimension = w.dimension();
+		net.minecraft.resources.ResourceKey<Level> dimension = w.dimension();
 		clearIfWorldChanged(w, dimension);
 		BlockPos4D coord = new BlockPos4D(dimension, location);
 		ConduitNetworkManager manager = getConduitNetworkManager(type);
@@ -310,7 +310,7 @@ public class ConduitRegistry {
 	 * @param location  The position of the block being removed
 	 * @param types     The native energy type of the removed conduit block
 	 */
-	public void conduitBlockRemovedEvent(World w, BlockPos location, ConduitType... types) {
+	public void conduitBlockRemovedEvent(Level w, BlockPos location, ConduitType... types) {
 		for (int i = 0; i < types.length; i++) {
 			conduitBlockRemovedEvent(w, location, types[i]);
 		}
@@ -327,32 +327,32 @@ public class ConduitRegistry {
 	}
 
 	/** @deprecated The supplied world, not a numeric ID, identifies a dimension. */
-	@Deprecated public void conduitBlockPlacedEvent(World world, int ignoredDimension, BlockPos pos, ConduitType type) {
+	@Deprecated public void conduitBlockPlacedEvent(Level world, int ignoredDimension, BlockPos pos, ConduitType type) {
 		conduitBlockPlacedEvent(world, pos, type);
 	}
 
 	/** @deprecated Use the world-only overload. */
-	@Deprecated public void conduitBlockPlacedEvent(World world, int ignoredDimension, BlockPos pos, ConduitType... types) {
+	@Deprecated public void conduitBlockPlacedEvent(Level world, int ignoredDimension, BlockPos pos, ConduitType... types) {
 		conduitBlockPlacedEvent(world, pos, types);
 	}
 
 	/** @deprecated Use the world-only overload. */
-	@Deprecated public void conduitBlockRemovedEvent(World world, int ignoredDimension, BlockPos pos, ConduitType type) {
+	@Deprecated public void conduitBlockRemovedEvent(Level world, int ignoredDimension, BlockPos pos, ConduitType type) {
 		conduitBlockRemovedEvent(world, pos, type);
 	}
 
 	/** @deprecated Use the world-only overload. */
-	@Deprecated public void conduitBlockRemovedEvent(World world, int ignoredDimension, BlockPos pos, ConduitType... types) {
+	@Deprecated public void conduitBlockRemovedEvent(Level world, int ignoredDimension, BlockPos pos, ConduitType... types) {
 		conduitBlockRemovedEvent(world, pos, types);
 	}
 
 	/** @deprecated Use the world-only overload. */
-	@Deprecated public void conduitBlockLoadedEvent(World world, int ignoredDimension, ConduitType... types) {
+	@Deprecated public void conduitBlockLoadedEvent(Level world, int ignoredDimension, ConduitType... types) {
 		conduitBlockLoadedEvent(world, types);
 	}
 
-	private void clearIfWorldChanged(World w, net.minecraft.util.RegistryKey<World> dimension) {
-		World knownWorld = activeWorlds.get(dimension);
+	private void clearIfWorldChanged(Level w, net.minecraft.resources.ResourceKey<Level> dimension) {
+		Level knownWorld = activeWorlds.get(dimension);
 		if (knownWorld == w) return;
 		if (knownWorld != null) {
 			networkManagers.clear();

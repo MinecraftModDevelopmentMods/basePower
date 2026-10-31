@@ -3,16 +3,16 @@ package zone.moddev.mc.poweradvantage.machines.fluidmachines;
 import cyano.poweradvantage.api.ConduitType;
 import cyano.poweradvantage.api.PoweredEntity;
 import cyano.poweradvantage.api.simple.BlockSimpleFluidMachine;
-import net.minecraft.block.material.Material;
-import net.minecraft.state.BooleanProperty;
-import net.minecraft.state.StateContainer;
-import net.minecraft.block.BlockState;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.Direction;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.IBlockReader;
-import net.minecraft.world.IWorldReader;
-import net.minecraft.world.World;
+import net.minecraft.world.level.material.Material;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.core.Direction;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.Level;
 
 public class StillBlock extends BlockSimpleFluidMachine {
 
@@ -23,7 +23,8 @@ public class StillBlock extends BlockSimpleFluidMachine {
 	public static final BooleanProperty ACTIVE = BooleanProperty.create("active");
 
 	public StillBlock() {
-		super(Material.PISTON, 3f);
+		super(net.minecraft.world.level.block.Block.Properties.of(Material.PISTON)
+                .strength(3f).lightLevel(state -> state.getValue(ACTIVE) ? 12 : 0));
 		this.registerDefaultState(defaultBlockState().setValue(ACTIVE, false));
 	}
 
@@ -31,7 +32,7 @@ public class StillBlock extends BlockSimpleFluidMachine {
 	 * Creates a blockstate
 	 */
 	@Override
-	protected void createBlockStateDefinition(StateContainer.Builder<net.minecraft.block.Block, BlockState> builder) {
+	protected void createBlockStateDefinition(StateDefinition.Builder<net.minecraft.world.level.block.Block, BlockState> builder) {
 		super.createBlockStateDefinition(builder);
 		builder.add(ACTIVE);
 	}
@@ -95,13 +96,8 @@ public class StillBlock extends BlockSimpleFluidMachine {
 	}
 
 	@Override
-	public int getLightValue(BlockState bs, net.minecraft.world.IBlockReader world, BlockPos coord) {
-		return bs.getValue(ACTIVE) ? 12 : 0;
-	}
-
-	@Override
-	public PoweredEntity newBlockEntity(IBlockReader world) {
-		return new StillTileEntity();
+	public PoweredEntity newBlockEntity(net.minecraft.core.BlockPos pos, net.minecraft.world.level.block.state.BlockState state) {
+		return new StillTileEntity(pos, state);
 	}
 
 	@Override
@@ -110,8 +106,8 @@ public class StillBlock extends BlockSimpleFluidMachine {
 	}
 
 	@Override
-	public int getAnalogOutputSignal(BlockState bs, World world, BlockPos coord) {
-		TileEntity te = world.getBlockEntity(coord);
+	public int getAnalogOutputSignal(BlockState bs, Level world, BlockPos coord) {
+		BlockEntity te = world.getBlockEntity(coord);
 		if (te instanceof StillTileEntity) {
 			return ((StillTileEntity) te).getRedstoneOutput();
 		}

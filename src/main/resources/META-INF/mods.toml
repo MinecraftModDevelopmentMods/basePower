@@ -14,14 +14,14 @@ description='''API and shared machines for pressure, electricity, quantum power,
 [[dependencies.poweradvantage]]
 modId="basemetals"
 mandatory=false
-versionRange="[3.1.1.116051,4.0.0)"
+versionRange="[3.1.0.117011,4.0.0)"
 ordering="AFTER"
 side="BOTH"
 
 [[dependencies.poweradvantage]]
 modId="orespawn"
 mandatory=true
-versionRange="[4.1.0.116051,5.0.0)"
+versionRange="[4.1.0.117011,5.0.0)"
 ordering="AFTER"
 side="BOTH"
 

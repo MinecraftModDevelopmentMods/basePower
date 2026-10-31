@@ -8,10 +8,10 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import zone.moddev.mc.poweradvantage.PowerAdvantage;
-import net.minecraft.fluid.Fluid;
+import net.minecraft.world.level.material.Fluid;
 import cyano.poweradvantage.api.fluid.FluidStack;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.registry.Registry;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.core.Registry;
 import zone.moddev.mc.poweradvantage.init.Fluids;
 
 /**

@@ -3,8 +3,8 @@ package zone.moddev.mc.poweradvantage.recipe;
 import com.google.gson.JsonObject;
 import java.util.Locale;
 import net.minecraft.tags.ItemTags;
-import net.minecraft.util.JSONUtils;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.GsonHelper;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.common.crafting.CraftingHelper;
 import net.minecraftforge.common.crafting.conditions.ICondition;
 import net.minecraftforge.common.crafting.conditions.IConditionSerializer;
@@ -40,8 +40,8 @@ public final class RecipeConditions {
             switch (id.getPath()) {
                 case "recipe_mode": return PowerAdvantage.recipeMode == RecipeMode.valueOf(value.toUpperCase(Locale.ROOT));
                 case "not_recipe_mode": return PowerAdvantage.recipeMode != RecipeMode.valueOf(value.toUpperCase(Locale.ROOT));
-                case "tag_empty": return net.minecraft.tags.TagCollectionManager.getInstance().getItems().getTagOrEmpty(new ResourceLocation(value)).getValues().isEmpty();
-                case "tag_not_empty": return !net.minecraft.tags.TagCollectionManager.getInstance().getItems().getTagOrEmpty(new ResourceLocation(value)).getValues().isEmpty();
+                case "tag_empty": return net.minecraft.tags.SerializationTags.getInstance().getOrEmpty(net.minecraft.core.Registry.ITEM_REGISTRY).getTagOrEmpty(new ResourceLocation(value)).getValues().isEmpty();
+                case "tag_not_empty": return !net.minecraft.tags.SerializationTags.getInstance().getOrEmpty(net.minecraft.core.Registry.ITEM_REGISTRY).getTagOrEmpty(new ResourceLocation(value)).getValues().isEmpty();
                 default: throw new IllegalStateException("Unknown Advantage condition " + id);
             }
         }
@@ -57,7 +57,7 @@ public final class RecipeConditions {
         }
 
         @Override public ResourceLocation getID() { return id; }
-        @Override public Condition read(JsonObject json) { return new Condition(id, JSONUtils.getAsString(json, key)); }
+        @Override public Condition read(JsonObject json) { return new Condition(id, GsonHelper.getAsString(json, key)); }
         @Override public void write(JsonObject json, Condition condition) { json.addProperty(key, condition.value); }
     }
 }

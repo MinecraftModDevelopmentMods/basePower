@@ -3,11 +3,11 @@ package zone.moddev.mc.poweradvantage.resources;
 import cyano.poweradvantage.api.GUIBlock;
 import cyano.poweradvantage.api.ConduitType;
 import cyano.poweradvantage.api.simple.BlockSimplePowerConduit;
-import net.minecraft.block.Block;
-import net.minecraft.block.material.Material;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.registry.Bootstrap;
-import net.minecraft.world.IBlockReader;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.material.Material;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.server.Bootstrap;
+import net.minecraft.world.level.BlockGetter;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import zone.moddev.mc.poweradvantage.machines.conveyors.BlockConveyor;
@@ -36,7 +36,7 @@ public class NativeMachinePropertyTest {
 
     private static final class MaterialMachine extends GUIBlock {
         MaterialMachine() { super(Material.PISTON, 0.75F); }
-        @Override public TileEntity newBlockEntity(IBlockReader world) { return null; }
+        @Override public BlockEntity newBlockEntity(net.minecraft.core.BlockPos pos, net.minecraft.world.level.block.state.BlockState state) { return null; }
     }
 
     @Test public void conduitSubclassesCanChooseNativePropertiesWithoutReplacingNetworkBehavior() {
@@ -50,7 +50,7 @@ public class NativeMachinePropertyTest {
 
     private static final class PropertyMachine extends GUIBlock {
         PropertyMachine(Block.Properties properties) { super(properties); }
-        @Override public TileEntity newBlockEntity(IBlockReader world) { return null; }
+        @Override public BlockEntity newBlockEntity(net.minecraft.core.BlockPos pos, net.minecraft.world.level.block.state.BlockState state) { return null; }
     }
 
     private static final class PropertyConduit extends BlockSimplePowerConduit {

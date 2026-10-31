@@ -1,14 +1,14 @@
 package zone.moddev.mc.poweradvantage.machines.conveyors;
 
 import zone.moddev.mc.poweradvantage.util.InventoryWrapper;
-import net.minecraft.inventory.IInventory;
-import net.minecraft.item.ItemStack;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.Direction;
+import net.minecraft.world.Container;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.core.Direction;
 import zone.moddev.mc.poweradvantage.init.Entities;
 
 public class TileEntityOverflowFilter extends TileEntityConveyorFilter {
-	public TileEntityOverflowFilter() { super(Entities.FILTER_OVERFLOW, 1); }
+	public TileEntityOverflowFilter(net.minecraft.core.BlockPos pos, net.minecraft.world.level.block.state.BlockState state) { super(Entities.FILTER_OVERFLOW, pos, state, 1); }
 
 	@Override
 	public boolean matchesFilter(ItemStack item) {
@@ -23,16 +23,16 @@ public class TileEntityOverflowFilter extends TileEntityConveyorFilter {
 	}
 
 	private boolean canInsert(ItemStack item, Direction f) {
-		TileEntity target = getLevel().getBlockEntity(getBlockPos().relative(f));
-		if (target instanceof IInventory) {
-			return canInsertItemInto(item, InventoryWrapper.wrap((IInventory) target), f.getOpposite());
+		BlockEntity target = getLevel().getBlockEntity(getBlockPos().relative(f));
+		if (target instanceof Container) {
+			return canInsertItemInto(item, InventoryWrapper.wrap((Container) target), f.getOpposite());
 		} else {
 			return false;
 		}
 	}
 
 	@Override
-	protected boolean isValidItemFor(ItemStack item, TileEntity target, Direction side) {
+	protected boolean isValidItemFor(ItemStack item, BlockEntity target, Direction side) {
 		// do all of the logic in the matchesFilter method
 		return true;
 	}

@@ -3,9 +3,9 @@ package zone.moddev.mc.poweradvantage.util;
 import zone.moddev.mc.poweradvantage.PowerAdvantage;
 import cyano.poweradvantage.api.ITypedConduit;
 import cyano.poweradvantage.api.PowerConnectorContext;
-import net.minecraft.block.ITileEntityProvider;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.Direction;
+import net.minecraft.world.level.block.EntityBlock;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.core.Direction;
 import net.minecraftforge.energy.CapabilityEnergy;
 
 /**
@@ -27,9 +27,9 @@ public abstract class PowerHelper {
 				// both blocks are Power Advantage conductors
 				return ((ITypedConduit) connection.thisBlock.getBlock()).canAcceptConnection(connection)
 						&& ((ITypedConduit) connection.otherBlock.getBlock()).canAcceptConnection(connection.reverse());
-			} else if (connection.otherBlock.getBlock() instanceof ITileEntityProvider
+			} else if (connection.otherBlock.getBlock() instanceof EntityBlock
 					&& PowerAdvantage.forgeEnergyConversionTable.containsKey(connection.powerType)) {
-				TileEntity tile = connection.world.getBlockEntity(connection.otherBlockPosition);
+				BlockEntity tile = connection.world.getBlockEntity(connection.otherBlockPosition);
 				if (tile == null) return false;
 				for (Direction side : Direction.values()) {
 					if (tile.getCapability(CapabilityEnergy.ENERGY, side).isPresent()) return true;

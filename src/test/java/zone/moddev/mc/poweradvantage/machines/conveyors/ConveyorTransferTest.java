@@ -1,31 +1,31 @@
 package zone.moddev.mc.poweradvantage.machines.conveyors;
 
-import net.minecraft.inventory.Inventory;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.util.Direction;
+import net.minecraft.world.SimpleContainer;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.core.Direction;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import zone.moddev.mc.poweradvantage.util.InventoryWrapper;
 import static org.junit.Assert.*;
 
 public class ConveyorTransferTest {
-    @BeforeClass public static void bootstrap() { net.minecraft.util.registry.Bootstrap.bootStrap(); }
+    @BeforeClass public static void bootstrap() { net.minecraft.SharedConstants.tryDetectVersion(); net.minecraft.server.Bootstrap.bootStrap(); }
 
     @Test public void laterEmptySlotRemainsAnAvailableDestination() {
-        Inventory destination = new Inventory(2);
+        SimpleContainer destination = new SimpleContainer(2);
         destination.setItem(0, new ItemStack(Items.COBBLESTONE, 64));
         assertTrue(TileEntityConveyor.canInsertItemInto(new ItemStack(Items.DIRT), InventoryWrapper.wrap(destination), Direction.UP));
     }
 
     @Test public void fullStackIsNotAnAvailableDestination() {
-        Inventory destination = new Inventory(1);
+        SimpleContainer destination = new SimpleContainer(1);
         destination.setItem(0, new ItemStack(Items.DIRT, 64));
         assertFalse(TileEntityConveyor.canInsertItemInto(new ItemStack(Items.DIRT), InventoryWrapper.wrap(destination), Direction.UP));
     }
 
     @Test public void transfersPreserveDifferentCustomItemData() {
-        Inventory source = new Inventory(2), target = new Inventory(2);
+        SimpleContainer source = new SimpleContainer(2), target = new SimpleContainer(2);
         source.setItem(0, tagged(3, "A")); source.setItem(1, tagged(3, "B")); target.setItem(0, tagged(1, "A"));
         for (int n = 0; n < 6; n++) assertTrue(TileEntityConveyor.transferItem(InventoryWrapper.wrap(source), Direction.EAST,
                 InventoryWrapper.wrap(target), Direction.WEST));

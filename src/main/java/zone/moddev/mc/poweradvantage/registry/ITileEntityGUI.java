@@ -1,7 +1,7 @@
 package zone.moddev.mc.poweradvantage.registry;
 
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.tileentity.TileEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
@@ -20,7 +20,7 @@ public interface ITileEntityGUI {
 	 * @param player The player that is going to use the GUI
 	 * @return An instance of net.minecraft.inventory.container.Container
 	 */
-	public abstract net.minecraft.inventory.container.Container getContainer(TileEntity e, PlayerEntity player);
+	public abstract net.minecraft.world.inventory.AbstractContainerMenu getContainer(BlockEntity e, Player player);
 
 	/**
 	 * Gets an instance of net.minecraft.client.gui.screen.inventory.ContainerScreen for
@@ -31,5 +31,5 @@ public interface ITileEntityGUI {
 	 * @return An instance of net.minecraft.client.gui.screen.inventory.ContainerScreen
 	 */
 	@OnlyIn(Dist.CLIENT)
-	public abstract net.minecraft.client.gui.screen.inventory.ContainerScreen getContainerGUI(TileEntity e, PlayerEntity player);
+	public abstract net.minecraft.client.gui.screens.inventory.AbstractContainerScreen getContainerGUI(BlockEntity e, Player player);
 }

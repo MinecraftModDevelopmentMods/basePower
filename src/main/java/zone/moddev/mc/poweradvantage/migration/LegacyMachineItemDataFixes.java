@@ -5,14 +5,14 @@ import com.mojang.datafixers.DataFixer;
 import com.mojang.serialization.Dynamic;
 import java.util.ArrayList;
 import java.util.Objects;
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.nbt.INBT;
-import net.minecraft.nbt.ListNBT;
-import net.minecraft.nbt.NBTDynamicOps;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.SharedConstants;
-import net.minecraft.util.datafix.DataFixesManager;
-import net.minecraft.util.datafix.TypeReferences;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.NbtOps;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.SharedConstants;
+import net.minecraft.util.datafix.DataFixers;
+import net.minecraft.util.datafix.fixes.References;
 
 /** Vanilla cannot traverse inventories behind unknown mod block-entity choices. */
 final class LegacyMachineItemDataFixes {
@@ -20,13 +20,13 @@ final class LegacyMachineItemDataFixes {
 
     private LegacyMachineItemDataFixes() {}
 
-    static void prepare(CompoundNBT root) {
+    static void prepare(CompoundTag root) {
         int version = root.contains("DataVersion", 99) ? root.getInt("DataVersion") : -1;
         int current = SharedConstants.getCurrentVersion().getWorldVersion();
         if (version >= current || root.getBoolean(PREPARED) || !root.contains("Level", 10)) return;
-        ListNBT tiles = root.getCompound("Level").getList("TileEntities", 10);
+        ListTag tiles = root.getCompound("Level").getList("TileEntities", 10);
         for (int index = 0; index < tiles.size(); index++) {
-            CompoundNBT tile = tiles.getCompound(index);
+            CompoundTag tile = tiles.getCompound(index);
             ResourceLocation id = ResourceLocation.tryParse(tile.getString("id"));
             if (id != null && LegacyMigrationApi.handlesNamespace(id.getNamespace())) {
                 rewrite(tile, version, current);
@@ -35,16 +35,16 @@ final class LegacyMachineItemDataFixes {
         root.putBoolean(PREPARED, true);
     }
 
-    private static INBT rewrite(INBT value, int version, int current) {
-        if (value instanceof CompoundNBT) {
-            CompoundNBT compound = (CompoundNBT) value;
+    private static Tag rewrite(Tag value, int version, int current) {
+        if (value instanceof CompoundTag) {
+            CompoundTag compound = (CompoundTag) value;
             ResourceLocation id = ResourceLocation.tryParse(compound.getString("id"));
             if (compound.contains("Count", 99) && id != null) {
                 if (supported(id)) {
-                    DataFixer fixer = DataFixesManager.getDataFixer();
-                    CompoundNBT input = version < 704 ? upgradeTo704(compound, version, fixer) : compound.copy();
-                    CompoundNBT fixed = (CompoundNBT) fixer.update(TypeReferences.ITEM_STACK,
-                            new Dynamic<>(NBTDynamicOps.INSTANCE, input), Math.max(version, 704), current).getValue();
+                    DataFixer fixer = DataFixers.getDataFixer();
+                    CompoundTag input = version < 704 ? upgradeTo704(compound, version, fixer) : compound.copy();
+                    CompoundTag fixed = (CompoundTag) fixer.update(References.ITEM_STACK,
+                            new Dynamic<>(NbtOps.INSTANCE, input), Math.max(version, 704), current).getValue();
                     // The native item schema also fixes its nested vanilla inventories.
                     // Do not visit them again with the old version and reset tool damage.
                     return preserve(compound, fixed);
@@ -54,30 +54,30 @@ final class LegacyMachineItemDataFixes {
             for (String key : new ArrayList<>(compound.getAllKeys())) {
                 compound.put(key, rewrite(compound.get(key), version, current));
             }
-        } else if (value instanceof ListNBT) {
-            ListNBT list = (ListNBT) value;
+        } else if (value instanceof ListTag) {
+            ListTag list = (ListTag) value;
             for (int index = 0; index < list.size(); index++) list.set(index, rewrite(list.get(index), version, current));
         }
         return value;
     }
 
-    static CompoundNBT upgradeTo704(CompoundNBT source, int version, DataFixer fixer) {
+    static CompoundTag upgradeTo704(CompoundTag source, int version, DataFixer fixer) {
         // A root ITEM_STACK hits the unchecked 704 hook conversion too early.
         // Native PLAYER.Inventory lets the nested block-entity choice rename run.
-        CompoundNBT player = new CompoundNBT();
-        ListNBT inventory = new ListNBT();
+        CompoundTag player = new CompoundTag();
+        ListTag inventory = new ListTag();
         inventory.add(source.copy());
         player.put("Inventory", inventory);
-        Object converted = fixer.update(TypeReferences.PLAYER, new Dynamic<>(NBTDynamicOps.INSTANCE, player),
+        Object converted = fixer.update(References.PLAYER, new Dynamic<>(NbtOps.INSTANCE, player),
                 version, 704).getValue();
-        if (!(converted instanceof CompoundNBT)) {
+        if (!(converted instanceof CompoundTag)) {
             throw new IllegalStateException("Native item envelope is not a player compound");
         }
-        INBT items = ((CompoundNBT) converted).get("Inventory");
-        if (!(items instanceof ListNBT) || ((ListNBT) items).size() != 1 || ((ListNBT) items).getElementType() != 10) {
+        Tag items = ((CompoundTag) converted).get("Inventory");
+        if (!(items instanceof ListTag) || ((ListTag) items).size() != 1 || ((ListTag) items).getElementType() != 10) {
             throw new IllegalStateException("Native item envelope changed singleton inventory cardinality or type");
         }
-        CompoundNBT result = ((ListNBT) items).getCompound(0);
+        CompoundTag result = ((ListTag) items).getCompound(0);
         ResourceLocation id = ResourceLocation.tryParse(result.getString("id"));
         if (!result.contains("id", 8) || id == null || id.getPath().isEmpty() || !result.contains("Count", 99)
                 || !result.get("Count").equals(source.get("Count"))
@@ -92,9 +92,9 @@ final class LegacyMachineItemDataFixes {
                 || id.getNamespace().equals("mmdlib") || LegacyMigrationApi.handlesNamespace(id.getNamespace());
     }
 
-    private static INBT preserve(INBT original, INBT result) {
-        if (original instanceof CompoundNBT && result instanceof CompoundNBT) {
-            CompoundNBT before = (CompoundNBT) original, after = (CompoundNBT) result;
+    private static Tag preserve(Tag original, Tag result) {
+        if (original instanceof CompoundTag && result instanceof CompoundTag) {
+            CompoundTag before = (CompoundTag) original, after = (CompoundTag) result;
             ResourceLocation id = ResourceLocation.tryParse(before.getString("id"));
             if (before.contains("Count", 99) && id != null) {
                 if (!after.contains("Count", 99) || before.getInt("Count") != after.getInt("Count")
@@ -109,10 +109,10 @@ final class LegacyMachineItemDataFixes {
             for (String key : new ArrayList<>(before.getAllKeys())) {
                 if (after.contains(key)) after.put(key, preserve(before.get(key), after.get(key)));
             }
-        } else if (original instanceof ListNBT && result instanceof ListNBT) {
-            ListNBT before = (ListNBT) original, after = (ListNBT) result;
-            boolean inventory = before.stream().anyMatch(value -> value instanceof CompoundNBT
-                    && ((CompoundNBT) value).contains("Count", 99) && ((CompoundNBT) value).contains("id", 8));
+        } else if (original instanceof ListTag && result instanceof ListTag) {
+            ListTag before = (ListTag) original, after = (ListTag) result;
+            boolean inventory = before.stream().anyMatch(value -> value instanceof CompoundTag
+                    && ((CompoundTag) value).contains("Count", 99) && ((CompoundTag) value).contains("id", 8));
             if (inventory && before.size() != after.size()) {
                 throw new IllegalStateException("Native item migration changed inventory cardinality");
             }
@@ -123,9 +123,9 @@ final class LegacyMachineItemDataFixes {
         return result;
     }
 
-    private static void restoreNamedEnchantments(CompoundNBT source, CompoundNBT target, String oldKey, String newKey) {
-        ListNBT before = source.getCompound("tag").getList(oldKey, 10);
-        ListNBT after = target.getCompound("tag").getList(newKey, 10);
+    private static void restoreNamedEnchantments(CompoundTag source, CompoundTag target, String oldKey, String newKey) {
+        ListTag before = source.getCompound("tag").getList(oldKey, 10);
+        ListTag after = target.getCompound("tag").getList(newKey, 10);
         for (int index = 0; index < before.size(); index++) {
             if (!before.getCompound(index).contains("id", 8)) continue;
             if (after.size() != before.size()) {
@@ -137,7 +137,7 @@ final class LegacyMachineItemDataFixes {
         }
     }
 
-    static void finish(CompoundNBT root) {
+    static void finish(CompoundTag root) {
         if (root != null) root.remove(PREPARED);
     }
 }

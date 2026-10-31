@@ -1,7 +1,7 @@
 package cyano.poweradvantage.api.simple;
 
 import zone.moddev.mc.poweradvantage.init.Fluids;
-import net.minecraft.block.material.Material;
+import net.minecraft.world.level.material.Material;
 
 /**
  * This block class provides all of the standard code for creating a machine 
@@ -30,5 +30,9 @@ public abstract class BlockSimpleFluidMachine extends BlockSimplePowerMachine {
 	public BlockSimpleFluidMachine(Material blockMaterial, float hardness) {
 		super(blockMaterial, hardness, Fluids.fluidConduit_general);
 	}
+
+    protected BlockSimpleFluidMachine(net.minecraft.world.level.block.Block.Properties properties) {
+        super(properties, Fluids.fluidConduit_general);
+    }
 
 }

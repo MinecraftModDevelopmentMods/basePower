@@ -6,9 +6,9 @@ import javax.annotation.Nullable;
 
 import cyano.poweradvantage.api.ConduitType;
 import cyano.poweradvantage.api.PowerRequest;
-import net.minecraft.block.Block;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
 import zone.moddev.mc.poweradvantage.conduitnetwork.ConduitRegistry;
 import zone.moddev.mc.poweradvantage.init.Fluids;
 
@@ -27,7 +27,7 @@ public final class FluidNetworkApi {
      *
      * @return the exact number of millibuckets accepted by the network
      */
-    public static int offerFluid(World world, BlockPos conduitPosition, FluidStack offered, int maxTransfer) {
+    public static int offerFluid(Level world, BlockPos conduitPosition, FluidStack offered, int maxTransfer) {
         return offerFluid(world, conduitPosition, offered, maxTransfer, PowerRequest.LAST_PRIORITY, null);
     }
 
@@ -39,7 +39,7 @@ public final class FluidNetworkApi {
      * @param source optional source object to exclude from receiving its own offer
      * @return the exact number of millibuckets accepted by consumers
      */
-    public static int offerFluid(World world, BlockPos conduitPosition, FluidStack offered, int maxTransfer,
+    public static int offerFluid(Level world, BlockPos conduitPosition, FluidStack offered, int maxTransfer,
             byte minimumPriority, @Nullable Object source) {
         if (world == null || world.isClientSide || conduitPosition == null || offered == null
                 || offered.getFluid() == null || offered.amount <= 0 || maxTransfer <= 0

@@ -4,10 +4,10 @@ import cyano.poweradvantage.api.fluid.FluidStack;
 import cyano.poweradvantage.api.fluid.FluidTank;
 import cyano.poweradvantage.api.fluid.FluidTankInfo;
 import cyano.poweradvantage.api.fluid.IAdvantageFluidHandler;
-import net.minecraft.fluid.Fluid;
-import net.minecraft.fluid.WaterFluid;
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.util.Direction;
+import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.material.WaterFluid;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.core.Direction;
 import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
 import org.junit.Test;
 import org.junit.BeforeClass;
@@ -17,8 +17,8 @@ public class ForgeFluidAdapterTest {
     private static Fluid WATER;
 
     @BeforeClass public static void bootstrapNativeRegistries() {
-        net.minecraft.util.registry.Bootstrap.bootStrap();
-        WATER = net.minecraft.fluid.Fluids.WATER;
+        net.minecraft.SharedConstants.tryDetectVersion(); net.minecraft.server.Bootstrap.bootStrap();
+        WATER = net.minecraft.world.level.material.Fluids.WATER;
     }
 
     @Test public void simulatesWithoutChangingTankOrInputThenExecutesExactAmount() {
@@ -26,7 +26,7 @@ public class ForgeFluidAdapterTest {
         int[] changes = {0};
         ForgeFluidAdapter adapter = new ForgeFluidAdapter(tank, Direction.NORTH, () -> changes[0]++);
         net.minecraftforge.fluids.FluidStack offered = new net.minecraftforge.fluids.FluidStack(WATER, 1500);
-        CompoundNBT tag = new CompoundNBT();
+        CompoundTag tag = new CompoundTag();
         tag.putString("Owner", "preserve-me");
         offered.setTag(tag);
         assertEquals(1000, adapter.fill(offered, FluidAction.SIMULATE));
@@ -75,7 +75,7 @@ public class ForgeFluidAdapterTest {
 
     @Test public void copiesBothDirectionsIncludingNbt() {
         FluidStack source = new FluidStack(WATER, 700);
-        source.tag = new CompoundNBT();
+        source.tag = new CompoundTag();
         source.tag.putInt("batch", 7);
         net.minecraftforge.fluids.FluidStack nativeStack = ForgeFluidAdapter.toForge(source);
         FluidStack copy = ForgeFluidAdapter.fromForge(nativeStack);

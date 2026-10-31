@@ -7,13 +7,13 @@ import java.util.Map;
 import cyano.poweradvantage.api.ConduitType;
 import cyano.poweradvantage.api.GUIBlock;
 import cyano.poweradvantage.api.fluid.InteractiveFluidBlock;
-import net.minecraft.block.Block;
-import net.minecraft.block.FlowingFluidBlock;
-import net.minecraft.block.material.Material;
-import net.minecraft.potion.Effects;
-import net.minecraft.item.Item;
-import net.minecraft.item.BlockItem;
-import net.minecraft.potion.EffectInstance;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.LiquidBlock;
+import net.minecraft.world.level.material.Material;
+import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -66,8 +66,8 @@ public final class Blocks {
     public static GUIBlock infinite_steam;
     public static GUIBlock infinite_electricity;
     public static GUIBlock infinite_quantum;
-    public static FlowingFluidBlock crude_oil_block;
-    public static FlowingFluidBlock refined_oil_block;
+    public static LiquidBlock crude_oil_block;
+    public static LiquidBlock refined_oil_block;
 
     private static boolean initialized;
 
@@ -105,11 +105,11 @@ public final class Blocks {
 
         Block.Properties oilProperties = Block.Properties.of(Material.WATER).noCollission()
                 .strength(100.0F).dynamicShape();
-        refined_oil_block = (FlowingFluidBlock) add(new InteractiveFluidBlock(Fluids.refined_oil,
-                oilProperties, true, (world, entity) -> entity .addEffect(new EffectInstance(Effects.CONFUSION, 200))),
+        refined_oil_block = (LiquidBlock) add(new InteractiveFluidBlock(Fluids.refined_oil,
+                oilProperties, true, (world, entity) -> entity .addEffect(new MobEffectInstance(MobEffects.CONFUSION, 200))),
                 "refined_oil");
-        crude_oil_block = (FlowingFluidBlock) add(new InteractiveFluidBlock(Fluids.crude_oil,
-                oilProperties, true, (world, entity) -> entity .addEffect(new EffectInstance(Effects.MOVEMENT_SLOWDOWN, 200, 2))),
+        crude_oil_block = (LiquidBlock) add(new InteractiveFluidBlock(Fluids.crude_oil,
+                oilProperties, true, (world, entity) -> entity .addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 200, 2))),
                 "crude_oil");
 
         ModSupport.initBlocks();
@@ -139,7 +139,7 @@ public final class Blocks {
         for (Map.Entry<String, Block> entry : ALL_BLOCKS.entrySet()) {
             Item.Properties properties = new Item.Properties();
             if (!"fluid_pipe_terminal".equals(entry.getKey())
-                    && !(entry.getValue() instanceof FlowingFluidBlock)) {
+                    && !(entry.getValue() instanceof LiquidBlock)) {
                 properties.tab(ItemGroups.tab_powerAdvantage);
             }
             BlockItem item = new BlockItem(entry.getValue(), properties);

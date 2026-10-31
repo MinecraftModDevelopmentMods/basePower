@@ -2,27 +2,27 @@ package cyano.poweradvantage.api.simple;
 
 import cyano.poweradvantage.api.*;
 import zone.moddev.mc.poweradvantage.conduitnetwork.ConduitRegistry;
-import net.minecraft.block.HorizontalBlock;
-import net.minecraft.block.material.Material;
-import net.minecraft.state.Property;
-import net.minecraft.state.DirectionProperty;
-import net.minecraft.state.StateContainer;
-import net.minecraft.block.BlockState;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.inventory.IInventory;
-import net.minecraft.inventory.InventoryHelper;
-import net.minecraft.item.Item;
-import net.minecraft.item.BlockItemUseContext;
-import net.minecraft.item.ItemStack;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.Direction;
-import net.minecraft.util.Mirror;
-import net.minecraft.util.Rotation;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.Explosion;
-import net.minecraft.world.World;
-import net.minecraft.world.IBlockReader;
-import net.minecraft.block.Block;
+import net.minecraft.world.level.block.HorizontalDirectionalBlock;
+import net.minecraft.world.level.material.Material;
+import net.minecraft.world.level.block.state.properties.Property;
+import net.minecraft.world.level.block.state.properties.DirectionProperty;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.Container;
+import net.minecraft.world.Containers;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.core.Direction;
+import net.minecraft.world.level.block.Mirror;
+import net.minecraft.world.level.block.Rotation;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Explosion;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.block.Block;
 
 import java.util.Random;
 
@@ -46,7 +46,7 @@ public abstract class BlockSimplePowerMachine extends GUIBlock implements ITyped
 	/**
 	 * Blockstate property indicating which direction the block is facing
 	 */
-    public static final DirectionProperty FACING = HorizontalBlock.FACING;
+    public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
     /**
      * Standard constructor for a machine block. Remember to set the GUI ID so that a GUI can pop-up 
      * when the player interacts with this block.
@@ -81,13 +81,13 @@ public abstract class BlockSimplePowerMachine extends GUIBlock implements ITyped
 	 * <b>TileEntitySimplePowerMachine</b>.
 	 */
 	@Override
-    public abstract PoweredEntity newBlockEntity(final IBlockReader world);
+    public abstract PoweredEntity newBlockEntity(net.minecraft.core.BlockPos pos, net.minecraft.world.level.block.state.BlockState state);
 	
 	/**
 	 * Override of default block behavior
 	 */
 	@Override
-	public void onPlace(final BlockState state, final World world, final BlockPos coord,
+	public void onPlace(final BlockState state, final Level world, final BlockPos coord,
 			final BlockState oldState, final boolean isMoving) {
 		super.onPlace(state, world, coord, oldState, isMoving);
 		this.setDefaultFacing(world, coord, state);
@@ -97,7 +97,7 @@ public abstract class BlockSimplePowerMachine extends GUIBlock implements ITyped
 	 * This method is called when the block is removed from the world by an entity.
 	 */
 	@Override
-	public void onRemove(BlockState state, World w, BlockPos coord, BlockState newState,
+	public void onRemove(BlockState state, Level w, BlockPos coord, BlockState newState,
 			boolean isMoving) {
 		if (state.getBlock() != newState.getBlock()) {
 			ConduitRegistry.getInstance().conduitBlockRemovedEvent(w, coord, getTypes());
@@ -108,7 +108,7 @@ public abstract class BlockSimplePowerMachine extends GUIBlock implements ITyped
 	 * This method is called when the block is destroyed by an explosion.
 	 */
 	@Override
-	public void wasExploded(World w, BlockPos coord, Explosion boom){
+	public void wasExploded(Level w, BlockPos coord, Explosion boom){
 		super.wasExploded(w, coord, boom);
 		ConduitRegistry.getInstance().conduitBlockRemovedEvent(w, coord, getTypes());
 	}
@@ -144,7 +144,7 @@ public abstract class BlockSimplePowerMachine extends GUIBlock implements ITyped
 	 * Creates the blockstate of this block when it is placed in the world
 	 */
     @Override
-    public BlockState getStateForPlacement(final BlockItemUseContext context) {
+    public BlockState getStateForPlacement(final BlockPlaceContext context) {
         return this.defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite());
     }
     
@@ -152,11 +152,11 @@ public abstract class BlockSimplePowerMachine extends GUIBlock implements ITyped
 	 * Creates the blockstate of this block when it is placed in the world
 	 */
     @Override
-    public void setPlacedBy(final World world, final BlockPos coord, final BlockState bs,
+    public void setPlacedBy(final Level world, final BlockPos coord, final BlockState bs,
             final LivingEntity placer, final ItemStack srcItemStack) {
         world.setBlock(coord, bs.setValue((Property) FACING, (Comparable)placer.getDirection().getOpposite()), 2);
         if (srcItemStack.hasCustomHoverName()) {
-            final TileEntity tileEntity = world.getBlockEntity(coord);
+            final BlockEntity tileEntity = world.getBlockEntity(coord);
         	if (tileEntity instanceof PoweredEntity){
 				((PoweredEntity)tileEntity).setCustomInventoryName(srcItemStack.getDisplayName().getString());
         	}
@@ -173,7 +173,7 @@ public abstract class BlockSimplePowerMachine extends GUIBlock implements ITyped
      * @param coord Block coordinate
      * @param state Block state
      */
-    protected void setDefaultFacing(final World w, final BlockPos coord, final BlockState state) {
+    protected void setDefaultFacing(final Level w, final BlockPos coord, final BlockState state) {
         if (w.isClientSide) {
             return;
         }
@@ -234,7 +234,7 @@ public abstract class BlockSimplePowerMachine extends GUIBlock implements ITyped
      * @return a number from 0 to 15
      */
     @Override
-    public  abstract  int getAnalogOutputSignal(BlockState state, final World world, final BlockPos coord);
+    public  abstract  int getAnalogOutputSignal(BlockState state, final Level world, final BlockPos coord);
     
 
     /**
@@ -259,7 +259,7 @@ public abstract class BlockSimplePowerMachine extends GUIBlock implements ITyped
      * Creates a blockstate
      */
     @Override
-    protected void createBlockStateDefinition(StateContainer.Builder<Block, BlockState> builder) {
+    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
 		builder.add(FACING);
     }
 

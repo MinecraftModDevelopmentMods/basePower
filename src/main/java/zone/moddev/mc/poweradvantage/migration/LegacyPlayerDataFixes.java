@@ -1,36 +1,36 @@
 package zone.moddev.mc.poweradvantage.migration;
 
 import com.mojang.datafixers.DataFixer;
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.nbt.INBT;
-import net.minecraft.nbt.ListNBT;
-import net.minecraft.nbt.NBTUtil;
-import net.minecraft.util.SharedConstants;
-import net.minecraft.util.datafix.DefaultTypeReferences;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.NbtUtils;
+import net.minecraft.SharedConstants;
+import net.minecraft.util.datafix.DataFixTypes;
 
 /** Keeps saved Forge enchantment names across the native numeric player fixers. */
 public final class LegacyPlayerDataFixes {
     private LegacyPlayerDataFixes() {}
 
-    public static CompoundNBT update(DataFixer fixer, DefaultTypeReferences type, CompoundNBT source, int version) {
-        if (type != DefaultTypeReferences.PLAYER) throw new IllegalArgumentException("Expected native PLAYER type");
-        CompoundNBT result = source.copy();
+    public static CompoundTag update(DataFixer fixer, DataFixTypes type, CompoundTag source, int version) {
+        if (type != DataFixTypes.PLAYER) throw new IllegalArgumentException("Expected native PLAYER type");
+        CompoundTag result = source.copy();
         int current = SharedConstants.getCurrentVersion().getWorldVersion();
         if (version >= current) return result;
         LegacyEntityDataFixes.preparePlayerAttributes(result);
         if (version < 704) {
             // Re-read the native namespaced container schema before later choice fixes.
-            result = NBTUtil.update(fixer, type, result, version, 704);
+            result = NbtUtils.update(fixer, type, result, version, 704);
             version = 704;
         }
-        result = NBTUtil.update(fixer, type, result, version, current);
+        result = NbtUtils.update(fixer, type, result, version, current);
         preserveNames(source, result);
         return result;
     }
 
-    private static void preserveNames(INBT original, INBT result) {
-        if (original instanceof CompoundNBT && result instanceof CompoundNBT) {
-            CompoundNBT before = (CompoundNBT) original, after = (CompoundNBT) result;
+    private static void preserveNames(Tag original, Tag result) {
+        if (original instanceof CompoundTag && result instanceof CompoundTag) {
+            CompoundTag before = (CompoundTag) original, after = (CompoundTag) result;
             if (isStack(before)) {
                 if (!before.get("Count").equals(after.get("Count"))
                         || (before.contains("Slot") != after.contains("Slot"))
@@ -46,8 +46,8 @@ public final class LegacyPlayerDataFixes {
                     throw new IllegalStateException("Native player migration removed an inventory branch");
                 }
             }
-        } else if (original instanceof ListNBT && result instanceof ListNBT) {
-            ListNBT before = (ListNBT) original, after = (ListNBT) result;
+        } else if (original instanceof ListTag && result instanceof ListTag) {
+            ListTag before = (ListTag) original, after = (ListTag) result;
             boolean inventory = containsStack(before) || containsStack(after);
             if (inventory && before.size() != after.size()) {
                 throw new IllegalStateException("Native player migration changed inventory cardinality");
@@ -60,25 +60,25 @@ public final class LegacyPlayerDataFixes {
         }
     }
 
-    private static boolean isStack(INBT value) {
-        return value instanceof CompoundNBT && ((CompoundNBT) value).contains("id")
-                && ((CompoundNBT) value).contains("Count", 99);
+    private static boolean isStack(Tag value) {
+        return value instanceof CompoundTag && ((CompoundTag) value).contains("id")
+                && ((CompoundTag) value).contains("Count", 99);
     }
 
-    private static boolean containsStack(INBT value) {
+    private static boolean containsStack(Tag value) {
         if (isStack(value)) return true;
-        if (value instanceof CompoundNBT) {
-            CompoundNBT compound = (CompoundNBT) value;
+        if (value instanceof CompoundTag) {
+            CompoundTag compound = (CompoundTag) value;
             for (String key : compound.getAllKeys()) if (containsStack(compound.get(key))) return true;
-        } else if (value instanceof ListNBT) {
-            for (INBT child : (ListNBT) value) if (containsStack(child)) return true;
+        } else if (value instanceof ListTag) {
+            for (Tag child : (ListTag) value) if (containsStack(child)) return true;
         }
         return false;
     }
 
-    private static void restoreNamed(CompoundNBT source, CompoundNBT target, String oldKey, String newKey) {
-        ListNBT before = source.getCompound("tag").getList(oldKey, 10);
-        ListNBT after = target.getCompound("tag").getList(newKey, 10);
+    private static void restoreNamed(CompoundTag source, CompoundTag target, String oldKey, String newKey) {
+        ListTag before = source.getCompound("tag").getList(oldKey, 10);
+        ListTag after = target.getCompound("tag").getList(newKey, 10);
         for (int index = 0; index < before.size(); index++) {
             if (!before.getCompound(index).contains("id", 8)) continue;
             if (before.size() != after.size()) {

@@ -2,43 +2,43 @@ package cyano.poweradvantage.api.fluid;
 
 import java.util.function.BiConsumer;
 
-import net.minecraft.block.Block;
-import net.minecraft.block.FlowingFluidBlock;
-import net.minecraft.block.BlockState;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.fluid.FlowingFluid;
-import net.minecraft.util.Direction;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.IBlockReader;
-import net.minecraft.world.World;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.LiquidBlock;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.level.material.FlowingFluid;
+import net.minecraft.core.Direction;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.Level;
 
 /** A native 1.13 fluid block which can affect immersed living entities. */
-public class InteractiveFluidBlock extends FlowingFluidBlock {
-    private final BiConsumer<World, LivingEntity> immersionEffect;
+public class InteractiveFluidBlock extends LiquidBlock {
+    private final BiConsumer<Level, LivingEntity> immersionEffect;
     private final boolean flammable;
 
     public InteractiveFluidBlock(FlowingFluid fluid, Block.Properties properties, boolean flammable,
-            BiConsumer<World, LivingEntity> immersionEffect) {
+            BiConsumer<Level, LivingEntity> immersionEffect) {
         super(fluid, properties);
         this.flammable = flammable;
         this.immersionEffect = immersionEffect;
     }
 
     @Override
-    public void entityInside(BlockState state, World world, BlockPos pos, Entity entity) {
+    public void entityInside(BlockState state, Level world, BlockPos pos, Entity entity) {
         if (immersionEffect != null && entity instanceof LivingEntity) {
             immersionEffect.accept(world, (LivingEntity) entity);
         }
     }
 
     @Override
-    public int getFlammability(BlockState state, IBlockReader world, BlockPos pos, Direction face) {
+    public int getFlammability(BlockState state, BlockGetter world, BlockPos pos, Direction face) {
         return flammable ? 60 : 0;
     }
 
     @Override
-    public int getFireSpreadSpeed(BlockState state, IBlockReader world, BlockPos pos, Direction face) {
+    public int getFireSpreadSpeed(BlockState state, BlockGetter world, BlockPos pos, Direction face) {
         return flammable ? 30 : 0;
     }
 }

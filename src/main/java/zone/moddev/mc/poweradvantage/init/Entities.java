@@ -1,7 +1,7 @@
 package zone.moddev.mc.poweradvantage.init;
 
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.tileentity.TileEntityType;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -30,31 +30,31 @@ import cyano.poweradvantage.api.modsupport.techreborn.TileEntityTRElectricityCon
 /** Stable tile identities with the native 1.14 valid-block lists. */
 @Mod.EventBusSubscriber(modid = PowerAdvantage.MODID, bus = Mod.EventBusSubscriber.Bus.MOD)
 public final class Entities {
-    public static TileEntityType<TerminalFluidPipeTileEntity> PIPE_TERMINAL;
-    public static TileEntityType<FluidDrainTileEntity> FLUID_DRAIN;
-    public static TileEntityType<FluidDischargeTileEntity> FLUID_DISCHARGE;
-    public static TileEntityType<StorageTankTileEntity> STORAGE_TANK;
-    public static TileEntityType<MetalTankTileEntity> METAL_TANK;
-    public static TileEntityType<StillTileEntity> STILL;
-    public static TileEntityType<TileEntityConveyor> CONVEYOR;
-    public static TileEntityType<TileEntityBlockFilter> FILTER_BLOCK;
-    public static TileEntityType<TileEntityFoodFilter> FILTER_FOOD;
-    public static TileEntityType<TileEntityFuelFilter> FILTER_FUEL;
-    public static TileEntityType<TileEntityInventoryFilter> FILTER_INVENTORY;
-    public static TileEntityType<TileEntityOreFilter> FILTER_ORE;
-    public static TileEntityType<TileEntityPlantFilter> FILTER_PLANT;
-    public static TileEntityType<TileEntitySmeltableFilter> FILTER_SMELT;
-    public static TileEntityType<TileEntityOverflowFilter> FILTER_OVERFLOW;
-    public static TileEntityType<InfiniteEnergyTileEntity> INFINITE_ENERGY;
-    public static TileEntityType<TileEntityRFSteamConverter> RF_STEAM_CONVERTER;
-    public static TileEntityType<TileEntityRFElectricityConverter> RF_ELECTRICITY_CONVERTER;
-    public static TileEntityType<TileEntityRFQuantumConverter> RF_QUANTUM_CONVERTER;
-    public static TileEntityType<TileEntityTRElectricityConverter> TR_ELECTRICITY_CONVERTER;
+    public static BlockEntityType<TerminalFluidPipeTileEntity> PIPE_TERMINAL;
+    public static BlockEntityType<FluidDrainTileEntity> FLUID_DRAIN;
+    public static BlockEntityType<FluidDischargeTileEntity> FLUID_DISCHARGE;
+    public static BlockEntityType<StorageTankTileEntity> STORAGE_TANK;
+    public static BlockEntityType<MetalTankTileEntity> METAL_TANK;
+    public static BlockEntityType<StillTileEntity> STILL;
+    public static BlockEntityType<TileEntityConveyor> CONVEYOR;
+    public static BlockEntityType<TileEntityBlockFilter> FILTER_BLOCK;
+    public static BlockEntityType<TileEntityFoodFilter> FILTER_FOOD;
+    public static BlockEntityType<TileEntityFuelFilter> FILTER_FUEL;
+    public static BlockEntityType<TileEntityInventoryFilter> FILTER_INVENTORY;
+    public static BlockEntityType<TileEntityOreFilter> FILTER_ORE;
+    public static BlockEntityType<TileEntityPlantFilter> FILTER_PLANT;
+    public static BlockEntityType<TileEntitySmeltableFilter> FILTER_SMELT;
+    public static BlockEntityType<TileEntityOverflowFilter> FILTER_OVERFLOW;
+    public static BlockEntityType<InfiniteEnergyTileEntity> INFINITE_ENERGY;
+    public static BlockEntityType<TileEntityRFSteamConverter> RF_STEAM_CONVERTER;
+    public static BlockEntityType<TileEntityRFElectricityConverter> RF_ELECTRICITY_CONVERTER;
+    public static BlockEntityType<TileEntityRFQuantumConverter> RF_QUANTUM_CONVERTER;
+    public static BlockEntityType<TileEntityTRElectricityConverter> TR_ELECTRICITY_CONVERTER;
 
     private Entities() {}
 
     @SubscribeEvent
-    public static void register(RegistryEvent.Register<TileEntityType<?>> event) {
+    public static void register(RegistryEvent.Register<BlockEntityType<?>> event) {
         PIPE_TERMINAL = register(event, "tileentity.pipe_terminal", TerminalFluidPipeTileEntity::new, Blocks.fluid_pipe_terminal);
         FLUID_DRAIN = register(event, "tileentity.fluid_drain", FluidDrainTileEntity::new, Blocks.fluid_drain);
         FLUID_DISCHARGE = register(event, "tileentity.fluid_discharge", FluidDischargeTileEntity::new, Blocks.fluid_discharge);
@@ -78,10 +78,10 @@ public final class Entities {
         TR_ELECTRICITY_CONVERTER = register(event, "tr_electricity_converter_tileentity", TileEntityTRElectricityConverter::new, ModSupport.converter_tr_electricity);
     }
 
-    private static <T extends TileEntity> TileEntityType<T> register(
-            RegistryEvent.Register<TileEntityType<?>> event, String id,
-            java.util.function.Supplier<? extends T> factory, net.minecraft.block.Block... validBlocks) {
-        TileEntityType<T> type = TileEntityType.Builder.<T>of(factory, validBlocks).build(null);
+    private static <T extends BlockEntity> BlockEntityType<T> register(
+            RegistryEvent.Register<BlockEntityType<?>> event, String id,
+            BlockEntityType.BlockEntitySupplier<T> factory, net.minecraft.world.level.block.Block... validBlocks) {
+        BlockEntityType<T> type = BlockEntityType.Builder.<T>of(factory, validBlocks).build(null);
         type.setRegistryName(PowerAdvantage.MODID, id);
         event.getRegistry().register(type);
         return type;

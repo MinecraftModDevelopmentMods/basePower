@@ -5,10 +5,12 @@ import cyano.poweradvantage.api.PowerRequest;
 import cyano.poweradvantage.api.PoweredEntity;
 import zone.moddev.mc.poweradvantage.conduitnetwork.ConduitRegistry;
 import zone.moddev.mc.poweradvantage.init.Fluids;
-import net.minecraft.fluid.Fluid;
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.tileentity.TileEntityType;
-import net.minecraft.util.Direction;
+import net.minecraft.world.level.material.Fluid;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.core.Direction;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.List;
 
@@ -30,8 +32,8 @@ import java.util.List;
  */
 public abstract class FluidPoweredEntity extends PoweredEntity implements IAdvantageFluidHandler {
 
-	protected FluidPoweredEntity(TileEntityType<?> type) {
-		super(type);
+	protected FluidPoweredEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
+		super(type, pos, state);
 	}
 
 
@@ -79,9 +81,9 @@ public abstract class FluidPoweredEntity extends PoweredEntity implements IAdvan
 	 * @param tagRoot An NBT tag
 	 */
 	@Override
-	public CompoundNBT save(final CompoundNBT tagRoot) {
+	public CompoundTag save(final CompoundTag tagRoot) {
 		super.save(tagRoot);
-		CompoundNBT tankTag = new CompoundNBT();
+		CompoundTag tankTag = new CompoundTag();
 		this.getTank().writeToNBT(tankTag);
 		tagRoot.put("Tank", tankTag);
 		return tagRoot;
@@ -93,10 +95,10 @@ public abstract class FluidPoweredEntity extends PoweredEntity implements IAdvan
 	 * @param tagRoot An NBT tag
 	 */
 	@Override
-	public void load(net.minecraft.block.BlockState state, final CompoundNBT tagRoot) {
-		super.load(state, tagRoot);
+	public void load(final CompoundTag tagRoot) {
+		super.load(tagRoot);
 		if (tagRoot.contains("Tank", 10)) {
-			CompoundNBT tankTag = tagRoot .getCompound("Tank");
+			CompoundTag tankTag = tagRoot .getCompound("Tank");
 			getTank().readFromNBT(tankTag);
 			if (tankTag.contains("Empty", 1)) {
 				// empty the tank if NBT says its empty (not default behavior of Tank.readFromNBT(...) )

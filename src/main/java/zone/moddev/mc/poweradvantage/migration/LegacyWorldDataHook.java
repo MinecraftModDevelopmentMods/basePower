@@ -25,19 +25,19 @@ import com.mojang.serialization.Dynamic;
 
 import cpw.mods.modlauncher.api.INameMappingService;
 import cyano.poweradvantage.api.migration.LegacyMigrationApi;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.nbt.CompressedStreamTools;
-import net.minecraft.nbt.INBT;
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.nbt.ListNBT;
-import net.minecraft.nbt.NBTUtil;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.datafix.fixes.BlockStateFlatteningMap;
-import net.minecraft.world.storage.SaveFormat.LevelSave;
-import net.minecraft.world.storage.IServerConfiguration;
-import net.minecraftforge.fml.WorldPersistenceHooks;
-import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.nbt.NbtIo;
+import net.minecraft.nbt.Tag;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.NbtUtils;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.datafix.fixes.BlockStateData;
+import net.minecraft.world.level.storage.LevelStorageSource.LevelStorageAccess;
+import net.minecraft.world.level.storage.WorldData;
+import net.minecraftforge.fmllegacy.WorldPersistenceHooks;
+import net.minecraftforge.fml.util.ObfuscationReflectionHelper;
 import net.minecraftforge.registries.ForgeRegistries;
 import zone.moddev.mc.poweradvantage.PowerAdvantage;
 
@@ -48,7 +48,7 @@ import zone.moddev.mc.poweradvantage.PowerAdvantage;
 public final class LegacyWorldDataHook implements WorldPersistenceHooks.WorldPersistenceHook {
     private static final LegacyWorldDataHook INSTANCE = new LegacyWorldDataHook();
     private static final ResourceLocation BLOCK_REGISTRY = new ResourceLocation("minecraft", "blocks");
-    private static final Map<String, CompoundNBT> LEGACY_WORLD_DATA = new ConcurrentHashMap<>();
+    private static final Map<String, CompoundTag> LEGACY_WORLD_DATA = new ConcurrentHashMap<>();
     private static final BitSet LEGACY_BLOCK_IDS = new BitSet();
     private static final Map<Integer, String> LEGACY_ENCHANTMENTS = new LinkedHashMap<>();
     private static final Set<Long> LEGACY_CHUNKS = Collections.newSetFromMap(new ConcurrentHashMap<>());
@@ -78,7 +78,7 @@ public final class LegacyWorldDataHook implements WorldPersistenceHooks.WorldPer
         File source = legacyRegistrySource(levelDat);
         if (source == null) return;
         try (FileInputStream input = new FileInputStream(source)) {
-            CompoundNBT root = CompressedStreamTools.readCompressed(input);
+            CompoundTag root = NbtIo.readCompressed(input);
             if (!root.contains("FML", 10)) return;
             prepareLegacyData(levelDat.getParentFile(), root.getCompound("FML"));
             migrateLoosePlayerData(levelDat, root);
@@ -90,9 +90,9 @@ public final class LegacyWorldDataHook implements WorldPersistenceHooks.WorldPer
     private static void removeRetiredProfessionSnapshot(File levelDat) {
         if (!levelDat.isFile()) return;
         try {
-            CompoundNBT root;
+            CompoundTag root;
             try (FileInputStream input = new FileInputStream(levelDat)) {
-                root = CompressedStreamTools.readCompressed(input);
+                root = NbtIo.readCompressed(input);
             }
             boolean changed = removeRetiredVanillaProfessionRegistry(root);
             changed |= renameFlattenedBiomeRegistry(root);
@@ -102,13 +102,13 @@ public final class LegacyWorldDataHook implements WorldPersistenceHooks.WorldPer
         }
     }
 
-    static boolean renameFlattenedBiomeRegistry(CompoundNBT root) {
+    static boolean renameFlattenedBiomeRegistry(CompoundTag root) {
         // Uppercase FML remains the untouched pre-flattening registry archive.
         if (root.getCompound("Data").getInt("DataVersion") < 1519) return false;
-        CompoundNBT registries = root.getCompound("fml").getCompound("Registries");
+        CompoundTag registries = root.getCompound("fml").getCompound("Registries");
         String old = "minecraft:biomes", current = "minecraft:worldgen/biome";
         if (!registries.contains(old, 10)) return false;
-        CompoundNBT snapshot = registries.getCompound(old);
+        CompoundTag snapshot = registries.getCompound(old);
         if (registries.contains(current) && !snapshot.equals(registries.get(current))) {
             throw new IllegalStateException("Conflicting old and current biome registry snapshots; preserve the world backup and resolve the registry conflict before loading");
         }
@@ -117,22 +117,22 @@ public final class LegacyWorldDataHook implements WorldPersistenceHooks.WorldPer
         return true;
     }
 
-    static boolean removeRetiredVanillaProfessionRegistry(CompoundNBT root) {
+    static boolean removeRetiredVanillaProfessionRegistry(CompoundTag root) {
         boolean changed = false;
         for (String namespace : new String[] {"fml", "FML"}) {
-            CompoundNBT registries = root.getCompound(namespace).getCompound("Registries");
+            CompoundTag registries = root.getCompound(namespace).getCompound("Registries");
             String key = "minecraft:villagerprofessions";
             if (!registries.contains(key, 10)) continue;
-            CompoundNBT snapshot = registries.getCompound(key);
+            CompoundTag snapshot = registries.getCompound(key);
             if (!snapshot.contains("ids", 9)) continue;
             boolean vanillaOnly = true;
-            for (INBT entry : (ListNBT) snapshot.get("ids")) {
-                if (!(entry instanceof CompoundNBT) || !Arrays.asList("minecraft:farmer", "minecraft:librarian",
+            for (Tag entry : (ListTag) snapshot.get("ids")) {
+                if (!(entry instanceof CompoundTag) || !Arrays.asList("minecraft:farmer", "minecraft:librarian",
                         "minecraft:priest", "minecraft:smith", "minecraft:butcher", "minecraft:nitwit")
-                        .contains(((CompoundNBT) entry).getString("K"))) vanillaOnly = false;
+                        .contains(((CompoundTag) entry).getString("K"))) vanillaOnly = false;
             }
             for (String list : new String[] {"aliases", "overrides", "dummied"}) {
-                if (snapshot.contains(list, 9) && !((ListNBT) snapshot.get(list)).isEmpty()) vanillaOnly = false;
+                if (snapshot.contains(list, 9) && !((ListTag) snapshot.get(list)).isEmpty()) vanillaOnly = false;
             }
             if (snapshot.getIntArray("blocked").length > 0 || !vanillaOnly) continue;
             // Vanilla fixes the villagers and offers. Remove only the retired vanilla ID index.
@@ -143,11 +143,11 @@ public final class LegacyWorldDataHook implements WorldPersistenceHooks.WorldPer
     }
 
     /** Called by the coremod immediately after a legacy chunk NBT is read. */
-    public static synchronized void prepareLegacyChunk(CompoundNBT root) {
+    public static synchronized void prepareLegacyChunk(CompoundTag root) {
         if (root == null) return;
         migrateLegacyNbt(root);
         if (!legacyWorldActive || !root.contains("Level", 10)) return;
-        CompoundNBT level = root.getCompound("Level");
+        CompoundTag level = root.getCompound("Level");
         int legacyBlocks = countLegacyBlocks(level);
         if (legacyBlocks > 0) {
             LEGACY_BLOCK_COUNTS.put(Long.valueOf(chunkKey(level.getInt("xPos"), level.getInt("zPos"))),
@@ -159,12 +159,24 @@ public final class LegacyWorldDataHook implements WorldPersistenceHooks.WorldPer
     }
 
     /** Detaches pending-save data before either mod's migration hook can mutate it. */
-    public static CompoundNBT copyChunkForMigration(CompoundNBT root) {
+    public static CompoundTag copyChunkForMigration(CompoundTag root) {
         return root == null ? null : root.copy();
     }
 
+    /** Native 1.17 stores entities separately; never mutate an I/O worker's cached data. */
+    public static CompoundTag prepareEntityChunkForMigration(CompoundTag source) {
+        if (source == null || !source.contains("Position", 11)
+                || source.getIntArray("Position").length != 2 || !source.contains("Entities", 9)) {
+            throw new IllegalStateException("Malformed saved entity chunk; refusing unsafe construction");
+        }
+        CompoundTag root = source.copy();
+        migrateLegacyNbt(root);
+        LegacyEntityDataFixes.prepare(root);
+        return root;
+    }
+
     /** Called after all mods' entry hooks, immediately before native chunk datafixing. */
-    public static void prepareLegacyEntities(CompoundNBT root) {
+    public static void prepareLegacyEntities(CompoundTag root) {
         if (root != null) {
             LegacyMachineItemDataFixes.prepare(root);
             LegacyEntityDataFixes.prepare(root);
@@ -172,11 +184,11 @@ public final class LegacyWorldDataHook implements WorldPersistenceHooks.WorldPer
     }
 
     /** Called after vanilla datafixing, before a legacy chunk is returned. */
-    public static CompoundNBT finalizeLegacyChunk(CompoundNBT root) {
+    public static CompoundTag finalizeLegacyChunk(CompoundTag root) {
         LegacyEntityDataFixes.finish(root);
         LegacyMachineItemDataFixes.finish(root);
         if (root != null && root.contains("Level", 10)) {
-            CompoundNBT level = root.getCompound("Level");
+            CompoundTag level = root.getCompound("Level");
             if (level.getBoolean(PRESERVE_CHUNK_MARKER)) {
                 level.putString("Status", "full");
                 level.remove(PRESERVE_CHUNK_MARKER);
@@ -185,7 +197,7 @@ public final class LegacyWorldDataHook implements WorldPersistenceHooks.WorldPer
         return root;
     }
 
-    public static boolean shouldBlockWorldgenWrite(net.minecraft.util.math.BlockPos position) {
+    public static boolean shouldBlockWorldgenWrite(net.minecraft.core.BlockPos position) {
         return legacyWorldActive && position != null
                 && LEGACY_CHUNKS.contains(Long.valueOf(chunkKey(position.getX() >> 4, position.getZ() >> 4)));
     }
@@ -193,19 +205,19 @@ public final class LegacyWorldDataHook implements WorldPersistenceHooks.WorldPer
     @Override public String getModId() { return "FML"; }
 
     @Override
-    public CompoundNBT getDataForWriting(LevelSave handler, IServerConfiguration info) {
-        CompoundNBT legacy = LEGACY_WORLD_DATA.get(worldKey(handler.getWorldDir().toFile()));
-        return legacy == null ? new CompoundNBT() : legacy.copy();
+    public CompoundTag getDataForWriting(LevelStorageAccess handler, WorldData info) {
+        CompoundTag legacy = LEGACY_WORLD_DATA.get(worldKey(handler.getWorldDir().toFile()));
+        return legacy == null ? new CompoundTag() : legacy.copy();
     }
 
     @Override
-    public void readData(LevelSave handler, IServerConfiguration info, CompoundNBT tag) {
+    public void readData(LevelStorageAccess handler, WorldData info, CompoundTag tag) {
         prepareLegacyData(handler.getWorldDir().toFile(), tag);
     }
 
-    private static synchronized void prepareLegacyData(File worldDirectory, CompoundNBT tag) {
+    private static synchronized void prepareLegacyData(File worldDirectory, CompoundTag tag) {
         if (!tag.contains("Registries", 10)) return;
-        CompoundNBT registries = tag.getCompound("Registries");
+        CompoundTag registries = tag.getCompound("Registries");
         if (!registries.contains(BLOCK_REGISTRY.toString(), 10)) return;
         installLegacyEnchantments(registries);
         String key = worldKey(worldDirectory);
@@ -221,13 +233,13 @@ public final class LegacyWorldDataHook implements WorldPersistenceHooks.WorldPer
         }
     }
 
-    private static int installLegacyBlockStates(CompoundNBT snapshot) {
+    private static int installLegacyBlockStates(CompoundTag snapshot) {
         LEGACY_BLOCK_IDS.clear();
         Map<ResourceLocation, Integer> ids = new LinkedHashMap<>();
-        ListNBT savedIds = snapshot.getList("ids", 10);
+        ListTag savedIds = snapshot.getList("ids", 10);
         int highestState = 0;
         for (int index = 0; index < savedIds.size(); index++) {
-            CompoundNBT entry = savedIds.getCompound(index);
+            CompoundTag entry = savedIds.getCompound(index);
             ResourceLocation id = safeId(normalizeLegacyRegistryName(entry.getString("K")));
             if (id == null || !LegacyMigrationApi.handlesNamespace(id.getNamespace())) continue;
             int numeric = entry.getInt("V");
@@ -249,33 +261,33 @@ public final class LegacyWorldDataHook implements WorldPersistenceHooks.WorldPer
             for (int metadata = 0; metadata < 16; metadata++) {
                 BlockState state = LegacyMigrationApi.decodeBlockState(entry.getKey(), block, metadata);
                 table[(entry.getValue().intValue() << 4) | metadata] =
-                        BlockStateFlatteningMap.parse(NBTUtil.writeBlockState(state).toString());
+                        BlockStateData.parse(NbtUtils.writeBlockState(state).toString());
                 mapped++;
             }
         }
         return mapped;
     }
 
-    private static void installLegacyEnchantments(CompoundNBT registries) {
+    private static void installLegacyEnchantments(CompoundTag registries) {
         LEGACY_ENCHANTMENTS.clear();
-        ListNBT entries = registries.getCompound("minecraft:enchantments").getList("ids", 10);
+        ListTag entries = registries.getCompound("minecraft:enchantments").getList("ids", 10);
         for (int index = 0; index < entries.size(); index++) {
-            CompoundNBT entry = entries.getCompound(index);
+            CompoundTag entry = entries.getCompound(index);
             ResourceLocation name = safeId(entry.getString("K"));
             if (name != null) LEGACY_ENCHANTMENTS.put(Integer.valueOf(entry.getInt("V")), name.toString());
         }
     }
 
     /** Resolve saved IDs, not today's registry order or vanilla's conflicting numeric IDs. */
-    static boolean migrateLegacyEnchantments(CompoundNBT compound, Map<Integer, String> savedIds) {
+    static boolean migrateLegacyEnchantments(CompoundTag compound, Map<Integer, String> savedIds) {
         boolean changed = migrateEnchantmentList(compound, "StoredEnchantments", savedIds);
         changed |= migrateEnchantmentList(compound, "Enchantments", savedIds);
         if (compound.contains("ench", 9)) {
-            ListNBT enchantments = compound.getList("ench", 10);
+            ListTag enchantments = compound.getList("ench", 10);
             if (!enchantments.isEmpty() && !savedIds.isEmpty()) {
                 // A partial conversion would leave an unreadable mixed old/new list.
                 for (int index = 0; index < enchantments.size(); index++) {
-                    CompoundNBT enchantment = enchantments.getCompound(index);
+                    CompoundTag enchantment = enchantments.getCompound(index);
                     if (enchantment.contains("id", 99)
                             && !savedIds.containsKey(Integer.valueOf(enchantment.getInt("id")))) {
                         throw new IllegalStateException("Missing saved enchantment mapping for " + enchantment.getInt("id"));
@@ -290,11 +302,11 @@ public final class LegacyWorldDataHook implements WorldPersistenceHooks.WorldPer
         return changed;
     }
 
-    private static boolean migrateEnchantmentList(CompoundNBT compound, String key, Map<Integer, String> savedIds) {
+    private static boolean migrateEnchantmentList(CompoundTag compound, String key, Map<Integer, String> savedIds) {
         boolean changed = false;
-        ListNBT list = compound.getList(key, 10);
+        ListTag list = compound.getList(key, 10);
         for (int index = 0; index < list.size(); index++) {
-            CompoundNBT enchantment = list.getCompound(index);
+            CompoundTag enchantment = list.getCompound(index);
             if (!enchantment.contains("id", 99)) continue;
             String name = savedIds.get(Integer.valueOf(enchantment.getInt("id")));
             if (name != null) {
@@ -305,7 +317,7 @@ public final class LegacyWorldDataHook implements WorldPersistenceHooks.WorldPer
         return changed;
     }
 
-    private static void migrateLoosePlayerData(File levelDat, CompoundNBT root) throws IOException {
+    private static void migrateLoosePlayerData(File levelDat, CompoundTag root) throws IOException {
         boolean changed = migrateLegacyNbt(root) > 0;
         if (changed && levelDat.isFile()) writeWithBackup(levelDat, root);
         File playerData = new File(levelDat.getParentFile(), "playerdata");
@@ -314,16 +326,16 @@ public final class LegacyWorldDataHook implements WorldPersistenceHooks.WorldPer
         Arrays.sort(files);
         for (File file : files) {
             try (FileInputStream input = new FileInputStream(file)) {
-                CompoundNBT player = CompressedStreamTools.readCompressed(input);
+                CompoundTag player = NbtIo.readCompressed(input);
                 if (migrateLegacyNbt(player) > 0) writeWithBackup(file, player);
             }
         }
     }
 
-    private static int migrateLegacyNbt(INBT value) {
+    private static int migrateLegacyNbt(Tag value) {
         int changed = 0;
-        if (value instanceof CompoundNBT) {
-            CompoundNBT compound = (CompoundNBT) value;
+        if (value instanceof CompoundTag) {
+            CompoundTag compound = (CompoundTag) value;
             String id = compound.getString("id");
             String vanillaBlockEntity = VANILLA_BLOCK_ENTITY_IDS.get(id);
             if (vanillaBlockEntity != null) {
@@ -341,7 +353,7 @@ public final class LegacyWorldDataHook implements WorldPersistenceHooks.WorldPer
             }
 
             if ("forge:bucketfilled".equalsIgnoreCase(id) && compound.contains("tag", 10)) {
-                CompoundNBT tag = compound.getCompound("tag");
+                CompoundTag tag = compound.getCompound("tag");
                 ResourceLocation bucket = LegacyMigrationApi.bucketTarget(tag.getString("FluidName"));
                 if (bucket != null) {
                     compound.putString("id", bucket.toString());
@@ -360,8 +372,8 @@ public final class LegacyWorldDataHook implements WorldPersistenceHooks.WorldPer
                     }
                     if (LegacyMigrationApi.isDurableItem(oldId)
                             && compound.contains("Damage", 99) && compound.getInt("Damage") > 0) {
-                        CompoundNBT tag = compound.contains("tag", 10)
-                                ? compound.getCompound("tag") : new CompoundNBT();
+                        CompoundTag tag = compound.contains("tag", 10)
+                                ? compound.getCompound("tag") : new CompoundTag();
                         if (!tag.contains("Damage", 99)) {
                             tag.putInt("Damage", compound.getInt("Damage"));
                             compound.put("tag", tag);
@@ -376,17 +388,17 @@ public final class LegacyWorldDataHook implements WorldPersistenceHooks.WorldPer
             if (migrateLegacyEnchantments(compound, LEGACY_ENCHANTMENTS)) changed++;
             if (LegacyMigrationApi.migrateRegisteredNbt(compound)) changed++;
             for (String key : new ArrayList<>(compound.getAllKeys())) {
-                INBT child = compound.get(key);
+                Tag child = compound.get(key);
                 if (child != null) changed += migrateLegacyNbt(child);
             }
-        } else if (value instanceof ListNBT) {
-            ListNBT list = (ListNBT) value;
+        } else if (value instanceof ListTag) {
+            ListTag list = (ListTag) value;
             for (int index = 0; index < list.size(); index++) changed += migrateLegacyNbt(list.get(index));
         }
         return changed;
     }
 
-    private static int migrateFluidName(CompoundNBT compound, String key) {
+    private static int migrateFluidName(CompoundTag compound, String key) {
         if (!compound.contains(key, 8)) return 0;
         String oldName = compound.getString(key);
         String target = LegacyMigrationApi.fluidTarget(oldName);
@@ -399,15 +411,15 @@ public final class LegacyWorldDataHook implements WorldPersistenceHooks.WorldPer
         for (File candidate : new File[] { levelDat, new File(levelDat.getParentFile(), "level.dat_old") }) {
             if (!candidate.isFile()) continue;
             try (FileInputStream input = new FileInputStream(candidate)) {
-                CompoundNBT root = CompressedStreamTools.readCompressed(input);
+                CompoundTag root = NbtIo.readCompressed(input);
                 if (root.contains("FML", 10) && containsLegacyRegistryEntry(root)) return candidate;
             } catch (IOException ignored) {}
         }
         return null;
     }
 
-    private static boolean containsLegacyRegistryEntry(CompoundNBT root) {
-        ListNBT ids = root.getCompound("FML").getCompound("Registries")
+    private static boolean containsLegacyRegistryEntry(CompoundTag root) {
+        ListTag ids = root.getCompound("FML").getCompound("Registries")
                 .getCompound(BLOCK_REGISTRY.toString()).getList("ids", 10);
         for (int index = 0; index < ids.size(); index++) {
             ResourceLocation id = safeId(normalizeLegacyRegistryName(ids.getCompound(index).getString("K")));
@@ -416,11 +428,11 @@ public final class LegacyWorldDataHook implements WorldPersistenceHooks.WorldPer
         return false;
     }
 
-    private static int countLegacyBlocks(CompoundNBT level) {
+    private static int countLegacyBlocks(CompoundTag level) {
         int found = 0;
-        ListNBT sections = level.getList("Sections", 10);
+        ListTag sections = level.getList("Sections", 10);
         for (int sectionIndex = 0; sectionIndex < sections.size(); sectionIndex++) {
-            CompoundNBT section = sections.getCompound(sectionIndex);
+            CompoundTag section = sections.getCompound(sectionIndex);
             byte[] blocks = section.getByteArray("Blocks");
             if (blocks.length != 4096) continue;
             byte[] add = section.getByteArray("Add");
@@ -472,12 +484,12 @@ public final class LegacyWorldDataHook implements WorldPersistenceHooks.WorldPer
     @SuppressWarnings("unchecked")
     private static Dynamic<?>[] expandFlatteningTable(int requiredLength) {
         try {
-            String fieldName = ObfuscationReflectionHelper.remapName(INameMappingService.Domain.FIELD, "field_199200_b");
-            Field valuesField = BlockStateFlatteningMap.class.getDeclaredField(fieldName);
+            String fieldName = ObfuscationReflectionHelper.remapName(INameMappingService.Domain.FIELD, "f_14934_");
+            Field valuesField = BlockStateData.class.getDeclaredField(fieldName);
             valuesField.setAccessible(true);
-            Field modifiersField = Field.class.getDeclaredField("modifiers");
-            modifiersField.setAccessible(true);
-            modifiersField.setInt(valuesField, valuesField.getModifiers() & ~Modifier.FINAL);
+            if (Modifier.isFinal(valuesField.getModifiers())) {
+                throw new IllegalStateException("The Advantage flattening-table hook did not run");
+            }
             Dynamic<?>[] current = (Dynamic<?>[]) valuesField.get(null);
             if (current.length >= requiredLength) return current;
             Dynamic<?>[] expanded = Arrays.copyOf(current, requiredLength);
@@ -488,12 +500,12 @@ public final class LegacyWorldDataHook implements WorldPersistenceHooks.WorldPer
         }
     }
 
-    private static void writeWithBackup(File file, CompoundNBT data) throws IOException {
+    private static void writeWithBackup(File file, CompoundTag data) throws IOException {
         File backup = new File(file.getParentFile(), file.getName() + ".poweradvantage-legacy-backup");
         if (!backup.exists()) Files.copy(file.toPath(), backup.toPath(), StandardCopyOption.COPY_ATTRIBUTES);
         File temporary = new File(file.getParentFile(), file.getName() + ".poweradvantage.tmp");
         try (FileOutputStream output = new FileOutputStream(temporary)) {
-            CompressedStreamTools.writeCompressed(data, output);
+            NbtIo.writeCompressed(data, output);
         }
         try {
             Files.move(temporary.toPath(), file.toPath(), StandardCopyOption.REPLACE_EXISTING,

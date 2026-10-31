@@ -2,8 +2,8 @@ package zone.moddev.mc.poweradvantage.machines.creative;
 
 import cyano.poweradvantage.api.ConduitType;
 import cyano.poweradvantage.api.simple.TileEntitySimplePowerMachine;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
 import zone.moddev.mc.poweradvantage.init.Entities;
 
 public class InfiniteEnergyTileEntity extends TileEntitySimplePowerMachine {
@@ -12,13 +12,13 @@ public class InfiniteEnergyTileEntity extends TileEntitySimplePowerMachine {
 	private final int[] dataArray = new int[0];
 	private final ConduitType[] type = new ConduitType[1];
 
-	public InfiniteEnergyTileEntity(ConduitType energyType) {
-		super(Entities.INFINITE_ENERGY, energyType, 1000f, "tile.poweradvantage.infinite_energy_source.name");
+	public InfiniteEnergyTileEntity(net.minecraft.core.BlockPos pos, net.minecraft.world.level.block.state.BlockState state, ConduitType energyType) {
+		super(Entities.INFINITE_ENERGY, pos, state, energyType, 1000f, "tile.poweradvantage.infinite_energy_source.name");
 		this.type[0] = energyType;
 	}
 
-	public InfiniteEnergyTileEntity() {
-		super(Entities.INFINITE_ENERGY, new ConduitType("power"), 1000f, "tile.poweradvantage.infinite_energy_source.name");
+	public InfiniteEnergyTileEntity(net.minecraft.core.BlockPos pos, net.minecraft.world.level.block.state.BlockState state) {
+		super(Entities.INFINITE_ENERGY, pos, state, new ConduitType("power"), 1000f, "tile.poweradvantage.infinite_energy_source.name");
 		this.type[0] = new ConduitType("power");
 	}
 
@@ -89,15 +89,15 @@ public class InfiniteEnergyTileEntity extends TileEntitySimplePowerMachine {
 	}
 
 	@Override
-	public CompoundNBT save(final CompoundNBT tagRoot) {
+	public CompoundTag save(final CompoundTag tagRoot) {
 		super .save(tagRoot);
 		tagRoot.putString("InfType", this.type[0].toString());
 		return tagRoot;
 	}
 
 	@Override
-	public void load(net.minecraft.block.BlockState state, final CompoundNBT tagRoot) {
-		super.load(state, tagRoot);
+	public void load(final CompoundTag tagRoot) {
+		super.load(tagRoot);
 		if (tagRoot.contains("InfType", 8)) {
 			this.type[0] = new ConduitType(tagRoot.getString("InfType"));
 		}

@@ -4,13 +4,13 @@ import cyano.poweradvantage.api.fluid.FluidPoweredEntity;
 import cyano.poweradvantage.api.simple.SimpleMachineGUI;
 import zone.moddev.mc.poweradvantage.math.Integer2D;
 import com.mojang.blaze3d.platform.GlStateManager;
-import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.renderer.BufferBuilder;
+import com.mojang.blaze3d.vertex.Tesselator;
+import com.mojang.blaze3d.vertex.BufferBuilder;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.client.renderer.texture.AtlasTexture;
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.world.biome.BiomeColors;
+import net.minecraft.client.renderer.texture.TextureAtlas;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.client.renderer.BiomeColors;
 import cyano.poweradvantage.api.fluid.FluidStack;
 
 
@@ -35,8 +35,8 @@ public class FluidTankGUI extends SimpleMachineGUI {
 						guiDisplayImage, guiContainer, x, y, z);
 			}
 		}
-		com.mojang.blaze3d.systems.RenderSystem.color4f(1f, 1f, 1f, 1f); // reset tint
-		guiContainer.getMinecraft().getTextureManager().bind(guiDisplayImage);
+		com.mojang.blaze3d.systems.RenderSystem.setShaderColor(1f, 1f, 1f, 1f); // reset tint
+		com.mojang.blaze3d.systems.RenderSystem.setShaderTexture(0, guiDisplayImage);
 		guiContainer.blit(x + 77, y + 6, 176, 0, 22, 66); // x, y, textureOffsetX, textureOffsetY, width, height)
 	}
 
@@ -53,7 +53,7 @@ public class FluidTankGUI extends SimpleMachineGUI {
 		FluidTankGUI.drawFluidFilledRectangle(guiContainer, fs, x + xPos, y + yPos + barSlotHeight - h, w, h, zLevel);
 		//guiContainer.drawModalRectWithCustomSizedTexture(x+xPos, y+yPos+barSlotHeight-h, 0, 0, w, h, 16, h);//h * texPerPixel); // x, y, u, v, width, height, textureWidth, textureHeight
 
-		guiContainer.getMinecraft().getTextureManager().bind(displayImage);
+		com.mojang.blaze3d.systems.RenderSystem.setShaderTexture(0, displayImage);
 		guiContainer.blit(x + xPos - 3, y + yPos - 3, 176, 0, 22, 66); // x, y, textureOffsetX, textureOffsetY, width, height)
 	}
 
@@ -65,20 +65,21 @@ public class FluidTankGUI extends SimpleMachineGUI {
 	) {
 		if (fs == null || fs.getFluid() == null || width <= 0 || height <= 0) return;
 		// The atlas supplies the current animation frame; water's sprite is grayscale.
-		TextureAtlasSprite sprite = guiContainer.getMinecraft().getTextureAtlas(AtlasTexture.LOCATION_BLOCKS)
+		TextureAtlasSprite sprite = guiContainer.getMinecraft().getTextureAtlas(TextureAtlas.LOCATION_BLOCKS)
 				.apply(fs.getFluid().getAttributes().getStillTexture());
-		guiContainer.getMinecraft().getTextureManager().bind(AtlasTexture.LOCATION_BLOCKS);
+		com.mojang.blaze3d.systems.RenderSystem.setShaderTexture(0, TextureAtlas.LOCATION_BLOCKS);
 		int color = fs.getFluid().getAttributes().getColor(zone.moddev.mc.poweradvantage.util.ForgeFluidAdapter.toForge(fs));
-		if (fs.getFluid().isSame(net.minecraft.fluid.Fluids.WATER)) {
+		if (fs.getFluid().isSame(net.minecraft.world.level.material.Fluids.WATER)) {
 			color = guiContainer.getMinecraft().level != null && guiContainer.getMinecraft().player != null
 					? BiomeColors.getAverageWaterColor(guiContainer.getMinecraft().level, guiContainer.getMinecraft().player.blockPosition()) : 0x3F76E4;
 		}
 		float red = ((color >>> 16) & 255) / 255F;
 		float green = ((color >>> 8) & 255) / 255F;
 		float blue = (color & 255) / 255F;
-		Tessellator tessellator = Tessellator.getInstance();
+		Tesselator tessellator = Tesselator.getInstance();
 		BufferBuilder vertexbuffer = tessellator.getBuilder();
-		vertexbuffer.begin(7, DefaultVertexFormats.POSITION_TEX_COLOR);
+		com.mojang.blaze3d.systems.RenderSystem.setShader(net.minecraft.client.renderer.GameRenderer::getPositionTexColorShader);
+		vertexbuffer.begin(com.mojang.blaze3d.vertex.VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
 		for (int dy = 0; dy < height; dy += 16) {
 			int tileHeight = Math.min(16, height - dy);
 			for (int dx = 0; dx < width; dx += 16) {

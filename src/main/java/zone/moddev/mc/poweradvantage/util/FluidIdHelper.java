@@ -1,8 +1,8 @@
 package zone.moddev.mc.poweradvantage.util;
 
-import net.minecraft.fluid.Fluid;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.registry.Registry;
+import net.minecraft.world.level.material.Fluid;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.core.Registry;
 
 public final class FluidIdHelper {
 

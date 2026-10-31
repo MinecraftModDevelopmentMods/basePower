@@ -3,12 +3,12 @@ package zone.moddev.mc.poweradvantage.machines.fluidmachines;
 import cyano.poweradvantage.api.ConduitType;
 import cyano.poweradvantage.api.PoweredEntity;
 import cyano.poweradvantage.api.simple.BlockSimpleFluidMachine;
-import net.minecraft.block.material.Material;
-import net.minecraft.block.BlockState;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.IBlockReader;
-import net.minecraft.world.World;
+import net.minecraft.world.level.material.Material;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.Level;
 
 public class FluidDrainBlock extends BlockSimpleFluidMachine {
 
@@ -18,8 +18,8 @@ public class FluidDrainBlock extends BlockSimpleFluidMachine {
 	}
 
 	@Override
-	public PoweredEntity newBlockEntity(IBlockReader w) {
-		return new FluidDrainTileEntity();
+	public PoweredEntity newBlockEntity(net.minecraft.core.BlockPos pos, net.minecraft.world.level.block.state.BlockState state) {
+		return new FluidDrainTileEntity(pos, state);
 	}
 
 	@Override
@@ -28,8 +28,8 @@ public class FluidDrainBlock extends BlockSimpleFluidMachine {
 	}
 
 	@Override
-	public int getAnalogOutputSignal(BlockState state, World world, BlockPos coord) {
-		TileEntity te = world.getBlockEntity(coord);
+	public int getAnalogOutputSignal(BlockState state, Level world, BlockPos coord) {
+		BlockEntity te = world.getBlockEntity(coord);
 		if (te != null && te instanceof FluidDrainTileEntity) {
 			return ((FluidDrainTileEntity) te).getRedstoneOutput();
 		}

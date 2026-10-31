@@ -9,8 +9,8 @@ import cyano.poweradvantage.api.modsupport.rf.TileEntityRFQuantumConverter;
 import cyano.poweradvantage.api.modsupport.rf.TileEntityRFSteamConverter;
 import cyano.poweradvantage.api.modsupport.techreborn.BlockTRConverter;
 import cyano.poweradvantage.api.modsupport.techreborn.TileEntityTRElectricityConverter;
-import net.minecraft.block.Block;
-import net.minecraft.block.material.Material;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.material.Material;
 import zone.moddev.mc.poweradvantage.PowerAdvantage;
 import zone.moddev.mc.poweradvantage.config.PowerAdvantageConfig;
 

@@ -15,7 +15,7 @@ import cyano.poweradvantage.api.migration.LegacyOreSpawnConfigBridge;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.fml.ExtensionPoint;
+
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
@@ -42,7 +42,7 @@ import zone.moddev.mc.poweradvantage.migration.LegacyWorldDataHook;
 public final class PowerAdvantage {
     public static final String MODID = "poweradvantage";
     public static final String NAME = "Power Advantage";
-    public static final String VERSION = "2.4.7.116051";
+    public static final String VERSION = "2.4.8.117011";
     public static final Logger LOGGER = LogManager.getLogger(MODID);
 
     private static PowerAdvantage instance;
@@ -81,7 +81,8 @@ public final class PowerAdvantage {
         MinecraftForge.EVENT_BUS.addListener(RecipeDiscovery::onPlayerLogin);
         MinecraftForge.EVENT_BUS.addListener(zone.moddev.mc.poweradvantage.recipe.PartsLoot::onLoad);
         MinecraftForge.EVENT_BUS.addListener(zone.moddev.mc.poweradvantage.init.Villages::onTrades);
-        MinecraftForge.EVENT_BUS.addListener(zone.moddev.mc.poweradvantage.recipe.MaterialTags::installReader);
+        FMLJavaModLoadingContext.get().getModEventBus().addListener(
+                zone.moddev.mc.poweradvantage.recipe.MaterialTags::registerPack);
 
         Fluids.init();
         Blocks.init();
@@ -98,7 +99,7 @@ public final class PowerAdvantage {
         DistExecutor.runWhenOn(Dist.CLIENT, () -> () -> {
             FMLJavaModLoadingContext.get().getModEventBus().addListener(
                     (net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent event) ->
-                            net.minecraftforge.fml.DeferredWorkQueue.runLater(() -> {
+                            event.enqueueWork(() -> {
                                 MachineGUIRegistry.registerScreens();
                                 zone.moddev.mc.poweradvantage.client.ClientOilRenderer.configureRenderLayers();
                             }));

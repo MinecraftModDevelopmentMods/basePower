@@ -55,7 +55,7 @@ public final class PowerAdvantageConfig {
 
     private PowerAdvantageConfig() {}
 
-    public static void onConfigLoading(ModConfig.Loading event) {
+    public static void onConfigLoading(net.minecraftforge.fml.event.config.ModConfigEvent.Loading event) {
         if (event.getConfig().getSpec() != SPEC) return;
         loaded = true;
         apply();

@@ -4,8 +4,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
-import net.minecraft.item.Item;
-import net.minecraft.item.BucketItem;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.BucketItem;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -35,9 +35,9 @@ public final class Items {
         sprocket = add("sprocket", new Item(properties()));
         rotator_tool = add("rotator_tool", new RotationTool(properties().stacksTo(1)));
         crude_oil_bucket = add("crude_oil_bucket", new BucketItem(Fluids.crude_oil,
-                new Item.Properties().tab(ItemGroups.tab_powerAdvantage).stacksTo(1).craftRemainder(net.minecraft.item.Items.BUCKET)));
+                new Item.Properties().tab(ItemGroups.tab_powerAdvantage).stacksTo(1).craftRemainder(net.minecraft.world.item.Items.BUCKET)));
         refined_oil_bucket = add("refined_oil_bucket", new BucketItem(Fluids.refined_oil,
-                new Item.Properties().tab(ItemGroups.tab_powerAdvantage).stacksTo(1).craftRemainder(net.minecraft.item.Items.BUCKET)));
+                new Item.Properties().tab(ItemGroups.tab_powerAdvantage).stacksTo(1).craftRemainder(net.minecraft.world.item.Items.BUCKET)));
         initialized = true;
     }
 

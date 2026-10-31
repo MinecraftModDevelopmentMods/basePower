@@ -6,13 +6,13 @@ import zone.moddev.mc.poweradvantage.registry.FuelRegistry;
 import zone.moddev.mc.poweradvantage.registry.still.recipe.DistillationRecipe;
 import zone.moddev.mc.poweradvantage.registry.still.recipe.DistillationRecipeRegistry;
 import zone.moddev.mc.poweradvantage.util.FluidIdHelper;
-import net.minecraft.block.BlockState;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.util.Direction;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
-import net.minecraft.fluid.Fluid;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.core.Direction;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.material.Fluid;
 import cyano.poweradvantage.api.fluid.FluidStack;
 import cyano.poweradvantage.api.fluid.FluidTank;
 import cyano.poweradvantage.api.fluid.FluidTankInfo;
@@ -40,8 +40,8 @@ public class StillTileEntity extends TileEntitySimpleFluidMachine {
 	private short totalBurnTime = 0;
 
 
-	public StillTileEntity() {
-		super(Entities.STILL, FluidTank.BUCKET_VOLUME, "tile.poweradvantage.still.name");
+	public StillTileEntity(net.minecraft.core.BlockPos pos, net.minecraft.world.level.block.state.BlockState state) {
+		super(Entities.STILL, pos, state, FluidTank.BUCKET_VOLUME, "tile.poweradvantage.still.name");
 	}
 
 	@Override
@@ -74,7 +74,7 @@ public class StillTileEntity extends TileEntitySimpleFluidMachine {
 	}
 
 	@Override
-	public boolean shouldRefresh(World world, BlockPos pos, BlockState oldState, BlockState newState) {
+	public boolean shouldRefresh(Level world, BlockPos pos, BlockState oldState, BlockState newState) {
 		// used to allow change in blockstate without interrupting the TileEntity or the GUI
 		return (oldState.getBlock() != newState.getBlock());
 	}
@@ -247,9 +247,9 @@ public class StillTileEntity extends TileEntitySimpleFluidMachine {
 	 * @param tagRoot An NBT tag
 	 */
 	@Override
-	public CompoundNBT save(final CompoundNBT tagRoot) {
+	public CompoundTag save(final CompoundTag tagRoot) {
 		super .save(tagRoot);
-		CompoundNBT tankTag2 = new CompoundNBT();
+		CompoundTag tankTag2 = new CompoundTag();
 		inputTank.writeToNBT(tankTag2);
 		tagRoot.put("InputTank", tankTag2);
 		tagRoot.putShort("burnTime", this.burnTime);
@@ -263,10 +263,10 @@ public class StillTileEntity extends TileEntitySimpleFluidMachine {
 	 * @param tagRoot An NBT tag
 	 */
 	@Override
-	public void load(net.minecraft.block.BlockState state, final CompoundNBT tagRoot) {
-		super.load(state, tagRoot);
+	public void load(final CompoundTag tagRoot) {
+		super.load(tagRoot);
 		if (tagRoot.contains("InputTank", 10)) {
-			CompoundNBT tankTag2 = tagRoot .getCompound("InputTank");
+			CompoundTag tankTag2 = tagRoot .getCompound("InputTank");
 			inputTank.readFromNBT(tankTag2);
 			if (tankTag2.contains("Empty", 1)) {
 				// empty the tank if NBT says its empty (not default behavior of Tank.readFromNBT(...) )
@@ -334,7 +334,7 @@ public class StillTileEntity extends TileEntitySimpleFluidMachine {
 		int fluidID2 = dataFields[DATAFIELD_FLUID_ID2];
 		int fluidVolume2 = dataFields[DATAFIELD_FLUID_VOLUME2];
 		if (fluidVolume1 <= 0) {
-			inputTank.setFluid(new FluidStack(net.minecraft.fluid.Fluids.WATER, 0));
+			inputTank.setFluid(new FluidStack(net.minecraft.world.level.material.Fluids.WATER, 0));
 		} else {
 			Fluid fluid = FluidIdHelper.getFluid(fluidID1);
 			if (fluid != null) {
@@ -343,7 +343,7 @@ public class StillTileEntity extends TileEntitySimpleFluidMachine {
 			}
 		}
 		if (fluidVolume2 <= 0) {
-			getTank().setFluid(new FluidStack(net.minecraft.fluid.Fluids.WATER, 0));
+			getTank().setFluid(new FluidStack(net.minecraft.world.level.material.Fluids.WATER, 0));
 		} else {
 			Fluid fluid = FluidIdHelper.getFluid(fluidID2);
 			if (fluid != null) {
@@ -376,14 +376,14 @@ public class StillTileEntity extends TileEntitySimpleFluidMachine {
 	 */
 	public void prepareDataFieldsForSync() {
 		if (inputTank.getFluid() == null || inputTank.getFluidAmount() <= 0) {
-			dataFields[DATAFIELD_FLUID_ID1] = FluidIdHelper.getFluidId(net.minecraft.fluid.Fluids.WATER);
+			dataFields[DATAFIELD_FLUID_ID1] = FluidIdHelper.getFluidId(net.minecraft.world.level.material.Fluids.WATER);
 			dataFields[DATAFIELD_FLUID_VOLUME1] = 0;
 		} else {
 			dataFields[DATAFIELD_FLUID_ID1] = FluidIdHelper.getFluidId(inputTank.getFluid().getFluid());
 			dataFields[DATAFIELD_FLUID_VOLUME1] = inputTank.getFluidAmount();
 		}
 		if (getTank().getFluid() == null || getTank().getFluidAmount() <= 0) {
-			dataFields[DATAFIELD_FLUID_ID2] = FluidIdHelper.getFluidId(net.minecraft.fluid.Fluids.WATER);
+			dataFields[DATAFIELD_FLUID_ID2] = FluidIdHelper.getFluidId(net.minecraft.world.level.material.Fluids.WATER);
 			dataFields[DATAFIELD_FLUID_VOLUME2] = 0;
 		} else {
 			dataFields[DATAFIELD_FLUID_ID2] = FluidIdHelper.getFluidId(getTank().getFluid().getFluid());
@@ -394,13 +394,13 @@ public class StillTileEntity extends TileEntitySimpleFluidMachine {
 	}
 
 	@Override
-	public CompoundNBT createDataFieldUpdateTag() {
+	public CompoundTag createDataFieldUpdateTag() {
 		this.prepareDataFieldsForSync();
-		CompoundNBT nbtTag = new CompoundNBT();
-		CompoundNBT inputTankTag = new CompoundNBT();
+		CompoundTag nbtTag = new CompoundTag();
+		CompoundTag inputTankTag = new CompoundTag();
 		inputTank.writeToNBT(inputTankTag);
 		nbtTag.put("InputTank", inputTankTag);
-		CompoundNBT outputTankTag = new CompoundNBT();
+		CompoundTag outputTankTag = new CompoundTag();
 		getTank().writeToNBT(outputTankTag);
 		nbtTag.put("Tank", outputTankTag);
 		nbtTag.putShort("burnTime", this.burnTime);
@@ -410,10 +410,10 @@ public class StillTileEntity extends TileEntitySimpleFluidMachine {
 	}
 
 	@Override
-	public void readDataFieldUpdateTag(CompoundNBT tag) {
+	public void readDataFieldUpdateTag(CompoundTag tag) {
 		boolean usedFluidNbt = false;
 		if (tag .contains("InputTank", 10)) {
-			CompoundNBT inputTankTag = tag .getCompound("InputTank");
+			CompoundTag inputTankTag = tag .getCompound("InputTank");
 			inputTank.readFromNBT(inputTankTag);
 			if (inputTankTag.contains("Empty", 1)) {
 				inputTank.setFluid(null);
@@ -421,7 +421,7 @@ public class StillTileEntity extends TileEntitySimpleFluidMachine {
 			usedFluidNbt = true;
 		}
 		if (tag .contains("Tank", 10)) {
-			CompoundNBT outputTankTag = tag .getCompound("Tank");
+			CompoundTag outputTankTag = tag .getCompound("Tank");
 			getTank().readFromNBT(outputTankTag);
 			if (outputTankTag.contains("Empty", 1)) {
 				getTank().setFluid(null);

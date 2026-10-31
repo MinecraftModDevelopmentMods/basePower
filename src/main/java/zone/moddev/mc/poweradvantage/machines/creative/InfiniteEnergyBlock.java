@@ -3,11 +3,11 @@ package zone.moddev.mc.poweradvantage.machines.creative;
 import cyano.poweradvantage.api.ConduitType;
 import cyano.poweradvantage.api.PoweredEntity;
 import cyano.poweradvantage.api.simple.BlockSimplePowerMachine;
-import net.minecraft.block.material.Material;
-import net.minecraft.block.BlockState;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
-import net.minecraft.world.IBlockReader;
+import net.minecraft.world.level.material.Material;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.BlockGetter;
 
 public class InfiniteEnergyBlock extends BlockSimplePowerMachine {
 
@@ -16,8 +16,8 @@ public class InfiniteEnergyBlock extends BlockSimplePowerMachine {
 	}
 
 	@Override
-	public PoweredEntity newBlockEntity(IBlockReader world) {
-		return new InfiniteEnergyTileEntity(this.getTypes()[0]);
+	public PoweredEntity newBlockEntity(net.minecraft.core.BlockPos pos, net.minecraft.world.level.block.state.BlockState state) {
+		return new InfiniteEnergyTileEntity(pos, state, this.getTypes()[0]);
 	}
 
 	@Override
@@ -26,7 +26,7 @@ public class InfiniteEnergyBlock extends BlockSimplePowerMachine {
 	}
 
 	@Override
-	public int getAnalogOutputSignal(BlockState bs, World world, BlockPos coord) {
+	public int getAnalogOutputSignal(BlockState bs, Level world, BlockPos coord) {
 		return 0;
 	}
 

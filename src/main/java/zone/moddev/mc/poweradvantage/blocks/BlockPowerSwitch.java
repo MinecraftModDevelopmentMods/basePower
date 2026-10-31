@@ -4,15 +4,15 @@ import cyano.poweradvantage.api.ConduitType;
 import cyano.poweradvantage.api.ITypedConduit;
 import cyano.poweradvantage.api.PowerConnectorContext;
 import zone.moddev.mc.poweradvantage.conduitnetwork.ConduitRegistry;
-import net.minecraft.block.Block;
-import net.minecraft.block.material.Material;
-import net.minecraft.state.BooleanProperty;
-import net.minecraft.state.StateContainer;
-import net.minecraft.block.BlockState;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.Explosion;
-import net.minecraft.world.IBlockReader;
-import net.minecraft.world.World;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.material.Material;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Explosion;
+import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.Level;
 
 /**
  * This block class is a user-friendly power switch for turning power on and off. You do not need to 
@@ -54,7 +54,7 @@ public class BlockPowerSwitch extends Block implements ITypedConduit {
 	 * Creates a blockstate
 	 */
 	@Override
-	protected void createBlockStateDefinition(StateContainer.Builder<Block, BlockState> builder) {
+	protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
 		builder.add(ACTIVE);
 	}
 
@@ -118,7 +118,7 @@ public class BlockPowerSwitch extends Block implements ITypedConduit {
 	 * Override of default block behavior
 	 */
 	@Override
-	public void onPlace(final BlockState state, final World world, final BlockPos coord, final BlockState oldState, final boolean isMoving) {
+	public void onPlace(final BlockState state, final Level world, final BlockPos coord, final BlockState oldState, final boolean isMoving) {
 		super.onPlace(state, world, coord, oldState, isMoving);
 		ConduitRegistry.getInstance().conduitBlockPlacedEvent(world, coord, getTypes());
 	}
@@ -127,7 +127,7 @@ public class BlockPowerSwitch extends Block implements ITypedConduit {
 	 * This method is called when the block is removed from the world by an entity.
 	 */
 	@Override
-	public void onRemove(BlockState state, World w, BlockPos coord, BlockState newState, boolean isMoving) {
+	public void onRemove(BlockState state, Level w, BlockPos coord, BlockState newState, boolean isMoving) {
 		if (state.getBlock() != newState.getBlock()) {
 			ConduitRegistry.getInstance().conduitBlockRemovedEvent(w, coord, getTypes());
 		}
@@ -138,7 +138,7 @@ public class BlockPowerSwitch extends Block implements ITypedConduit {
 	 * This method is called when the block is destroyed by an explosion.
 	 */
 	@Override
-	public void wasExploded(World w, BlockPos coord, Explosion boom) {
+	public void wasExploded(Level w, BlockPos coord, Explosion boom) {
 		super.wasExploded(w, coord, boom);
 		ConduitRegistry.getInstance().conduitBlockRemovedEvent(w, coord, getTypes());
 	}
@@ -146,9 +146,9 @@ public class BlockPowerSwitch extends Block implements ITypedConduit {
 	/**
 	 * Called when a neighboring block changes.
 	 */
-	public void onNeighborChange(IBlockReader w, BlockPos pos, BlockPos neighbor) {
-		if (w instanceof World) {
-			World world = (World) w;
+	public void onNeighborChange(BlockGetter w, BlockPos pos, BlockPos neighbor) {
+		if (w instanceof Level) {
+			Level world = (Level) w;
 			BlockState state = world.getBlockState(pos);
 			// redstone power given or taken
 			boolean activated = !world.hasNeighborSignal(pos);
@@ -162,7 +162,7 @@ public class BlockPowerSwitch extends Block implements ITypedConduit {
 	}
 
 	@Override
-	public void neighborChanged(BlockState state, World world, BlockPos pos, Block block, BlockPos fromPos, boolean isMoving) {
+	public void neighborChanged(BlockState state, Level world, BlockPos pos, Block block, BlockPos fromPos, boolean isMoving) {
 		onNeighborChange(world, pos, pos);
 	}
 

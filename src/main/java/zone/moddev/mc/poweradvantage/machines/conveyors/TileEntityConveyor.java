@@ -1,27 +1,26 @@
 package zone.moddev.mc.poweradvantage.machines.conveyors;
 
 import zone.moddev.mc.poweradvantage.util.InventoryWrapper;
-import net.minecraft.block.BlockState;
-import net.minecraft.entity.item.ItemEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.inventory.IInventory;
-import net.minecraft.inventory.ISidedInventory;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.nbt.ListNBT;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.tileentity.HopperTileEntity;
-import net.minecraft.tileentity.TileEntityType;
-import net.minecraft.util.Direction;
-import net.minecraft.tileentity.ITickableTileEntity;
-import net.minecraft.util.math.AxisAlignedBB;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.text.TextComponent;
-import net.minecraft.util.text.StringTextComponent;
-import net.minecraft.util.text.TranslationTextComponent;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.inventory.container.INamedContainerProvider;
-import net.minecraft.world.World;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.Container;
+import net.minecraft.world.WorldlyContainer;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.HopperBlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.core.Direction;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.BaseComponent;
+import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.MenuProvider;
+import net.minecraft.world.level.Level;
 import zone.moddev.mc.poweradvantage.PowerAdvantage;
 
 import java.util.Arrays;
@@ -29,7 +28,7 @@ import java.util.List;
 import java.util.Random;
 import zone.moddev.mc.poweradvantage.init.Entities;
 
-public class TileEntityConveyor extends TileEntity implements ITickableTileEntity, ISidedInventory, net.minecraft.util.INameable {
+public class TileEntityConveyor extends BlockEntity implements WorldlyContainer, net.minecraft.world.Nameable {
     private final zone.moddev.mc.poweradvantage.util.MachineCapabilities machineCapabilities =
             new zone.moddev.mc.poweradvantage.util.MachineCapabilities(this);
 
@@ -42,12 +41,12 @@ public class TileEntityConveyor extends TileEntity implements ITickableTileEntit
         return local.isPresent() ? local : super.getCapability(capability, face);
     }
 
-    @Override protected void invalidateCaps() {
+    @Override public void invalidateCaps() {
         if (machineCapabilities != null) machineCapabilities.invalidate();
         super.invalidateCaps();
     }
 
-    @Override protected void reviveCaps() {
+    @Override public void reviveCaps() {
         super.reviveCaps();
         if (machineCapabilities != null) machineCapabilities.revive();
     }
@@ -67,19 +66,18 @@ public class TileEntityConveyor extends TileEntity implements ITickableTileEntit
 	protected final int transferInvterval = 7;
 	
 	
-	public TileEntityConveyor(){
-		this(Entities.CONVEYOR, 1);
+	public TileEntityConveyor(BlockPos pos, BlockState state){
+		this(Entities.CONVEYOR, pos, state, 1);
 	}
 	
-	protected TileEntityConveyor(TileEntityType<?> type, int inventorySize){
-		super(type);
+	protected TileEntityConveyor(BlockEntityType<?> type, BlockPos pos, BlockState state, int inventorySize){
+		super(type, pos, state);
 		inventory = new ItemStack[inventorySize];
 	}
 	
 	
-	@Override
 	public void tick() {
-		World w = getLevel();
+		Level w = getLevel();
 		if(w.isClientSide) return;
 		if(transferCooldown > 0) transferCooldown--;
 		if(transferCooldown == 0){
@@ -90,10 +88,10 @@ public class TileEntityConveyor extends TileEntity implements ITickableTileEntit
 			Direction myDir = dir;
 			Direction theirDir = dir.getOpposite();
 			BlockPos targetPos = getBlockPos().relative(myDir);
-			TileEntity target = w.getBlockEntity(targetPos);
+			BlockEntity target = w.getBlockEntity(targetPos);
 			if(target != null) {
-				if( target instanceof IInventory){
-					ISidedInventory them = InventoryWrapper.wrap(HopperTileEntity.getContainerAt(getLevel(),targetPos.getX(), targetPos.getY(), targetPos.getZ()));
+				if( target instanceof Container){
+					WorldlyContainer them = InventoryWrapper.wrap(HopperBlockEntity.getContainerAt(getLevel(), targetPos));
 
 					if(transferItem(this,myDir,them,theirDir)){
 						transferCooldown = transferInvterval;
@@ -108,7 +106,7 @@ public class TileEntityConveyor extends TileEntity implements ITickableTileEntit
 			BlockPos upstreamBlock = getBlockPos().relative(myDir);
 			if(w.isEmptyBlock(upstreamBlock)){
 				// grab items sitting on the ground behind the conveyor
-				List<ItemEntity> list = w.getEntitiesOfClass(ItemEntity.class, new AxisAlignedBB(
+				List<ItemEntity> list = w.getEntitiesOfClass(ItemEntity.class, new AABB(
 						upstreamBlock.getX(), upstreamBlock.getY(), upstreamBlock.getZ(), 
 						upstreamBlock.getX()+1, upstreamBlock.getY()+1, upstreamBlock.getZ()+1));
 				if(!list.isEmpty()){
@@ -125,7 +123,7 @@ public class TileEntityConveyor extends TileEntity implements ITickableTileEntit
 								getInventory()[0].grow(1);
 							}
 							if(entityStack.isEmpty()){
-								e.remove();
+								e.discard();
 							} else {
 								e.setItem(entityStack);
 							}
@@ -136,8 +134,8 @@ public class TileEntityConveyor extends TileEntity implements ITickableTileEntit
 			} else {
 				target = w.getBlockEntity(upstreamBlock);
 				if(target != null){
-					if( target instanceof IInventory){
-						ISidedInventory them = InventoryWrapper.wrap(HopperTileEntity.getContainerAt(getLevel(),upstreamBlock.getX(), upstreamBlock.getY(), upstreamBlock.getZ()));
+					if( target instanceof Container){
+						WorldlyContainer them = InventoryWrapper.wrap(HopperBlockEntity.getContainerAt(getLevel(), upstreamBlock));
 						if(transferItem(them,theirDir,this,myDir)){
 							this.setChanged();
 						}
@@ -153,7 +151,7 @@ public class TileEntityConveyor extends TileEntity implements ITickableTileEntit
 	}
 
 	
-	protected static boolean canInsertItemInto(ItemStack item, ISidedInventory dest, Direction destFace){
+	protected static boolean canInsertItemInto(ItemStack item, WorldlyContainer dest, Direction destFace){
 		if(item == null || item.isEmpty() || item.getItem() == null || isLocked(dest)){
 			return false;
 		}
@@ -173,7 +171,7 @@ public class TileEntityConveyor extends TileEntity implements ITickableTileEntit
 		return false;
 	}
 	
-	protected static boolean transferItem(ISidedInventory src, Direction srcFace, ISidedInventory dest, Direction destFace){
+	protected static boolean transferItem(WorldlyContainer src, Direction srcFace, WorldlyContainer dest, Direction destFace){
 		if(isLocked(src) || isLocked(dest)){
 			return false;
 		}
@@ -245,14 +243,14 @@ public class TileEntityConveyor extends TileEntity implements ITickableTileEntit
 	 * @param tagRoot The root of the NBT
 	 */
 	@Override
-	public void load(net.minecraft.block.BlockState state, final CompoundNBT tagRoot) {
-		super.load(state, tagRoot);
+	public void load(final CompoundTag tagRoot) {
+		super.load(tagRoot);
 		ItemStack[] inventory = this.getInventory();
 		if(inventory != null ){
 			Arrays.fill(inventory, null);
-			final ListNBT nbttaglist = tagRoot.getList("Items", 10);
+			final ListTag nbttaglist = tagRoot.getList("Items", 10);
 			for (int i = 0; i < nbttaglist.size() && i < inventory.length; ++i) {
-				final CompoundNBT nbttagcompound1 = nbttaglist .getCompound(i);
+				final CompoundTag nbttagcompound1 = nbttaglist .getCompound(i);
 				final byte n = nbttagcompound1.getByte("Slot");
 				if (n >= 0 && n < inventory.length) {
 					ItemStack stack = ItemStack.of(nbttagcompound1);
@@ -272,14 +270,14 @@ public class TileEntityConveyor extends TileEntity implements ITickableTileEntit
 	 * @param tagRoot The root of the NBT
 	 */
 	@Override
-	public CompoundNBT save(final CompoundNBT tagRoot) {
+	public CompoundTag save(final CompoundTag tagRoot) {
 		super .save(tagRoot);
 		ItemStack[] inventory = this.getInventory();
 		if(inventory != null ){
-			final ListNBT nbttaglist = new ListNBT();
+			final ListTag nbttaglist = new ListTag();
 			for (int i = 0; i < inventory.length; ++i) {
 				if (inventory[i] != null && !inventory[i].isEmpty()) {
-					final CompoundNBT nbttagcompound1 = new CompoundNBT();
+					final CompoundTag nbttagcompound1 = new CompoundTag();
 					nbttagcompound1.putByte("Slot", (byte)i);
 					inventory[i] .save(nbttagcompound1);
 					nbttaglist .add(nbttagcompound1);
@@ -301,7 +299,7 @@ public class TileEntityConveyor extends TileEntity implements ITickableTileEntit
 	 * @param newSate State after change
 	 * @return true if this TileEntity should be invalidated (deleted and recreated), false otherwise
 	 */
-	public boolean shouldRefresh(World world, BlockPos pos, BlockState oldState, BlockState newSate) {
+	public boolean shouldRefresh(Level world, BlockPos pos, BlockState oldState, BlockState newSate) {
 		return oldState.getBlock() != newSate.getBlock();
 	}
 	
@@ -320,7 +318,7 @@ public class TileEntityConveyor extends TileEntity implements ITickableTileEntit
 	}
 
 	@Override
-	public void stopOpen(PlayerEntity p) {
+	public void stopOpen(Player p) {
 		// do nothing
 	}
 
@@ -380,7 +378,7 @@ public class TileEntityConveyor extends TileEntity implements ITickableTileEntit
 	}
 
 	@Override
-	public boolean stillValid(final PlayerEntity p_isUseableByPlayer_1_) {
+	public boolean stillValid(final Player p_isUseableByPlayer_1_) {
 		return this.level.getBlockEntity(this.worldPosition)
 				== this && p_isUseableByPlayer_1_.distanceToSqr(
 						(double)this.worldPosition.getX() + 0.5,
@@ -389,7 +387,7 @@ public class TileEntityConveyor extends TileEntity implements ITickableTileEntit
 	}
 
 	@Override
-	public void startOpen(PlayerEntity arg0) {
+	public void startOpen(Player arg0) {
 		// do nothing
 	}
 
@@ -412,8 +410,8 @@ public class TileEntityConveyor extends TileEntity implements ITickableTileEntit
 	}
 
 	@Override
-	public TextComponent getDisplayName() {
-		return (TextComponent) getName();
+	public BaseComponent getDisplayName() {
+		return (BaseComponent) getName();
 	}
 
 	private String customName = null;
@@ -423,14 +421,14 @@ public class TileEntityConveyor extends TileEntity implements ITickableTileEntit
 	 * given by the player (i.e. with an anvil)
 	 */
 	@Override
-	public ITextComponent getName() {
-		return this.hasCustomName() ? new StringTextComponent(this.customName)
-				: new TranslationTextComponent(this.getDescriptionId());
+	public Component getName() {
+		return this.hasCustomName() ? new TextComponent(this.customName)
+				: new TranslatableComponent(this.getDescriptionId());
 	}
 
 	@Override
-	public ITextComponent getCustomName() {
-		return this.hasCustomName() ? new StringTextComponent(this.customName) : null;
+	public Component getCustomName() {
+		return this.hasCustomName() ? new TextComponent(this.customName) : null;
 	}
 	
 	/**

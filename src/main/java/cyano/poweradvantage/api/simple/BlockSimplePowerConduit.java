@@ -4,19 +4,19 @@ import cyano.poweradvantage.api.ConduitBlock;
 import cyano.poweradvantage.api.ConduitType;
 import cyano.poweradvantage.api.PowerConnectorContext;
 import zone.moddev.mc.poweradvantage.util.PowerHelper;
-import net.minecraft.block.Block;
-import net.minecraft.block.material.Material;
-import net.minecraft.block.BlockState;
-import net.minecraft.item.BlockItemUseContext;
-import net.minecraft.pathfinding.PathType;
-import net.minecraft.state.BooleanProperty;
-import net.minecraft.state.StateContainer;
-import net.minecraft.util.Direction;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.shapes.VoxelShape;
-import net.minecraft.util.math.shapes.VoxelShapes;
-import net.minecraft.world.IBlockReader;
-import net.minecraft.world.IWorld;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.material.Material;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.level.pathfinder.PathComputationType;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.core.Direction;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.shapes.VoxelShape;
+import net.minecraft.world.phys.shapes.Shapes;
+import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.LevelAccessor;
 
 public abstract class BlockSimplePowerConduit extends ConduitBlock {
     public static final BooleanProperty SOUTH = BooleanProperty.create("south");
@@ -58,22 +58,22 @@ public abstract class BlockSimplePowerConduit extends ConduitBlock {
     @Override public boolean isPowerSource(ConduitType conduitType) { return false; }
 
     @Override
-    protected void createBlockStateDefinition(StateContainer.Builder<Block, BlockState> builder) {
+    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         builder.add(WEST, DOWN, SOUTH, EAST, UP, NORTH);
     }
 
     @Override
-    public BlockState getStateForPlacement(BlockItemUseContext context) {
+    public BlockState getStateForPlacement(BlockPlaceContext context) {
         return connectedState(defaultBlockState(), context.getLevel(), context.getClickedPos());
     }
 
     @Override
     public BlockState updateShape(BlockState state, Direction facing, BlockState facingState,
-            IWorld world, BlockPos currentPos, BlockPos facingPos) {
+            LevelAccessor world, BlockPos currentPos, BlockPos facingPos) {
         return state.setValue(property(facing), canConnectTo(world, currentPos, state, facing, facingPos));
     }
 
-    private BlockState connectedState(BlockState state, IBlockReader world, BlockPos pos) {
+    private BlockState connectedState(BlockState state, BlockGetter world, BlockPos pos) {
         return state.setValue(WEST, canConnectTo(world, pos, state, Direction.WEST, pos.west()))
                 .setValue(DOWN, canConnectTo(world, pos, state, Direction.DOWN, pos.below()))
                 .setValue(SOUTH, canConnectTo(world, pos, state, Direction.SOUTH, pos.south()))
@@ -94,7 +94,7 @@ public abstract class BlockSimplePowerConduit extends ConduitBlock {
         }
     }
 
-    protected boolean canConnectTo(IBlockReader world, BlockPos thisBlock, BlockState state,
+    protected boolean canConnectTo(BlockGetter world, BlockPos thisBlock, BlockState state,
             Direction face, BlockPos otherBlock) {
         for (ConduitType type : types) {
             if (PowerHelper.areConnectable(new PowerConnectorContext(type, world, state, thisBlock, face))) {
@@ -105,7 +105,7 @@ public abstract class BlockSimplePowerConduit extends ConduitBlock {
     }
 
     @Override
-    public VoxelShape getShape(BlockState state, IBlockReader world, BlockPos pos, net.minecraft.util.math.shapes.ISelectionContext context) {
+    public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, net.minecraft.world.phys.shapes.CollisionContext context) {
         double min = 8.0D - pipeRadius * 16.0D;
         double max = 8.0D + pipeRadius * 16.0D;
         VoxelShape shape = Block.box(min, min, min, max, max, max);
@@ -114,23 +114,23 @@ public abstract class BlockSimplePowerConduit extends ConduitBlock {
             if (!state.getValue(property(facing))) continue;
             connected = true;
             switch (facing) {
-                case DOWN: shape = VoxelShapes.or(shape, Block.box(min, 0, min, max, min, max)); break;
-                case UP: shape = VoxelShapes.or(shape, Block.box(min, max, min, max, 16, max)); break;
-                case NORTH: shape = VoxelShapes.or(shape, Block.box(min, min, 0, max, max, min)); break;
-                case SOUTH: shape = VoxelShapes.or(shape, Block.box(min, min, max, max, max, 16)); break;
-                case WEST: shape = VoxelShapes.or(shape, Block.box(0, min, min, min, max, max)); break;
-                case EAST: shape = VoxelShapes.or(shape, Block.box(max, min, min, 16, max, max)); break;
+                case DOWN: shape = Shapes.or(shape, Block.box(min, 0, min, max, min, max)); break;
+                case UP: shape = Shapes.or(shape, Block.box(min, max, min, max, 16, max)); break;
+                case NORTH: shape = Shapes.or(shape, Block.box(min, min, 0, max, max, min)); break;
+                case SOUTH: shape = Shapes.or(shape, Block.box(min, min, max, max, max, 16)); break;
+                case WEST: shape = Shapes.or(shape, Block.box(0, min, min, min, max, max)); break;
+                case EAST: shape = Shapes.or(shape, Block.box(max, min, min, 16, max, max)); break;
             }
         }
         if (!connected) {
-            shape = VoxelShapes.or(shape, Block.box(0, min, min, 16, max, max));
-            shape = VoxelShapes.or(shape, Block.box(min, min, 0, max, max, 16));
+            shape = Shapes.or(shape, Block.box(0, min, min, 16, max, max));
+            shape = Shapes.or(shape, Block.box(min, min, 0, max, max, 16));
         }
         return shape;
     }
 
     public boolean isFullCube(BlockState state) { return false; }
-    @Override public boolean isPathfindable(BlockState state, IBlockReader world, BlockPos pos, PathType type) { return false; }
+    @Override public boolean isPathfindable(BlockState state, BlockGetter world, BlockPos pos, PathComputationType type) { return false; }
 
     /** Legacy metadata bridge retained for migration tests. */
     public int getMetaFromState(BlockState state) { return 0; }
