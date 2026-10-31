@@ -109,13 +109,16 @@ public abstract class PoweredEntity extends BlockEntity implements IPowerMachine
 		if (newValue < 0) {
 			float delta = -1 * this.getEnergy(type);
 			this.setEnergy(0, type);
+			if (delta != 0) markMachineStateUnsaved();
 			return delta;
 		} else if (newValue > this.getEnergyCapacity(type)) {
 			float delta = this.getEnergyCapacity(type) - this.getEnergy(type);
 			this.setEnergy(this.getEnergyCapacity(type), type);
+			if (delta != 0) markMachineStateUnsaved();
 			return delta;
 		}
 		this.setEnergy(newValue, type);
+		if (energy != 0) markMachineStateUnsaved();
 		return energy;
 	}
 
@@ -202,6 +205,17 @@ public abstract class PoweredEntity extends BlockEntity implements IPowerMachine
 		if (this.isServer() && ((this.getLevel().getGameTime() + this.getTickOffset()) % powerUpdateInterval == 0)) {
 			this.powerUpdate();
 		}
+		markMachineStateUnsaved();
+	}
+
+	private void markMachineStateUnsaved() {
+		if (!(this.level instanceof net.minecraft.server.level.ServerLevel) || isRemoved()) return;
+		BlockPos pos = getBlockPos();
+		net.minecraft.world.level.chunk.LevelChunk chunk = ((net.minecraft.server.level.ServerLevel) this.level)
+				.getChunkSource().getChunkNow(pos.getX() >> 4, pos.getZ() >> 4);
+		// Timers and externally supplied energy can change without a GUI sync.
+		// Mark the loaded chunk only; do not load neighbours or notify comparators.
+		if (chunk != null) chunk.setUnsaved(true);
 	}
 
 	private void refreshConduitNetworkAfterLoad() {
