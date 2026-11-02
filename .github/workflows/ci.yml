@@ -1,4 +1,4 @@
-name: Power Advantage 1.10 CI
+name: basePower 1.10 CI
 
 on:
   push:
@@ -13,7 +13,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: poweradvantage-1.10-${{ github.workflow }}-${{ github.ref }}
+  group: basepower-1.10-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -81,16 +81,32 @@ jobs:
           -PoreSpawnDeobfJar=${{ steps.orespawn.outputs.jar }}
           --no-daemon --stacktrace
 
+      - name: Check the isolated test harness
+        run: >-
+          ./gradlew -p test-rig clean check assemble
+          -PpowerAdvantageDeobfJar=${{ github.workspace }}/build/libs-dev/basePower-2.4.4.110021-deobf.jar
+          --no-daemon --stacktrace
+
+      - name: Install Python for migration contract tests
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.12.14'
+
+      - name: Check migration and progression contracts
+        run: |
+          python -m pip install -r test-rig/migration/requirements.txt
+          python -m unittest discover -s test-rig/migration -p 'test_*.py'
+
       - name: Upload audited release candidate
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: PowerAdvantage-1.10.2-${{ github.sha }}
+          name: basePower-1.10.2-${{ github.sha }}
           if-no-files-found: error
           retention-days: 30
           path: |
-            build/libs/PowerAdvantage-2.4.3.110021.jar
-            build/libs/PowerAdvantage-2.4.3.110021-sources.jar
-            build/libs/PowerAdvantage-2.4.3.110021-javadoc.jar
+            build/libs/basePower-2.4.4.110021.jar
+            build/libs/basePower-2.4.4.110021-sources.jar
+            build/libs/basePower-2.4.4.110021-javadoc.jar
             build/release/SHA256SUMS
             CHANGELOG.txt
 
@@ -98,7 +114,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: PowerAdvantage-1.10.2-diagnostics-${{ github.sha }}
+          name: basePower-1.10.2-diagnostics-${{ github.sha }}
           if-no-files-found: ignore
           retention-days: 14
           path: |
@@ -106,3 +122,5 @@ jobs:
             build/reports/**
             build/*-run/logs/**
             build/problems/**
+            test-rig/build/gradle/test-results/**
+            test-rig/build/gradle/reports/**

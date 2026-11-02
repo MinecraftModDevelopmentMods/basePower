@@ -35,14 +35,14 @@ public final class ConduitRegistry {
 
 	public static float transmitPowerToConsumers(float availableEnergy, ConduitType powerType,
 			byte minimumPriority, TileEntity provider) {
-		return zone.moddev.mc.poweradvantage.conduitnetwork.ConduitRegistry.transmitPowerToConsumers(
+		return zone.moddev.mc.basepower.conduitnetwork.ConduitRegistry.transmitPowerToConsumers(
 			availableEnergy, powerType, minimumPriority, provider);
 	}
 
 	public static float transmitPowerToConsumers(float availableEnergy, ConduitType networkType,
 			ConduitType powerType, byte minimumPriority, World world, BlockPos sourcePosition,
 			Object provider) {
-		return zone.moddev.mc.poweradvantage.conduitnetwork.ConduitRegistry.transmitPowerToConsumers(
+		return zone.moddev.mc.basepower.conduitnetwork.ConduitRegistry.transmitPowerToConsumers(
 			availableEnergy, networkType, powerType, minimumPriority, world, sourcePosition, provider);
 	}
 
@@ -66,7 +66,7 @@ public final class ConduitRegistry {
 		delegate().conduitBlockRemovedEvent(world, dimension, position, types);
 	}
 
-	private zone.moddev.mc.poweradvantage.conduitnetwork.ConduitRegistry delegate() {
-		return zone.moddev.mc.poweradvantage.conduitnetwork.ConduitRegistry.getInstance();
+	private zone.moddev.mc.basepower.conduitnetwork.ConduitRegistry delegate() {
+		return zone.moddev.mc.basepower.conduitnetwork.ConduitRegistry.getInstance();
 	}
 }

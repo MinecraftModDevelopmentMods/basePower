@@ -18,6 +18,7 @@ This handbook serves two audiences at once. A player should be able to build and
 | [Inspector's Register of Possible Legacy Bugs](possible-legacy-bugs.md) | Intent-versus-code discrepancies waiting for gameplay investigation |
 | [MMD Material And Fluid Compatibility](mmd-material-fluid-compatibility.md) | OreSpawn ownership, migration authority, crude-oil aliases, and Ore Dictionary standards |
 | [Advantage Works test rig](../../test-rig/README.md) | Source-controlled generator and runner for the 20 commissioning cards |
+| [Recipe Progression Checks](recipe-progression-checks.md) | Finite raw-material routes, real crafting/trading, returned containers and a restart-tested starter plant |
 
 ## Edition authority
 

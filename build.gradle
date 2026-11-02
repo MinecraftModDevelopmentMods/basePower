@@ -34,7 +34,7 @@ tasks.register('clientResourceProbeJar', Jar) {
 
 group = project.mod_group
 version = project.mod_version
-base.archivesName = 'PowerAdvantage'
+base.archivesName = 'basePower'
 
 def versionParts = project.mod_version.toString().tokenize('.')
 if (versionParts.size() != 4 || !versionParts.every { it ==~ /\d+/ }) {
@@ -310,7 +310,7 @@ tasks.register('verifyReleaseConfiguration') {
     group = 'verification'
     description = 'Validates release identity, target metadata, and optional integration policy.'
     doLast {
-        if (project.mod_version != '2.4.3.110021') {
+        if (project.mod_version != '2.4.4.110021') {
             throw new GradleException("Unexpected PowerAdvantage release version: ${project.mod_version}")
         }
         if (project.minecraft_version != '1.10.2'
@@ -325,10 +325,10 @@ tasks.register('verifyReleaseConfiguration') {
                 || project.gradle_java_version != '17') {
             throw new GradleException('Unexpected release dispatcher target metadata')
         }
-        if (project.mod_id != 'poweradvantage'
-                || project.group.toString() != 'zone.moddev.mc.poweradvantage'
-                || base.archivesName.get() != 'PowerAdvantage'
-                || project.curseforge_project_id != '240982') {
+        if (project.mod_id != 'basepower'
+                || project.group.toString() != 'zone.moddev.mc.basepower'
+                || base.archivesName.get() != 'basePower'
+                || project.curseforge_project_id != '0') {
             throw new GradleException('Unexpected Forge, Maven, archive, or CurseForge identity')
         }
         if (project.cf_requirements != 'base-metals,mmd-orespawn'
@@ -356,10 +356,10 @@ tasks.register('verifyReleaseConfiguration') {
             }
         }
         String mainSource = file(
-                'src/main/java/zone/moddev/mc/poweradvantage/PowerAdvantage.java').getText('UTF-8')
-        if (!mainSource.contains('MODID = "poweradvantage"')
-                || !mainSource.contains('VERSION = "2.4.3.110021"')
-                || !mainSource.contains('required-after:orespawn@[4.0.6,5.0.0);after:basemetals')) {
+                'src/main/java/zone/moddev/mc/basepower/PowerAdvantage.java').getText('UTF-8')
+        if (!mainSource.contains('MODID = "basepower"')
+                || !mainSource.contains('VERSION = "2.4.4.110021"')
+                || !mainSource.contains('required-before:orespawn@[4.0.6,5.0.0)')) {
             throw new GradleException('PowerAdvantage source identity or dependency policy changed')
         }
         if (!file('src/main/java/cyano/poweradvantage/api/PoweredEntity.java').isFile()) {
@@ -367,8 +367,22 @@ tasks.register('verifyReleaseConfiguration') {
         }
         def metadata = new JsonSlurper().parse(file('src/main/resources/mcmod.info'))
         def mod = metadata instanceof List ? metadata.first() : metadata
-        if (mod.modid != 'poweradvantage') {
+        if (mod.modid != 'basepower') {
             throw new GradleException('Source mcmod.info does not use the stable poweradvantage mod id')
+        }
+    }
+}
+
+def publicationTargetAllowed = { String projectId ->
+    (projectId ==~ /[1-9][0-9]*/) && projectId != '240982'
+}
+
+tasks.register('verifyPublicationTarget') {
+    group = 'verification'
+    description = 'Refuses publication until the new basePower CurseForge project is assigned.'
+    doLast {
+        if (!publicationTargetAllowed(project.curseforge_project_id.toString())) {
+            throw new GradleException('Assign the new basePower CurseForge project ID before publishing; never reuse Power Advantage 240982.')
         }
     }
 }
@@ -493,14 +507,14 @@ tasks.register('verifyReleaseArtifacts') {
         new ZipFile(mainJar).withCloseable { zip ->
             List<String> names = zip.entries().collect { it.name }
             ['mcmod.info', 'pack.mcmeta',
-             'zone/moddev/mc/poweradvantage/PowerAdvantage.class',
+             'zone/moddev/mc/basepower/PowerAdvantage.class',
              'cyano/poweradvantage/api/PoweredEntity.class',
              'cyano/poweradvantage/api/fluid/FluidNetworkApi.class',
              'com/mcmoddev/poweradvantage/math/Integer2D.class',
              'com/mcmoddev/poweradvantage/registry/ITileEntityGUI.class',
              'com/mcmoddev/poweradvantage/conduitnetwork/ConduitRegistry.class',
              'com/mcmoddev/poweradvantage/init/Fluids.class',
-             'assets/poweradvantage/lang/en_US.lang'].each { required ->
+             'assets/basepower/lang/en_US.lang'].each { required ->
                 if (!names.contains(required)) {
                     throw new GradleException("Release jar is missing ${required}")
                 }
@@ -557,7 +571,7 @@ tasks.register('verifyReleaseArtifacts') {
         }
 
         new ZipFile(new File(libs, expectedReleaseFiles.get()[1])).withCloseable { sourceZip ->
-            if (sourceZip.getEntry('zone/moddev/mc/poweradvantage/PowerAdvantage.java') == null
+            if (sourceZip.getEntry('zone/moddev/mc/basepower/PowerAdvantage.java') == null
                     || sourceZip.getEntry('cyano/poweradvantage/api/PoweredEntity.java') == null
                     || sourceZip.getEntry('cyano/poweradvantage/api/fluid/FluidNetworkApi.java') == null) {
                 throw new GradleException('Sources jar is missing implementation or legacy API sources')
@@ -598,6 +612,7 @@ tasks.register('writeReleaseChecksums') {
 tasks.register('verifyPreparedReleaseArtifacts') {
     group = 'verification'
     description = 'Audits an immutable release bundle before Maven publication.'
+    dependsOn tasks.named('verifyReleaseConfiguration')
     doLast {
         if (!preparedReleaseDir.isPresent()) {
             throw new GradleException('preparedReleaseDir is required for prepared artifact publication')
@@ -655,9 +670,9 @@ publishing {
                 artifact(tasks.named('javadocJar'))
             }
             pom {
-                name = 'Power Advantage'
+                name = 'basePower'
                 description = project.mod_description
-                url = 'https://github.com/MinecraftModDevelopmentMods/PowerAdvantage'
+                url = 'https://github.com/MinecraftModDevelopmentMods/basePower'
                 licenses {
                     license {
                         name = 'GNU Lesser General Public License, Version 3'
@@ -665,9 +680,9 @@ publishing {
                     }
                 }
                 scm {
-                    connection = 'scm:git:https://github.com/MinecraftModDevelopmentMods/PowerAdvantage.git'
-                    developerConnection = 'scm:git:ssh://git@github.com/MinecraftModDevelopmentMods/PowerAdvantage.git'
-                    url = 'https://github.com/MinecraftModDevelopmentMods/PowerAdvantage'
+                    connection = 'scm:git:https://github.com/MinecraftModDevelopmentMods/basePower.git'
+                    developerConnection = 'scm:git:ssh://git@github.com/MinecraftModDevelopmentMods/basePower.git'
+                    url = 'https://github.com/MinecraftModDevelopmentMods/basePower'
                 }
             }
         }
@@ -700,10 +715,69 @@ tasks.register('validateMavenReleaseCredentials') {
 }
 
 tasks.withType(PublishToMavenRepository).configureEach {
+    dependsOn tasks.named('verifyPublicationTarget')
+    dependsOn tasks.named('verifyReleaseConfiguration')
     dependsOn tasks.named('validateMavenReleaseCredentials')
     dependsOn preparedReleaseDir.isPresent()
             ? tasks.named('verifyPreparedReleaseArtifacts')
             : tasks.named('verifyReleaseArtifacts')
+}
+
+tasks.register('verifyPublicationGuards') {
+    group = 'verification'
+    description = 'Checks publication policy and task dependencies without executing publication.'
+    inputs.files('build.gradle', '.github/workflows/release-on-tag.yml')
+    doLast {
+        ['', '0', '240982', '-1', 'unassigned'].each { rejectedId ->
+            if (publicationTargetAllowed(rejectedId)) {
+                throw new GradleException("Publication target must reject '${rejectedId}'")
+            }
+        }
+        if (!publicationTargetAllowed('999999')) {
+            throw new GradleException('Publication target must accept an assigned non-legacy numeric ID')
+        }
+        if (publishing.publications.named('mavenJava', MavenPublication).get().pom.name.get() != 'basePower') {
+            throw new GradleException('Maven POM must use the basePower name')
+        }
+        def requireDependencies = { Task candidate, List<String> required ->
+            Set<String> actual = candidate.taskDependencies.getDependencies(candidate).collect { it.name } as Set
+            if (!actual.containsAll(required)) {
+                throw new GradleException("${candidate.name} is missing guards: ${required - actual}")
+            }
+        }
+        requireDependencies(tasks.named('verifyPreparedReleaseArtifacts').get(), ['verifyReleaseConfiguration'])
+        def publicationTasks = tasks.withType(PublishToMavenRepository).toList()
+        if (publicationTasks.isEmpty()) {
+            throw new GradleException('No external Maven publication task was inspected')
+        }
+        publicationTasks.each { publicationTask ->
+            requireDependencies(publicationTask, ['verifyPublicationTarget', 'verifyReleaseConfiguration',
+                    'validateMavenReleaseCredentials', preparedReleaseDir.isPresent()
+                            ? 'verifyPreparedReleaseArtifacts' : 'verifyReleaseArtifacts'])
+        }
+        // Inspect dependencies only; never invoke publication or its rejecting guard actions.
+        def pending = [tasks.named('check').get()]
+        Set<Task> inspected = [] as Set
+        while (!pending.isEmpty()) {
+            Task candidate = pending.remove(pending.size() - 1)
+            if (!inspected.add(candidate)) continue
+            if (candidate instanceof PublishToMavenRepository || candidate.name == 'verifyPublicationTarget') {
+                throw new GradleException("Normal check must not execute ${candidate.name}")
+            }
+            pending.addAll(candidate.taskDependencies.getDependencies(candidate))
+        }
+        String tagWorkflow = file('.github/workflows/release-on-tag.yml').readLines('UTF-8')
+                .collect { it.trim() }.join('\n')
+        String tagGuard = '''project_id="$(value curseforge_project_id)"
+if [[ ! "$project_id" =~ ^[1-9][0-9]*$ || "$project_id" == '240982' ]]; then
+echo "basePower publication requires a new assigned CurseForge project; refusing $project_id" >&2
+exit 1
+fi'''.replace('\r\n', '\n')
+        if (!tagWorkflow.contains(tagGuard)
+                || tagWorkflow.indexOf(tagGuard) > tagWorkflow.indexOf('successful_ci=')) {
+            throw new GradleException('Release tag must reject unassigned and legacy project IDs before checking CI')
+        }
+    }
 }
 
 idea {
@@ -837,7 +911,7 @@ tasks.register('verifyEclipseProductionClasspath') {
                     || contents.contains('src/test') || contents.contains('bin/test')) {
                 throw new GradleException("${name} does not isolate production code")
             }
-            if (!contents.contains('PROJECT_ATTR" value="PowerAdvantage"')) {
+            if (!contents.contains('PROJECT_ATTR" value="basePower"')) {
                 throw new GradleException("${name} targets the wrong Eclipse project")
             }
         }
@@ -846,6 +920,7 @@ tasks.register('verifyEclipseProductionClasspath') {
 
 tasks.named('check') {
     dependsOn tasks.named('verifyReleaseConfiguration')
+    dependsOn tasks.named('verifyPublicationGuards')
 }
 
 tasks.register('prepareGuiProbeLaunch') {

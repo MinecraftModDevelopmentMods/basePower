@@ -59,7 +59,7 @@ dependencies {
     runnerImplementation 'com.google.code.gson:gson:2.8.0'
     testImplementation 'junit:junit:4.13.2'
     compileOnly files(project.findProperty('powerAdvantageDeobfJar')
-            ?: '../build/libs-dev/PowerAdvantage-2.4.3.110021-deobf.jar')
+            ?: '../build/libs-dev/basePower-2.4.4.110021-deobf.jar')
 }
 
 tasks.named('processResources', ProcessResources) {
@@ -160,7 +160,7 @@ tasks.register('verifyHarnessIsolation') {
     group = 'verification'
     description = 'Confirms the PowerAdvantage release contains no test-harness content.'
     doLast {
-        File powerJar = file('../build/libs/PowerAdvantage-2.4.3.110021.jar')
+        File powerJar = file('../build/libs/basePower-2.4.4.110021.jar')
         if (!powerJar.isFile()) {
             throw new GradleException("Build PowerAdvantage first: ${powerJar}")
         }
@@ -179,4 +179,9 @@ tasks.register('verifyHarnessIsolation') {
 
 tasks.named('check') {
     dependsOn tasks.named('verifyHarnessIsolation')
+}
+
+tasks.named('test', Test) {
+    inputs.dir('profiles')
+    inputs.file('src/main/java/zone/moddev/mc/advantageworks/NativeSurvivalProgressionProbe.java')
 }

@@ -1,0 +1,53 @@
+language_support_goals=english (en_US,en_EN,en_CA,en_GB, en_AU, en_PT), spanish (es_MX,es_ES), chinese (zh_CN), japanese (ja_JA), portugese (pt_BR), german (de_DE), italian (it_IT), korean (ko_KR)
+nei.basepower.recipehandler.shapelessfurnace.name=Large Furnace (Shapeless)
+nei.basepower.recipehandler.shapedfurnace.name=Large Furnace (Shaped)
+
+tooltip.basepower.empty=Empty
+tooltip.basepower.buckets_of=%x buckets of %y
+
+itemGroup.basepower=basePower
+
+tile.basepower.fluid_drain.name=Drain
+tile.basepower.fluid_discharge.name=Discharge Grate
+tile.basepower.fluid_storage_tank.name=Portable Fluid Tank
+item.basepower.fluid_storage_tank_item.name=Storage Tank
+tile.basepower.fluid_pipe.name=Pipe
+
+tile.basepower.item_conveyor.name=Conveyor
+tile.basepower.item_filter_block.name=Block Filter Conveyor
+tile.basepower.item_filter_food.name=Food Filter Conveyor
+tile.basepower.item_filter_fuel.name=Fuel Filter Conveyor
+tile.basepower.item_filter_inventory.name=Filter Conveyor
+tile.basepower.item_filter_ore.name=Ore Filter Conveyor
+tile.basepower.item_filter_plant.name=Plantable Filter Conveyor
+tile.basepower.item_filter_smelt.name=Furnace Filter Conveyor
+tile.basepower.item_filter_overflow.name=Overflow Filter Conveyor
+tile.basepower.steel_frame.name=Steel Frame
+
+
+item.basepower.starch.name=Starch
+item.basepower.bioplastic_ingot.name=Bioplastic Ingot
+item.basepower.sprocket.name=Sprocket
+
+tile.basepower.fluid_metal_tank.name=Metal Fluid Tank
+item.basepower.rotator_tool.name=Rotation Wrench
+
+tile.basepower.infinite_steam.name=Unlimited Steam Power
+tile.basepower.infinite_electricity.name=Unlimited Electrical Power
+tile.basepower.infinite_quantum.name=Unlimited Quantum Power
+
+tile.basepower.crude_oil.name=Crude Oil
+fluid.basepower.crude_oil=Crude Oil
+item.bucket.crude_oil=Bucket of Crude Oil
+
+tile.basepower.still.name=Distillation Furnace
+
+tile.basepower.refined_oil.name=Refined Oil
+fluid.basepower.refined_oil=Refined Oil
+item.bucket.refined_oil=Bucket of Refined Oil
+tile.basepower.fluid_switch.name=Fluid Switch Valve
+
+tile.basepower.converter_rf_steam.name=Steam-RF Transformer
+tile.basepower.converter_rf_electricity.name=Electricity-RF Transformer
+tile.basepower.converter_rf_quantum.name=Quantum-RF Transformer
+tile.basepower.converter_tr_electricity.name=Electricity-EU Transformer

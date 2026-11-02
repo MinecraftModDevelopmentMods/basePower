@@ -1,4 +1,4 @@
-name: Validate Power Advantage release tag
+name: Validate basePower release tag
 
 on:
   push:
@@ -10,13 +10,13 @@ permissions:
   contents: read
 
 concurrency:
-  group: poweradvantage-release-tag-${{ github.ref_name }}
+  group: basepower-release-tag-${{ github.ref_name }}
   cancel-in-progress: false
 
 jobs:
   validate-release-tag:
     name: Validate tag for manual release confirmation
-    if: github.repository == 'MinecraftModDevelopmentMods/PowerAdvantage'
+    if: github.repository == 'MinecraftModDevelopmentMods/basePower'
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -37,6 +37,11 @@ jobs:
           minecraft_version="$(value minecraft_version)"
           loader_name="$(value loader_name)"
           loader_code="$(value loader_code)"
+          project_id="$(value curseforge_project_id)"
+          if [[ ! "$project_id" =~ ^[1-9][0-9]*$ || "$project_id" == '240982' ]]; then
+            echo "basePower publication requires a new assigned CurseForge project; refusing $project_id" >&2
+            exit 1
+          fi
 
           IFS=. read -r mc_major mc_minor mc_patch extra <<<"$minecraft_version"
           if [[ -n "${extra:-}" || -z "${mc_major:-}" || -z "${mc_minor:-}" ]]; then

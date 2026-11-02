@@ -51,7 +51,7 @@ final class NativeRecipeProgressionProbe {
         return empty(stack) ? null : stack.getItem().getRegistryName() + "@" + stack.getMetadata();
     }
     private static boolean owned(String token) {
-        return token != null && (token.startsWith("poweradvantage:") || token.startsWith("steamadvantage:") || token.startsWith("electricadvantage:"));
+        return token != null && (token.startsWith("basepower:") || token.startsWith("basesteam:") || token.startsWith("baseelectric:"));
     }
     private static void add(JsonArray target, String value) { target.add(value == null ? JsonNull.INSTANCE : new JsonPrimitive(value)); }
     private static Object invoke(Object value, String method) throws Exception {
@@ -73,7 +73,7 @@ final class NativeRecipeProgressionProbe {
         row.addProperty("reason", failure.toString());
         row.addProperty("stackTrace", trace.toString());
     }
-    private static int width(IRecipe recipe) {
+    static int width(IRecipe recipe) {
         if (recipe instanceof ShapedRecipes) return ((ShapedRecipes)recipe).recipeWidth;
         for (String method : new String[]{"getRecipeWidth","getWidth"}) {
             try { return ((Number)invoke(recipe, method)).intValue(); } catch (Exception ignored) {}
@@ -127,6 +127,7 @@ final class NativeRecipeProgressionProbe {
             List<List<ItemStack>> cells=ingredients(recipe);
             require(!cells.isEmpty() && cells.size()<=9,"Unsupported/dynamic recipe ingredients");
             int width=width(recipe);
+            row.addProperty("width",width);
             require(width>0 && width<=3 && (cells.size()+width-1)/width<=3,"Unsupported grid dimensions");
             Container owner=new Container() {
                 @Override public boolean canInteractWith(net.minecraft.entity.player.EntityPlayer player) { return true; }
@@ -198,7 +199,7 @@ final class NativeRecipeProgressionProbe {
             @Override public void sendPacket(Packet<?> packet) {}
         };
         player.interactionManager.setGameType(net.minecraft.world.GameType.SURVIVAL);
-        Class<?> power=Class.forName("zone.moddev.mc.poweradvantage.PowerAdvantage");
+        Class<?> power=Class.forName("zone.moddev.mc.basepower.PowerAdvantage");
         JsonObject report=new JsonObject();
         report.addProperty("minecraft","1.10.2"); report.addProperty("label",label);
         report.addProperty("mode",power.getField("recipeMode").get(null).toString());
@@ -265,6 +266,7 @@ final class NativeRecipeProgressionProbe {
             } catch (Exception failure) { report.addProperty("crusherLookupError",failure.toString()); break; }
         }
         report.add("crushing",crushing);
+        report.add("economy", NativeSurvivalProgressionProbe.economy(world));
         JsonArray loot=new JsonArray();
         if (report.get("mode").getAsString().equals("APOCALYPTIC")) {
             LootContext context=new LootContext.Builder(world).build();

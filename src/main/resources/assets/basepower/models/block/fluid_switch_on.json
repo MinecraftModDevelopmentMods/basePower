@@ -1,0 +1,7 @@
+{
+    "parent": "block/cube_all",
+    "textures": {
+        "all": "basepower:blocks/fluid_switch_on",
+        "particle": "basepower:materials/steel"
+    }
+}

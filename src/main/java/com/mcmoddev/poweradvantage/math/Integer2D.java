@@ -5,7 +5,7 @@ package com.mcmoddev.poweradvantage.math;
  * {@code cyano.poweradvantage.api.simple.SimpleMachineGUI} constructor.
  *
  * @deprecated New code should use
- * {@link zone.moddev.mc.poweradvantage.math.Integer2D}.
+ * {@link zone.moddev.mc.basepower.math.Integer2D}.
  */
 @Deprecated
 public class Integer2D {

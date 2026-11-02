@@ -287,6 +287,11 @@ public final class WorksRunner {
                         + input.file + ", found " + source.getName());
             }
             String hash = sha256(source);
+            if (input.id.matches("base(?:power|steam|electric)")
+                    && (input.sha256 == null || !input.sha256.matches("[A-Fa-f0-9]{64}"))) {
+                throw new IllegalStateException("Renamed target " + input.id
+                        + " requires a fresh exact SHA-256 pin; historical pins do not apply");
+            }
             if (!input.workspaceProduced && (input.sha256 == null || input.sha256.isEmpty())) {
                 throw new IllegalStateException("Supplied mod " + input.id + " must pin SHA-256");
             }
@@ -447,7 +452,7 @@ public final class WorksRunner {
         if (!config.isDirectory() && !config.mkdirs()) {
             throw new IllegalStateException("Cannot create config directory " + config);
         }
-        write(new File(config, "poweradvantage.cfg"),
+        write(new File(config, "basepower.cfg"),
                 "options {\n    S:recipe_mode=" + profile.recipeMode + "\n}\n");
         String properties = "allow-flight=true\n"
                 + "difficulty=0\n"
@@ -482,6 +487,7 @@ public final class WorksRunner {
         manifest.put("recipeMode", profile.recipeMode);
         manifest.put("sourceCommit", profile.sourceCommit);
         manifest.put("sourceVersion", profile.sourceVersion);
+        manifest.put("qualificationStatus", profile.qualificationStatus);
         manifest.put("levelName", profile.levelName);
         manifest.put("levelType", profile.levelType);
         manifest.put("buildWorks", profile.buildWorks);
@@ -894,6 +900,7 @@ public final class WorksRunner {
         String recipeMode = "NORMAL";
         String sourceCommit;
         String sourceVersion;
+        String qualificationStatus;
         ForgeInput forge;
         List<String> launchCommand = new ArrayList<>();
         List<ModInput> mods = new ArrayList<>();

@@ -48,10 +48,10 @@ final class SteamNetworkLifecycleCases {
                     c.steamSupply(3, 4, 8, 6000);
                     c.block(11, 5, 8, negative && !gap ? "minecraft:redstone_block" : "minecraft:air");
                     for (int x = 4; x <= 18; x++) {
-                        c.block(x, 4, 8, x == 11 ? "steamadvantage:steam_switch"
-                                : gap && negative && x == 15 ? "minecraft:air" : "steamadvantage:steam_pipe");
+                        c.block(x, 4, 8, x == 11 ? "basesteam:steam_switch"
+                                : gap && negative && x == 15 ? "minecraft:air" : "basesteam:steam_pipe");
                     }
-                    c.block(19, 4, 8, "steamadvantage:steam_crusher");
+                    c.block(19, 4, 8, "basesteam:steam_crusher");
                     c.put(19, 4, 8, 0, "minecraft:stone", 8);
                     c.require(c.inventory(19, 4, 8).isItemValidForSlot(0, c.inventory(19, 4, 8).getStackInSlot(0)),
                             "The active native crushing registry accepts the finite stone stock");
@@ -75,10 +75,10 @@ final class SteamNetworkLifecycleCases {
                 ticks, c -> {
                     for (int z = 2; z <= 9; z++) {
                         c.steamSupply(3, 4, z, 10000);
-                        c.block(4, 4, z, "steamadvantage:steam_pipe");
+                        c.block(4, 4, z, "basesteam:steam_pipe");
                     }
-                    for (int x = 5; x <= 21; x++) c.block(x, 4, 8, "steamadvantage:steam_pipe");
-                    c.block(22, 4, 8, "steamadvantage:steam_crusher");
+                    for (int x = 5; x <= 21; x++) c.block(x, 4, 8, "basesteam:steam_pipe");
+                    c.block(22, 4, 8, "basesteam:steam_crusher");
                     c.block(22, 5, 8, "minecraft:hopper");
                     c.block(22, 6, 8, "minecraft:chest");
                     c.block(23, 3, 8, "minecraft:chest");
@@ -193,9 +193,9 @@ final class SteamNetworkLifecycleCases {
 
         void control(MachineContext c, int elapsed, boolean interrupt) {
             BlockPos local = gap ? new BlockPos(15, 4, 8) : new BlockPos(11, 5, 8);
-            String before = gap ? interrupt ? "steamadvantage:steam_pipe" : "minecraft:air"
+            String before = gap ? interrupt ? "basesteam:steam_pipe" : "minecraft:air"
                     : interrupt ? "minecraft:air" : "minecraft:redstone_block";
-            String after = gap ? interrupt ? "minecraft:air" : "steamadvantage:steam_pipe"
+            String after = gap ? interrupt ? "minecraft:air" : "basesteam:steam_pipe"
                     : interrupt ? "minecraft:redstone_block" : "minecraft:air";
             BlockPos pos = c.at(local.getX(), local.getY(), local.getZ());
             if (c.settingUp || !c.positions.contains(pos)) throw new IllegalStateException("Undeclared timed control location");

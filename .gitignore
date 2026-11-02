@@ -25,6 +25,7 @@
 /classes/
 /logs/
 /mcmodsrepo/
+/.ci-dependencies/
 /test-rig/.cache/
 /test-rig/.gradle/
 /test-rig/build/
@@ -77,6 +78,13 @@
 !/libs/RF-API.zip
 
 /secret.json
+
+# Packaged output; only the wrapper and the pinned RF API belong in source control.
+*.jar
+*.zip
+!/gradle/wrapper/gradle-wrapper.jar
+!/libs/RF-API.jar
+!/libs/RF-API.zip
 # Nested local tooling and generated output
 AGENTS.md
 AGENT.md

@@ -1,0 +1,8 @@
+{
+  "parent": "block/block",
+  "parent": "basepower:block/pipe4_0",
+    "textures": {
+        "texture": "basepower:blocks/fluid_pipe",
+        "particle": "basepower:materials/iron"
+    }
+}

@@ -1,0 +1,6 @@
+{
+    "variants": {
+        "active=false":  { "model": "basepower:fluid_switch_off"},
+        "active=true":   { "model": "basepower:fluid_switch_on"}
+    }
+}

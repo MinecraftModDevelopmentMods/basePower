@@ -1,4 +1,19 @@
-Unreleased
+basePower 2.4.4.110021
+
+- Continue Power Advantage as basePower, with the new basepower mod ID and namespace.
+- Read released Cyano 1.10 block, item and tile identities without rebuilding machines.
+- Import existing configuration and loot settings without overwriting base customisations.
+- Translate saved Forge mod and oil-owner records before world loading, with byte-for-byte header backups.
+- Keep OreSpawn choices during the identity change and stop on conflicting old and new settings.
+- Keep fluid identities, processing rules and the legacy add-on API available.
+- Restore translated portable-tank descriptions and retain the empty tank's description on its item.
+- Check upgrades on copies of released Cyano worlds, including Sylvester, and retain machine contents across full restarts.
+- Add finite-material recipe progression checks, including returned buckets, obtainable ingredient alternatives, villager trades and connected starter machines across full restarts.
+- Route Forge fluid capability calls through each machine's fluid handler, so stills fill their input tank and tank restrictions are respected.
+- Keep current OreSpawn global and saved-world profiles readable after a full restart, without resetting generation choices or accepting unknown future schemas.
+- Add the basePower project logo and updated installation, migration and CurseForge descriptions.
+
+Earlier unreleased Advantage fixes, retained in basePower
 
 - Restore missing carbon-dust and steel-block recipe names when equivalent registered materials are available. Keep existing Ore Dictionary entries and recipe amounts unchanged.
 - Enable Forge's universal bucket during mod construction so oil buckets work without another mod enabling them first.
