@@ -36,6 +36,10 @@ INPUTS = {
 }
 
 
+def steam_block(path, line):
+    return ("basesteam:" if line == "110" else "steamadvantage:") + path
+
+
 def require(value, message):
     if not value:
         raise AssertionError(message)
@@ -185,8 +189,8 @@ def control_case(row, saved, declaration, base, line):
                 "Tile hold must remove ticking, retain the same tile and leave NBT unchanged")
         observed = measured.get(at(*point))
         require(observed is not None and "nbt" in observed
-                and observed["block"] == ("steamadvantage:steam_furnace" if row["id"] in FURNACES
-                                          else "steamadvantage:steam_crusher"),
+                and observed["block"] == steam_block("steam_furnace" if row["id"] in FURNACES
+                                                      else "steam_crusher", line),
                 "Held tile is not the measured native machine")
         actual.add(point)
     require(actual == expected, "Incomplete measured tile hold coverage")
@@ -228,7 +232,7 @@ def audit_documents(catalog, operation, fixture, cold, line):
                 for stage in ("before", "after"):
                     require(set(positions(row[stage], base, line)) == expected_positions, "Wrong comparator layout")
                     for i, count in enumerate(counts):
-                        data = tile(row[stage], at(3 + 6 * i), "steamadvantage:steam_crusher", line)
+                        data = tile(row[stage], at(3 + 6 * i), steam_block("steam_crusher", line), line)
                         inventory(data, 0, "minecraft:stone", count)
                         require(energy(data) == 0 and progress(data) == 0, "Comparator witness must remain unpowered")
                 for i, count in enumerate(counts):
@@ -245,7 +249,7 @@ def audit_documents(catalog, operation, fixture, cold, line):
                     require(set(snapshot) == expected_positions, "Wrong controlled-machine layout")
                     if signal:
                         require(snapshot[at(7)]["block"] == "minecraft:redstone_block", "Missing actual redstone source")
-                block = "steamadvantage:steam_crusher" if is_crusher else "steamadvantage:steam_furnace"
+                block = steam_block("steam_crusher" if is_crusher else "steam_furnace", line)
                 before = tile(row["before"], at(8), block, line)
                 after = tile(row["after"], at(8), block, line)
                 item = "minecraft:stone" if is_crusher else "minecraft:sand"

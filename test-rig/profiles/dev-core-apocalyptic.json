@@ -7,30 +7,34 @@
   "shutdownTimeoutSeconds": 60,
   "stationRunSeconds": 5,
   "recipeMode": "APOCALYPTIC",
-  "sourceCommit": "2443eaae7c666b8d54a5c9c30091892b79e80994",
-  "sourceVersion": "2.4.3.110021",
+  "sourceCommit": "UNQUALIFIED_REBRAND_WORKTREE",
+  "sourceVersion": "2.4.4.110021",
   "lifecycleStations": [],
   "mods": [
     {
       "id": "advantageworkstest",
-      "version": "1.0.0.110020",
-      "file": "AdvantageWorksTestHarness-1.0.0.110020-deobf.jar",
-      "path": "build/libs-dev/AdvantageWorksTestHarness-1.0.0.110020-deobf.jar",
-      "workspaceProduced": true
+      "version": "1.1.0.110021",
+      "file": "AdvantageWorksTestHarness-1.1.0.110021-deobf.jar",
+      "path": "build/gradle/libs-dev/AdvantageWorksTestHarness-1.1.0.110021-deobf.jar",
+      "workspaceProduced": true,
+      "sha256": "FE1F72756FA4A16BFAD5CD21C28EC85C2F8FCF25A29EDC5A9908914B6F8559D2"
     },
     {
-      "id": "steamadvantage",
-      "version": "2.2.5.110021",
-      "file": "SteamAdvantage-2.2.5.110021-deobf.jar",
-      "path": "../../SteamAdvantage/SteamAdvantage/build/libs-dev/SteamAdvantage-2.2.5.110021-deobf.jar",
-      "sha256": "B5247840473DE939234D83B61612B42B2398D79036101CD17ADA5AEA08B8A63F"
+      "id": "basesteam",
+      "version": "2.2.6.110021",
+      "file": "baseSteam-2.2.6.110021-deobf.jar",
+      "path": "../../SteamAdvantage/SteamAdvantage/build/libs-dev/baseSteam-2.2.6.110021-deobf.jar",
+      "workspaceProduced": true,
+      "sha256": "17563247BECAA47E7191EC8FDCC1BF8EB493BC83312C2CD2BF2DA52332D6DC55"
     },
     {
-      "id": "electricadvantage",
-      "version": "2.2.5.110021",
-      "file": "ElectricAdvantage-2.2.5.110021-deobf.jar",
-      "path": "../../ElectricAdvantage/ElectricAdvantage/build/libs-dev/ElectricAdvantage-2.2.5.110021-deobf.jar",
-      "sha256": "2E1ED596049D891C3A41ECC9DFE8979E39DED56651B8DE6DB2A9A4709F5A1AF9"
+      "id": "baseelectric",
+      "version": "2.2.6.110021",
+      "file": "baseElectric-2.2.6.110021-deobf.jar",
+      "path": "../../ElectricAdvantage/ElectricAdvantage/build/libs-dev/baseElectric-2.2.6.110021-deobf.jar",
+      "workspaceProduced": true,
+      "sha256": "BBB2620D71A52B1EF11E509F77D52E1A733FB7A8F5883646331AF4D5E1A2708F"
     }
-  ]
+  ],
+  "qualificationStatus": "UNQUALIFIED_REBRAND_WORKSPACE_INPUTS"
 }

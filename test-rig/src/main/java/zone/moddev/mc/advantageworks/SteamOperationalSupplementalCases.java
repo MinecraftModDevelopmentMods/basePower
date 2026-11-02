@@ -42,11 +42,11 @@ final class SteamOperationalSupplementalCases {
                     "A finite source fills a normal consumer before backup storage. Disabling backup discharge "
                     + "prevents later relay masking the original allocation; a full-consumer control proves backup connectivity.",
                     80, c -> {
-                        c.block(8, 4, 8, "steamadvantage:steam_boiler_coal");
-                        c.block(9, 4, 8, "steamadvantage:steam_furnace");
-                        c.block(7, 4, 8, "steamadvantage:steam_pipe");
-                        c.block(6, 4, 8, "steamadvantage:steam_pipe");
-                        c.block(5, 4, 8, "steamadvantage:steam_tank");
+                        c.block(8, 4, 8, "basesteam:steam_boiler_coal");
+                        c.block(9, 4, 8, "basesteam:steam_furnace");
+                        c.block(7, 4, 8, "basesteam:steam_pipe");
+                        c.block(6, 4, 8, "basesteam:steam_pipe");
+                        c.block(5, 4, 8, "basesteam:steam_tank");
                         c.block(4, 4, 8, "minecraft:redstone_block");
                         c.power(8, 4, 8, "steam", 40);
                         if (consumerFull) c.power(9, 4, 8, "steam", 200);
@@ -170,12 +170,12 @@ final class SteamOperationalSupplementalCases {
         shot.player.setRotationYawHead(0.0F);
         shot.player.prevRotationYawHead = 0.0F;
         shot.player.motionX = shot.player.motionY = shot.player.motionZ = 0;
-        shot.weapon = new ItemStack(item(c, "steamadvantage:musket"));
+        shot.weapon = new ItemStack(item(c, "basesteam:musket"));
         shot.player.setHeldItem(EnumHand.MAIN_HAND, shot.weapon);
-        shot.player.inventory.setInventorySlotContents(1, new ItemStack(item(c, "steamadvantage:blackpowder_cartridge"), 2));
+        shot.player.inventory.setInventorySlotContents(1, new ItemStack(item(c, "basesteam:blackpowder_cartridge"), 2));
         enchant(c, shot.weapon, "steamadvantage:rapid_reload", 1);
         try {
-            shot.configuredDamage = Class.forName("zone.moddev.mc.steamadvantage.SteamAdvantage", false,
+            shot.configuredDamage = Class.forName("zone.moddev.mc.basesteam.SteamAdvantage", false,
                     SteamOperationalSupplementalCases.class.getClassLoader()).getDeclaredField("MUSKET_DAMAGE").getFloat(null);
         } catch (ReflectiveOperationException error) {
             throw new IllegalStateException("Musket configuration contract is unavailable", error);
@@ -259,7 +259,7 @@ final class SteamOperationalSupplementalCases {
     }
 
     private static void enchant(MachineContext c, ItemStack stack, String id, int level) {
-        Enchantment enchantment = net.minecraft.enchantment.Enchantment.REGISTRY.getObject(new ResourceLocation(id));
+        Enchantment enchantment = CanonicalSteamEnchantments.require(id);
         c.require(enchantment != null && level >= 1 && level <= enchantment.getMaxLevel(), "Registered supported enchantment " + id);
         stack.addEnchantment(enchantment, level);
     }

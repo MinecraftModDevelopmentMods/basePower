@@ -4,9 +4,11 @@ import base64
 import contextlib
 from copy import deepcopy
 import gzip
+import importlib.util
 import io
 import json
 from pathlib import Path
+import shutil
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -15,7 +17,8 @@ import nbtlib
 import steam_control_audit as audit
 
 
-LINE = Path(__file__).resolve().parents[3].name[2:]
+# This branch tests 1.10; checkout directory names are not version metadata.
+LINE = "110"
 
 
 def snapshot(position, block, data=None):
@@ -63,7 +66,7 @@ def fixture():
         if case_id == audit.COMPARATOR:
             before, after = [], []
             for i, stock in enumerate((0, 1, 32, 64)):
-                tile = snapshot(at(3 + 6 * i), "steamadvantage:steam_crusher",
+                tile = snapshot(at(3 + 6 * i), audit.steam_block("steam_crusher", LINE),
                                 data("minecraft:stone", stock, 0, work=0))
                 before.append(tile); after.append(deepcopy(tile))
                 row["count/" + str(3 + 6 * i) + "/4/8/minecraft:stone"] = stock
@@ -72,14 +75,14 @@ def fixture():
             crusher = case_id in audit.CRUSHERS
             signal, initial = audit.CRUSHERS[case_id] if crusher else (audit.FURNACES[case_id], 40)
             if crusher:
-                block, item, slot = "steamadvantage:steam_crusher", "minecraft:stone", 0
+                block, item, slot = audit.steam_block("steam_crusher", LINE), "minecraft:stone", 0
                 work = 105 if signal or initial == 0 else 107
                 reserve = 0 if initial == 0 else 39.9375 if signal else 38.4375
                 before_data = data(item, 1, slot, initial, work=106)
                 after_data = data(item, 1, slot, reserve, work=work)
                 row["firstLoaded.progress"] = work
             else:
-                block, item, slot = "steamadvantage:steam_furnace", "minecraft:sand", 1
+                block, item, slot = audit.steam_block("steam_furnace", LINE), "minecraft:sand", 1
                 heat = 989.5 if signal else 1027.0
                 work = audit.f32(.25 + audit.f32(audit.f32(3.5e-6) * heat))
                 reserve = 40 if signal else 39.5
@@ -123,6 +126,33 @@ def change_tile(row, line, **changes):
 
 
 class SteamControlAuditTests(unittest.TestCase):
+    def test_fixture_version_survives_a_differently_named_checkout(self):
+        with tempfile.TemporaryDirectory(prefix="advantage-checkout-") as temporary:
+            relocated = Path(temporary) / "A Different Repository Name" / "test_steam_control_audit.py"
+            relocated.parent.mkdir()
+            shutil.copyfile(__file__, relocated)
+            spec = importlib.util.spec_from_file_location("relocated_steam_contract", relocated)
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            self.assertEqual("110", module.LINE)
+
+    def test_namespace_is_exact_and_version_specific(self):
+        self.assertEqual("basesteam:steam_crusher", audit.steam_block("steam_crusher", "110"))
+        self.assertEqual("steamadvantage:steam_crusher", audit.steam_block("steam_crusher", "112"))
+
+    def test_old_owner_is_not_accepted_as_a_renamed_native_machine(self):
+        if LINE != "110":
+            self.skipTest("Only the 1.10 target has been renamed")
+        bundle = fixture()
+        for group, keys in (("operation", ("before", "after")), ("fixture", ("positions",)),
+                            ("cold", ("positions",))):
+            for row in bundle[group]["cases"]:
+                for key in keys:
+                    for state in row[key]:
+                        for field in ("block", "state"):
+                            state[field] = state[field].replace("basesteam:", "steamadvantage:")
+        self.verify(bundle)
+
     def verify(self, bundle, status="FAIL"):
         result = audit.audit_documents(**bundle, line=LINE)
         self.assertEqual(status, result["status"], result)

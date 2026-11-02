@@ -41,23 +41,23 @@ public final class LegacyPartialNetworkCases {
                 + "while other endpoints remain loaded and unchanged. The same ticket restores the chunk; "
                 + "event-time typed NBT and finite resources survive, and native processing resumes without rebuilding.",
                 TICKS, c -> {
-                    String pipe = type.equals("steam") ? "steamadvantage:steam_pipe"
-                            : type.equals("electric") ? "electricadvantage:electric_conduit" : "poweradvantage:fluid_pipe";
+                    String pipe = type.equals("steam") ? "basesteam:steam_pipe"
+                            : type.equals("electric") ? "baseelectric:electric_conduit" : "basepower:fluid_pipe";
                     if (type.equals("steam")) {
                         c.steamSupply(3, 4, 3, 6000);
-                        c.block(20, 4, 20, "steamadvantage:steam_crusher");
+                        c.block(20, 4, 20, "basesteam:steam_crusher");
                         c.put(20, 4, 20, 0, "minecraft:stone", 8);
                         c.require(c.inventory(20, 4, 20).isItemValidForSlot(0, c.inventory(20, 4, 20).getStackInSlot(0)),
                                 "Native stone crushing recipe is available");
                     } else if (type.equals("electric")) {
                         c.electricSupply(3, 4, 3, 6000);
                         NativeStacks.tag(c.inventory(3, 4, 3).getStackInSlot(0)).setString("PartialNetworkWitness", id);
-                        c.block(20, 4, 20, "electricadvantage:electric_oven");
+                        c.block(20, 4, 20, "baseelectric:electric_oven");
                         c.put(20, 4, 20, 0, "minecraft:potato", 8);
                     } else {
-                        c.block(3, 4, 3, "poweradvantage:fluid_metal_tank");
+                        c.block(3, 4, 3, "basepower:fluid_metal_tank");
                         c.tank(3, 4, 3, "minecraft:water", 6000);
-                        c.block(20, 4, 20, "steamadvantage:steam_boiler_coal");
+                        c.block(20, 4, 20, "basesteam:steam_boiler_coal");
                         c.put(20, 4, 20, 0, "minecraft:coal", 1);
                     }
                     for (int x = 4; x <= 20; x++) c.block(x, 4, 3, pipe);

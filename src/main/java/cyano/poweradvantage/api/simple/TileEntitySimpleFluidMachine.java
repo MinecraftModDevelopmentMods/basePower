@@ -5,7 +5,7 @@ import cyano.poweradvantage.api.PowerConnectorContext;
 import cyano.poweradvantage.api.PowerRequest;
 import cyano.poweradvantage.api.fluid.FluidPoweredEntity;
 import cyano.poweradvantage.api.fluid.FluidRequest;
-import zone.moddev.mc.poweradvantage.init.Fluids;
+import zone.moddev.mc.basepower.init.Fluids;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.ISidedInventory;
 import net.minecraft.item.ItemStack;
@@ -23,6 +23,7 @@ import net.minecraftforge.fluids.FluidRegistry;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.FluidTank;
 import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
+import net.minecraftforge.fluids.capability.wrappers.FluidHandlerWrapper;
 
 import java.util.List;
 
@@ -72,7 +73,9 @@ public abstract class TileEntitySimpleFluidMachine extends FluidPoweredEntity im
 
 	@Override
 	public <T> T getCapability(Capability<T> capability, EnumFacing facing) {
-		return (capability == CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY)? (T)tank : super.getCapability(capability,facing);
+		// Delegate through the machine so overrides retain input/output routing and restrictions.
+		return (capability == CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY)
+				? (T)new FluidHandlerWrapper(this, facing) : super.getCapability(capability,facing);
 	}
 
 	/**

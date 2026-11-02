@@ -32,8 +32,9 @@ public class ProfileManifestTest {
                 profile = new JsonParser().parse(reader).getAsJsonObject();
             }
             assertTrue(file.getName(), profileNames.add(text(profile, "name")));
-            assertEquals("2443eaae7c666b8d54a5c9c30091892b79e80994", text(profile, "sourceCommit"));
-            assertEquals("2.4.3.110021", text(profile, "sourceVersion"));
+            assertEquals("UNQUALIFIED_REBRAND_WORKTREE", text(profile, "sourceCommit"));
+            assertEquals("UNQUALIFIED_REBRAND_WORKSPACE_INPUTS", text(profile, "qualificationStatus"));
+            assertEquals("2.4.4.110021", text(profile, "sourceVersion"));
             recipeModes.add(text(profile, "recipeMode"));
 
             if ("packaged".equals(text(profile, "mode"))) {
@@ -50,7 +51,7 @@ public class ProfileManifestTest {
                 JsonArray exclusions = profile.getAsJsonArray("stableWorldgenCountExclusions");
                 assertNotNull(exclusions);
                 assertEquals(1, exclusions.size());
-                assertEquals("poweradvantage:crude_oil", exclusions.get(0).getAsString());
+                assertEquals("basepower:crude_oil", exclusions.get(0).getAsString());
             }
 
             JsonArray mods = profile.getAsJsonArray("mods");
@@ -70,6 +71,13 @@ public class ProfileManifestTest {
                 assertFalse("Hard-coded drive path in " + file, path.matches("^[A-Za-z]:.*"));
                 boolean workspaceProduced = mod.has("workspaceProduced")
                         && mod.get("workspaceProduced").getAsBoolean();
+                assertFalse("Historical Advantage identity in current target: " + file,
+                        text(mod, "id").matches("(?:power|steam|electric)advantage"));
+                if (text(mod, "id").matches("base(?:power|steam|electric)")) {
+                    assertTrue(file.getName(), workspaceProduced);
+                    if (mod.has("sha256")) assertTrue("Fresh target pin required",
+                            text(mod, "sha256").matches("[A-Fa-f0-9]{64}"));
+                }
                 if (!workspaceProduced) assertEquals(file.getName(), 64, text(mod, "sha256").length());
             }
             if ("packaged".equals(text(profile, "mode"))) {

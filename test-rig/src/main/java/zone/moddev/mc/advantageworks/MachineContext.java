@@ -230,14 +230,14 @@ final class MachineContext {
     }
 
     void steamSupply(int x, int y, int z, float reserve) {
-        block(x, y, z, "steamadvantage:steam_tank");
+        block(x, y, z, "basesteam:steam_tank");
         power(x, y, z, "steam", reserve);
     }
 
     void electricSupply(int x, int y, int z, float reserve) {
         if (!Float.isFinite(reserve) || reserve < 0 || reserve > 8000) throw new IllegalArgumentException("Invalid battery reserve");
-        block(x, y, z, "electricadvantage:electric_battery_array");
-        put(x, y, z, 0, "electricadvantage:lithium_battery", 1);
+        block(x, y, z, "baseelectric:electric_battery_array");
+        put(x, y, z, 0, "baseelectric:lithium_battery", 1);
         NativeStacks.tag(inventory(x, y, z).getStackInSlot(0)).setFloat("energy", reserve);
         inventory(x, y, z).markDirty();
     }

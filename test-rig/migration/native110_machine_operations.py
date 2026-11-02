@@ -15,7 +15,7 @@ import traceback
 import nbtlib
 
 from rig_transport import digest, write_json
-from native110 import RIG, LAUNCHER, output_path, pinned_profile, require_disjoint
+from native110 import RIG, LAUNCHER, identity, output_path, pinned_profile, require_disjoint
 from native110_code import Server, code_files, verify_code, INVENTORY
 from native110_lifecycle import prepare, read_json, require_native_boot, verify_staged
 
@@ -25,7 +25,7 @@ REQUIRED = {
               "conveyor/blocked", "conveyor/item-entity", "conveyor/nbt-preserved", "filter/block", "filter/food", "filter/fuel", "filter/ore",
               "filter/plant", "filter/smelt", "filter/inventory-0", "filter/inventory-1", "filter/inventory-2",
               "filter/inventory-3", "filter/overflow-0", "filter/overflow-1", "filter/overflow-2", "filter/overflow-3",
-              "drain/minecraft_water", "drain/poweradvantage_crude_oil", "drain/poweradvantage_refined_oil",
+              "drain/minecraft_water", "drain/basepower_crude_oil", "drain/basepower_refined_oil",
               "drain/non-source", "tank/filter-true", "tank/filter-false", "tank/full", "fluid-switch/true",
               "fluid-switch/false", "discharge/true", "discharge/false", "conveyor/locked-source", "conveyor/locked-destination",
               "still/production", "still/no-fuel", "still/invalid", "still/full", "still/one-space", "still/redstone"},
@@ -168,21 +168,26 @@ def validate_restart(fixture, inspected):
 
 
 def pin(args):
+    pinned_profile(args.base.resolve(), "target110")
     base = read_json(args.base)
     destination = args.output.resolve()
     if destination.exists(): raise FileExistsError(destination)
     destination.mkdir(parents=True)
     replacements = {
-        "poweradvantage": RIG.parent / "build/libs/PowerAdvantage-2.4.3.110021.jar",
-        "steamadvantage": RIG.parent.parent / "SteamAdvantage/SteamAdvantage/build/libs/SteamAdvantage-2.2.5.110021.jar",
-        "electricadvantage": RIG.parent.parent / "ElectricAdvantage/ElectricAdvantage/build/libs/ElectricAdvantage-2.2.5.110021.jar",
+        "basepower": RIG.parent / "build/libs/basePower-2.4.4.110021.jar",
+        "basesteam": RIG.parent.parent / "SteamAdvantage/SteamAdvantage/build/libs/baseSteam-2.2.6.110021.jar",
+        "baseelectric": RIG.parent.parent / "ElectricAdvantage/ElectricAdvantage/build/libs/baseElectric-2.2.6.110021.jar",
         "advantageworkstest": RIG / "build/gradle/libs/AdvantageWorksTestHarness-1.1.0.110021.jar",
     }
     if getattr(args, "original_production", False):
         replacements = {key: value for key, value in replacements.items() if key == "advantageworkstest"}
     target = copy.deepcopy(base["target110"])
+    renamed = {"poweradvantage": "basepower", "steamadvantage": "basesteam", "electricadvantage": "baseelectric"}
     for jar in target["jars"]:
-        source = replacements.get(jar["id"], Path(jar["path"]))
+        wanted = jar["id"] if getattr(args, "original_production", False) else renamed.get(jar["id"], jar["id"])
+        source = replacements.get(wanted, (args.base.resolve().parent / jar["path"]).resolve())
+        actual_id, version = identity(source)
+        if actual_id != wanted: raise AssertionError("Wrong candidate mod identity: " + str(source))
         checksum = digest(source)
         folder = destination / "artifacts" / checksum
         folder.mkdir(parents=True, exist_ok=True)
@@ -190,8 +195,8 @@ def pin(args):
         if path.exists(): raise FileExistsError(path)
         shutil.copy2(source, path)
         if digest(path) != checksum: raise AssertionError("Archive copy differs")
-        jar.update(path=str(path), originPath=str(source), sha256=checksum)
-        if jar["id"] in replacements: jar["sourceRef"] = "LOCAL_OPERATING_CANDIDATE_" + args.label
+        jar.update(id=actual_id, version=version, path=str(path), originPath=str(source), sha256=checksum)
+        if wanted in replacements: jar["sourceRef"] = "LOCAL_OPERATING_CANDIDATE_" + args.label
     target["qualificationStatus"] = "UNQUALIFIED_OPERATING_CANDIDATE"
     target["scope"] = args.label
     target["serverCode"] = {"files": code_files(Path(target["seed"]))}

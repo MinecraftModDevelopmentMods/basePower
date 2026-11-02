@@ -1,0 +1,5 @@
+{
+    "variants": {
+        "normal": { "model": "basepower:steel_frame" }
+    }
+}

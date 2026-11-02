@@ -19,7 +19,7 @@ import org.apache.logging.log4j.LogManager;
 /** Native, worldless GUI capture only; no operating or migration claims. */
 @Mod(modid = ClientResourceProbe.MODID, name = "Advantage GUI Capture", version = "1.0.0.110021",
         clientSideOnly = true, acceptedMinecraftVersions = "[1.10.2]",
-        dependencies = "required-after:poweradvantage;required-after:steamadvantage;required-after:electricadvantage")
+        dependencies = "required-after:basepower;required-after:basesteam;required-after:baseelectric")
 @Mod.EventBusSubscriber(value = Side.CLIENT)
 public final class ClientResourceProbe {
     static final String MODID = "advantageclientresources";
@@ -44,7 +44,7 @@ public final class ClientResourceProbe {
                     && Boolean.getBoolean("advantageworks.machineGuiLayouts"), "All three mods and the GUI audit are required");
             JsonArray mods = new JsonArray();
             JsonObject versions = new JsonObject();
-            for (String id : new String[]{"poweradvantage", "steamadvantage", "electricadvantage"}) {
+            for (String id : new String[]{"basepower", "basesteam", "baseelectric"}) {
                 ModContainer mod = Loader.instance().getIndexedModList().get(id);
                 require(mod != null, "Combined launch omitted " + id);
                 String expected = System.getProperty("advantageworks.expectedVersion." + id);

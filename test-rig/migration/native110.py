@@ -66,7 +66,13 @@ def pinned_profile(manifest_path, key):
             raise ValueError("Wrong Advantage platform version")
         if jar["id"] in ids: raise ValueError("Duplicate mod identity")
         ids.add(jar["id"]); jars.append(path)
-    if key != "target110" or target["launcher"] != LAUNCHER or not {"poweradvantage", "advantageworkstest"} <= ids:
+    legacy = {"poweradvantage", "steamadvantage", "electricadvantage"}
+    current = {"basepower", "basesteam", "baseelectric"}
+    if ids & legacy and ids & current:
+        raise ValueError("Mixed historical and renamed target identities")
+    if any(not jar["version"].endswith(".110021") for jar in target["jars"] if jar["id"] in current):
+        raise ValueError("Wrong renamed Advantage platform version")
+    if key != "target110" or target["launcher"] != LAUNCHER or "advantageworkstest" not in ids or not ids & {"poweradvantage", "basepower"}:
         raise ValueError("Incomplete/wrong native110 input profile")
     if digest(seed / LAUNCHER) != target["launcher_sha256"].upper() or not (seed / "libraries").is_dir():
         raise AssertionError("Native Forge 25 seed changed")

@@ -42,7 +42,7 @@
       ],
       "exclusive": false,
       "requiredMods": [
-        "poweradvantage"
+        "basepower"
       ],
       "placements": [
         {
@@ -51,7 +51,7 @@
             1,
             7
           ],
-          "block": "poweradvantage:fluid_drain",
+          "block": "basepower:fluid_drain",
           "meta": 0
         },
         {
@@ -60,7 +60,7 @@
             1,
             7
           ],
-          "block": "poweradvantage:fluid_pipe",
+          "block": "basepower:fluid_pipe",
           "meta": 0
         },
         {
@@ -69,7 +69,7 @@
             1,
             7
           ],
-          "block": "poweradvantage:fluid_storage_tank",
+          "block": "basepower:fluid_storage_tank",
           "meta": 0
         },
         {
@@ -78,7 +78,7 @@
             1,
             7
           ],
-          "block": "poweradvantage:fluid_pipe",
+          "block": "basepower:fluid_pipe",
           "meta": 0
         },
         {
@@ -87,7 +87,7 @@
             1,
             7
           ],
-          "block": "poweradvantage:fluid_switch",
+          "block": "basepower:fluid_switch",
           "meta": 0
         },
         {
@@ -96,7 +96,7 @@
             1,
             7
           ],
-          "block": "poweradvantage:fluid_pipe",
+          "block": "basepower:fluid_pipe",
           "meta": 0
         },
         {
@@ -105,7 +105,7 @@
             1,
             7
           ],
-          "block": "poweradvantage:fluid_metal_tank",
+          "block": "basepower:fluid_metal_tank",
           "meta": 0
         },
         {
@@ -114,7 +114,7 @@
             1,
             8
           ],
-          "block": "poweradvantage:fluid_discharge",
+          "block": "basepower:fluid_discharge",
           "meta": 0
         },
         {
@@ -123,7 +123,7 @@
             1,
             7
           ],
-          "block": "poweradvantage:fluid_storage_tank",
+          "block": "basepower:fluid_storage_tank",
           "meta": 0
         },
         {
@@ -132,7 +132,7 @@
             1,
             7
           ],
-          "block": "poweradvantage:fluid_metal_tank",
+          "block": "basepower:fluid_metal_tank",
           "meta": 0
         },
         {
@@ -141,7 +141,7 @@
             1,
             7
           ],
-          "block": "poweradvantage:fluid_pipe_terminal",
+          "block": "basepower:fluid_pipe_terminal",
           "meta": 0
         },
         {
@@ -150,7 +150,7 @@
             1,
             7
           ],
-          "block": "poweradvantage:steel_frame",
+          "block": "basepower:steel_frame",
           "meta": 0
         },
         {
@@ -159,7 +159,7 @@
             2,
             7
           ],
-          "block": "poweradvantage:infinite_steam",
+          "block": "basepower:infinite_steam",
           "meta": 0
         },
         {
@@ -168,7 +168,7 @@
             2,
             7
           ],
-          "block": "poweradvantage:infinite_electricity",
+          "block": "basepower:infinite_electricity",
           "meta": 0
         },
         {
@@ -177,30 +177,30 @@
             2,
             7
           ],
-          "block": "poweradvantage:infinite_quantum",
+          "block": "basepower:infinite_quantum",
           "meta": 0
         },
         {
           "pos": [20, 1, 14],
-          "block": "poweradvantage:converter_rf_steam",
+          "block": "basepower:converter_rf_steam",
           "meta": 0,
           "optional": true
         },
         {
           "pos": [21, 1, 14],
-          "block": "poweradvantage:converter_rf_electricity",
+          "block": "basepower:converter_rf_electricity",
           "meta": 0,
           "optional": true
         },
         {
           "pos": [22, 1, 14],
-          "block": "poweradvantage:converter_rf_quantum",
+          "block": "basepower:converter_rf_quantum",
           "meta": 0,
           "optional": true
         },
         {
           "pos": [23, 1, 14],
-          "block": "poweradvantage:converter_tr_electricity",
+          "block": "basepower:converter_tr_electricity",
           "meta": 0,
           "optional": true
         },
@@ -210,7 +210,7 @@
             1,
             10
           ],
-          "block": "poweradvantage:crude_oil",
+          "block": "basepower:crude_oil",
           "meta": 0
         },
         {
@@ -219,7 +219,7 @@
             1,
             10
           ],
-          "block": "poweradvantage:refined_oil",
+          "block": "basepower:refined_oil",
           "meta": 0
         },
         {
@@ -241,7 +241,7 @@
             24
           ],
           "slot": 0,
-          "item": "poweradvantage:starch",
+          "item": "basepower:starch",
           "count": 16
         },
         {
@@ -252,7 +252,7 @@
             24
           ],
           "slot": 1,
-          "item": "poweradvantage:bioplastic_ingot",
+          "item": "basepower:bioplastic_ingot",
           "count": 16
         },
         {
@@ -263,7 +263,7 @@
             24
           ],
           "slot": 2,
-          "item": "poweradvantage:sprocket",
+          "item": "basepower:sprocket",
           "count": 16
         },
         {
@@ -274,7 +274,7 @@
             24
           ],
           "slot": 3,
-          "item": "poweradvantage:rotator_tool",
+          "item": "basepower:rotator_tool",
           "count": 1
         },
         {
@@ -315,7 +315,7 @@
             1,
             7
           ],
-          "block": "poweradvantage:fluid_drain"
+          "block": "basepower:fluid_drain"
         },
         {
           "id": "portable-tank-tile",
@@ -347,7 +347,7 @@
           "id": "power-items",
           "type": "registryItem",
           "pos": null,
-          "item": "poweradvantage:rotator_tool"
+          "item": "basepower:rotator_tool"
         },
         {
           "id": "orespawn-integration",
@@ -360,28 +360,28 @@
           "id": "rf-steam-converter",
           "type": "registryBlock",
           "pos": null,
-          "block": "poweradvantage:converter_rf_steam",
+          "block": "basepower:converter_rf_steam",
           "optional": true
         },
         {
           "id": "rf-electric-converter",
           "type": "registryBlock",
           "pos": null,
-          "block": "poweradvantage:converter_rf_electricity",
+          "block": "basepower:converter_rf_electricity",
           "optional": true
         },
         {
           "id": "rf-quantum-converter",
           "type": "registryBlock",
           "pos": null,
-          "block": "poweradvantage:converter_rf_quantum",
+          "block": "basepower:converter_rf_quantum",
           "optional": true
         },
         {
           "id": "tech-reborn-converter",
           "type": "registryBlock",
           "pos": null,
-          "block": "poweradvantage:converter_tr_electricity",
+          "block": "basepower:converter_tr_electricity",
           "optional": true
         }
       ],
@@ -415,7 +415,7 @@
       ],
       "exclusive": true,
       "requiredMods": [
-        "poweradvantage"
+        "basepower"
       ],
       "placements": [
         {
@@ -424,7 +424,7 @@
             1,
             8
           ],
-          "block": "poweradvantage:fluid_drain",
+          "block": "basepower:fluid_drain",
           "meta": 0
         },
         {
@@ -433,7 +433,7 @@
             1,
             8
           ],
-          "block": "poweradvantage:fluid_pipe",
+          "block": "basepower:fluid_pipe",
           "meta": 0
         },
         {
@@ -442,7 +442,7 @@
             1,
             8
           ],
-          "block": "poweradvantage:fluid_metal_tank",
+          "block": "basepower:fluid_metal_tank",
           "meta": 0
         },
         {
@@ -451,7 +451,7 @@
             1,
             8
           ],
-          "block": "poweradvantage:fluid_metal_tank",
+          "block": "basepower:fluid_metal_tank",
           "meta": 0
         },
         {
@@ -460,7 +460,7 @@
             1,
             8
           ],
-          "block": "poweradvantage:fluid_pipe",
+          "block": "basepower:fluid_pipe",
           "meta": 0
         },
         {
@@ -469,7 +469,7 @@
             1,
             8
           ],
-          "block": "poweradvantage:fluid_discharge",
+          "block": "basepower:fluid_discharge",
           "meta": 0
         },
         {
@@ -628,7 +628,7 @@
       ],
       "exclusive": false,
       "requiredMods": [
-        "poweradvantage"
+        "basepower"
       ],
       "placements": [
         {
@@ -637,7 +637,7 @@
             1,
             8
           ],
-          "block": "poweradvantage:fluid_storage_tank",
+          "block": "basepower:fluid_storage_tank",
           "meta": 0
         },
         {
@@ -646,7 +646,7 @@
             1,
             8
           ],
-          "block": "poweradvantage:fluid_pipe",
+          "block": "basepower:fluid_pipe",
           "meta": 0
         },
         {
@@ -655,7 +655,7 @@
             1,
             8
           ],
-          "block": "poweradvantage:still",
+          "block": "basepower:still",
           "meta": 0
         },
         {
@@ -664,7 +664,7 @@
             1,
             8
           ],
-          "block": "poweradvantage:fluid_pipe",
+          "block": "basepower:fluid_pipe",
           "meta": 0
         },
         {
@@ -673,7 +673,7 @@
             1,
             8
           ],
-          "block": "poweradvantage:fluid_metal_tank",
+          "block": "basepower:fluid_metal_tank",
           "meta": 0
         },
         {
@@ -687,31 +687,31 @@
         },
         {
           "pos": [4, 1, 14],
-          "block": "poweradvantage:fluid_storage_tank",
+          "block": "basepower:fluid_storage_tank",
           "meta": 0,
           "requiredMods": ["mineralogy"]
         },
         {
           "pos": [5, 1, 14],
-          "block": "poweradvantage:fluid_pipe",
+          "block": "basepower:fluid_pipe",
           "meta": 0,
           "requiredMods": ["mineralogy"]
         },
         {
           "pos": [6, 1, 14],
-          "block": "poweradvantage:still",
+          "block": "basepower:still",
           "meta": 0,
           "requiredMods": ["mineralogy"]
         },
         {
           "pos": [7, 1, 14],
-          "block": "poweradvantage:fluid_pipe",
+          "block": "basepower:fluid_pipe",
           "meta": 0,
           "requiredMods": ["mineralogy"]
         },
         {
           "pos": [8, 1, 14],
-          "block": "poweradvantage:fluid_metal_tank",
+          "block": "basepower:fluid_metal_tank",
           "meta": 0,
           "requiredMods": ["mineralogy"]
         }
@@ -874,7 +874,7 @@
       ],
       "exclusive": false,
       "requiredMods": [
-        "poweradvantage"
+        "basepower"
       ],
       "placements": [
         {
@@ -892,7 +892,7 @@
             1,
             6
           ],
-          "block": "poweradvantage:item_conveyor",
+          "block": "basepower:item_conveyor",
           "meta": 5
         },
         {
@@ -901,7 +901,7 @@
             1,
             6
           ],
-          "block": "poweradvantage:item_conveyor",
+          "block": "basepower:item_conveyor",
           "meta": 5
         },
         {
@@ -928,7 +928,7 @@
             1,
             9
           ],
-          "block": "poweradvantage:item_filter_inventory",
+          "block": "basepower:item_filter_inventory",
           "meta": 5
         },
         {
@@ -964,7 +964,7 @@
             1,
             12
           ],
-          "block": "poweradvantage:item_filter_block",
+          "block": "basepower:item_filter_block",
           "meta": 5
         },
         {
@@ -973,7 +973,7 @@
             1,
             12
           ],
-          "block": "poweradvantage:item_filter_food",
+          "block": "basepower:item_filter_food",
           "meta": 5
         },
         {
@@ -982,7 +982,7 @@
             1,
             12
           ],
-          "block": "poweradvantage:item_filter_fuel",
+          "block": "basepower:item_filter_fuel",
           "meta": 5
         },
         {
@@ -991,7 +991,7 @@
             1,
             12
           ],
-          "block": "poweradvantage:item_filter_ore",
+          "block": "basepower:item_filter_ore",
           "meta": 5
         },
         {
@@ -1000,7 +1000,7 @@
             1,
             12
           ],
-          "block": "poweradvantage:item_filter_plant",
+          "block": "basepower:item_filter_plant",
           "meta": 5
         },
         {
@@ -1009,7 +1009,7 @@
             1,
             12
           ],
-          "block": "poweradvantage:item_filter_smelt",
+          "block": "basepower:item_filter_smelt",
           "meta": 5
         },
         {
@@ -1036,7 +1036,7 @@
             1,
             9
           ],
-          "block": "poweradvantage:item_filter_overflow",
+          "block": "basepower:item_filter_overflow",
           "meta": 5
         },
         {
@@ -1072,7 +1072,7 @@
             1,
             6
           ],
-          "block": "poweradvantage:item_conveyor",
+          "block": "basepower:item_conveyor",
           "meta": 1
         },
         {
@@ -1081,7 +1081,7 @@
             2,
             6
           ],
-          "block": "poweradvantage:item_conveyor",
+          "block": "basepower:item_conveyor",
           "meta": 5
         },
         {
@@ -1099,7 +1099,7 @@
             1,
             12
           ],
-          "block": "poweradvantage:item_conveyor",
+          "block": "basepower:item_conveyor",
           "meta": 5
         },
         {
@@ -1108,7 +1108,7 @@
             1,
             12
           ],
-          "block": "poweradvantage:item_conveyor",
+          "block": "basepower:item_conveyor",
           "meta": 5
         },
         {
@@ -1127,7 +1127,7 @@
         },
         {
           "pos": [3, 1, 15],
-          "block": "poweradvantage:item_filter_inventory",
+          "block": "basepower:item_filter_inventory",
           "meta": 5
         },
         {
@@ -1147,7 +1147,7 @@
         },
         {
           "pos": [3, 1, 18],
-          "block": "poweradvantage:item_filter_inventory",
+          "block": "basepower:item_filter_inventory",
           "meta": 5
         },
         {
@@ -1197,7 +1197,7 @@
         },
         {
           "pos": [13, 1, 15],
-          "block": "poweradvantage:item_filter_overflow",
+          "block": "basepower:item_filter_overflow",
           "meta": 5
         },
         {
@@ -1217,7 +1217,7 @@
         },
         {
           "pos": [13, 1, 18],
-          "block": "poweradvantage:item_filter_overflow",
+          "block": "basepower:item_filter_overflow",
           "meta": 5
         },
         {
@@ -1237,7 +1237,7 @@
         },
         {
           "pos": [13, 1, 21],
-          "block": "poweradvantage:item_filter_overflow",
+          "block": "basepower:item_filter_overflow",
           "meta": 5
         },
         {
@@ -1595,7 +1595,7 @@
             1,
             6
           ],
-          "block": "poweradvantage:item_conveyor",
+          "block": "basepower:item_conveyor",
           "meta": 5
         },
         {
@@ -1685,8 +1685,8 @@
       ],
       "exclusive": false,
       "requiredMods": [
-        "poweradvantage",
-        "steamadvantage"
+        "basepower",
+        "basesteam"
       ],
       "placements": [
         {
@@ -1695,7 +1695,7 @@
             1,
             7
           ],
-          "block": "steamadvantage:steam_boiler_coal",
+          "block": "basesteam:steam_boiler_coal",
           "meta": 0
         },
         {
@@ -1704,7 +1704,7 @@
             1,
             7
           ],
-          "block": "steamadvantage:steam_pipe",
+          "block": "basesteam:steam_pipe",
           "meta": 0
         },
         {
@@ -1713,7 +1713,7 @@
             1,
             7
           ],
-          "block": "steamadvantage:steam_tank",
+          "block": "basesteam:steam_tank",
           "meta": 0
         },
         {
@@ -1722,7 +1722,7 @@
             1,
             12
           ],
-          "block": "steamadvantage:steam_boiler_electric",
+          "block": "basesteam:steam_boiler_electric",
           "meta": 0
         },
         {
@@ -1731,7 +1731,7 @@
             1,
             12
           ],
-          "block": "steamadvantage:steam_pipe",
+          "block": "basesteam:steam_pipe",
           "meta": 0
         },
         {
@@ -1740,7 +1740,7 @@
             1,
             12
           ],
-          "block": "steamadvantage:steam_tank",
+          "block": "basesteam:steam_tank",
           "meta": 0
         },
         {
@@ -1749,7 +1749,7 @@
             1,
             7
           ],
-          "block": "steamadvantage:steam_boiler_geothermal",
+          "block": "basesteam:steam_boiler_geothermal",
           "meta": 0
         },
         {
@@ -1758,7 +1758,7 @@
             1,
             7
           ],
-          "block": "steamadvantage:steam_pipe",
+          "block": "basesteam:steam_pipe",
           "meta": 0
         },
         {
@@ -1767,7 +1767,7 @@
             1,
             7
           ],
-          "block": "steamadvantage:steam_tank",
+          "block": "basesteam:steam_tank",
           "meta": 0
         },
         {
@@ -1776,7 +1776,7 @@
             1,
             12
           ],
-          "block": "steamadvantage:steam_boiler_oil",
+          "block": "basesteam:steam_boiler_oil",
           "meta": 0
         },
         {
@@ -1785,7 +1785,7 @@
             1,
             12
           ],
-          "block": "steamadvantage:steam_pipe",
+          "block": "basesteam:steam_pipe",
           "meta": 0
         },
         {
@@ -1794,7 +1794,7 @@
             1,
             12
           ],
-          "block": "steamadvantage:steam_tank",
+          "block": "basesteam:steam_tank",
           "meta": 0
         },
         {
@@ -1827,7 +1827,7 @@
             20
           ],
           "slot": 0,
-          "item": "steamadvantage:steam_governor",
+          "item": "basesteam:steam_governor",
           "count": 4
         },
         {
@@ -1851,7 +1851,7 @@
             1,
             6
           ],
-          "block": "poweradvantage:fluid_storage_tank",
+          "block": "basepower:fluid_storage_tank",
           "meta": 0
         },
         {
@@ -1871,7 +1871,7 @@
             1,
             13
           ],
-          "block": "poweradvantage:infinite_electricity",
+          "block": "basepower:infinite_electricity",
           "meta": 0
         },
         {
@@ -1891,7 +1891,7 @@
             1,
             13
           ],
-          "block": "poweradvantage:fluid_storage_tank",
+          "block": "basepower:fluid_storage_tank",
           "meta": 0
         },
         {
@@ -2026,8 +2026,8 @@
       ],
       "exclusive": false,
       "requiredMods": [
-        "poweradvantage",
-        "steamadvantage"
+        "basepower",
+        "basesteam"
       ],
       "placements": [
         {
@@ -2036,7 +2036,7 @@
             1,
             8
           ],
-          "block": "steamadvantage:steam_pipe",
+          "block": "basesteam:steam_pipe",
           "meta": 0
         },
         {
@@ -2045,7 +2045,7 @@
             1,
             8
           ],
-          "block": "steamadvantage:steam_tank",
+          "block": "basesteam:steam_tank",
           "meta": 0
         },
         {
@@ -2054,7 +2054,7 @@
             1,
             8
           ],
-          "block": "steamadvantage:steam_pipe",
+          "block": "basesteam:steam_pipe",
           "meta": 0
         },
         {
@@ -2063,7 +2063,7 @@
             1,
             8
           ],
-          "block": "steamadvantage:steam_furnace",
+          "block": "basesteam:steam_furnace",
           "meta": 0
         },
         {
@@ -2072,7 +2072,7 @@
             1,
             8
           ],
-          "block": "steamadvantage:steam_drill",
+          "block": "basesteam:steam_drill",
           "meta": 5
         },
         {
@@ -2081,7 +2081,7 @@
             1,
             8
           ],
-          "block": "steamadvantage:steam_crusher",
+          "block": "basesteam:steam_crusher",
           "meta": 0
         },
         {
@@ -2090,7 +2090,7 @@
             1,
             7
           ],
-          "block": "steamadvantage:steam_pipe",
+          "block": "basesteam:steam_pipe",
           "meta": 0
         },
         {
@@ -2099,7 +2099,7 @@
             1,
             6
           ],
-          "block": "steamadvantage:steam_switch",
+          "block": "basesteam:steam_switch",
           "meta": 0
         },
         {
@@ -2108,7 +2108,7 @@
             1,
             9
           ],
-          "block": "steamadvantage:steam_pipe",
+          "block": "basesteam:steam_pipe",
           "meta": 0
         },
         {
@@ -2117,7 +2117,7 @@
             1,
             10
           ],
-          "block": "steamadvantage:steam_drill",
+          "block": "basesteam:steam_drill",
           "meta": 3
         },
         {
@@ -2126,7 +2126,7 @@
             1,
             8
           ],
-          "block": "steamadvantage:steam_pipe",
+          "block": "basesteam:steam_pipe",
           "meta": 0
         },
         {
@@ -2135,7 +2135,7 @@
             1,
             8
           ],
-          "block": "steamadvantage:steam_pipe",
+          "block": "basesteam:steam_pipe",
           "meta": 0
         },
         {
@@ -2144,7 +2144,7 @@
             1,
             8
           ],
-          "block": "steamadvantage:steam_pipe",
+          "block": "basesteam:steam_pipe",
           "meta": 0
         },
         {
@@ -2153,7 +2153,7 @@
             1,
             8
           ],
-          "block": "steamadvantage:steam_pipe",
+          "block": "basesteam:steam_pipe",
           "meta": 0
         },
         {
@@ -2162,7 +2162,7 @@
             1,
             8
           ],
-          "block": "steamadvantage:steam_tank",
+          "block": "basesteam:steam_tank",
           "meta": 0
         }
       ],
@@ -2175,7 +2175,7 @@
             1,
             8
           ],
-          "block": "poweradvantage:infinite_steam",
+          "block": "basepower:infinite_steam",
           "meta": 0
         },
         {
@@ -2185,7 +2185,7 @@
             1,
             8
           ],
-          "block": "poweradvantage:infinite_steam",
+          "block": "basepower:infinite_steam",
           "meta": 0
         }
       ],
@@ -2216,7 +2216,7 @@
             1,
             8
           ],
-          "block": "steamadvantage:steam_pipe"
+          "block": "basesteam:steam_pipe"
         },
         {
           "id": "steam-switch",
@@ -2226,7 +2226,7 @@
             1,
             6
           ],
-          "block": "steamadvantage:steam_switch"
+          "block": "basesteam:steam_switch"
         },
         {
           "id": "middle-drill",
@@ -2268,8 +2268,8 @@
       ],
       "exclusive": false,
       "requiredMods": [
-        "poweradvantage",
-        "steamadvantage"
+        "basepower",
+        "basesteam"
       ],
       "placements": [
         {
@@ -2278,7 +2278,7 @@
             1,
             8
           ],
-          "block": "steamadvantage:steam_boiler_coal",
+          "block": "basesteam:steam_boiler_coal",
           "meta": 0
         },
         {
@@ -2287,7 +2287,7 @@
             1,
             8
           ],
-          "block": "steamadvantage:steam_pipe",
+          "block": "basesteam:steam_pipe",
           "meta": 0
         },
         {
@@ -2296,7 +2296,7 @@
             1,
             8
           ],
-          "block": "steamadvantage:steam_tank",
+          "block": "basesteam:steam_tank",
           "meta": 0
         },
         {
@@ -2305,7 +2305,7 @@
             1,
             8
           ],
-          "block": "steamadvantage:steam_pipe",
+          "block": "basesteam:steam_pipe",
           "meta": 0
         },
         {
@@ -2314,7 +2314,7 @@
             1,
             8
           ],
-          "block": "steamadvantage:steam_furnace",
+          "block": "basesteam:steam_furnace",
           "meta": 0
         },
         {
@@ -2323,7 +2323,7 @@
             1,
             8
           ],
-          "block": "steamadvantage:steam_crusher",
+          "block": "basesteam:steam_crusher",
           "meta": 0
         },
         {
@@ -2332,7 +2332,7 @@
             1,
             10
           ],
-          "block": "steamadvantage:steam_switch",
+          "block": "basesteam:steam_switch",
           "meta": 0
         }
       ],
@@ -2357,7 +2357,7 @@
             1,
             7
           ],
-          "block": "poweradvantage:fluid_storage_tank",
+          "block": "basepower:fluid_storage_tank",
           "meta": 0
         },
         {
@@ -2438,8 +2438,8 @@
       ],
       "exclusive": false,
       "requiredMods": [
-        "poweradvantage",
-        "steamadvantage"
+        "basepower",
+        "basesteam"
       ],
       "placements": [
         {
@@ -2457,7 +2457,7 @@
             1,
             7
           ],
-          "block": "steamadvantage:steam_furnace",
+          "block": "basesteam:steam_furnace",
           "meta": 0
         },
         {
@@ -2475,7 +2475,7 @@
             1,
             6
           ],
-          "block": "steamadvantage:steam_pipe",
+          "block": "basesteam:steam_pipe",
           "meta": 0
         },
         {
@@ -2493,7 +2493,7 @@
             1,
             13
           ],
-          "block": "steamadvantage:steam_crusher",
+          "block": "basesteam:steam_crusher",
           "meta": 0
         },
         {
@@ -2511,7 +2511,7 @@
             1,
             12
           ],
-          "block": "steamadvantage:steam_pipe",
+          "block": "basesteam:steam_pipe",
           "meta": 0
         },
         {
@@ -2520,7 +2520,7 @@
             1,
             13
           ],
-          "block": "steamadvantage:steam_still",
+          "block": "basesteam:steam_still",
           "meta": 0
         },
         {
@@ -2529,7 +2529,7 @@
             1,
             13
           ],
-          "block": "steamadvantage:steam_crusher",
+          "block": "basesteam:steam_crusher",
           "meta": 0
         }
       ],
@@ -2554,7 +2554,7 @@
             1,
             5
           ],
-          "block": "poweradvantage:infinite_steam",
+          "block": "basepower:infinite_steam",
           "meta": 0
         },
         {
@@ -2564,7 +2564,7 @@
             1,
             11
           ],
-          "block": "poweradvantage:infinite_steam",
+          "block": "basepower:infinite_steam",
           "meta": 0
         },
         {
@@ -2574,7 +2574,7 @@
             1,
             12
           ],
-          "block": "poweradvantage:infinite_steam",
+          "block": "basepower:infinite_steam",
           "meta": 0
         },
         {
@@ -2702,8 +2702,8 @@
       "exclusive": true,
       "enclosed": true,
       "requiredMods": [
-        "poweradvantage",
-        "steamadvantage"
+        "basepower",
+        "basesteam"
       ],
       "placements": [
         {
@@ -2712,7 +2712,7 @@
             2,
             6
           ],
-          "block": "steamadvantage:steam_drill",
+          "block": "basesteam:steam_drill",
           "meta": 0
         },
         {
@@ -2721,7 +2721,7 @@
             2,
             6
           ],
-          "block": "steamadvantage:steam_drill",
+          "block": "basesteam:steam_drill",
           "meta": 1
         },
         {
@@ -2730,7 +2730,7 @@
             2,
             6
           ],
-          "block": "steamadvantage:steam_drill",
+          "block": "basesteam:steam_drill",
           "meta": 2
         },
         {
@@ -2739,7 +2739,7 @@
             2,
             6
           ],
-          "block": "steamadvantage:steam_drill",
+          "block": "basesteam:steam_drill",
           "meta": 3
         },
         {
@@ -2748,7 +2748,7 @@
             2,
             6
           ],
-          "block": "steamadvantage:steam_drill",
+          "block": "basesteam:steam_drill",
           "meta": 4
         },
         {
@@ -2757,7 +2757,7 @@
             2,
             6
           ],
-          "block": "steamadvantage:steam_drill",
+          "block": "basesteam:steam_drill",
           "meta": 5
         },
         {
@@ -2766,7 +2766,7 @@
             3,
             6
           ],
-          "block": "steamadvantage:steam_track",
+          "block": "basesteam:steam_track",
           "meta": 0
         },
         {
@@ -2775,7 +2775,7 @@
             1,
             6
           ],
-          "block": "steamadvantage:steam_track",
+          "block": "basesteam:steam_track",
           "meta": 0
         },
         {
@@ -2784,7 +2784,7 @@
             2,
             7
           ],
-          "block": "steamadvantage:steam_track",
+          "block": "basesteam:steam_track",
           "meta": 0
         },
         {
@@ -2793,7 +2793,7 @@
             2,
             5
           ],
-          "block": "steamadvantage:steam_track",
+          "block": "basesteam:steam_track",
           "meta": 0
         },
         {
@@ -2802,7 +2802,7 @@
             2,
             6
           ],
-          "block": "steamadvantage:steam_track",
+          "block": "basesteam:steam_track",
           "meta": 0
         },
         {
@@ -2811,7 +2811,7 @@
             2,
             6
           ],
-          "block": "steamadvantage:steam_track",
+          "block": "basesteam:steam_track",
           "meta": 0
         },
         {
@@ -2820,7 +2820,7 @@
             1,
             6
           ],
-          "block": "steamadvantage:drillbit",
+          "block": "basesteam:drillbit",
           "meta": 0
         },
         {
@@ -2829,7 +2829,7 @@
             3,
             6
           ],
-          "block": "steamadvantage:drillbit",
+          "block": "basesteam:drillbit",
           "meta": 1
         },
         {
@@ -2838,7 +2838,7 @@
             2,
             5
           ],
-          "block": "steamadvantage:drillbit",
+          "block": "basesteam:drillbit",
           "meta": 2
         },
         {
@@ -2847,7 +2847,7 @@
             2,
             7
           ],
-          "block": "steamadvantage:drillbit",
+          "block": "basesteam:drillbit",
           "meta": 3
         },
         {
@@ -2856,7 +2856,7 @@
             2,
             6
           ],
-          "block": "steamadvantage:drillbit",
+          "block": "basesteam:drillbit",
           "meta": 4
         },
         {
@@ -2865,7 +2865,7 @@
             2,
             6
           ],
-          "block": "steamadvantage:drillbit",
+          "block": "basesteam:drillbit",
           "meta": 5
         },
         {
@@ -2932,7 +2932,7 @@
             2,
             7
           ],
-          "block": "poweradvantage:infinite_steam",
+          "block": "basepower:infinite_steam",
           "meta": 0
         },
         {
@@ -2942,7 +2942,7 @@
             2,
             7
           ],
-          "block": "poweradvantage:infinite_steam",
+          "block": "basepower:infinite_steam",
           "meta": 0
         },
         {
@@ -2952,7 +2952,7 @@
             2,
             9
           ],
-          "block": "poweradvantage:infinite_steam",
+          "block": "basepower:infinite_steam",
           "meta": 0
         },
         {
@@ -2962,7 +2962,7 @@
             2,
             3
           ],
-          "block": "poweradvantage:infinite_steam",
+          "block": "basepower:infinite_steam",
           "meta": 0
         },
         {
@@ -2972,7 +2972,7 @@
             2,
             7
           ],
-          "block": "poweradvantage:infinite_steam",
+          "block": "basepower:infinite_steam",
           "meta": 0
         },
         {
@@ -2982,7 +2982,7 @@
             2,
             7
           ],
-          "block": "poweradvantage:infinite_steam",
+          "block": "basepower:infinite_steam",
           "meta": 0
         }
       ],
@@ -3045,7 +3045,7 @@
             2,
             6
           ],
-          "block": "steamadvantage:steam_drill",
+          "block": "basesteam:steam_drill",
           "meta": 0
         },
         {
@@ -3056,7 +3056,7 @@
             2,
             6
           ],
-          "block": "steamadvantage:steam_drill",
+          "block": "basesteam:steam_drill",
           "meta": 1
         },
         {
@@ -3067,7 +3067,7 @@
             2,
             6
           ],
-          "block": "steamadvantage:steam_drill",
+          "block": "basesteam:steam_drill",
           "meta": 2
         },
         {
@@ -3078,7 +3078,7 @@
             2,
             6
           ],
-          "block": "steamadvantage:steam_drill",
+          "block": "basesteam:steam_drill",
           "meta": 3
         },
         {
@@ -3089,7 +3089,7 @@
             2,
             6
           ],
-          "block": "steamadvantage:steam_drill",
+          "block": "basesteam:steam_drill",
           "meta": 4
         },
         {
@@ -3100,7 +3100,7 @@
             2,
             6
           ],
-          "block": "steamadvantage:steam_drill",
+          "block": "basesteam:steam_drill",
           "meta": 5
         }
       ],
@@ -3135,8 +3135,8 @@
       "exclusive": true,
       "enclosed": true,
       "requiredMods": [
-        "poweradvantage",
-        "steamadvantage"
+        "basepower",
+        "basesteam"
       ],
       "placements": [
         {
@@ -3145,7 +3145,7 @@
             5,
             10
           ],
-          "block": "steamadvantage:steam_pump",
+          "block": "basesteam:steam_pump",
           "meta": 0
         },
         {
@@ -3154,7 +3154,7 @@
             4,
             10
           ],
-          "block": "steamadvantage:pump_pipe_steam",
+          "block": "basesteam:pump_pipe_steam",
           "meta": 0
         },
         {
@@ -3163,7 +3163,7 @@
             3,
             10
           ],
-          "block": "steamadvantage:pump_pipe_steam",
+          "block": "basesteam:pump_pipe_steam",
           "meta": 0
         },
         {
@@ -3172,7 +3172,7 @@
             5,
             10
           ],
-          "block": "steamadvantage:steam_pipe",
+          "block": "basesteam:steam_pipe",
           "meta": 0
         },
         {
@@ -3181,7 +3181,7 @@
             5,
             10
           ],
-          "block": "poweradvantage:fluid_metal_tank",
+          "block": "basepower:fluid_metal_tank",
           "meta": 0
         },
         {
@@ -3190,7 +3190,7 @@
             5,
             20
           ],
-          "block": "steamadvantage:steam_pump",
+          "block": "basesteam:steam_pump",
           "meta": 0
         },
         {
@@ -3412,7 +3412,7 @@
             5,
             11
           ],
-          "block": "poweradvantage:infinite_steam",
+          "block": "basepower:infinite_steam",
           "meta": 0
         }
       ],
@@ -3453,7 +3453,7 @@
             4,
             10
           ],
-          "block": "steamadvantage:pump_pipe_steam"
+          "block": "basesteam:pump_pipe_steam"
         },
         {
           "id": "pump-fluid-persisted",
@@ -3497,8 +3497,8 @@
       "exclusive": true,
       "enclosed": true,
       "requiredMods": [
-        "poweradvantage",
-        "steamadvantage"
+        "basepower",
+        "basesteam"
       ],
       "placements": [
         {
@@ -3507,7 +3507,7 @@
             1,
             12
           ],
-          "block": "steamadvantage:steam_elevator",
+          "block": "basesteam:steam_elevator",
           "meta": 0
         },
         {
@@ -3516,7 +3516,7 @@
             2,
             12
           ],
-          "block": "steamadvantage:platform",
+          "block": "basesteam:platform",
           "meta": 0
         },
         {
@@ -3525,7 +3525,7 @@
             1,
             12
           ],
-          "block": "steamadvantage:steam_pipe",
+          "block": "basesteam:steam_pipe",
           "meta": 0
         },
         {
@@ -3592,7 +3592,7 @@
             1,
             12
           ],
-          "block": "poweradvantage:infinite_steam",
+          "block": "basepower:infinite_steam",
           "meta": 0
         }
       ],
@@ -3624,7 +3624,7 @@
             2,
             12
           ],
-          "block": "steamadvantage:platform"
+          "block": "basesteam:platform"
         }
       ],
       "manualChecks": [
@@ -3657,8 +3657,8 @@
       "exclusive": true,
       "enclosed": true,
       "requiredMods": [
-        "poweradvantage",
-        "steamadvantage"
+        "basepower",
+        "basesteam"
       ],
       "placements": [
         {
@@ -3770,7 +3770,7 @@
             5
           ],
           "slot": 0,
-          "item": "steamadvantage:musket",
+          "item": "basesteam:musket",
           "count": 1
         },
         {
@@ -3781,7 +3781,7 @@
             5
           ],
           "slot": 1,
-          "item": "steamadvantage:musket",
+          "item": "basesteam:musket",
           "count": 1,
           "nbt": {
             "loaded": 1
@@ -3795,7 +3795,7 @@
             5
           ],
           "slot": 2,
-          "item": "steamadvantage:blackpowder_cartridge",
+          "item": "basesteam:blackpowder_cartridge",
           "count": 64
         },
         {
@@ -3806,7 +3806,7 @@
             5
           ],
           "slot": 3,
-          "item": "steamadvantage:steam_governor",
+          "item": "basesteam:steam_governor",
           "count": 8
         },
         {
@@ -3817,14 +3817,14 @@
             5
           ],
           "slot": 4,
-          "item": "steamadvantage:steam_drill_bit",
+          "item": "basesteam:steam_drill_bit",
           "count": 8
         },
         {
           "type": "setInventory",
           "pos": [3, 1, 5],
           "slot": 5,
-          "item": "steamadvantage:musket",
+          "item": "basesteam:musket",
           "count": 1,
           "enchantment": "steamadvantage:rapid_reload",
           "level": 1
@@ -3833,7 +3833,7 @@
           "type": "setInventory",
           "pos": [3, 1, 5],
           "slot": 6,
-          "item": "steamadvantage:musket",
+          "item": "basesteam:musket",
           "count": 1,
           "enchantment": "steamadvantage:powderless",
           "level": 1
@@ -3842,7 +3842,7 @@
           "type": "setInventory",
           "pos": [3, 1, 5],
           "slot": 7,
-          "item": "steamadvantage:musket",
+          "item": "basesteam:musket",
           "count": 1,
           "enchantment": "steamadvantage:high_explosive",
           "level": 1
@@ -3851,7 +3851,7 @@
           "type": "setInventory",
           "pos": [3, 1, 5],
           "slot": 8,
-          "item": "steamadvantage:musket",
+          "item": "basesteam:musket",
           "count": 1,
           "enchantment": "steamadvantage:high_explosive",
           "level": 5
@@ -3860,7 +3860,7 @@
           "type": "setInventory",
           "pos": [3, 1, 5],
           "slot": 9,
-          "item": "steamadvantage:musket",
+          "item": "basesteam:musket",
           "count": 1,
           "enchantment": "steamadvantage:recoil",
           "level": 1
@@ -3869,7 +3869,7 @@
           "type": "setInventory",
           "pos": [3, 1, 5],
           "slot": 10,
-          "item": "steamadvantage:musket",
+          "item": "basesteam:musket",
           "count": 1,
           "enchantment": "steamadvantage:recoil",
           "level": 5
@@ -3882,13 +3882,13 @@
           "id": "musket-item",
           "type": "registryItem",
           "pos": null,
-          "item": "steamadvantage:musket"
+          "item": "basesteam:musket"
         },
         {
           "id": "cartridge-item",
           "type": "registryItem",
           "pos": null,
-          "item": "steamadvantage:blackpowder_cartridge"
+          "item": "basesteam:blackpowder_cartridge"
         },
         {
           "id": "range-chest",
@@ -3903,7 +3903,7 @@
           "id": "stocked-muskets",
           "type": "inventoryCount",
           "pos": [3, 1, 5],
-          "item": "steamadvantage:musket",
+          "item": "basesteam:musket",
           "count": 8,
           "operator": "min"
         }
@@ -3938,8 +3938,8 @@
       "exclusive": true,
       "enclosed": true,
       "requiredMods": [
-        "poweradvantage",
-        "electricadvantage"
+        "basepower",
+        "baseelectric"
       ],
       "placements": [
         {
@@ -3948,7 +3948,7 @@
             1,
             7
           ],
-          "block": "electricadvantage:photovoltaic_generator",
+          "block": "baseelectric:photovoltaic_generator",
           "meta": 0
         },
         {
@@ -3957,7 +3957,7 @@
             1,
             7
           ],
-          "block": "electricadvantage:electric_conduit",
+          "block": "baseelectric:electric_conduit",
           "meta": 0
         },
         {
@@ -3966,7 +3966,7 @@
             1,
             7
           ],
-          "block": "electricadvantage:electric_battery_array",
+          "block": "baseelectric:electric_battery_array",
           "meta": 0
         },
         {
@@ -4191,7 +4191,7 @@
             4,
             12
           ],
-          "block": "electricadvantage:hydroelectric_generator",
+          "block": "baseelectric:hydroelectric_generator",
           "meta": 0
         },
         {
@@ -4200,7 +4200,7 @@
             4,
             12
           ],
-          "block": "electricadvantage:electric_battery_array",
+          "block": "baseelectric:electric_battery_array",
           "meta": 0
         },
         {
@@ -4209,7 +4209,7 @@
             1,
             7
           ],
-          "block": "electricadvantage:steam_powered_generator",
+          "block": "baseelectric:steam_powered_generator",
           "meta": 0
         },
         {
@@ -4218,7 +4218,7 @@
             1,
             7
           ],
-          "block": "electricadvantage:electric_conduit",
+          "block": "baseelectric:electric_conduit",
           "meta": 0
         },
         {
@@ -4227,7 +4227,7 @@
             1,
             7
           ],
-          "block": "electricadvantage:electric_battery_array",
+          "block": "baseelectric:electric_battery_array",
           "meta": 0
         }
       ],
@@ -4239,7 +4239,7 @@
             1,
             7
           ],
-          "item": "electricadvantage:lithium_battery",
+          "item": "baseelectric:lithium_battery",
           "slot": 0,
           "count": 1,
           "nbt": {
@@ -4253,7 +4253,7 @@
             4,
             12
           ],
-          "item": "electricadvantage:lithium_battery",
+          "item": "baseelectric:lithium_battery",
           "slot": 0,
           "count": 1,
           "nbt": {
@@ -4267,7 +4267,7 @@
             1,
             7
           ],
-          "item": "electricadvantage:lithium_battery",
+          "item": "baseelectric:lithium_battery",
           "slot": 0,
           "count": 1,
           "nbt": {
@@ -4291,7 +4291,7 @@
             4,
             12
           ],
-          "item": "electricadvantage:lithium_battery",
+          "item": "baseelectric:lithium_battery",
           "slot": 0,
           "count": 1,
           "nbt": {
@@ -4305,7 +4305,7 @@
             1,
             7
           ],
-          "block": "poweradvantage:infinite_steam",
+          "block": "basepower:infinite_steam",
           "meta": 0
         },
         {
@@ -4363,7 +4363,7 @@
             4,
             12
           ],
-          "block": "electricadvantage:hydroelectric_generator",
+          "block": "baseelectric:hydroelectric_generator",
           "meta": 10
         },
         {
@@ -4418,8 +4418,8 @@
       ],
       "exclusive": false,
       "requiredMods": [
-        "poweradvantage",
-        "electricadvantage"
+        "basepower",
+        "baseelectric"
       ],
       "placements": [
         {
@@ -4428,7 +4428,7 @@
             1,
             7
           ],
-          "block": "electricadvantage:electric_battery_array",
+          "block": "baseelectric:electric_battery_array",
           "meta": 0
         },
         {
@@ -4437,7 +4437,7 @@
             1,
             7
           ],
-          "block": "electricadvantage:electric_conduit",
+          "block": "baseelectric:electric_conduit",
           "meta": 0
         },
         {
@@ -4446,7 +4446,7 @@
             1,
             7
           ],
-          "block": "electricadvantage:electric_switch",
+          "block": "baseelectric:electric_switch",
           "meta": 0
         },
         {
@@ -4455,7 +4455,7 @@
             1,
             7
           ],
-          "block": "electricadvantage:electric_conduit",
+          "block": "baseelectric:electric_conduit",
           "meta": 0
         },
         {
@@ -4464,7 +4464,7 @@
             1,
             7
           ],
-          "block": "electricadvantage:electric_crusher",
+          "block": "baseelectric:electric_crusher",
           "meta": 0
         },
         {
@@ -4473,7 +4473,7 @@
             1,
             7
           ],
-          "block": "electricadvantage:electric_furnace",
+          "block": "baseelectric:electric_furnace",
           "meta": 0
         },
         {
@@ -4482,7 +4482,7 @@
             1,
             7
           ],
-          "block": "electricadvantage:electric_fabricator",
+          "block": "baseelectric:electric_fabricator",
           "meta": 0
         },
         {
@@ -4504,7 +4504,7 @@
             7
           ],
           "slot": 0,
-          "item": "electricadvantage:lead_acid_battery",
+          "item": "baseelectric:lead_acid_battery",
           "count": 1,
           "nbt": {
             "energy": 0
@@ -4518,7 +4518,7 @@
             7
           ],
           "slot": 1,
-          "item": "electricadvantage:nickel_hydride_battery",
+          "item": "baseelectric:nickel_hydride_battery",
           "count": 1,
           "nbt": {
             "energy": 250
@@ -4532,7 +4532,7 @@
             7
           ],
           "slot": 2,
-          "item": "electricadvantage:alkaline_battery",
+          "item": "baseelectric:alkaline_battery",
           "count": 1
         },
         {
@@ -4543,7 +4543,7 @@
             7
           ],
           "slot": 3,
-          "item": "electricadvantage:lithium_battery",
+          "item": "baseelectric:lithium_battery",
           "count": 1
         },
         {
@@ -4554,7 +4554,7 @@
             12
           ],
           "slot": 0,
-          "item": "electricadvantage:blank_circuit_board",
+          "item": "baseelectric:blank_circuit_board",
           "count": 8
         },
         {
@@ -4565,7 +4565,7 @@
             12
           ],
           "slot": 1,
-          "item": "electricadvantage:control_circuit",
+          "item": "baseelectric:control_circuit",
           "count": 8
         },
         {
@@ -4576,7 +4576,7 @@
             12
           ],
           "slot": 2,
-          "item": "electricadvantage:integrated_circuit",
+          "item": "baseelectric:integrated_circuit",
           "count": 8
         },
         {
@@ -4587,7 +4587,7 @@
             12
           ],
           "slot": 3,
-          "item": "electricadvantage:psu",
+          "item": "baseelectric:psu",
           "count": 8
         },
         {
@@ -4598,7 +4598,7 @@
             12
           ],
           "slot": 4,
-          "item": "electricadvantage:silicon_ingot",
+          "item": "baseelectric:silicon_ingot",
           "count": 8
         },
         {
@@ -4609,7 +4609,7 @@
             12
           ],
           "slot": 5,
-          "item": "electricadvantage:silicon_mix",
+          "item": "baseelectric:silicon_mix",
           "count": 8
         },
         {
@@ -4620,7 +4620,7 @@
             12
           ],
           "slot": 6,
-          "item": "electricadvantage:solder_mix",
+          "item": "baseelectric:solder_mix",
           "count": 8
         },
         {
@@ -4631,7 +4631,7 @@
             12
           ],
           "slot": 7,
-          "item": "electricadvantage:solder",
+          "item": "baseelectric:solder",
           "count": 8
         },
         {
@@ -4642,7 +4642,7 @@
             12
           ],
           "slot": 8,
-          "item": "electricadvantage:li_ingot",
+          "item": "baseelectric:li_ingot",
           "count": 8
         },
         {
@@ -4653,7 +4653,7 @@
             12
           ],
           "slot": 9,
-          "item": "electricadvantage:li_powder",
+          "item": "baseelectric:li_powder",
           "count": 8
         },
         {
@@ -4664,7 +4664,7 @@
             12
           ],
           "slot": 10,
-          "item": "electricadvantage:li_nugget",
+          "item": "baseelectric:li_nugget",
           "count": 8
         },
         {
@@ -4675,7 +4675,7 @@
             12
           ],
           "slot": 11,
-          "item": "electricadvantage:sulfur_powder",
+          "item": "baseelectric:sulfur_powder",
           "count": 8
         },
         {
@@ -4686,14 +4686,14 @@
             12
           ],
           "slot": 12,
-          "item": "electricadvantage:petrolplastic_ingot",
+          "item": "baseelectric:petrolplastic_ingot",
           "count": 8
         },
         {
           "type": "setInventory",
           "pos": [3, 1, 12],
           "slot": 13,
-          "item": "electricadvantage:lead_acid_battery",
+          "item": "baseelectric:lead_acid_battery",
           "count": 1,
           "nbt": {"energy": 0}
         },
@@ -4701,7 +4701,7 @@
           "type": "setInventory",
           "pos": [3, 1, 12],
           "slot": 14,
-          "item": "electricadvantage:lead_acid_battery",
+          "item": "baseelectric:lead_acid_battery",
           "count": 1,
           "nbt": {"energy": 500}
         },
@@ -4709,14 +4709,14 @@
           "type": "setInventory",
           "pos": [3, 1, 12],
           "slot": 15,
-          "item": "electricadvantage:lead_acid_battery",
+          "item": "baseelectric:lead_acid_battery",
           "count": 1
         },
         {
           "type": "setInventory",
           "pos": [3, 1, 12],
           "slot": 16,
-          "item": "electricadvantage:nickel_hydride_battery",
+          "item": "baseelectric:nickel_hydride_battery",
           "count": 1,
           "nbt": {"energy": 0}
         },
@@ -4724,7 +4724,7 @@
           "type": "setInventory",
           "pos": [3, 1, 12],
           "slot": 17,
-          "item": "electricadvantage:nickel_hydride_battery",
+          "item": "baseelectric:nickel_hydride_battery",
           "count": 1,
           "nbt": {"energy": 1000}
         },
@@ -4732,14 +4732,14 @@
           "type": "setInventory",
           "pos": [3, 1, 12],
           "slot": 18,
-          "item": "electricadvantage:nickel_hydride_battery",
+          "item": "baseelectric:nickel_hydride_battery",
           "count": 1
         },
         {
           "type": "setInventory",
           "pos": [3, 1, 12],
           "slot": 19,
-          "item": "electricadvantage:alkaline_battery",
+          "item": "baseelectric:alkaline_battery",
           "count": 1,
           "nbt": {"energy": 0}
         },
@@ -4747,7 +4747,7 @@
           "type": "setInventory",
           "pos": [3, 1, 12],
           "slot": 20,
-          "item": "electricadvantage:alkaline_battery",
+          "item": "baseelectric:alkaline_battery",
           "count": 1,
           "nbt": {"energy": 2000}
         },
@@ -4755,14 +4755,14 @@
           "type": "setInventory",
           "pos": [3, 1, 12],
           "slot": 21,
-          "item": "electricadvantage:alkaline_battery",
+          "item": "baseelectric:alkaline_battery",
           "count": 1
         },
         {
           "type": "setInventory",
           "pos": [3, 1, 12],
           "slot": 22,
-          "item": "electricadvantage:lithium_battery",
+          "item": "baseelectric:lithium_battery",
           "count": 1,
           "nbt": {"energy": 0}
         },
@@ -4770,7 +4770,7 @@
           "type": "setInventory",
           "pos": [3, 1, 12],
           "slot": 23,
-          "item": "electricadvantage:lithium_battery",
+          "item": "baseelectric:lithium_battery",
           "count": 1,
           "nbt": {"energy": 4000}
         },
@@ -4778,7 +4778,7 @@
           "type": "setInventory",
           "pos": [3, 1, 12],
           "slot": 24,
-          "item": "electricadvantage:lithium_battery",
+          "item": "baseelectric:lithium_battery",
           "count": 1
         }
       ],
@@ -4790,7 +4790,7 @@
             1,
             7
           ],
-          "block": "poweradvantage:infinite_electricity",
+          "block": "basepower:infinite_electricity",
           "meta": 0
         }
       ],
@@ -4822,13 +4822,13 @@
             1,
             7
           ],
-          "block": "electricadvantage:electric_switch"
+          "block": "baseelectric:electric_switch"
         },
         {
           "id": "lithium-battery",
           "type": "registryItem",
           "pos": null,
-          "item": "electricadvantage:lithium_battery"
+          "item": "baseelectric:lithium_battery"
         },
         {
           "id": "lead-empty-nbt",
@@ -4896,8 +4896,8 @@
       ],
       "exclusive": false,
       "requiredMods": [
-        "poweradvantage",
-        "electricadvantage"
+        "basepower",
+        "baseelectric"
       ],
       "placements": [
         {
@@ -4906,7 +4906,7 @@
             1,
             6
           ],
-          "block": "electricadvantage:electric_crusher",
+          "block": "baseelectric:electric_crusher",
           "meta": 0
         },
         {
@@ -4915,7 +4915,7 @@
             1,
             6
           ],
-          "block": "electricadvantage:electric_furnace",
+          "block": "baseelectric:electric_furnace",
           "meta": 0
         },
         {
@@ -4924,7 +4924,7 @@
             1,
             6
           ],
-          "block": "electricadvantage:electric_oven",
+          "block": "baseelectric:electric_oven",
           "meta": 0
         },
         {
@@ -4933,7 +4933,7 @@
             1,
             6
           ],
-          "block": "electricadvantage:electric_fabricator",
+          "block": "baseelectric:electric_fabricator",
           "meta": 0
         },
         {
@@ -4951,7 +4951,7 @@
             1,
             10
           ],
-          "block": "poweradvantage:item_conveyor",
+          "block": "basepower:item_conveyor",
           "meta": 5
         },
         {
@@ -4969,7 +4969,7 @@
             1,
             14
           ],
-          "block": "electricadvantage:li_ore",
+          "block": "baseelectric:li_ore",
           "meta": 0
         },
         {
@@ -4978,7 +4978,7 @@
             1,
             14
           ],
-          "block": "electricadvantage:sulfur_ore",
+          "block": "baseelectric:sulfur_ore",
           "meta": 0
         }
       ],
@@ -4991,7 +4991,7 @@
             1,
             5
           ],
-          "block": "poweradvantage:infinite_electricity",
+          "block": "basepower:infinite_electricity",
           "meta": 0
         },
         {
@@ -5001,7 +5001,7 @@
             1,
             5
           ],
-          "block": "poweradvantage:infinite_electricity",
+          "block": "basepower:infinite_electricity",
           "meta": 0
         },
         {
@@ -5011,7 +5011,7 @@
             1,
             5
           ],
-          "block": "poweradvantage:infinite_electricity",
+          "block": "basepower:infinite_electricity",
           "meta": 0
         },
         {
@@ -5021,7 +5021,7 @@
             1,
             5
           ],
-          "block": "poweradvantage:infinite_electricity",
+          "block": "basepower:infinite_electricity",
           "meta": 0
         },
         {
@@ -5148,8 +5148,8 @@
       ],
       "exclusive": true,
       "requiredMods": [
-        "poweradvantage",
-        "electricadvantage"
+        "basepower",
+        "baseelectric"
       ],
       "placements": [
         {
@@ -5158,7 +5158,7 @@
             5,
             7
           ],
-          "block": "electricadvantage:electric_pump",
+          "block": "baseelectric:electric_pump",
           "meta": 0
         },
         {
@@ -5167,7 +5167,7 @@
             4,
             7
           ],
-          "block": "electricadvantage:pump_pipe_electric",
+          "block": "baseelectric:pump_pipe_electric",
           "meta": 0
         },
         {
@@ -5176,7 +5176,7 @@
             5,
             7
           ],
-          "block": "electricadvantage:electric_conduit",
+          "block": "baseelectric:electric_conduit",
           "meta": 0
         },
         {
@@ -5185,7 +5185,7 @@
             5,
             7
           ],
-          "block": "poweradvantage:fluid_metal_tank",
+          "block": "basepower:fluid_metal_tank",
           "meta": 0
         },
         {
@@ -5194,7 +5194,7 @@
             1,
             7
           ],
-          "block": "electricadvantage:electric_still",
+          "block": "baseelectric:electric_still",
           "meta": 0
         },
         {
@@ -5203,7 +5203,7 @@
             1,
             7
           ],
-          "block": "electricadvantage:plastic_refinery",
+          "block": "baseelectric:plastic_refinery",
           "meta": 0
         },
         {
@@ -5212,7 +5212,7 @@
             1,
             7
           ],
-          "block": "poweradvantage:fluid_storage_tank",
+          "block": "basepower:fluid_storage_tank",
           "meta": 0
         },
         {
@@ -5221,7 +5221,7 @@
             1,
             7
           ],
-          "block": "poweradvantage:fluid_storage_tank",
+          "block": "basepower:fluid_storage_tank",
           "meta": 0
         },
         {
@@ -5230,7 +5230,7 @@
             1,
             7
           ],
-          "block": "poweradvantage:fluid_storage_tank",
+          "block": "basepower:fluid_storage_tank",
           "meta": 0
         },
         {
@@ -5283,7 +5283,7 @@
             5,
             6
           ],
-          "block": "poweradvantage:infinite_electricity",
+          "block": "basepower:infinite_electricity",
           "meta": 0
         },
         {
@@ -5293,7 +5293,7 @@
             1,
             6
           ],
-          "block": "poweradvantage:infinite_electricity",
+          "block": "basepower:infinite_electricity",
           "meta": 0
         },
         {
@@ -5303,7 +5303,7 @@
             1,
             6
           ],
-          "block": "poweradvantage:infinite_electricity",
+          "block": "basepower:infinite_electricity",
           "meta": 0
         }
       ],
@@ -5377,7 +5377,7 @@
             4,
             7
           ],
-          "block": "electricadvantage:pump_pipe_electric"
+          "block": "baseelectric:pump_pipe_electric"
         }
       ],
       "manualChecks": [
@@ -5409,8 +5409,8 @@
       ],
       "exclusive": false,
       "requiredMods": [
-        "poweradvantage",
-        "electricadvantage"
+        "basepower",
+        "baseelectric"
       ],
       "placements": [
         {
@@ -5419,7 +5419,7 @@
             1,
             8
           ],
-          "block": "electricadvantage:growth_chamber_controller",
+          "block": "baseelectric:growth_chamber_controller",
           "meta": 0
         },
         {
@@ -5428,7 +5428,7 @@
             1,
             8
           ],
-          "block": "electricadvantage:growth_chamber",
+          "block": "baseelectric:growth_chamber",
           "meta": 0
         },
         {
@@ -5437,7 +5437,7 @@
             1,
             8
           ],
-          "block": "electricadvantage:growth_chamber",
+          "block": "baseelectric:growth_chamber",
           "meta": 0
         },
         {
@@ -5446,7 +5446,7 @@
             1,
             8
           ],
-          "block": "electricadvantage:growth_chamber",
+          "block": "baseelectric:growth_chamber",
           "meta": 0
         },
         {
@@ -5455,7 +5455,7 @@
             1,
             9
           ],
-          "block": "electricadvantage:growth_chamber",
+          "block": "baseelectric:growth_chamber",
           "meta": 0
         },
         {
@@ -5464,7 +5464,7 @@
             1,
             7
           ],
-          "block": "electricadvantage:electric_conduit",
+          "block": "baseelectric:electric_conduit",
           "meta": 0
         },
         {
@@ -5473,7 +5473,7 @@
             1,
             8
           ],
-          "block": "poweradvantage:fluid_storage_tank",
+          "block": "basepower:fluid_storage_tank",
           "meta": 0
         },
         {
@@ -5550,7 +5550,7 @@
             1,
             7
           ],
-          "block": "poweradvantage:infinite_electricity",
+          "block": "basepower:infinite_electricity",
           "meta": 0
         }
       ],
@@ -5623,8 +5623,8 @@
       "exclusive": true,
       "enclosed": true,
       "requiredMods": [
-        "poweradvantage",
-        "electricadvantage"
+        "basepower",
+        "baseelectric"
       ],
       "placements": [
         {
@@ -5633,7 +5633,7 @@
             2,
             6
           ],
-          "block": "electricadvantage:electric_drill",
+          "block": "baseelectric:electric_drill",
           "meta": 0
         },
         {
@@ -5642,7 +5642,7 @@
             2,
             6
           ],
-          "block": "electricadvantage:electric_drill",
+          "block": "baseelectric:electric_drill",
           "meta": 1
         },
         {
@@ -5651,7 +5651,7 @@
             2,
             6
           ],
-          "block": "electricadvantage:electric_drill",
+          "block": "baseelectric:electric_drill",
           "meta": 2
         },
         {
@@ -5660,7 +5660,7 @@
             2,
             6
           ],
-          "block": "electricadvantage:electric_drill",
+          "block": "baseelectric:electric_drill",
           "meta": 3
         },
         {
@@ -5669,7 +5669,7 @@
             2,
             6
           ],
-          "block": "electricadvantage:electric_drill",
+          "block": "baseelectric:electric_drill",
           "meta": 4
         },
         {
@@ -5678,7 +5678,7 @@
             2,
             6
           ],
-          "block": "electricadvantage:electric_drill",
+          "block": "baseelectric:electric_drill",
           "meta": 5
         },
         {
@@ -5687,7 +5687,7 @@
             3,
             6
           ],
-          "block": "electricadvantage:electric_track",
+          "block": "baseelectric:electric_track",
           "meta": 0
         },
         {
@@ -5696,7 +5696,7 @@
             1,
             6
           ],
-          "block": "electricadvantage:electric_track",
+          "block": "baseelectric:electric_track",
           "meta": 0
         },
         {
@@ -5705,7 +5705,7 @@
             2,
             7
           ],
-          "block": "electricadvantage:electric_track",
+          "block": "baseelectric:electric_track",
           "meta": 0
         },
         {
@@ -5714,7 +5714,7 @@
             2,
             5
           ],
-          "block": "electricadvantage:electric_track",
+          "block": "baseelectric:electric_track",
           "meta": 0
         },
         {
@@ -5723,7 +5723,7 @@
             2,
             6
           ],
-          "block": "electricadvantage:electric_track",
+          "block": "baseelectric:electric_track",
           "meta": 0
         },
         {
@@ -5732,7 +5732,7 @@
             2,
             6
           ],
-          "block": "electricadvantage:electric_track",
+          "block": "baseelectric:electric_track",
           "meta": 0
         },
         {
@@ -5799,7 +5799,7 @@
             2,
             7
           ],
-          "block": "poweradvantage:infinite_electricity",
+          "block": "basepower:infinite_electricity",
           "meta": 0
         },
         {
@@ -5809,7 +5809,7 @@
             2,
             7
           ],
-          "block": "poweradvantage:infinite_electricity",
+          "block": "basepower:infinite_electricity",
           "meta": 0
         },
         {
@@ -5819,7 +5819,7 @@
             2,
             9
           ],
-          "block": "poweradvantage:infinite_electricity",
+          "block": "basepower:infinite_electricity",
           "meta": 0
         },
         {
@@ -5829,7 +5829,7 @@
             2,
             3
           ],
-          "block": "poweradvantage:infinite_electricity",
+          "block": "basepower:infinite_electricity",
           "meta": 0
         },
         {
@@ -5839,7 +5839,7 @@
             2,
             7
           ],
-          "block": "poweradvantage:infinite_electricity",
+          "block": "basepower:infinite_electricity",
           "meta": 0
         },
         {
@@ -5849,7 +5849,7 @@
             2,
             7
           ],
-          "block": "poweradvantage:infinite_electricity",
+          "block": "basepower:infinite_electricity",
           "meta": 0
         }
       ],
@@ -5912,7 +5912,7 @@
             2,
             6
           ],
-          "block": "electricadvantage:electric_drill",
+          "block": "baseelectric:electric_drill",
           "meta": 0
         },
         {
@@ -5923,7 +5923,7 @@
             2,
             6
           ],
-          "block": "electricadvantage:electric_drill",
+          "block": "baseelectric:electric_drill",
           "meta": 1
         },
         {
@@ -5934,7 +5934,7 @@
             2,
             6
           ],
-          "block": "electricadvantage:electric_drill",
+          "block": "baseelectric:electric_drill",
           "meta": 2
         },
         {
@@ -5945,7 +5945,7 @@
             2,
             6
           ],
-          "block": "electricadvantage:electric_drill",
+          "block": "baseelectric:electric_drill",
           "meta": 3
         },
         {
@@ -5956,7 +5956,7 @@
             2,
             6
           ],
-          "block": "electricadvantage:electric_drill",
+          "block": "baseelectric:electric_drill",
           "meta": 4
         },
         {
@@ -5967,7 +5967,7 @@
             2,
             6
           ],
-          "block": "electricadvantage:electric_drill",
+          "block": "baseelectric:electric_drill",
           "meta": 5
         }
       ],
@@ -6002,8 +6002,8 @@
       "exclusive": true,
       "enclosed": true,
       "requiredMods": [
-        "poweradvantage",
-        "electricadvantage"
+        "basepower",
+        "baseelectric"
       ],
       "placements": [
         {
@@ -6012,7 +6012,7 @@
             1,
             7
           ],
-          "block": "electricadvantage:led_bar",
+          "block": "baseelectric:led_bar",
           "meta": 0
         },
         {
@@ -6021,7 +6021,7 @@
             1,
             7
           ],
-          "block": "electricadvantage:electric_conduit",
+          "block": "baseelectric:electric_conduit",
           "meta": 0
         },
         {
@@ -6030,7 +6030,7 @@
             1,
             7
           ],
-          "block": "electricadvantage:electric_switch",
+          "block": "baseelectric:electric_switch",
           "meta": 0
         },
         {
@@ -6039,7 +6039,7 @@
             1,
             7
           ],
-          "block": "electricadvantage:laser_turret",
+          "block": "baseelectric:laser_turret",
           "meta": 0
         },
         {
@@ -6048,7 +6048,7 @@
             1,
             7
           ],
-          "block": "electricadvantage:electric_conduit",
+          "block": "baseelectric:electric_conduit",
           "meta": 0
         },
         {
@@ -6057,7 +6057,7 @@
             1,
             20
           ],
-          "block": "electricadvantage:laser_turret_evil",
+          "block": "baseelectric:laser_turret_evil",
           "meta": 0
         },
         {
@@ -6115,7 +6115,7 @@
             1,
             7
           ],
-          "block": "poweradvantage:infinite_electricity",
+          "block": "basepower:infinite_electricity",
           "meta": 0
         },
         {
@@ -6125,7 +6125,7 @@
             1,
             7
           ],
-          "block": "poweradvantage:infinite_electricity",
+          "block": "basepower:infinite_electricity",
           "meta": 0
         }
       ],
@@ -6205,8 +6205,8 @@
       ],
       "exclusive": true,
       "requiredMods": [
-        "poweradvantage",
-        "electricadvantage"
+        "basepower",
+        "baseelectric"
       ],
       "placements": [
         {
@@ -6215,7 +6215,7 @@
             1,
             10
           ],
-          "block": "electricadvantage:electric_fabricator",
+          "block": "baseelectric:electric_fabricator",
           "meta": 0
         },
         {
@@ -6224,7 +6224,7 @@
             1,
             10
           ],
-          "block": "electricadvantage:electric_conduit",
+          "block": "baseelectric:electric_conduit",
           "meta": 0
         },
         {
@@ -6314,7 +6314,7 @@
             1,
             9
           ],
-          "block": "poweradvantage:infinite_electricity",
+          "block": "basepower:infinite_electricity",
           "meta": 0
         }
       ],
@@ -6387,7 +6387,7 @@
       ],
       "exclusive": false,
       "requiredMods": [
-        "poweradvantage"
+        "basepower"
       ],
       "placements": [
         {
@@ -6396,7 +6396,7 @@
             1,
             7
           ],
-          "block": "poweradvantage:fluid_pipe",
+          "block": "basepower:fluid_pipe",
           "meta": 0
         },
         {
@@ -6405,7 +6405,7 @@
             1,
             7
           ],
-          "block": "poweradvantage:fluid_storage_tank",
+          "block": "basepower:fluid_storage_tank",
           "meta": 0
         },
         {
@@ -6479,7 +6479,7 @@
             1,
             7
           ],
-          "block": "poweradvantage:fluid_pipe"
+          "block": "basepower:fluid_pipe"
         },
         {
           "id": "api-tank-filled",

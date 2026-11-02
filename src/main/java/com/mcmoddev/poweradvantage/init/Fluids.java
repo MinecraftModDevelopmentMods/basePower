@@ -8,5 +8,5 @@ package com.mcmoddev.poweradvantage.init;
  * {@code cyano.poweradvantage.api.fluid}.
  */
 @Deprecated
-public abstract class Fluids extends zone.moddev.mc.poweradvantage.init.Fluids {
+public abstract class Fluids extends zone.moddev.mc.basepower.init.Fluids {
 }

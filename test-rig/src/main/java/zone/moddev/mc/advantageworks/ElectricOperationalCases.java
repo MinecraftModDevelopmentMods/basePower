@@ -25,7 +25,7 @@ import net.minecraftforge.fml.common.registry.EntityRegistry;
 
 /** Independent operating contracts. Only setup seeds inputs; all work uses world ticks. */
 public final class ElectricOperationalCases {
-    private static final String EA = "electricadvantage:";
+    private static final String EA = "baseelectric:";
     private static final PropertyBool LED_LIT = PropertyBool.create("lit");
     private static final String ELECTRICITY = "electricity";
     private static final String GREENHOUSE = "greenhouse";
@@ -167,7 +167,7 @@ public final class ElectricOperationalCases {
                         int x = CELLS[i];
                         c.block(x, Y, Z, EA + "plastic_refinery");
                         if (i != 1) c.electricSupply(x - 1, Y, Z, 4000);
-                        if (i != 2) reserve(c, x, Y, Z, "getTank", "poweradvantage:refined_oil", i == 4 ? 99 : 200);
+                        if (i != 2) reserve(c, x, Y, Z, "getTank", "basepower:refined_oil", i == 4 ? 99 : 200);
                     }
                     rejectFluid(c, CELLS[2], "minecraft:water", 200);
                     c.put(CELLS[3], Y, Z, 0, EA + "petrolplastic_ingot", 64);
@@ -191,15 +191,15 @@ public final class ElectricOperationalCases {
                         int x = CELLS[i];
                         c.block(x, Y, Z, EA + "electric_still");
                         if (i != 1) c.electricSupply(x - 1, Y, Z, 1000);
-                        if (i != 2) reserve(c, x, Y, Z, "getInputTank", "poweradvantage:crude_oil", i == 4 ? 1 : 40);
+                        if (i != 2) reserve(c, x, Y, Z, "getInputTank", "basepower:crude_oil", i == 4 ? 1 : 40);
                     }
                     rejectFluid(c, CELLS[2], "minecraft:water", 40);
-                    reserve(c, CELLS[3], Y, Z, "getOutputTank", "poweradvantage:refined_oil", 1000);
+                    reserve(c, CELLS[3], Y, Z, "getOutputTank", "basepower:refined_oil", 1000);
                     equal(c, "setup.fullOutput", tankAmount(c, CELLS[3], 1), 1000);
                 }, c -> {
                     equal(c, "positive.input", tankAmount(c, CELLS[0], 0), 0);
                     equal(c, "positive.output", tankAmount(c, CELLS[0], 1), 20);
-                    fluidIs(c, CELLS[0], 1, "poweradvantage:refined_oil");
+                    fluidIs(c, CELLS[0], 1, "basepower:refined_oil");
                     close(c, "positive.energyDebit", 1000 - pairEnergy(c, CELLS[0]), 320, 0.01f);
                     for (int i = 1; i < CELLS.length; i++) {
                         equal(c, "negative" + i + ".input", tankAmount(c, CELLS[i], 0), i == 2 ? 0 : i == 4 ? 1 : 40);
@@ -212,7 +212,7 @@ public final class ElectricOperationalCases {
                 + "mutation. The 48 finite mB then operate on natural ticks, making 24 mB refined oil for 384 electricity.", 80, c -> {
                     c.block(8, Y, Z, EA + "electric_still");
                     c.electricSupply(7, Y, Z, 1000);
-                    Fluid oil = NativeFluids.get("poweradvantage:crude_oil");
+                    Fluid oil = NativeFluids.get("basepower:crude_oil");
                     c.require(oil != null, "Crude oil exists for faced automation");
                     int stored = 0;
                     for (EnumFacing face : EnumFacing.values()) {
@@ -226,12 +226,12 @@ public final class ElectricOperationalCases {
                 }, c -> {
                     equal(c, "faced.input", tankAmount(c, 8, 0), 0);
                     equal(c, "faced.output", tankAmount(c, 8, 1), 24);
-                    fluidIs(c, 8, 1, "poweradvantage:refined_oil");
+                    fluidIs(c, 8, 1, "basepower:refined_oil");
                     close(c, "faced.energyDebit", 1000 - pairEnergy(c, 8), 384, 0.01f);
                     for (EnumFacing face : EnumFacing.values()) {
                         FluidStack simulated = fluids(c, 8, face).drain(24, false);
                         equal(c, "face." + face + ".drainable", simulated == null ? 0 : simulated.amount, 24);
-                        c.require(simulated != null && simulated.getFluid() == NativeFluids.get("poweradvantage:refined_oil"),
+                        c.require(simulated != null && simulated.getFluid() == NativeFluids.get("basepower:refined_oil"),
                                 "Face offers the real refined product " + face);
                         equal(c, "face." + face + ".drainSimulationUnchanged", tankAmount(c, 8, 1), 24);
                     }
@@ -372,6 +372,11 @@ public final class ElectricOperationalCases {
                 }));
     }
 
+    static boolean hydroturbineIdentity(String owner, String canonicalId, String registrationName) {
+        return "baseelectric".equals(owner) && "baseelectric.Hydroturbine".equals(canonicalId)
+                && "Hydroturbine".equals(registrationName);
+    }
+
     private static void hydro(List<MachineScenario> cases) {
         cases.add(new MachineScenario("electric/hydro-rate",
                 "A naturally spawned turbine in a contained horizontal water channel generates four electricity "
@@ -411,8 +416,8 @@ public final class ElectricOperationalCases {
                     for (Entity actor : c.world.getEntitiesWithinAABB(Entity.class,
                             new AxisAlignedBB(c.at(0, 0, 0), c.at(31, 31, 31)))) {
                         EntityRegistry.EntityRegistration registration = EntityRegistry.instance().lookupModSpawn(actor.getClass(), false);
-                        if (registration == null || !"electricadvantage".equals(registration.getContainer().getModId())
-                                || !"electricadvantage.Hydroturbine".equals(registration.getEntityName())) continue;
+                        if (registration == null || !hydroturbineIdentity(registration.getContainer().getModId(),
+                                net.minecraft.entity.EntityList.getEntityString(actor), registration.getEntityName())) continue;
                         turbines++;
                         c.record("hydro.motion/" + actor.getUniqueID(), new net.minecraft.util.math.Vec3d(actor.motionX, actor.motionY, actor.motionZ).toString());
                         c.require(new net.minecraft.util.math.Vec3d(actor.motionX, actor.motionY, actor.motionZ).lengthSquared() == 0,

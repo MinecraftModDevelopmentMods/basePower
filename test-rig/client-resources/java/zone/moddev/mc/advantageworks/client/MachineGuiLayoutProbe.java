@@ -36,7 +36,7 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.TextComponentTranslation;
 import net.minecraftforge.fml.common.registry.ForgeRegistries;
-import zone.moddev.mc.poweradvantage.registry.MachineGUIRegistry;
+import zone.moddev.mc.basepower.registry.MachineGUIRegistry;
 
 /** Renders every registered machine screen, not just its detached decorations. */
 final class MachineGuiLayoutProbe {
@@ -161,11 +161,11 @@ final class MachineGuiLayoutProbe {
                     require(screen.hovered() == menu.inventorySlots.get(menu.inventorySlots.size() - 9), "Inventory hitbox is misaligned");
                     ImageIO.write(tooltip, "png", new File("machine-gui-layouts/" + id.replace(':', '-') + "-tooltip.png"));
                     inventory.setInventorySlotContents(0, null);
-                    if (block == zone.moddev.mc.poweradvantage.init.Blocks.metal_storage_tank) {
+                    if (block == zone.moddev.mc.basepower.init.Blocks.metal_storage_tank) {
                         negativeControls += verifyMissingLabelControls(minecraft, screen);
                         verifyLongName(minecraft, (SimpleMachineGUI) definition, menu, inventory);
                     }
-                    if (block == zone.moddev.mc.poweradvantage.init.Blocks.metal_storage_tank) {
+                    if (block == zone.moddev.mc.basepower.init.Blocks.metal_storage_tank) {
                         verifyHelperLimits(screen);
                     }
                     row.addProperty("renders", renders);
@@ -387,10 +387,10 @@ final class MachineGuiLayoutProbe {
     }
 
     private static void verifyHelperLimits(RecordingScreen screen) throws Exception {
-        for (String name : new String[]{"zone.moddev.mc.electricadvantage.gui.GUIHelper",
-                "zone.moddev.mc.steamadvantage.gui.GUIHelper"}) {
-            if (!net.minecraftforge.fml.common.Loader.isModLoaded(name.contains("electricadvantage") ? "electricadvantage" : "steamadvantage")) continue;
-            String[] methods = name.contains("electricadvantage") ? new String[]{"drawProgressBar"}
+        for (String name : new String[]{"zone.moddev.mc.baseelectric.gui.GUIHelper",
+                "zone.moddev.mc.basesteam.gui.GUIHelper"}) {
+            if (!net.minecraftforge.fml.common.Loader.isModLoaded(name.contains("baseelectric") ? "baseelectric" : "basesteam")) continue;
+            String[] methods = name.contains("baseelectric") ? new String[]{"drawProgressBar"}
                     : new String[]{"drawDownArrowProgress", "drawFlameProgress"};
             for (String method : methods) {
                 Method draw = Class.forName(name).getMethod(method, int.class, int.class, float.class, SimpleMachineGUI.GUIContainer.class);

@@ -1,0 +1,56 @@
+language_support_goals=english (en_US,en_EN,en_CA,en_GB, en_AU, en_PT), spanish (es_MX,es_ES), chinese (zh_CN), japanese (ja_JA), portugese (pt_BR), german (de_DE), italian (it_IT), korean (ko_KR)
+nei.basepower.recipehandler.shapelessfurnace.name=Gran Horno (no forma)
+nei.basepower.recipehandler.shapedfurnace.name=Gran Horno (en forma)
+
+tooltip.basepower.empty=Vacío
+tooltip.basepower.buckets_of =%x cubos de %y
+
+itemGroup.basepower=Ventaja de Energía
+
+tile.basepower.fluid_drain.name=Drenaje
+tile.basepower.fluid_discharge.name=Descarga Grate
+tile.basepower.fluid_storage_tank.name=Tanque de almacenamiento
+item.basepower.fluid_storage_tank_item.name=Tanque de almacenamiento
+tile.basepower.fluid_pipe.name=Tubo
+
+tile.basepower.item_conveyor.name=Transportadores
+tile.basepower.item_filter_block.name=Bloquear Filtro Transportadores
+tile.basepower.item_filter_food.name=Filtro Alimentos Transportadores
+tile.basepower.item_filter_fuel.name=Filtro de combustible Transportadores
+tile.basepower.item_filter_inventory.name=Filtro Transportadores
+tile.basepower.item_filter_ore.name=Ore Transportadores Filtro
+tile.basepower.item_filter_plant.name=Plantable Transportadores Filtro
+tile.basepower.item_filter_smelt.name=Horno Filtro Transportadores
+tile.basepower.item_filter_overflow.name=Desbordamiento Filtro Transportadores
+tile.basepower.steel_frame.name=Marco de Acero
+
+
+item.basepower.starch.name=Almidón
+item.basepower.bioplastic_ingot.name=Bioplástico Lingote
+item.basepower.sprocket.name=Piñón
+
+
+tile.basepower.fluid_metal_tank.name=Tanque de Almacenamiento de Acero
+item.basepower.rotator_tool.name=Herramienta de Rotación
+
+tile.basepower.infinite_steam.name=La Energía de Vapor Infinito
+tile.basepower.infinite_electricity.name=Energía Eléctrica Infinito
+tile.basepower.infinite_quantum.name=Cuántica Infinito
+
+tile.basepower.crude_oil.name=Petróleo Crudo
+fluid.basepower.crude_oil=Petróleo Crudo
+item.bucket.crude_oil.name=Cubo de Crudo
+
+
+tile.basepower.still.name=Destilería
+
+tile.basepower.refined_oil.name=Refinado de Petróleo
+fluid.basepower.refined_oil=Refinado de Petróleo
+item.bucket.refined_oil.name=Cubo de Refinado de Petróleo
+tile.basepower.fluid_switch.name=Válvula
+
+
+tile.basepower.converter_rf_steam.name=Vapor-RF Transformador
+tile.basepower.converter_rf_electricity.name=Electricidad-RF Transformador
+tile.basepower.converter_rf_quantum.name=Cuántico-RF Transformador
+tile.basepower.converter_tr_electricity.name=Electricidad-EU Transformador

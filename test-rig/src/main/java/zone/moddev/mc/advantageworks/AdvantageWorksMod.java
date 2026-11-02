@@ -24,6 +24,8 @@ public final class AdvantageWorksMod {
                     net.minecraftforge.common.ForgeChunkManager.forceChunk(ticket, chunk);
         });
         MachineOperationalProbe.register();
+        NativePassiveMigrationProbe.register();
+        NativeSurvivalProgressionProbe.register();
     }
 
     @Mod.EventHandler
@@ -32,5 +34,7 @@ public final class AdvantageWorksMod {
         MachineOperationalProbe.registerCommands(event);
         NativeHarvestProbe.registerCommands(event);
         NativeRecipeProgressionProbe.registerCommands(event);
+        NativePassiveMigrationProbe.registerCommands(event);
+        NativeSurvivalProgressionProbe.registerCommands(event);
     }
 }

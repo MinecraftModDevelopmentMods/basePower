@@ -7,32 +7,32 @@ import native110_recipe_progression as native
 def fixture(mode="NORMAL"):
     rows=[]
     ores={"ingotIron":["minecraft:iron_ingot@0"],
-          "ingotSilicon":["electricadvantage:silicon_ingot@0"],
+          "ingotSilicon":["baseelectric:silicon_ingot@0"],
           "nuggetCopper":["basemetals:copper_nugget@0"],
           "nuggetTin":["basemetals:tin_nugget@0"],
           "nuggetGold":["minecraft:gold_nugget@0"],
-          "plastic":["poweradvantage:plastic@0"],"dustRedstone":["minecraft:redstone@0"]}
+          "plastic":["basepower:plastic@0"],"dustRedstone":["minecraft:redstone@0"]}
     def recipe(output,inputs,count=1):
         rows.append(dict(id="craft/"+str(len(rows)),output=output,inputs=inputs,count=count,
                          providers=[[item] for item in inputs],
                          actualCrafted=output,actualCraftedCount=count,
                          status="PASS",owned=True,negativeControlsRejected=2,consumption="NATIVE_SLOT_CRAFTING",
                          recipeBookCraftUnlock="N/A_NO_1_10_RECIPE_BOOK"))
-    recipe("poweradvantage:fluid_pipe@0",["minecraft:iron_ingot@0"]*6,3 if mode=="APOCALYPTIC" else 6)
-    recipe("steamadvantage:steam_governor@0",["minecraft:iron_nugget@0"])
-    recipe("electricadvantage:psu@0",["electricadvantage:control_circuit@0"])
+    recipe("basepower:fluid_pipe@0",["minecraft:iron_ingot@0"]*6,3 if mode=="APOCALYPTIC" else 6)
+    recipe("basesteam:steam_governor@0",["minecraft:iron_nugget@0"])
+    recipe("baseelectric:psu@0",["baseelectric:control_circuit@0"])
     if mode!="APOCALYPTIC":
-        recipe("poweradvantage:sprocket@0",["basemetals:steel_ingot@0"],4)
+        recipe("basepower:sprocket@0",["basemetals:steel_ingot@0"],4)
         for metal in ("Copper","Tin","Gold"):
             inputs=[ores["ingotSilicon"][0]]*3+[ores["nugget"+metal][0]]*3
             if mode=="TECH_PROGRESSION":
                 inputs=[ores["plastic"][0],ores["dustRedstone"][0],ores["plastic"][0]]+inputs
-            recipe("electricadvantage:integrated_circuit@0",inputs,3)
-        recipe("electricadvantage:photovoltaic_generator@0",["minecraft:glass@0"])
+            recipe("baseelectric:integrated_circuit@0",inputs,3)
+        recipe("baseelectric:photovoltaic_generator@0",["minecraft:glass@0"])
     return dict(minecraft=native.MC,mode=mode,rubber=True,status="EXPORTED_NOT_QUALIFIED",crafting=rows,
                 targets=sorted(native.CORE),ores=ores,
                 blockItems=[],smelting=[dict(input="minecraft:iron_ore@0",output="minecraft:iron_ingot@0",count=1)],
-                crusherRegistry="unit:fixture",crushing=[dict(input="minecraft:potato@0",output="poweradvantage:starch@0",tools=[])],sampledNativeLoot=[])
+                crusherRegistry="unit:fixture",crushing=[dict(input="minecraft:potato@0",output="basepower:starch@0",tools=[])],sampledNativeLoot=[])
 
 class RecipeAuditTests(unittest.TestCase):
     def test_missing_process_functions_and_lookup_errors_remain_required_failures(self):
@@ -64,7 +64,7 @@ class RecipeAuditTests(unittest.TestCase):
         with self.assertRaises(AssertionError): native.mode_checks(doc,"NORMAL",True)
 
     def test_apocalyptic_does_not_gain_free_chips_sprockets_or_solar(self):
-        for target in ("poweradvantage:sprocket@0","electricadvantage:integrated_circuit@0","electricadvantage:photovoltaic_generator@0"):
+        for target in ("basepower:sprocket@0","baseelectric:integrated_circuit@0","baseelectric:photovoltaic_generator@0"):
             doc=fixture("APOCALYPTIC")
             extra=deepcopy(doc["crafting"][0]);extra.update(id="forbidden",output=target);doc["crafting"].append(extra)
             with self.subTest(target=target),self.assertRaises(AssertionError): native.mode_checks(doc,"APOCALYPTIC",True)
@@ -74,13 +74,13 @@ class RecipeAuditTests(unittest.TestCase):
             doc=fixture(mode);doc["crafting"][0]["count"]=99
             with self.subTest(mode=mode),self.assertRaises(AssertionError):native.mode_checks(doc,mode,True)
         doc=fixture("TECH_PROGRESSION")
-        next(r for r in doc["crafting"] if r["output"]=="electricadvantage:integrated_circuit@0")["inputs"]=["minecraft:dirt@0"]*6
+        next(r for r in doc["crafting"] if r["output"]=="baseelectric:integrated_circuit@0")["inputs"]=["minecraft:dirt@0"]*6
         with self.assertRaises(AssertionError): native.mode_checks(doc,"TECH_PROGRESSION",True)
 
     def test_wrong_chip_materials_are_not_blessed_by_a_root_flag(self):
         for mode in ("NORMAL","TECH_PROGRESSION"):
             doc=fixture(mode);doc["chipSemanticsVerified"]=True
-            chip=next(r for r in doc["crafting"] if r["output"]=="electricadvantage:integrated_circuit@0")
+            chip=next(r for r in doc["crafting"] if r["output"]=="baseelectric:integrated_circuit@0")
             chip["inputs"]=["minecraft:dirt@0"]*len(chip["inputs"])
             chip["providers"]=[[item] for item in chip["inputs"]]
             with self.subTest(mode=mode),self.assertRaisesRegex(AssertionError,"Microchip"):
@@ -90,7 +90,7 @@ class RecipeAuditTests(unittest.TestCase):
         for mode in ("NORMAL","TECH_PROGRESSION"):
             for count in (1,2,4,64):
                 doc=fixture(mode)
-                chip=next(r for r in doc["crafting"] if r["output"]=="electricadvantage:integrated_circuit@0")
+                chip=next(r for r in doc["crafting"] if r["output"]=="baseelectric:integrated_circuit@0")
                 chip.update(count=count,actualCraftedCount=count)
                 with self.subTest(mode=mode,count=count),self.assertRaisesRegex(AssertionError,"Microchip"):
                     native.mode_checks(doc,mode,True)
@@ -100,7 +100,7 @@ class RecipeAuditTests(unittest.TestCase):
             for metals in (["basemetals:copper_nugget@0","basemetals:tin_nugget@0","minecraft:gold_nugget@0"],
                            ["basemetals:copper_ingot@0"]*3):
                 doc=fixture(mode);doc["ores"]["ingotCopper"]=["basemetals:copper_ingot@0"]
-                chip=next(r for r in doc["crafting"] if r["output"]=="electricadvantage:integrated_circuit@0")
+                chip=next(r for r in doc["crafting"] if r["output"]=="baseelectric:integrated_circuit@0")
                 chip["inputs"][-3:]=metals;chip["providers"][-3:]=[[item] for item in metals]
                 with self.subTest(mode=mode,metals=metals),self.assertRaisesRegex(AssertionError,"Microchip"):
                     native.mode_checks(doc,mode,True)
@@ -115,7 +115,7 @@ class RecipeAuditTests(unittest.TestCase):
     def test_tech_chip_requires_plastic_and_redstone(self):
         for slot in (0,1,2):
             doc=fixture("TECH_PROGRESSION")
-            chip=next(r for r in doc["crafting"] if r["output"]=="electricadvantage:integrated_circuit@0")
+            chip=next(r for r in doc["crafting"] if r["output"]=="baseelectric:integrated_circuit@0")
             chip["inputs"][slot]=doc["ores"]["ingotSilicon"][0]
             chip["providers"][slot]=[chip["inputs"][slot]]
             with self.subTest(slot=slot),self.assertRaisesRegex(AssertionError,"Microchip"):
@@ -125,7 +125,7 @@ class RecipeAuditTests(unittest.TestCase):
         for mode in ("NORMAL","TECH_PROGRESSION"):
             for mutation in ("missing","short","empty","wrong-selected","extra-wrong-choice"):
                 doc=fixture(mode)
-                chip=next(r for r in doc["crafting"] if r["output"]=="electricadvantage:integrated_circuit@0")
+                chip=next(r for r in doc["crafting"] if r["output"]=="baseelectric:integrated_circuit@0")
                 if mutation=="missing": chip.pop("providers")
                 elif mutation=="short": chip["providers"].pop()
                 elif mutation=="empty": chip["providers"][0]=[]
@@ -150,37 +150,37 @@ class RecipeAuditTests(unittest.TestCase):
 
     def test_chip_wildcard_ores_accept_native_expanded_providers(self):
         doc=fixture();doc["ores"]["ingotSilicon"]=["othermod:silicon@32767"]
-        for chip in (r for r in doc["crafting"] if r["output"]=="electricadvantage:integrated_circuit@0"):
+        for chip in (r for r in doc["crafting"] if r["output"]=="baseelectric:integrated_circuit@0"):
             chip["inputs"][:3]=["othermod:silicon@5"]*3
             chip["providers"][:3]=[["othermod:silicon@5","othermod:silicon@7"] for _ in range(3)]
         native.mode_checks(doc,"NORMAL",True)
 
     def test_chip_provider_wildcards_cannot_broaden_specific_ore_entries(self):
         doc=fixture()
-        chip=next(r for r in doc["crafting"] if r["output"]=="electricadvantage:integrated_circuit@0")
+        chip=next(r for r in doc["crafting"] if r["output"]=="baseelectric:integrated_circuit@0")
         chip["providers"][0]=[chip["inputs"][0].rsplit("@",1)[0]+"@32767"]
         with self.assertRaisesRegex(AssertionError,"Microchip"):
             native.mode_checks(doc,"NORMAL",True)
 
     def test_unseeded_self_and_mutual_cycles_are_not_reachable(self):
         doc=fixture()
-        for output,inputs in (("poweradvantage:a@0",["poweradvantage:b@0"]),("poweradvantage:b@0",["poweradvantage:a@0"])):
+        for output,inputs in (("basepower:a@0",["basepower:b@0"]),("basepower:b@0",["basepower:a@0"])):
             doc["crafting"].append(dict(id=output,output=output,inputs=inputs,status="PASS"))
             doc["targets"].append(output)
         result=native.reachability(doc)
-        self.assertIn("poweradvantage:a@0",result["blocked"]);self.assertIn("poweradvantage:b@0",result["blocked"])
+        self.assertIn("basepower:a@0",result["blocked"]);self.assertIn("basepower:b@0",result["blocked"])
 
     def test_generated_loot_configuration_is_not_a_real_acquisition(self):
-        doc=fixture("APOCALYPTIC");doc["generatedLootConfig"]=["poweradvantage:sprocket@0"]
-        self.assertNotIn("poweradvantage:sprocket@0",native.reachability(doc)["reachable"])
-        doc["sampledNativeLoot"]=[dict(item="poweradvantage:sprocket@0",table="simple_dungeon",seed=4)]
-        self.assertIn("poweradvantage:sprocket@0",native.reachability(doc)["reachable"])
+        doc=fixture("APOCALYPTIC");doc["generatedLootConfig"]=["basepower:sprocket@0"]
+        self.assertNotIn("basepower:sprocket@0",native.reachability(doc)["reachable"])
+        doc["sampledNativeLoot"]=[dict(item="basepower:sprocket@0",table="simple_dungeon",seed=4)]
+        self.assertIn("basepower:sprocket@0",native.reachability(doc)["reachable"])
         doc["mode"]="NORMAL"
-        self.assertNotIn("poweradvantage:sprocket@0",native.reachability(doc)["reachable"])
+        self.assertNotIn("basepower:sprocket@0",native.reachability(doc)["reachable"])
 
     def test_ore_roots_never_seed_a_crafted_nonblock_part(self):
-        doc=fixture();doc["ores"]["oreCopper"]=["poweradvantage:sprocket@0"]
-        self.assertNotIn("poweradvantage:sprocket@0",native.reachability(doc)["reachable"])
+        doc=fixture();doc["ores"]["oreCopper"]=["basepower:sprocket@0"]
+        self.assertNotIn("basepower:sprocket@0",native.reachability(doc)["reachable"])
 
     def test_smelting_requires_a_reachable_furnace_and_fuel(self):
         doc=fixture();doc["smelting"]=[dict(input="minecraft:iron_ore@0",output="minecraft:iron_ingot@0",count=1)]
@@ -189,10 +189,10 @@ class RecipeAuditTests(unittest.TestCase):
         self.assertIn("minecraft:iron_ingot@0",native.reachability(doc)["reachable"])
 
     def test_crushing_requires_an_obtainable_valid_hammer(self):
-        doc=fixture();doc["crushing"]=[dict(input="minecraft:potato@0",output="poweradvantage:starch@0",tools=["basemetals:stone_crackhammer@0"])]
-        self.assertNotIn("poweradvantage:starch@0",native.reachability(doc)["reachable"])
+        doc=fixture();doc["crushing"]=[dict(input="minecraft:potato@0",output="basepower:starch@0",tools=["basemetals:stone_crackhammer@0"])]
+        self.assertNotIn("basepower:starch@0",native.reachability(doc)["reachable"])
         doc["crafting"].append(dict(id="hammer",inputs=["minecraft:cobblestone@0"],output="basemetals:stone_crackhammer@0",status="PASS"))
-        self.assertIn("poweradvantage:starch@0",native.reachability(doc)["reachable"])
+        self.assertIn("basepower:starch@0",native.reachability(doc)["reachable"])
 
     def test_unverified_native_recipes_and_missing_machine_edges_are_explicit(self):
         doc=fixture();doc["crafting"][0].update(status="UNVERIFIED",reason="Missing provider")

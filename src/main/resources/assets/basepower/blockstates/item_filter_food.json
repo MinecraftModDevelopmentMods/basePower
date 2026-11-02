@@ -1,0 +1,8 @@
+{
+    "variants": {
+        "facing=north": { "model": "basepower:item_filter_food"           },
+        "facing=south": { "model": "basepower:item_filter_food", "y": 180 },
+        "facing=west":  { "model": "basepower:item_filter_food", "y": 270 },
+        "facing=east":  { "model": "basepower:item_filter_food", "y": 90  }
+    }
+}

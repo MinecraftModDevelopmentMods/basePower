@@ -42,7 +42,7 @@ final class SteamOperationalActors {
                     "A real passenger moves to the physical stop, one move costs exactly 32 steam, "
                     + "a steady signal never repeats the move, and insufficient steam leaves passenger/shaft unchanged.",
                     80, c -> {
-                        c.block(8, 0, 8, "steamadvantage:steam_elevator");
+                        c.block(8, 0, 8, "basesteam:steam_elevator");
                         c.block(8, 9, 8, "minecraft:stone");
                         boolean down = mode.equals("down");
                         if (down) {
@@ -78,7 +78,7 @@ final class SteamOperationalActors {
                             IBlockState state = c.world.getBlockState(c.at(8, y, 8));
                             c.record("shaft/" + y, state.toString());
                             if (movedUp && y <= 6) {
-                                c.require("steamadvantage:platform".equals(String.valueOf(state.getBlock().getRegistryName())),
+                                c.require("basesteam:platform".equals(String.valueOf(state.getBlock().getRegistryName())),
                                         "Raised shaft contains physical platform segment " + y);
                                 PropertyInteger height = (PropertyInteger) state.getBlock().getBlockState().getProperty("height");
                                 c.require(height != null && state.getValue(height) == (y == 6 ? 4 : 0),
@@ -94,7 +94,7 @@ final class SteamOperationalActors {
     }
 
     private static void platform(MachineContext c, int y, int height) {
-        c.block(8, y, 8, "steamadvantage:platform");
+        c.block(8, y, 8, "basesteam:platform");
         IBlockState state = c.world.getBlockState(c.at(8, y, 8));
         PropertyInteger property = (PropertyInteger) state.getBlock().getBlockState().getProperty("height");
         if (property == null) throw new IllegalStateException("Missing native platform height");
@@ -130,16 +130,16 @@ final class SteamOperationalActors {
                         shot.player.setPositionAndRotation(muzzle.getX() + 0.5, muzzle.getY(), muzzle.getZ() + 0.5, 0, 0);
                         shot.player.setRotationYawHead(0.0F);
                         shot.player.prevRotationYawHead = 0.0F;
-                        Item weapon = net.minecraft.item.Item.REGISTRY.getObject(new ResourceLocation("steamadvantage:musket"));
-                        c.require(weapon != null && new ResourceLocation("steamadvantage:musket").equals(weapon.getRegistryName()), "Native musket is registered");
+                        Item weapon = net.minecraft.item.Item.REGISTRY.getObject(new ResourceLocation("basesteam:musket"));
+                        c.require(weapon != null && new ResourceLocation("basesteam:musket").equals(weapon.getRegistryName()), "Native musket is registered");
                         shot.weapon = new ItemStack(weapon);
                         shot.player.setHeldItem(EnumHand.MAIN_HAND, shot.weapon);
                         if (!mode.equals("no-ammo")) enchant(c, shot.weapon, "steamadvantage:rapid_reload");
                         if (mode.equals("powderless")) enchant(c, shot.weapon, "steamadvantage:powderless");
                         if (mode.equals("infinity")) enchant(c, shot.weapon, "minecraft:infinity");
                         if (mode.equals("last-cartridge") || mode.equals("infinity")) {
-                            Item cartridge = net.minecraft.item.Item.REGISTRY.getObject(new ResourceLocation("steamadvantage:blackpowder_cartridge"));
-                            c.require(cartridge != null && new ResourceLocation("steamadvantage:blackpowder_cartridge").equals(cartridge.getRegistryName()), "Cartridge is registered");
+                            Item cartridge = net.minecraft.item.Item.REGISTRY.getObject(new ResourceLocation("basesteam:blackpowder_cartridge"));
+                            c.require(cartridge != null && new ResourceLocation("basesteam:blackpowder_cartridge").equals(cartridge.getRegistryName()), "Cartridge is registered");
                             shot.player.inventory.setInventorySlotContents(1, new ItemStack(cartridge));
                         }
                         shot.expectedAmmo = mode.equals("infinity") ? 1 : 0;
@@ -198,7 +198,7 @@ final class SteamOperationalActors {
 
     private static float shotDamage() {
         try {
-            float damage = Class.forName("zone.moddev.mc.steamadvantage.SteamAdvantage", false,
+            float damage = Class.forName("zone.moddev.mc.basesteam.SteamAdvantage", false,
                     SteamOperationalActors.class.getClassLoader()).getDeclaredField("MUSKET_DAMAGE").getFloat(null);
             if (!Float.isFinite(damage) || damage <= 0 || damage >= 1000) throw new IllegalStateException("Unsupported configured musket damage");
             return damage;
@@ -208,7 +208,7 @@ final class SteamOperationalActors {
     }
 
     private static void enchant(MachineContext c, ItemStack weapon, String id) {
-        Enchantment enchantment = net.minecraft.enchantment.Enchantment.REGISTRY.getObject(new ResourceLocation(id));
+        Enchantment enchantment = CanonicalSteamEnchantments.require(id);
         c.require(enchantment != null, "Registered enchantment " + id);
         weapon.addEnchantment(enchantment, 1);
     }

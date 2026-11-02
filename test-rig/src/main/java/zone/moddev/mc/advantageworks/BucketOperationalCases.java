@@ -96,10 +96,10 @@ public final class BucketOperationalCases {
                 && Item.REGISTRY.getObject(bucket.getRegistryName()) == bucket,
                 "Universal bucket is a real registered item, not merely an enabled flag");
         c.record("bucket/item", bucket.getRegistryName().toString());
-        for (String mod : new String[]{"basemetals", "steamadvantage", "electricadvantage", "orespawn"})
+        for (String mod : new String[]{"basemetals", "basesteam", "baseelectric", "orespawn"})
             c.record("bucket/mod/" + mod, Loader.isModLoaded(mod));
         if (Boolean.getBoolean("advworks.bucket.requireStandalone"))
-            for (String mod : new String[]{"basemetals", "steamadvantage", "electricadvantage"})
+            for (String mod : new String[]{"basemetals", "basesteam", "baseelectric"})
                 c.require(!Loader.isModLoaded(mod), "Standalone bucket proof excludes " + mod);
         return bucket;
     }

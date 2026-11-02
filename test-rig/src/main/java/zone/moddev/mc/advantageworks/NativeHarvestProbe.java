@@ -200,7 +200,7 @@ final class NativeHarvestProbe {
             boxEvidence.add(encoded);
         }
         row.add("collisionBoxes", boxEvidence);
-        if (blockId.equals("electricadvantage:electric_conduit")) {
+        if (blockId.equals("baseelectric:electric_conduit")) {
             expected.add(Arrays.toString(new double[]{.375, .375, .375, .625, .625, .625}));
             if ((mask & 2) != 0) expected.add(Arrays.toString(new double[]{.375, .375, .375, .625, 1, .625}));
             if ((mask & 1) != 0) expected.add(Arrays.toString(new double[]{.375, 0, .375, .625, .625, .625}));
@@ -249,11 +249,11 @@ final class NativeHarvestProbe {
         };
         player.setPosition(POS.getX() + .5, POS.getY() + 1, POS.getZ() + .5);
         JsonArray rows = new JsonArray();
-        String sulfur = "electricadvantage:sulfur_ore", lithium = "electricadvantage:li_ore";
+        String sulfur = "baseelectric:sulfur_ore", lithium = "baseelectric:li_ore";
         witness(world, player, rows, "sulfur/hand-fails", sulfur, 0, null, false, false, "", 0, 0, 1);
         witness(world, player, rows, "sulfur/axe-fails", sulfur, 0, Items.IRON_AXE, false, false, "", 0, 0, 1);
-        witness(world, player, rows, "sulfur/wood", sulfur, 0, Items.WOODEN_PICKAXE, false, true, "electricadvantage:sulfur_powder", 1, 4, 8);
-        witness(world, player, rows, "sulfur/stone", sulfur, 0, Items.STONE_PICKAXE, false, true, "electricadvantage:sulfur_powder", 1, 4, 8);
+        witness(world, player, rows, "sulfur/wood", sulfur, 0, Items.WOODEN_PICKAXE, false, true, "baseelectric:sulfur_powder", 1, 4, 8);
+        witness(world, player, rows, "sulfur/stone", sulfur, 0, Items.STONE_PICKAXE, false, true, "baseelectric:sulfur_powder", 1, 4, 8);
         witness(world, player, rows, "sulfur/silk", sulfur, 0, Items.WOODEN_PICKAXE, true, true, sulfur, 1, 1, 1);
         witness(world, player, rows, "lithium/hand-fails", lithium, 1, null, false, false, "", 0, 0, 1);
         witness(world, player, rows, "lithium/wood-fails", lithium, 1, Items.WOODEN_PICKAXE, false, false, "", 0, 0, 1);
@@ -262,19 +262,19 @@ final class NativeHarvestProbe {
         witness(world, player, rows, "lithium/stone", lithium, 1, Items.STONE_PICKAXE, false, true, lithium, 1, 1, 1);
         witness(world, player, rows, "lithium/diamond", lithium, 1, Items.DIAMOND_PICKAXE, false, true, lithium, 1, 1, 1);
         witness(world, player, rows, "lithium/silk", lithium, 1, Items.STONE_PICKAXE, true, true, lithium, 1, 1, 1);
-        witness(world, player, rows, "frame/hand", "poweradvantage:steel_frame", -1, null, false, true, "poweradvantage:steel_frame", 1, 1, 1);
-        witness(world, player, rows, "frame/silk", "poweradvantage:steel_frame", -1, Items.DIAMOND_PICKAXE, true, true, "poweradvantage:steel_frame", 1, 1, 1);
+        witness(world, player, rows, "frame/hand", "basepower:steel_frame", -1, null, false, true, "basepower:steel_frame", 1, 1, 1);
+        witness(world, player, rows, "frame/silk", "basepower:steel_frame", -1, Items.DIAMOND_PICKAXE, true, true, "basepower:steel_frame", 1, 1, 1);
         for (int mask = 0; mask < 64; mask++) {
             for (String family : new String[] {"wire", "scaffold"}) {
-                String identity = "electricadvantage:" + (family.equals("wire") ? "electric_conduit" : "electric_track");
+                String identity = "baseelectric:" + (family.equals("wire") ? "electric_conduit" : "electric_track");
                 String prefix = family + "/" + mask;
                 witness(world, player, rows, prefix + "/hand", identity, -1, null, false, true, identity, 1, 1, 1, mask);
                 witness(world, player, rows, prefix + "/silk", identity, -1, Items.DIAMOND_PICKAXE, true, true, identity, 1, 1, 1, mask);
             }
         }
 
-        properties(world, rows, "solar/native-solidity", "electricadvantage:photovoltaic_generator", true, 0);
-        properties(world, rows, "frame/native-opacity", "poweradvantage:steel_frame", false, 0);
+        properties(world, rows, "solar/native-solidity", "baseelectric:photovoltaic_generator", true, 0);
+        properties(world, rows, "frame/native-opacity", "basepower:steel_frame", false, 0);
         for (String id : WATER_ONLY) {
             JsonObject row = new JsonObject(); row.addProperty("id", id);
             row.addProperty("status", "N/A");

@@ -41,20 +41,20 @@ WATER_ONLY = {"wire/waterlogged", "scaffold/waterlogged", "frame/waterlogged"}
 NA_REASON = f"Minecraft {MINECRAFT} has no waterlogged blockstate/fluid API"
 # Historical GUIBlock explicitly sets light opacity to zero, independent of
 # PhotovoltaicGeneratorBlock's full-cube/opaque overrides. Preserve both facts.
-PROPERTIES = {"solar/native-solidity": ("electricadvantage:photovoltaic_generator", True, 0),
-              "frame/native-opacity": ("poweradvantage:steel_frame", False, 0)}
+PROPERTIES = {"solar/native-solidity": ("baseelectric:photovoltaic_generator", True, 0),
+              "frame/native-opacity": ("basepower:steel_frame", False, 0)}
 
 
 def block_identity(name):
-    if name.startswith("sulfur/"): return "electricadvantage:sulfur_ore"
-    if name.startswith("lithium/"): return "electricadvantage:li_ore"
-    if name.startswith("frame/"): return "poweradvantage:steel_frame"
-    return "electricadvantage:" + ("electric_conduit" if name.startswith("wire/") else "electric_track")
+    if name.startswith("sulfur/"): return "baseelectric:sulfur_ore"
+    if name.startswith("lithium/"): return "baseelectric:li_ore"
+    if name.startswith("frame/"): return "basepower:steel_frame"
+    return "baseelectric:" + ("electric_conduit" if name.startswith("wire/") else "electric_track")
 
 
 def drop_identity(name):
     if not EXPECTED[name][3]: return ""
-    if name in ("sulfur/wood", "sulfur/stone"): return "electricadvantage:sulfur_powder"
+    if name in ("sulfur/wood", "sulfur/stone"): return "baseelectric:sulfur_powder"
     return block_identity(name)
 
 
@@ -163,7 +163,7 @@ def run(args):
     require_disjoint(output, args.target_manifest)
     target = pinned_profile(args.target_manifest.resolve(), "target110")
     for protected in (target[0], *target[2]): require_disjoint(output, protected)
-    if not {"poweradvantage","steamadvantage","electricadvantage","advantageworkstest"} <= {identity(jar)[0] for jar in target[2]}:
+    if not {"basepower","basesteam","baseelectric","advantageworkstest"} <= {identity(jar)[0] for jar in target[2]}:
         raise AssertionError("Harvest requires all three Advantage mods and the native harness")
     expected_code = read_json(args.target_manifest)["target110"].get("serverCode")
     if not expected_code: raise AssertionError("Harvest requires an exact sealed server-code inventory")

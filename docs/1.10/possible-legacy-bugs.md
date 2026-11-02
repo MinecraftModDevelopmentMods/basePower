@@ -16,6 +16,7 @@
 | `PA-110-001` | Refined-oil contact effect | None: original release behaviour confirmed | Closed; historical wording uncertainty |
 | `EA-110-002` | Growth controller soil capacity | None: whole-block refill hysteresis works coherently | Closed by runtime characterization |
 | `SA-110-003` | Steam crusher comparator output | Low: automation signal cannot distinguish input quantity | Repaired in `2.2.2.110021`; automated signal regression passes |
+| `PA-110-002` | Forge fluid capability bypasses machine routing | High: raw oil enters the still's output tank and processing stops | Repaired in the local basePower `2.4.4.110021` candidate; focused and packaged-machine regressions pass |
 
 ## SA-110-001: steam pump reads a different tank key
 
@@ -123,6 +124,18 @@
 - **Test control:** Allow at least two redstone ticks after changing the input before reading the comparator tile's `OutputSignal`; an immediate same-tick read can report the previous value.
 - **Required layout:** Steam crusher, comparator and dust/readout line, valid input item at four stack levels; [Card S-04](commissioning-and-fault-finding.md#card-s-04-blast-furnace-and-crusher).
 - **Versions to check:** Original and maintained 1.10.2, then 1.12.2.
+
+## PA-110-002: Forge fluid capability bypasses machine routing
+
+- **Component:** The shared `TileEntitySimpleFluidMachine` capability bridge, particularly `basepower:still`.
+- **Intended behaviour:** A Forge fluid capability must use the machine's fluid handler, including its input/output routing and side restrictions. A still accepts crude oil into its input reserve and exposes refined oil as output.
+- **Implemented behaviour before repair:** `getCapability` returned the raw output `FluidTank`. This bypassed the still's overridden `fill` method and any overridden handler restrictions.
+- **Runtime confirmation:** The new finite-material progression test collected a real crude-oil bucket and transferred its 1,000 mB through the native capability. The saved still held `Tank:{FluidName:"crude_oil",Amount:1000}` while `InputTank` remained empty; its coal was untouched and no distillation occurred. The full restart preserved this wrong routing rather than repairing it.
+- **Focused controls:** Three of four initial capability tests failed: overridden input routing, side/fluid restrictions, and input capacity/properties. The output-only drain control already passed.
+- **Repair:** Delegate the capability through Forge's `FluidHandlerWrapper(this, facing)`. No recipe, processing ratio, registry identity or NBT key changes.
+- **Regression:** All four focused tests pass. The packaged starter plant now turns exactly 1,000 mB crude into 500 mB refined oil and five plastic ingots, with real fuel and hydroelectric generation. The rebuilt Power jar also passes all 188 operating cases and 188 cold-state comparisons. See [recipe progression checks](recipe-progression-checks.md) for the wider matrix and its limits.
+- **Source:** `src/main/java/cyano/poweradvantage/api/simple/TileEntitySimpleFluidMachine.java`, method `getCapability`; `StillTileEntity.fill` and `getTankInfo` define the required routing.
+- **Versions to check:** Maintained 1.10.2 confirmed and repaired locally. Other Minecraft lines and the original release's capability behaviour have not been requalified by this repair.
 
 ## Reviewed differences not presently classified as bugs
 

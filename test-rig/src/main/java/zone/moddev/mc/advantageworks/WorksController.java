@@ -184,10 +184,10 @@ final class WorksController {
         }
         WorldServer world = overworld(server);
         Map<String, String> expectedBiomes = new LinkedHashMap<>();
-        expectedBiomes.put("poweradvantage:crude_oil", "DESERT");
+        expectedBiomes.put("basepower:crude_oil", "DESERT");
         expectedBiomes.put("mineralogy:crude_oil", "OCEAN");
-        expectedBiomes.put("electricadvantage:li_ore", null);
-        expectedBiomes.put("electricadvantage:sulfur_ore", null);
+        expectedBiomes.put("baseelectric:li_ore", null);
+        expectedBiomes.put("baseelectric:sulfur_ore", null);
         expectedBiomes.put("mineralogy:sulfur_ore", null);
 
         Set<Long> chunks = new LinkedHashSet<>();
@@ -658,8 +658,7 @@ final class WorksController {
                         }
                     }
                     if (action.enchantment != null) {
-                        Enchantment enchantment = Enchantment.REGISTRY.getObject(
-                                new ResourceLocation(action.enchantment));
+                        Enchantment enchantment = CanonicalSteamEnchantments.require(action.enchantment);
                         if (enchantment == null) {
                             throw new IllegalStateException("Unknown enchantment " + action.enchantment);
                         }

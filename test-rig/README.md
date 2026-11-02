@@ -1,6 +1,10 @@
 # Advantage Works 1.10.2 Test Rig
 
-> **Commissioning notice:** This harness builds disposable works. It is not a gameplay mod, registers no content, and must never be shipped inside a PowerAdvantage jar.
+The current targets are basePower, baseSteam and baseElectric. Station IDs and operator commands stay unchanged. Original-release Advantage fixtures are read-only migration sources, not interchangeable runtime dependencies. See [Moving From Advantage To basePower](../docs/1.10/base-migration.md) before testing an existing world.
+
+See [Recipe Progression Checks](../docs/1.10/recipe-progression-checks.md) for finite-material native crafting, hammer and merchant transactions, and the connected oil/plastic and steam starter plant. This is separate from the older recipe-registration audit, whose partial results are retained.
+
+> **Commissioning notice:** This harness builds disposable works. It is not a gameplay mod, registers no content, and must never be shipped inside a basePower jar.
 
 The rig turns the 20 cards in the [Advantage Works handbook](../docs/1.10/README.md) plus a public-API fixture into one walkable superflat server world. Power Works lies west of the central concourse, Steam Works north, Electric Works east, and the drill, lift, turbine, pumping, musket, and turret proving grounds south.
 
@@ -67,7 +71,7 @@ gradlew.bat -p test-rig verifyWorksPackagedCurrent -PworksStations=E-01 -PworksS
 
 Every machinery profile still builds and checks the complete works; the selection controls which stations are started, stopped, and checkpointed around the full process restart. Normal-world generation profiles deliberately skip station construction. The configured run duration is also used as a post-restart settle interval before assertions, allowing an eight-tick distribution cycle to complete. Use `worksServerPort` when another local server occupies the profile's default port. The effective station list, duration, and port are recorded in `run-manifest.json`.
 
-The development profile uses current PowerAdvantage source plus the sibling SteamAdvantage and ElectricAdvantage deobf jars. PowerAdvantage supplies the pinned OreSpawn 4 development runtime; BaseMetals and Mineralogy remain absent so their integrations are visibly skipped.
+The development profile uses current basePower source plus the sibling baseSteam and baseElectric deobf jars. basePower supplies the pinned OreSpawn 4 development runtime; BaseMetals and Mineralogy remain absent so their integrations are visibly skipped.
 
 ## Run matrix
 
@@ -127,4 +131,14 @@ The sampler records block counts, sampled biome centers, any deposit-producing c
 
 ## Release isolation
 
-`verifyHarnessIsolation` opens the PowerAdvantage release jar and rejects any `zone/moddev/mc/advantageworks` class or `assets/advantageworkstest` resource. The normal PowerAdvantage build never includes the nested `test-rig` source set.
+`verifyHarnessIsolation` opens the basePower release jar and rejects any `zone/moddev/mc/advantageworks` class or `assets/advantageworkstest` resource. The normal basePower build never includes the nested `test-rig` source set.
+
+## Migration Evidence
+
+The native migration runners distinguish three kinds of evidence:
+
+- Connected original-release worlds prove saved-state preservation and paid work without replacing machines, followed by a full server restart.
+- The larger passive original-release fixture checks saved blocks, metadata, inventories and typed NBT before machinery can tick.
+- Newly constructed nested inventory and entity fixtures test additional migration cases. They are synthetic tests, not evidence that a historical player used that exact arrangement.
+
+Each run pins the candidate jars, server code, fixture and test protocol. Failed receipts remain available. A known dependency warning may only be classified after a fresh, hash-bound dependency-only control and candidate behaviour check; it is not a blanket permission to ignore startup errors. Endurance means a measured 30-minute finite-resource operating run, not a shortened smoke run.

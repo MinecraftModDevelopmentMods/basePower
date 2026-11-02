@@ -9,7 +9,7 @@
     "authorList": ["Minecraft Mod Development"],
     "credits": "Test specifications derived from DrCyano's Advantage documentation and maintained source.",
     "requiredMods": [],
-    "dependencies": ["poweradvantage"],
+    "dependencies": ["basepower"],
     "dependants": []
   }
 ]

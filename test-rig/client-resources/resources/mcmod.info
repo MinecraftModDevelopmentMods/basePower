@@ -6,6 +6,6 @@
     "version": "1.0.0.110021",
     "mcversion": "1.10.2",
     "authorList": ["Advantage Works"],
-    "dependencies": ["poweradvantage", "steamadvantage", "electricadvantage"]
+    "dependencies": ["basepower", "basesteam", "baseelectric"]
   }
 ]

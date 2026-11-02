@@ -161,7 +161,7 @@ class LegacyHarvestTests(unittest.TestCase):
     def test_wrong_tool_cannot_hide_unexpected_live_drop(self):
         document=sample()
         row(document,"lithium/wood-fails")["dropEvidence"][0]["actualDrops"] = [
-            dict(entityId=99999,uuid=str(UUID(int=99999)),item="electricadvantage:li_ore",
+            dict(entityId=99999,uuid=str(UUID(int=99999)),item="baseelectric:li_ore",
                  count=1,damage=0,tagged=False,removed=False,x=1200.5,y=8.5,z=1024.5)]
         with self.assertRaises(AssertionError): native.require_isolation(document)
 
@@ -185,8 +185,8 @@ class LegacyHarvestTests(unittest.TestCase):
             self.assertIn(literal,source)
         self.assertNotIn(".getDrops(",source)
         self.assertNotIn("import com.mcmoddev",source)
-        self.assertNotIn("import zone.moddev.mc.electricadvantage",source)
-        self.assertNotIn("import zone.moddev.mc.steamadvantage",source)
+        self.assertNotIn("import zone.moddev.mc.baseelectric",source)
+        self.assertNotIn("import zone.moddev.mc.basesteam",source)
 
     def test_runner_enforces_code_custody_before_boot_without_editing_shared_helpers(self):
         source=Path(native.__file__).read_text()
