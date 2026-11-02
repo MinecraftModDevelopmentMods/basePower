@@ -12,6 +12,7 @@ basePower 2.4.4.110021
 - Route Forge fluid capability calls through each machine's fluid handler, so stills fill their input tank and tank restrictions are respected.
 - Keep current OreSpawn global and saved-world profiles readable after a full restart, without resetting generation choices or accepting unknown future schemas.
 - Add the basePower project logo and updated installation, migration and CurseForge descriptions.
+- Run the migration-contract checks in clean checkouts and CI without depending on local folder names.
 
 Earlier unreleased Advantage fixes, retained in basePower
 

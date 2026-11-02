@@ -4,9 +4,11 @@ import base64
 import contextlib
 from copy import deepcopy
 import gzip
+import importlib.util
 import io
 import json
 from pathlib import Path
+import shutil
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -15,7 +17,8 @@ import nbtlib
 import steam_control_audit as audit
 
 
-LINE = Path(__file__).resolve().parents[3].name[2:]
+# This branch tests 1.10; checkout directory names are not version metadata.
+LINE = "110"
 
 
 def snapshot(position, block, data=None):
@@ -123,6 +126,16 @@ def change_tile(row, line, **changes):
 
 
 class SteamControlAuditTests(unittest.TestCase):
+    def test_fixture_version_survives_a_differently_named_checkout(self):
+        with tempfile.TemporaryDirectory(prefix="advantage-checkout-") as temporary:
+            relocated = Path(temporary) / "A Different Repository Name" / "test_steam_control_audit.py"
+            relocated.parent.mkdir()
+            shutil.copyfile(__file__, relocated)
+            spec = importlib.util.spec_from_file_location("relocated_steam_contract", relocated)
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            self.assertEqual("110", module.LINE)
+
     def test_namespace_is_exact_and_version_specific(self):
         self.assertEqual("basesteam:steam_crusher", audit.steam_block("steam_crusher", "110"))
         self.assertEqual("steamadvantage:steam_crusher", audit.steam_block("steam_crusher", "112"))
