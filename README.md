@@ -6,6 +6,8 @@ The new mod ID is `basepower`, with implementation packages under `zone.moddev.m
 
 ## Playing And Upgrading
 
+basePower is available on [CurseForge](https://www.curseforge.com/minecraft/mc-mods/basepower), project `1780140`. The [player wiki](https://github.com/MinecraftModDevelopmentMods/basePower/wiki) covers installation, machines, recipes and upgrading.
+
 Use Java 8, Forge `12.18.3.2511` or a compatible later 1.10.2 build, Base Metals and MMD OreSpawn. The maintained dependency pack was tested with Base Metals `2.5.1.110021` and OreSpawn `4.1.2.110021`.
 
 Back up the complete world and configuration, then try the upgrade on a copy. Replace Power Advantage with basePower. Replace Steam and Electric Advantage with matching baseSteam and baseElectric builds if they are installed; do not mix the old and new families. Existing machines and their saved contents migrate without rebuilding. Check the copy again after closing Minecraft completely and restarting it.
@@ -66,6 +68,6 @@ Base Metals remains a required distribution dependency and is absent from the co
 
 ## Publishing
 
-Source delivery and CurseForge publication are separate. The new CurseForge project ID is still `0`, which deliberately blocks uploads; the original Power Advantage project must not be reused. No tag or release is created by the ordinary CI build.
+Source delivery and CurseForge publication are separate. basePower uses CurseForge project `1780140`; the original Power Advantage project must not be reused. Ordinary CI does not create a tag, release or upload, and assigning the project ID does not authorise another publication.
 
 The [project-page copy](docs/curseforge-description.md) and [logo](docs/branding/README.md) are kept with the source. The logo is not part of the mod jar, so it does not change the tested artifacts.

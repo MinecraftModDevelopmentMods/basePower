@@ -39,4 +39,4 @@ The regression work uses disposable, hash-checked copies of original-release fix
 
 Automated checks do not replace visual and gameplay acceptance. A build or server-start pass alone is not proof that a world migrated without losing contents. Current candidate results and any remaining gaps must be reported against the exact tested jars before release.
 
-The new CurseForge projects have not been assigned numeric project IDs in this source yet. Publication must remain blocked until those IDs are supplied; the old Advantage upload targets must never be reused.
+basePower is available on [CurseForge](https://www.curseforge.com/minecraft/mc-mods/basepower), project `1780140`. baseSteam and baseElectric still need their own new project IDs in this source before automated publication. The old Advantage upload targets must never be reused.

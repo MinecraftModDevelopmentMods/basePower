@@ -1,5 +1,7 @@
 # base 1.10.2 Candidate Checks
 
+**Publication update, 3 November 2026:** basePower now has a live [CurseForge project](https://www.curseforge.com/minecraft/mc-mods/basepower), ID `1780140`, listing the 1.10.2 release. The checks and pending gates below are the preserved pre-publication record, not a statement that the project is still unassigned. This metadata update does not independently verify the downloadable file's checksum or authorise another upload.
+
 This is the local basePower/baseSteam/baseElectric identity-migration candidate, not a published release. The old Advantage repositories remain intact. Tests use disposable copies; the original Sylvester world has not been converted.
 
 The results below record exact-artifact qualification before source delivery. Git commits, hosted checks and CurseForge publication are separate steps. Both expansions must pin the approved basePower source commit and development-jar checksum before their guarded release checks can pass. New CurseForge project IDs remain unassigned, so publication stays blocked.
