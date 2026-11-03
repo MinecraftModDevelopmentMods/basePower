@@ -328,7 +328,7 @@ tasks.register('verifyReleaseConfiguration') {
         if (project.mod_id != 'basepower'
                 || project.group.toString() != 'zone.moddev.mc.basepower'
                 || base.archivesName.get() != 'basePower'
-                || project.curseforge_project_id != '0') {
+                || project.curseforge_project_id != '1780140') {
             throw new GradleException('Unexpected Forge, Maven, archive, or CurseForge identity')
         }
         if (project.cf_requirements != 'base-metals,mmd-orespawn'
@@ -379,10 +379,10 @@ def publicationTargetAllowed = { String projectId ->
 
 tasks.register('verifyPublicationTarget') {
     group = 'verification'
-    description = 'Refuses publication until the new basePower CurseForge project is assigned.'
+    description = 'Validates the assigned basePower CurseForge publication target.'
     doLast {
         if (!publicationTargetAllowed(project.curseforge_project_id.toString())) {
-            throw new GradleException('Assign the new basePower CurseForge project ID before publishing; never reuse Power Advantage 240982.')
+            throw new GradleException('Use basePower CurseForge project 1780140; never reuse Power Advantage 240982.')
         }
     }
 }
