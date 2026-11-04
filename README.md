@@ -28,4 +28,4 @@ gradlew.bat cleanEclipse verifyEclipseProductionClasspath
 
 Build the pinned OreSpawn 4.1.3.112021 development jar first, or pass `-PoreSpawnDeobfJar=<path>`. CI builds the exact source in `gradle.properties`. Base Metals is a distribution dependency, not a compile dependency. Optional RF and RebornCore APIs are compile-only and are not bundled. CI stages the exact historical RebornCore Maven artifact; the later CurseForge archive with the same version has different contents.
 
-The [test coverage notes](TEST-COVERAGE-BACKPORT.md) describe the preceding Advantage build, not the qualification status of these renamed jars.
+See [Checking a base workshop upgrade](docs/1.12-validation.md) for the current test procedure. The [test coverage notes](TEST-COVERAGE-BACKPORT.md) describe the preceding Advantage build.

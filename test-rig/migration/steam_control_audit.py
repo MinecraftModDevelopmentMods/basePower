@@ -155,7 +155,7 @@ def progress(data):
     return int(value)
 
 
-def control_case(row, saved, declaration, base, line):
+def control_case(row, saved, declaration, base, line, steam_modid="steamadvantage"):
     index = saved.get("index")
     require(type(index) is int and index >= 0, "Missing station index")
     require(type(row.get("startTick")) is int and type(row.get("finishTick")) is int
@@ -185,15 +185,15 @@ def control_case(row, saved, declaration, base, line):
                 "Tile hold must remove ticking, retain the same tile and leave NBT unchanged")
         observed = measured.get(at(*point))
         require(observed is not None and "nbt" in observed
-                and observed["block"] == ("steamadvantage:steam_furnace" if row["id"] in FURNACES
-                                          else "steamadvantage:steam_crusher"),
+                and observed["block"] == steam_modid + (":steam_furnace" if row["id"] in FURNACES
+                                                       else ":steam_crusher"),
                 "Held tile is not the measured native machine")
         actual.add(point)
     require(actual == expected, "Incomplete measured tile hold coverage")
     return at
 
 
-def audit_documents(catalog, operation, fixture, cold, line):
+def audit_documents(catalog, operation, fixture, cold, line, steam_modid="steamadvantage"):
     report = {"status": "FAIL", "line": line, "scope": "Six Steam first-tick/control cases plus full declared operation/cold checks",
               "cases": {}, "failures": []}
     try:
@@ -214,7 +214,7 @@ def audit_documents(catalog, operation, fixture, cold, line):
         require(report["cold"]["status"] == "PASS", "Base exact cold-restart audit failed")
         for case_id in sorted(IDS):
             row = observed[case_id]
-            at = control_case(row, saved[case_id], declared[case_id], base, line)
+            at = control_case(row, saved[case_id], declared[case_id], base, line, steam_modid)
             require(positions(saved[case_id]["positions"], base, line)
                     == positions(restarted[case_id]["positions"], base, line),
                     "Control typed NBT changed across cold restart")
@@ -228,7 +228,7 @@ def audit_documents(catalog, operation, fixture, cold, line):
                 for stage in ("before", "after"):
                     require(set(positions(row[stage], base, line)) == expected_positions, "Wrong comparator layout")
                     for i, count in enumerate(counts):
-                        data = tile(row[stage], at(3 + 6 * i), "steamadvantage:steam_crusher", line)
+                        data = tile(row[stage], at(3 + 6 * i), steam_modid + ":steam_crusher", line)
                         inventory(data, 0, "minecraft:stone", count)
                         require(energy(data) == 0 and progress(data) == 0, "Comparator witness must remain unpowered")
                 for i, count in enumerate(counts):
@@ -245,7 +245,7 @@ def audit_documents(catalog, operation, fixture, cold, line):
                     require(set(snapshot) == expected_positions, "Wrong controlled-machine layout")
                     if signal:
                         require(snapshot[at(7)]["block"] == "minecraft:redstone_block", "Missing actual redstone source")
-                block = "steamadvantage:steam_crusher" if is_crusher else "steamadvantage:steam_furnace"
+                block = steam_modid + (":steam_crusher" if is_crusher else ":steam_furnace")
                 before = tile(row["before"], at(8), block, line)
                 after = tile(row["after"], at(8), block, line)
                 item = "minecraft:stone" if is_crusher else "minecraft:sand"
@@ -287,11 +287,11 @@ def unique_object(pairs):
     return result
 
 
-def audit(runtime, line):
+def audit(runtime, line, steam_modid="steamadvantage"):
     runtime = Path(runtime).resolve()
     raw = {name: (runtime / path).read_bytes() for name, path in INPUTS.items()}
     documents = {name: json.loads(value, object_pairs_hook=unique_object) for name, value in raw.items()}
-    report = audit_documents(**documents, line=line)
+    report = audit_documents(**documents, line=line, steam_modid=steam_modid)
     report["runtime"] = str(runtime)
     report["inputSha256"] = {INPUTS[name]: hashlib.sha256(value).hexdigest().upper() for name, value in raw.items()}
     report["auditorSha256"] = hashlib.sha256(Path(__file__).read_bytes()).hexdigest().upper()
@@ -305,9 +305,10 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--runtime", type=Path, required=True)
     parser.add_argument("--line", choices=LINES, required=True)
+    parser.add_argument("--steam-modid", choices=("steamadvantage", "basesteam"), default="steamadvantage")
     args = parser.parse_args(argv)
     try:
-        report = audit(args.runtime, args.line)
+        report = audit(args.runtime, args.line, args.steam_modid)
     except Exception as error:
         report = {"status": "FAIL", "line": args.line, "runtime": str(args.runtime), "failures": [str(error)]}
     print(json.dumps(report, indent=2, sort_keys=True, allow_nan=False))
