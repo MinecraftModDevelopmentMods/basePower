@@ -20,21 +20,21 @@ RAW=("log","sapling","cobblestone","coal","iron_ore","gold_ore","sand","clay_bal
      "leather","string","feather","blaze_rod","ender_pearl","quartz","bone","cactus","dirt")
 ORE_ROOTS=("oreCopper","oreTin","oreZinc","oreLead","oreNickel","oreSilver","oreLithium","oreSulfur")
 EXCLUSIONS={
- "poweradvantage:infinite_steam@0":"Creative-only source",
- "poweradvantage:infinite_electricity@0":"Creative-only source",
- "poweradvantage:infinite_quantum@0":"Creative-only source",
- "poweradvantage:crude_oil@0":"World fluid identity; natural collection is outside this audit",
- "poweradvantage:refined_oil@0":"World fluid identity; live distillation is outside this audit",
- "poweradvantage:fluid_pipe_terminal@0":"Hidden ordinary-pipe state",
- "steamadvantage:drillbit@0":"Drill-created helper",
- "steamadvantage:platform@0":"Elevator-created helper",
- "steamadvantage:pump_pipe_steam@0":"Pump-created helper",
- "electricadvantage:pump_pipe_electric@0":"Pump-created helper",
- "electricadvantage:laser_turret_evil@0":"Hidden converted turret state",
+ "basepower:infinite_steam@0":"Creative-only source",
+ "basepower:infinite_electricity@0":"Creative-only source",
+ "basepower:infinite_quantum@0":"Creative-only source",
+ "basepower:crude_oil@0":"World fluid identity; natural collection is outside this audit",
+ "basepower:refined_oil@0":"World fluid identity; live distillation is outside this audit",
+ "basepower:fluid_pipe_terminal@0":"Hidden ordinary-pipe state",
+ "basesteam:drillbit@0":"Drill-created helper",
+ "basesteam:platform@0":"Elevator-created helper",
+ "basesteam:pump_pipe_steam@0":"Pump-created helper",
+ "baseelectric:pump_pipe_electric@0":"Pump-created helper",
+ "baseelectric:laser_turret_evil@0":"Hidden converted turret state",
 }
-CORE={"poweradvantage:sprocket@0","poweradvantage:fluid_pipe@0","steamadvantage:steam_governor@0",
-      "steamadvantage:steam_pipe@0","electricadvantage:integrated_circuit@0","electricadvantage:psu@0",
-      "electricadvantage:electric_conduit@0","electricadvantage:photovoltaic_generator@0"}
+CORE={"basepower:sprocket@0","basepower:fluid_pipe@0","basesteam:steam_governor@0",
+      "basesteam:steam_pipe@0","baseelectric:integrated_circuit@0","baseelectric:psu@0",
+      "baseelectric:electric_conduit@0","baseelectric:photovoltaic_generator@0"}
 
 
 def mode_checks(doc,mode,rubber):
@@ -48,7 +48,7 @@ def mode_checks(doc,mode,rubber):
     ids=[r["id"] for r in crafting]
     if len(ids)!=len(set(ids)): raise AssertionError("Duplicate native recipe evidence")
     for row in crafting:
-        owned=isinstance(row.get("output"),str) and row["output"].startswith(("poweradvantage:","steamadvantage:","electricadvantage:"))
+        owned=isinstance(row.get("output"),str) and row["output"].startswith(("basepower:","basesteam:","baseelectric:"))
         if row.get("owned") is not owned: raise AssertionError("Native recipe ownership evidence is missing or inconsistent")
         if row.get("status")=="PASS" and (row.get("negativeControlsRejected")!=2
                 or type(row.get("count")) is not int or row["count"]<=0 or not row.get("output")
@@ -61,17 +61,17 @@ def mode_checks(doc,mode,rubber):
         if row.get("status")=="PASS" and row.get("owned") is True and row.get("recipeBookCraftUnlock")!="PASS":
             raise AssertionError("Missing native recipe-book result or explicit legacy N/A")
     def rows(output): return [r for r in crafting if r.get("output")==output]
-    for target in ("poweradvantage:sprocket@0","electricadvantage:integrated_circuit@0","electricadvantage:photovoltaic_generator@0"):
+    for target in ("basepower:sprocket@0","baseelectric:integrated_circuit@0","baseelectric:photovoltaic_generator@0"):
         if bool(rows(target)) != (mode!="APOCALYPTIC"): raise AssertionError("Recipe mode restriction changed: "+target)
-    for target in ("steamadvantage:steam_governor@0","electricadvantage:psu@0"):
+    for target in ("basesteam:steam_governor@0","baseelectric:psu@0"):
         if not rows(target): raise AssertionError("Mode lost a foundational recipe: "+target)
     iron=set(doc.get("ores",{}).get("ingotIron",[]))
-    pipes=[r for r in rows("poweradvantage:fluid_pipe@0")
+    pipes=[r for r in rows("basepower:fluid_pipe@0")
            if len([x for x in r.get("inputs",[]) if x])==6
            and all(x in iron for x in r["inputs"] if x)]
     if not pipes or any(r["count"]!=(3 if mode=="APOCALYPTIC" else 6) for r in pipes):
         raise AssertionError("Native iron-pipe yield changed")
-    chips=rows("electricadvantage:integrated_circuit@0")
+    chips=rows("baseelectric:integrated_circuit@0")
     # Forge may expand a wildcard ore entry into concrete matching-stack variants.
     def matches_provider(value,choices):
         return (isinstance(value,str) and "@" in value and isinstance(choices,list)
@@ -125,7 +125,7 @@ def reachability(doc):
     blocked=[]; excluded={}
     for target in doc["targets"]:
         if target in EXCLUSIONS: excluded[target]=EXCLUSIONS[target]
-        elif doc["mode"]=="APOCALYPTIC" and target=="electricadvantage:photovoltaic_generator@0":
+        elif doc["mode"]=="APOCALYPTIC" and target=="baseelectric:photovoltaic_generator@0":
             excluded[target]="Explicit legacy Apocalyptic restriction"
         elif target not in known: blocked.append(target)
     return {"reachable":known,"blocked":sorted(blocked),"excluded":excluded,"rounds":rounds,
@@ -174,7 +174,7 @@ def run(args):
             launcher=prepare(runtime,target,[],args.port)
             verify_code(runtime,code); write_json(runtime/INVENTORY,code)
             (runtime/"advantage-legacy-recipes.allow").touch()
-            config=runtime/"config/poweradvantage.cfg"; config.parent.mkdir(exist_ok=True)
+            config=runtime/"config/basepower.cfg"; config.parent.mkdir(exist_ok=True)
             config.write_text('options {\n S:recipe_mode='+mode+'\n B:plastic_equals_rubber='+str(not args.no_rubber).lower()+'\n}\n',encoding="utf-8")
             proofs={}
             for phase in ("initial","restart"):

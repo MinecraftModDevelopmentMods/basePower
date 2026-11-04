@@ -11,6 +11,7 @@ import net.minecraftforge.fml.relauncher.SideOnly;
  * @author DrCyano
  *
  */
+@Deprecated
 public interface ITileEntityGUI {
 	/**
 	 * Gets an instance of net.minecraft.inventory.Container for the

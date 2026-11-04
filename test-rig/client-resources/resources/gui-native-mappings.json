@@ -12,8 +12,8 @@
     "import net.minecraftforge.fluids.FluidTank;"
   ],
   [
-    "import zone.moddev.mc.poweradvantage.registry.MachineGUIRegistry;",
-    "import com.mcmoddev.poweradvantage.registry.MachineGUIRegistry;"
+    "import zone.moddev.mc.basepower.registry.MachineGUIRegistry;",
+    "import zone.moddev.mc.basepower.registry.MachineGUIRegistry;"
   ],
   [
     "net.minecraft.resources.IResource",
@@ -76,16 +76,16 @@
     "net.minecraftforge.fluids.FluidRegistry.WATER"
   ],
   [
-    "zone.moddev.mc.poweradvantage.init.Blocks",
-    "com.mcmoddev.poweradvantage.init.Blocks"
+    "zone.moddev.mc.basepower.init.Blocks",
+    "zone.moddev.mc.basepower.init.Blocks"
   ],
   [
-    "zone.moddev.mc.electricadvantage.gui.GUIHelper",
-    "com.mcmoddev.electricadvantage.gui.GUIHelper"
+    "zone.moddev.mc.baseelectric.gui.GUIHelper",
+    "zone.moddev.mc.baseelectric.gui.GUIHelper"
   ],
   [
-    "zone.moddev.mc.steamadvantage.gui.GUIHelper",
-    "com.mcmoddev.steamadvantage.gui.GUIHelper"
+    "zone.moddev.mc.basesteam.gui.GUIHelper",
+    "zone.moddev.mc.basesteam.gui.GUIHelper"
   ],
   [
     "net.minecraftforge.fml.ModList.get().isLoaded(",

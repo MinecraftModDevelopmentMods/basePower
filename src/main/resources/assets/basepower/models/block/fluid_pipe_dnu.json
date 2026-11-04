@@ -1,0 +1,7 @@
+{
+  "parent": "basepower:block/pipe4_dnu",
+    "textures": {
+        "texture": "basepower:blocks/fluid_pipe",
+        "particle": "basepower:materials/iron"
+    }
+}

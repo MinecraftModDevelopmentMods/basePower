@@ -16,7 +16,7 @@ final class SteamReloadControlCases {
                     int[] stock = {0, 1, 32, 64};
                     for (int i = 0; i < stock.length; i++) {
                         int x = 3 + i * 6;
-                        c.block(x, Y, Z, "steamadvantage:steam_crusher");
+                        c.block(x, Y, Z, "basesteam:steam_crusher");
                         c.put(x, Y, Z, 0, "minecraft:stone", stock[i]);
                     }
                 }, holding(new int[]{3, 9, 15, 21}, c -> {
@@ -41,7 +41,7 @@ final class SteamReloadControlCases {
         cases.add(new MachineScenario("steam/lifecycle/crusher-first-loaded-" + name,
                 "One native tick observes live redstone before touching saved crusher progress; no reload grace or replacement.", 1,
                 c -> {
-                    c.block(X, Y, Z, "steamadvantage:steam_crusher");
+                    c.block(X, Y, Z, "basesteam:steam_crusher");
                     if (signalled) c.block(X - 1, Y, Z, "minecraft:redstone_block");
                     c.put(X, Y, Z, 0, "minecraft:stone", 1);
                     NBTTagCompound tag = new NBTTagCompound(); tag.setShort("progress", (short)106); c.seed(X, Y, Z, tag);
@@ -66,7 +66,7 @@ final class SteamReloadControlCases {
         cases.add(new MachineScenario("steam/lifecycle/furnace-first-loaded-" + (signalled ? "signalled" : "unpowered"),
                 "A burning, partly completed furnace uses the real control signal for its first steam heat bonus and work increment.", 1,
                 c -> {
-                    c.block(X, Y, Z, "steamadvantage:steam_furnace");
+                    c.block(X, Y, Z, "basesteam:steam_furnace");
                     if (signalled) c.block(X - 1, Y, Z, "minecraft:redstone_block");
                     c.put(X, Y, Z, 1, "minecraft:sand", 1);
                     NBTTagCompound tag = new NBTTagCompound();

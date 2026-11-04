@@ -42,7 +42,7 @@ final class DrillOperationalCases {
     private static void scenario(List<MachineScenario> cases, String district, EnumFacing facing, String mode) {
         boolean steam = district.equals("steam");
         boolean move = mode.equals("move"), noPower = mode.equals("no-power");
-        String namespace = steam ? "steamadvantage" : "electricadvantage";
+        String namespace = steam ? "basesteam" : "baseelectric";
         String drill = namespace + ":" + district + "_drill";
         String track = namespace + ":" + district + "_track";
         String conduit = namespace + (steam ? ":steam_pipe" : ":electric_conduit");
@@ -116,7 +116,7 @@ final class DrillOperationalCases {
                     BlockPos active = move ? destination : source;
                     requireBlock(c, source, move ? conduit : drill, "Source becomes the correct conduit only after a successful move");
                     requireBlock(c, destination, move ? drill : track, "Destination contains the moved drill, or the untouched single track in a control");
-                    requireBlock(c, front, move ? "poweradvantage:steel_frame" : "minecraft:bedrock",
+                    requireBlock(c, front, move ? "basepower:steel_frame" : "minecraft:bedrock",
                             "The old bore mouth becomes one steel frame only on movement");
                     requireBlock(c, nextFront, "minecraft:bedrock", "Destination bedrock stop is never mined");
                     requireBlock(c, hold, "minecraft:redstone_block", "Destination hold remains physically present");

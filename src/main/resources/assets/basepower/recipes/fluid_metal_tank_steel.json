@@ -1,0 +1,22 @@
+{
+	"type": "forge:ore_shaped",
+	"pattern": [
+		"xxx",
+		"xpx",
+		"xxx"
+	],
+	"key": {
+		"x": {
+			"type": "forge:ore_dict",
+			"ore": "ingotSteel"
+		},
+		"p": {
+			"type": "forge:ore_dict",
+			"ore": "pipe"
+		}
+	},
+	"result": {
+		"item": "basepower:fluid_metal_tank"
+	},
+	"group": "fluid_machines"
+}

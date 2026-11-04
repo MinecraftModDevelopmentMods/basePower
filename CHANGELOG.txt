@@ -1,4 +1,10 @@
-Unreleased test-coverage repairs for 1.12.2
+2.4.4.112021 - basePower for Minecraft 1.12.2
+
+- Continue Power Advantage as basePower on Forge 1.12.2. Read original Advantage and basePower 1.10.2 world data without changing block paths, fluid names or stored amounts.
+- Preserve the world-generation settings for oil, sulfur and lithium when moving to OreSpawn 4 on 1.12.2.
+- Route automated still fills to the input tank and expose only refined output for draining. Keep compatible crude oil names usable for distilling and fuel.
+
+Earlier 1.12.2 test-coverage repairs
 
 - Restore the missing carbon-dust recipe name from registered coal and charcoal powders, without replacing existing entries or changing recipe amounts.
 - Enable Forge's universal bucket during mod construction so oil buckets work without another mod enabling them first.

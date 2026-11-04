@@ -31,7 +31,7 @@ tasks.register('clientResourceProbeJar', Jar) {
 
 group = project.mod_group
 version = project.mod_version
-base.archivesName = 'PowerAdvantage'
+base.archivesName = 'basePower'
 
 def versionParts = project.mod_version.toString().tokenize('.')
 if (versionParts.size() != 4 || !versionParts.every { it ==~ /\d+/ }) {
@@ -181,6 +181,12 @@ repositories {
 }
 
 def rfApiJar = file('libs/RF-API.jar')
+// Use the matching OreSpawn 1.12 build; CI may stage it outside the sibling checkout.
+def oreSpawnJar = file(providers.gradleProperty('oreSpawnDeobfJar').getOrElse(
+        "../../../MinecraftMineralogy/OS112/OreSpawn/build/libs-dev/OreSpawn-${project.orespawn_version}-deobf.jar"))
+if (!oreSpawnJar.isFile()) {
+    throw new GradleException("Missing OreSpawn development jar: ${oreSpawnJar}. Build the pinned source or set -PoreSpawnDeobfJar=<path>.")
+}
 def usingStagedRebornCore = providers.gradleProperty('rebornCoreVerificationRepository').isPresent()
 def rebornCoreCoordinate = usingStagedRebornCore
         ? "curse.maven:reborncore-${project.reborncore_curse_project_id}:${project.reborncore_curse_file_id}"
@@ -197,6 +203,7 @@ dependencies {
     // but do not package or launch PowerAdvantage with the provider mods.
     compileOnly files(rfApiJar)
     compileOnly rebornCoreCoordinate
+    implementation files(oreSpawnJar)
 }
 
 tasks.named('processResources', ProcessResources) {
@@ -326,7 +333,7 @@ tasks.register('verifyReleaseConfiguration') {
     group = 'verification'
     description = 'Validates release identity, target metadata, and optional integration policy.'
     doLast {
-        if (project.mod_version != '2.4.1.112021') {
+        if (project.mod_version != '2.4.4.112021') {
             throw new GradleException("Unexpected PowerAdvantage release version: ${project.mod_version}")
         }
         if (project.minecraft_version != '1.12.2'
@@ -341,10 +348,10 @@ tasks.register('verifyReleaseConfiguration') {
                 || project.gradle_java_version != '17') {
             throw new GradleException('Unexpected release dispatcher target metadata')
         }
-        if (project.mod_id != 'poweradvantage'
-                || project.group.toString() != 'com.mcmoddev.poweradvantage'
-                || base.archivesName.get() != 'PowerAdvantage'
-                || project.curseforge_project_id != '240982') {
+        if (project.mod_id != 'basepower'
+                || project.group.toString() != 'zone.moddev.mc.basepower'
+                || base.archivesName.get() != 'basePower'
+                || project.curseforge_project_id != '1780140') {
             throw new GradleException('Unexpected Forge, Maven, archive, or CurseForge identity')
         }
         if (project.cf_requirements != 'base-metals,mmd-orespawn'
@@ -361,17 +368,17 @@ tasks.register('verifyReleaseConfiguration') {
             throw new GradleException('Unexpected RebornCore compile API identity')
         }
         String mainSource = file(
-                'src/main/java/com/mcmoddev/poweradvantage/PowerAdvantage.java').getText('UTF-8')
-        if (!mainSource.contains('MODID = "poweradvantage"')
-                || !mainSource.contains('VERSION = "2.4.1.112021"')
-                || !mainSource.contains('dependencies = "after:basemetals"')) {
+                'src/main/java/zone/moddev/mc/basepower/PowerAdvantage.java').getText('UTF-8')
+        if (!mainSource.contains('MODID = "basepower"')
+                || !mainSource.contains('VERSION = "2.4.4.112021"')
+                || !mainSource.contains('required-before:orespawn@[4.1.3,5.0.0)')) {
             throw new GradleException('PowerAdvantage source identity or optional BaseMetals policy changed')
         }
         if (!file('src/main/java/cyano/poweradvantage/api/PoweredEntity.java').isFile()) {
             throw new GradleException('Legacy cyano.poweradvantage.api compatibility surface is missing')
         }
         String entitySource = file(
-                'src/main/java/com/mcmoddev/poweradvantage/init/Entities.java').getText('UTF-8')
+                'src/main/java/zone/moddev/mc/basepower/init/Entities.java').getText('UTF-8')
         [
                 'tileentity.pipe_terminal', 'tileentity.fluid_drain',
                 'tileentity.fluid_discharge', 'tileentity.fluid_storage_tank',
@@ -386,8 +393,8 @@ tasks.register('verifyReleaseConfiguration') {
         }
         def metadata = new JsonSlurper().parse(file('src/main/resources/mcmod.info'))
         def mod = metadata instanceof List ? metadata.first() : metadata
-        if (mod.modid != 'poweradvantage') {
-            throw new GradleException('Source mcmod.info does not use the stable poweradvantage mod id')
+        if (mod.modid != 'basepower') {
+            throw new GradleException('Source mcmod.info does not use the stable basepower mod id')
         }
     }
 }
@@ -397,6 +404,11 @@ tasks.register('verifyReleaseDependencies') {
     description = 'Resolves and audits Forge plus the exact optional compile APIs.'
     dependsOn tasks.named('verifyReleaseConfiguration')
     doLast {
+        def oreSpawnHash = MessageDigest.getInstance('SHA-256').digest(oreSpawnJar.bytes)
+                .encodeHex().toString().toUpperCase(Locale.ROOT)
+        if (oreSpawnHash != project.orespawn_deobf_sha256) {
+            throw new GradleException("Unexpected OreSpawn development artifact: ${oreSpawnHash}")
+        }
         if (!rfApiJar.isFile()) {
             throw new GradleException("Missing tracked RF API jar: ${rfApiJar}")
         }
@@ -453,7 +465,10 @@ tasks.register('verifyReleaseDependencies') {
                 || runtimeFiles.contains(rebornCoreJar.canonicalFile)) {
             throw new GradleException('Optional RF or RebornCore API leaked onto runtimeClasspath')
         }
-        List<String> forbiddenRuntimeMods = runtimeFiles.collect { it.name.toLowerCase(Locale.ROOT) }
+        if (!compileFiles.contains(oreSpawnJar.canonicalFile) || !runtimeFiles.contains(oreSpawnJar.canonicalFile)) {
+            throw new GradleException('Pinned OreSpawn is missing from the development classpath')
+        }
+        List<String> forbiddenRuntimeMods = (runtimeFiles - oreSpawnJar.canonicalFile).collect { it.name.toLowerCase(Locale.ROOT) }
                 .findAll { name ->
                     name.contains('basemetals') || name.contains('orespawn')
                             || name.contains('tesla') || name.contains('reborncore')
@@ -503,16 +518,16 @@ tasks.register('verifyReleaseArtifacts') {
         new ZipFile(mainJar).withCloseable { zip ->
             List<String> names = zip.entries().collect { it.name }
             ['mcmod.info', 'pack.mcmeta',
-             'com/mcmoddev/poweradvantage/PowerAdvantage.class',
+             'zone/moddev/mc/basepower/PowerAdvantage.class',
              'cyano/poweradvantage/api/PoweredEntity.class',
-             'assets/poweradvantage/lang/en_us.lang'].each { required ->
+             'assets/basepower/lang/en_us.lang'].each { required ->
                 if (!names.contains(required)) {
                     throw new GradleException("Release jar is missing ${required}")
                 }
             }
             ['agent-notes/', '.codex/', 'src/test/', 'fernflower_abstract_parameter_names.txt',
              'cofh/api/', 'reborncore/api/', 'cyano/basemetals/', 'com/mcmoddev/lib/',
-             'net/minecraft/', 'net/minecraftforge/'].each { forbidden ->
+             'net/minecraft/', 'net/minecraftforge/', 'zone/moddev/mc/orespawn/', 'com/mcmoddev/orespawn/'].each { forbidden ->
                 if (names.any { it.contains(forbidden) }) {
                     throw new GradleException("Release jar contains forbidden entry matching ${forbidden}")
                 }
@@ -546,7 +561,7 @@ tasks.register('verifyReleaseArtifacts') {
         }
 
         new ZipFile(new File(libs, expectedReleaseFiles.get()[1])).withCloseable { sourceZip ->
-            if (sourceZip.getEntry('com/mcmoddev/poweradvantage/PowerAdvantage.java') == null
+            if (sourceZip.getEntry('zone/moddev/mc/basepower/PowerAdvantage.java') == null
                     || sourceZip.getEntry('cyano/poweradvantage/api/PoweredEntity.java') == null) {
                 throw new GradleException('Sources jar is missing implementation or legacy API sources')
             }
@@ -645,7 +660,7 @@ publishing {
             pom {
                 name = 'Power Advantage'
                 description = project.mod_description
-                url = 'https://github.com/MinecraftModDevelopmentMods/PowerAdvantage'
+                url = 'https://github.com/MinecraftModDevelopmentMods/basePower'
                 licenses {
                     license {
                         name = 'GNU Lesser General Public License, Version 3'
@@ -653,9 +668,9 @@ publishing {
                     }
                 }
                 scm {
-                    connection = 'scm:git:https://github.com/MinecraftModDevelopmentMods/PowerAdvantage.git'
-                    developerConnection = 'scm:git:ssh://git@github.com/MinecraftModDevelopmentMods/PowerAdvantage.git'
-                    url = 'https://github.com/MinecraftModDevelopmentMods/PowerAdvantage'
+                    connection = 'scm:git:https://github.com/MinecraftModDevelopmentMods/basePower.git'
+                    developerConnection = 'scm:git:ssh://git@github.com/MinecraftModDevelopmentMods/basePower.git'
+                    url = 'https://github.com/MinecraftModDevelopmentMods/basePower'
                 }
             }
         }

@@ -1,6 +1,6 @@
 package cyano.poweradvantage.api.modsupport.rf;
 
-import com.mcmoddev.poweradvantage.PowerAdvantage;
+import zone.moddev.mc.basepower.PowerAdvantage;
 import cyano.poweradvantage.api.ConduitType;
 import cyano.poweradvantage.api.modsupport.TileEntityConverter;
 import net.minecraft.entity.player.EntityPlayer;

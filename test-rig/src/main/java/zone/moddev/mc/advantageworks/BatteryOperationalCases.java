@@ -17,10 +17,10 @@ final class BatteryOperationalCases {
             cases.add(new MachineScenario("electric/battery-chemistry-" + chemistry,
                     "Each battery chemistry supplies a real LED from finite item NBT, retaining its rated capacity and exact energy debit", 160,
                     c -> {
-                        c.block(7, 4, 8, "electricadvantage:electric_battery_array");
-                        c.put(7, 4, 8, 0, "electricadvantage:" + chemistry + "_battery", 1);
+                        c.block(7, 4, 8, "baseelectric:electric_battery_array");
+                        c.put(7, 4, 8, 0, "baseelectric:" + chemistry + "_battery", 1);
                         NativeStacks.tag(c.inventory(7, 4, 8).getStackInSlot(0)).setFloat("energy", 10);
-                        c.block(8, 4, 8, "electricadvantage:led_bar");
+                        c.block(8, 4, 8, "baseelectric:led_bar");
                     }, c -> {
                         PoweredEntity array = (PoweredEntity)c.tile(7, 4, 8);
                         c.require(array.getEnergyCapacity(new ConduitType("electricity")) == capacity, "rated battery capacity retained");

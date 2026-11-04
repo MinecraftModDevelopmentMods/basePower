@@ -1,0 +1,8 @@
+{
+    "variants": {
+        "facing=east": { "model": "basepower:fluid_metal_tank", "y": 90, "uvlock": true },
+        "facing=north": { "model": "basepower:fluid_metal_tank", "uvlock": true },
+        "facing=south": { "model": "basepower:fluid_metal_tank", "y": 180, "uvlock": true },
+        "facing=west": { "model": "basepower:fluid_metal_tank", "y": 270, "uvlock": true }
+    }
+}

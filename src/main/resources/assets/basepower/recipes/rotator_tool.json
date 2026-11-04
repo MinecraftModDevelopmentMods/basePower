@@ -1,0 +1,22 @@
+{
+	"type": "forge:ore_shaped",
+	"pattern": [
+		"xx",
+		"x*",
+		" x"
+	],
+	"key": {
+		"x": {
+			"type": "forge:ore_dict",
+			"ore": "ingotIron"
+		},
+		"*": {
+			"type": "forge:ore_dict",
+			"ore": "sprocket"
+		}
+	},
+	"result": {
+		"item": "basepower:rotator_tool"
+	},
+	"group": "tools"
+}

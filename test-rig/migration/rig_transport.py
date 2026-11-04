@@ -28,11 +28,11 @@ def write_json(path, value):
 
 
 class Server:
-    def __init__(self, runtime, java, launcher, label):
+    def __init__(self, runtime, java, launcher, label, *, query_result="confirm"):
         self.lines = queue.Queue()
         self.log = (runtime / f"console-{label}.log").open("w", encoding="utf-8")
         self.process = subprocess.Popen(
-            [str(java), "-Xms512M", "-Xmx2G", "-Dfml.queryResult=confirm", "-jar", launcher, "nogui"],
+            [str(java), "-Xms512M", "-Xmx2G", "-Dfml.queryResult=" + query_result, "-jar", launcher, "nogui"],
             cwd=runtime, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
             text=True, encoding="utf-8", errors="replace", creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
         )

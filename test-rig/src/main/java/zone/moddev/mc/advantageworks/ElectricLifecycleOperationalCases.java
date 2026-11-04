@@ -12,7 +12,7 @@ import net.minecraft.util.math.BlockPos;
 
 /** Finite legacy jobs. Verification only reads the world; live phase actions need a core hook. */
 public final class ElectricLifecycleOperationalCases {
-    private static final String EA = "electricadvantage:";
+    private static final String EA = "baseelectric:";
     private static final String ELECTRICITY = "electricity";
     private static final PropertyBool LIT = PropertyBool.create("lit");
     private static final PropertyBool ACTIVE = PropertyBool.create("active");

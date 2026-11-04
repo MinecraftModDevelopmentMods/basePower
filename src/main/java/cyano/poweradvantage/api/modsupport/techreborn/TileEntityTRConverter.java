@@ -1,6 +1,6 @@
 package cyano.poweradvantage.api.modsupport.techreborn;
 
-import com.mcmoddev.poweradvantage.PowerAdvantage;
+import zone.moddev.mc.basepower.PowerAdvantage;
 import cyano.poweradvantage.api.ConduitType;
 import cyano.poweradvantage.api.modsupport.TileEntityConverter;
 import net.minecraft.tileentity.TileEntity;

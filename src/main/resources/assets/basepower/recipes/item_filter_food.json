@@ -1,0 +1,23 @@
+{
+	"type": "forge:ore_shaped",
+	"pattern": [
+		"x",
+		"y",
+		"z"
+	],
+	"key": {
+		"x": {
+			"item": "basepower:item_conveyor"
+		},
+		"y": {
+			"item": "minecraft:bread"
+		},
+		"z": {
+			"item": "minecraft:wooden_pressure_plate"
+		}
+	},
+	"result": {
+		"item": "basepower:item_filter_food"
+	},
+	"group": "conveyors"
+}

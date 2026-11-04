@@ -1,0 +1,8 @@
+{
+    "variants": {
+        "facing=east": { "model": "basepower:infinite_quantum", "y": 90 },
+        "facing=north": { "model": "basepower:infinite_quantum" },
+        "facing=south": { "model": "basepower:infinite_quantum", "y": 180 },
+        "facing=west": { "model": "basepower:infinite_quantum", "y": 270 }
+    }
+}

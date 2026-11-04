@@ -1,0 +1,7 @@
+{
+	"conditions": {
+		"recipe_mode": "zone.moddev.mc.basepower.recipe.condition.RecipeModeConditionFactory",
+		"not_recipe_mode": "zone.moddev.mc.basepower.recipe.condition.NotRecipeModeConditionFactory",
+		"ore_dict_empty": "zone.moddev.mc.basepower.recipe.condition.OreDictEmptyConditionFactory"
+	}
+}

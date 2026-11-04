@@ -26,6 +26,14 @@ jobs:
       - name: Check out source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
+      - name: Check out pinned OreSpawn
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          repository: MinecraftModDevelopmentMods/OreSpawn
+          ref: 72205b9bb6bfff17cf69715c0d5bd4d2efd3b148
+          path: .ci-dependencies/OreSpawn
+          persist-credentials: false
+
       - name: Install Java 8 toolchain
         uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
         with:
@@ -40,6 +48,21 @@ jobs:
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6
+
+      - name: Build pinned OreSpawn development jar
+        id: orespawn
+        shell: bash
+        run: |
+          set -euo pipefail
+          dependency="$GITHUB_WORKSPACE/.ci-dependencies/OreSpawn"
+          chmod +x "$dependency/gradlew"
+          (
+            cd "$dependency"
+            ./gradlew deobfJar --no-daemon --stacktrace
+          )
+          jar="$dependency/build/libs-dev/OreSpawn-4.1.3.112021-deobf.jar"
+          test -f "$jar"
+          echo "jar=$jar" >> "$GITHUB_OUTPUT"
 
       - name: Stage exact RebornCore compile API
         id: reborncore
@@ -57,6 +80,7 @@ jobs:
         run: |
           chmod +x ./gradlew
           ./gradlew clean classes --rerun-tasks --no-build-cache --no-daemon --stacktrace \
+            -PoreSpawnDeobfJar="${{ steps.orespawn.outputs.jar }}" \
             -PrebornCoreVerificationRepository=${{ steps.reborncore.outputs.repository }}
 
       - name: Analyze

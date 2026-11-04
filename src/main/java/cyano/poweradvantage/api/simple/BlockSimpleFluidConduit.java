@@ -3,7 +3,7 @@ package cyano.poweradvantage.api.simple;
 import cyano.poweradvantage.api.ConduitType;
 import cyano.poweradvantage.api.PowerConnectorContext;
 import cyano.poweradvantage.api.fluid.FluidConduitBlock;
-import com.mcmoddev.poweradvantage.util.PowerHelper;
+import zone.moddev.mc.basepower.util.PowerHelper;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.properties.IProperty;
 import net.minecraft.block.properties.PropertyBool;
@@ -74,7 +74,7 @@ public abstract class BlockSimpleFluidConduit extends FluidConduitBlock {
 	 *                      around the conduit pipes (measured in meters). For each pixel of radius,
 	 *                      add 0.0625 (1/16).
 	 *                      For example, if your block model files use
-	 *                      <i>poweradvantage:block/pipe3_*</i> as the parent model, then the radius
+	 *                      <i>basepower:block/pipe3_*</i> as the parent model, then the radius
 	 *                      of the model will be 3 pixels (6 pixels wide) and you will want to use
 	 *                      0.1875 (3/16) as the pipeRadius. A pixel in Minecraft is defines as 1/16
 	 *                      of a block, regardless of the texture resolution.
