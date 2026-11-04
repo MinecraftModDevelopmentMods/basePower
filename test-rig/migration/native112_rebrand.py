@@ -202,6 +202,24 @@ def change_legacy_oil(config):
     write_json(path, document)
 
 
+def save_released_player_choices(source, source_seed, java, port):
+    path = source / WORLD / "serverconfig/orespawn-worldgen.json"
+    profile = read_json(path)
+    profile["ores"]["baseelectric:ore/sulfur"]["enabled"] = False
+    profile["ores"]["baseelectric:ore/lithium"]["dimensions"]["minecraft:overworld"]["frequency"] = 0.25
+    write_json(path, profile)
+    expected = worldgen_rules(source)
+    # Open and save with the released 1.10 mods before using this as a source.
+    server = Server(source, java, SOURCE_LAUNCHER, "source-player-choices", query_result="cancel")
+    try:
+        command(server, "save-all", "Saved the world")
+    finally:
+        server.close()
+    if code_files(source) != code_files(source_seed) or worldgen_rules(source) != expected:
+        raise AssertionError("Released 1.10 source did not retain the explicit world profile")
+    return expected
+
+
 def assert_legacy_worldgen(rules):
     # OreSpawn draws from [size - variation, size + variation) in the legacy range.
     expected = {"basepower:crude_oil": (0.375, 18, 29, 19, 47),
@@ -301,6 +319,8 @@ def run(args):
     config_hashes = None
     try:
         positions = create(source, (source_seed, SOURCE_LAUNCHER, jars), args.java8, args.port, source_pin["owners"])
+        original_cyano = source_pin["owners"][0] == "poweradvantage"
+        source_rules = None if original_cyano else save_released_player_choices(source, source_seed, args.java8, args.port)
         if {jar.name: digest(jar) for jar in (source / "mods").glob("*.jar")} != {
                 jar.name: row["sha256"] for jar, row in zip(jars, source_pin["jars"])}:
             raise AssertionError("Staged 1.10 mods differ from the source manifest")
@@ -320,6 +340,8 @@ def run(args):
         write_json(output / "source-world-hashes.json", source_hashes)
         report["phases"]["source"] = original
         report["positions"] = positions
+        if source_rules is not None:
+            original["worldgenRules"] = source_rules
         if original["witnesses"]["tank"]["fluid"] != ["crude_oil", 1337]:
             raise AssertionError("Source did not save the finite fluid witness")
         if original["witnesses"]["chest"]["items"][-1].get("fluid") != ["crude_oil", 1000]:
@@ -330,7 +352,6 @@ def run(args):
         configure(runtime, args.port)
         shutil.copytree(source / WORLD, runtime / WORLD)
         shutil.copytree(source / "config", runtime / "config")
-        original_cyano = source_pin["owners"][0] == "poweradvantage"
         if original_cyano:
             change_legacy_oil(runtime / "config")
         verify_staged(runtime, target)
@@ -363,6 +384,8 @@ def run(args):
             assert_preserved(original, result, operated=label == "restarted")
             if original_cyano:
                 assert_legacy_worldgen(rules)
+            elif rules != source_rules:
+                raise AssertionError("Explicit released 1.10 OreSpawn rules changed during the upgrade")
             if first_rules is not None and rules != first_rules:
                 raise AssertionError("Owned OreSpawn profile changed across the cold restart")
             header = source / WORLD / "level.dat"
