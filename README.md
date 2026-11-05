@@ -2,11 +2,11 @@
 
 basePower continues DrCyano's Power Advantage. It adds conveyors, filters, fluid plumbing and the shared systems used by baseSteam and baseElectric. The 1.12.2 build uses Forge 14.23.5.2859 and Java 8.
 
-## Moving a world from 1.10.2
+## Moving an existing world
 
-You can upgrade directly from the original released Advantage mods or from basePower, baseSteam and baseElectric on 1.10.2. Back up your complete world and configuration first. Replace all installed Advantage mods together and use the matching 1.12.2 builds of Base Metals and MMD OreSpawn. Check a copy through a complete save, exit and reopen before upgrading your main world.
+You can upgrade from the original Advantage mods or the base mods on 1.10.2. If you're already using the old Advantage mods on 1.12.2, you can replace them too. Back up your world and config, replace the old mods together, then try the upgrade on a copy. Save, close Minecraft completely and reopen the copy before moving your main world.
 
-Block and item paths are unchanged. The new builds read both generations of tile IDs, and preserve fluid names and machine data. Keep any required third-party mods installed: this is not a migration for missing mods elsewhere in your pack. Read the [world upgrade guide](docs/1.12-upgrade.md) before moving a valued save.
+Use Forge 14.23.5.2859 or newer, with the 1.12.2 builds of Base Metals, MMDLib and MMD OreSpawn 4.1.3 or newer in the 4.x line. Existing MMDLib crusher recipes keep their saved IDs. If Forge still warns about missing entries, cancel and check what's missing before proceeding. See the [world upgrade guide](docs/1.12-upgrade.md).
 
 [CurseForge](https://www.curseforge.com/minecraft/mc-mods/basepower) | [Player wiki](https://github.com/MinecraftModDevelopmentMods/basePower/wiki)
 

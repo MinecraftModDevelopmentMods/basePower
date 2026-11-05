@@ -1,9 +1,9 @@
 2.4.4.112021 - basePower for Minecraft 1.12.2
 
-- Continue Power Advantage as basePower on Forge 1.12.2. Read original Advantage and basePower 1.10.2 world data without changing block paths, fluid names or stored amounts.
+- Bring basePower to Forge 1.12.2. Upgrade worlds from the original Advantage mods or the 1.10.2 base mods, keeping blocks, items, fluids and machine contents.
 - Preserve the world-generation settings for oil, sulfur and lithium when moving to OreSpawn 4 on 1.12.2.
-- Keep MMDLib crusher recipes when opening a world saved with the old 1.12.2 Advantage mods, without accepting Forge's missing-entry prompt.
-- Route automated still fills to the input tank and expose only refined output for draining. Keep compatible crude oil names usable for distilling and fuel.
+- Keep the saved MMDLib crusher recipe IDs when replacing the old 1.12.2 Advantage mods.
+- Fix the still so pipes fill the input tank and can only drain the output. Crude oil from Mineralogy also works in the still.
 
 Earlier 1.12.2 test-coverage repairs
 
