@@ -1,0 +1,29 @@
+{
+  "repository": "MinecraftModDevelopmentMods/basePower",
+  "groupId": "zone.moddev.mc.basepower",
+  "artifactId": "basePower",
+  "description": "Shared power, fluid and item transport systems for baseSteam and baseElectric.",
+  "license": "GNU Lesser General Public License, Version 3",
+  "licenseUrl": "https://www.gnu.org/licenses/lgpl-3.0.txt",
+  "releases": {
+    "2.4.4.110021": {
+      "branch": "master-1.10.2",
+      "commit": "a376e0c0de11cf5e6ffdbb2a87a8cf0d6b55a708",
+      "runId": 41615398501,
+      "artifactId": 13221291519,
+      "archiveSha256": "c3d0011c312abb9bdecf2c38e6adc6fc63393edd2bd58f4466825e2cef6ab119",
+      "curseFileId": 9408450,
+      "mainSha256": "164693e756a935a8c51085cf95aecccaf3506390a6f0a3888e46765f29896f31"
+    },
+    "2.4.4.112021": {
+      "branch": "master-1.12.2",
+      "commit": "1fc2fb3a409a5cf86a4133ee4d313002a5b8611e",
+      "tag": "2.4.4.112021",
+      "runId": 42005297779,
+      "artifactId": 13404931286,
+      "archiveSha256": "604ef22c74ab7835ddf63babac19b54abea3659e632a2712a0601a03d25d68c0",
+      "curseFileId": 9452029,
+      "mainSha256": "126e9d0969ce6146f45a59ee4d6ca2b5fdf29ecf559ba595dcc1a9cf29a743db"
+    }
+  }
+}

@@ -1,0 +1,66 @@
+import groovy.json.JsonSlurper
+
+plugins {
+    id 'maven-publish'
+}
+
+def manifest = new JsonSlurper().parse(file('releases.json'))
+def releaseVersion = providers.gradleProperty('releaseVersion').get()
+if (!manifest.releases.containsKey(releaseVersion)) {
+    throw new GradleException("Version is not approved for Maven publication: $releaseVersion")
+}
+def work = file(providers.gradleProperty('releaseWork').get())
+def stem = manifest.artifactId + '-' + releaseVersion
+layout.buildDirectory.set(new File(work, 'gradle'))
+
+def destination = 'https://maven.moddev.zone/releases'
+def uploadUrl = providers.environmentVariable('MAVEN_UPLOAD_URL').orElse('').get()
+def uploadUser = providers.environmentVariable('MAVEN_UPLOAD_USERNAME').orElse('').get()
+def uploadPassword = providers.environmentVariable('MAVEN_UPLOAD_PASSWORD').orElse('').get()
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            groupId = manifest.groupId
+            artifactId = manifest.artifactId
+            version = releaseVersion
+            artifact new File(work, stem + '.jar')
+            artifact(new File(work, stem + '-sources.jar')) { classifier = 'sources' }
+            artifact(new File(work, stem + '-javadoc.jar')) { classifier = 'javadoc' }
+            pom {
+                name = manifest.artifactId
+                description = manifest.description
+                url = "https://github.com/" + manifest.repository
+                licenses {
+                    license {
+                        name = manifest.license
+                        url = manifest.licenseUrl
+                    }
+                }
+                scm {
+                    url = "https://github.com/" + manifest.repository
+                    connection = "scm:git:https://github.com/" + manifest.repository + ".git"
+                }
+            }
+        }
+    }
+    repositories {
+        maven {
+            name = 'release'
+            url = uri(destination)
+            credentials {
+                username = uploadUser
+                password = uploadPassword
+            }
+            authentication { basic(BasicAuthentication) }
+        }
+    }
+}
+
+tasks.withType(PublishToMavenRepository).configureEach {
+    doFirst {
+        if (!(uploadUrl in [destination, destination + '/']) || !uploadUser || !uploadPassword) {
+            throw new GradleException('MMD Maven destination and credentials must match the release repository')
+        }
+    }
+}
