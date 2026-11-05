@@ -29,7 +29,7 @@ def digest(data):
 
 def read_url(url, allow_absent=False):
     try:
-        request = Request(url, headers={"User-Agent": "MMD-Maven-Release/1.0"})
+        request = Request(url, headers={"User-Agent": "MMD-Maven-Release/1.0", "Cache-Control": "no-cache"})
         with urlopen(request, timeout=30) as response:
             require(response.status == 200, f"Unexpected HTTP status for {url}")
             return response.read()
@@ -91,12 +91,17 @@ def jar_names(manifest, version):
     return [stem + suffix for suffix in (".jar", "-sources.jar", "-javadoc.jar")]
 
 
+def pom_digest(data):
+    # Gradle writes native line endings. Jar checks always use the exact bytes.
+    return digest(data.replace(b"\r\n", b"\n"))
+
+
 def destination_state(manifest, version, release, work, verify_metadata=False):
     jars = jar_names(manifest, version)
     sums = json.loads((work / "verified.json").read_text(encoding="ascii"))
     require(sums[jars[0]] == release["mainSha256"], "Prepared release does not match the manifest")
     pom = jars[0].removesuffix(".jar") + ".pom"
-    sums[pom] = digest((work / "gradle/publications/mavenJava/pom-default.xml").read_bytes())
+    sums[pom] = pom_digest((work / "gradle/publications/mavenJava/pom-default.xml").read_bytes())
     directory = f"{MAVEN}/{manifest['groupId'].replace('.', '/')}/{manifest['artifactId']}"
     present = 0
     for name, sha in sums.items():
@@ -104,13 +109,21 @@ def destination_state(manifest, version, release, work, verify_metadata=False):
             require(digest((work / name).read_bytes()) == sha, f"Prepared file changed: {name}")
         remote = read_url(f"{directory}/{version}/{name}", allow_absent=True)
         if remote is not None:
-            require(digest(remote) == sha, f"Maven already contains different bytes: {name}")
+            actual = pom_digest(remote) if name == pom else digest(remote)
+            require(actual == sha, f"Maven already contains different bytes: {name}")
             present += 1
-    require(present in (0, len(sums)), "Maven version is partially populated; refusing automatic overwrite")
-    if verify_metadata and present:
-        metadata = ElementTree.fromstring(read_url(f"{directory}/maven-metadata.xml"))
-        require(version in [node.text for node in metadata.findall("versioning/versions/version")],
-                "Published version is missing from Maven metadata")
+    if verify_metadata:
+        # After a successful write, a public cache can expose only part of the release.
+        # This path only reads; preflight still refuses to write to a partial version.
+        if present != len(sums):
+            return "pending"
+        document = read_url(f"{directory}/maven-metadata.xml", allow_absent=True)
+        if document is None or version not in [
+            node.text for node in ElementTree.fromstring(document).findall("versioning/versions/version")
+        ]:
+            return "pending"
+    else:
+        require(present in (0, len(sums)), "Maven version is partially populated; refusing automatic overwrite")
     return "present" if present else "absent"
 
 
@@ -126,7 +139,7 @@ def main():
         require(mode == "check" or state == "absent", "Destination is not empty")
         print(state)
     elif mode == "verify":
-        for delay in (0, 2, 5, 10):
+        for delay in (0, 2, 5, 10, 20, 30):
             time.sleep(delay)
             if destination_state(manifest, version, release, work, verify_metadata=True) == "present":
                 print(f"MMD Maven verified: {manifest['groupId']}:{manifest['artifactId']}:{version}")
