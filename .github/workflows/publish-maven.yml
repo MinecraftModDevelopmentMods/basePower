@@ -36,8 +36,10 @@ jobs:
     timeout-minutes: 15
     env:
       RELEASE_VERSION: ${{ inputs.version }}
-      RELEASE_WORK: ${{ runner.temp }}/maven-release
     steps:
+      - name: Set the temporary publication directory
+        run: echo "RELEASE_WORK=$RUNNER_TEMP/maven-release" >> "$GITHUB_ENV"
+
       - name: Check out the publication workflow
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
