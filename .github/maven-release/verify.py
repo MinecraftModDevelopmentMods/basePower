@@ -28,6 +28,9 @@ def digest(data):
 
 
 def read_url(url, allow_absent=False):
+    if url.startswith(MAVEN + "/"):
+        # The CDN can cache pre-upload 404s even with a no-cache request header.
+        url += f"?mmd_verify={time.time_ns()}"
     try:
         request = Request(url, headers={"User-Agent": "MMD-Maven-Release/1.0", "Cache-Control": "no-cache"})
         with urlopen(request, timeout=30) as response:
