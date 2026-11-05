@@ -14,11 +14,41 @@ from native112_rebrand import ALIASES, canonical, command, configure
 from rig_transport import WORLD, Server, digest, fingerprint, stage, write_json
 
 REGISTRY = "mmdlib:crusher_registry"
+UNKNOWN_RECIPE = "poweradvantage:advantageworks_unknown_crusher_recipe"
 
 
 def registry(world):
     entries = nbtlib.load(world / "level.dat")["FML"]["Registries"][REGISTRY]
     return {str(row["K"]): int(row["V"]) for row in entries["ids"]}
+
+
+def assert_unknown_recipe_is_not_dropped(output, source, config, profile, args):
+    runtime = output / "unknown-recipe-control"
+    launcher = stage(runtime, profile)
+    configure(runtime, args.port)
+    world = runtime / WORLD
+    shutil.copytree(source, world)
+    shutil.copytree(config, runtime / "config")
+    header = world / "level.dat"
+    document = nbtlib.load(header)
+    entries = document["FML"]["Registries"][REGISTRY]["ids"]
+    entries.append(nbtlib.Compound({"K": nbtlib.String(UNKNOWN_RECIPE),
+                                   "V": nbtlib.Int(max(int(entry["V"]) for entry in entries) + 1)}))
+    document.save(header, gzipped=True)
+    regions = fingerprint(world / "region")
+    try:
+        server = Server(runtime, args.java8, launcher, "unknown", query_result="cancel")
+    except RuntimeError:
+        pass
+    else:
+        server.close()
+        raise AssertionError("Forge opened a world with an unknown crusher recipe")
+    log = runtime / "console-unknown.log"
+    messages = log.read_text(encoding="utf-8", errors="replace")
+    if ("Missing " + REGISTRY + ":\n    " + UNKNOWN_RECIPE not in messages or "Done (" in messages
+            or registry(world).get(UNKNOWN_RECIPE) is None or fingerprint(world / "region") != regions):
+        raise AssertionError("Forge did not refuse the unknown recipe without altering the save")
+    return dict(status="PASS", recipe=UNKNOWN_RECIPE, logSha256=digest(log))
 
 
 def run(args):
@@ -62,6 +92,7 @@ def run(args):
                 raise AssertionError("Saved crusher IDs differ: " + str(observed))
             if any(name.split(":", 1)[0] in ALIASES for name in saved):
                 raise AssertionError("Save still uses old Advantage crusher IDs")
+        report["unknownRecipeControl"] = assert_unknown_recipe_is_not_dropped(output, source, config, profile, args)
         report["status"] = "PASS"
     except Exception as error:
         report.update(status="FAIL", failure=str(error), traceback=traceback.format_exc())

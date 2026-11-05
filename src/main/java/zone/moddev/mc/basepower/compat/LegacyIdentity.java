@@ -54,12 +54,18 @@ public final class LegacyIdentity {
 
     public static <T extends IForgeRegistryEntry<T>> void remapMissingMappings(
             RegistryEvent.MissingMappings<T> event, IForgeRegistry<T> registry, String oldModId, String newModId) {
+        remapMissingMappings(event, registry, oldModId, newModId, true);
+    }
+
+    private static <T extends IForgeRegistryEntry<T>> void remapMissingMappings(
+            RegistryEvent.MissingMappings<T> event, IForgeRegistry<T> registry, String oldModId, String newModId,
+            boolean failWithoutTarget) {
         for (RegistryEvent.MissingMappings.Mapping<T> mapping : event.getAllMappings()) {
             if (!oldModId.equals(mapping.key.getNamespace())) continue;
             ResourceLocation target = new ResourceLocation(newModId, mapping.key.getPath());
             if (registry.containsKey(target)) {
                 mapping.remap(registry.getValue(target));
-            } else {
+            } else if (failWithoutTarget) {
                 mapping.fail();
                 FMLLog.severe("%s: no migration target for %s", newModId, mapping.key);
             }
@@ -68,9 +74,16 @@ public final class LegacyIdentity {
 
     private static <T extends IForgeRegistryEntry<T>> void remapInstalled(
             RegistryEvent.MissingMappings<T> event, IForgeRegistry<T> registry) {
-        remapMissingMappings(event, registry, "poweradvantage", "basepower");
-        if (Loader.isModLoaded("basesteam")) remapMissingMappings(event, registry, "steamadvantage", "basesteam");
-        if (Loader.isModLoaded("baseelectric")) remapMissingMappings(event, registry, "electricadvantage", "baseelectric");
+        remapInstalled(event, registry, true);
+    }
+
+    private static <T extends IForgeRegistryEntry<T>> void remapInstalled(
+            RegistryEvent.MissingMappings<T> event, IForgeRegistry<T> registry, boolean failWithoutTarget) {
+        remapMissingMappings(event, registry, "poweradvantage", "basepower", failWithoutTarget);
+        if (Loader.isModLoaded("basesteam"))
+            remapMissingMappings(event, registry, "steamadvantage", "basesteam", failWithoutTarget);
+        if (Loader.isModLoaded("baseelectric"))
+            remapMissingMappings(event, registry, "electricadvantage", "baseelectric", failWithoutTarget);
     }
 
     @SubscribeEvent public static void remapBlocks(RegistryEvent.MissingMappings<Block> event) {
@@ -101,7 +114,8 @@ public final class LegacyIdentity {
 
     private static <T extends IForgeRegistryEntry<T>> void remapEventRegistry(RegistryEvent.MissingMappings<T> event) {
         // The event's registry is the staging snapshot; replacements live in the active registry.
-        remapInstalled(event, RegistryManager.ACTIVE.<T>getRegistry(event.getName()));
+        // Leave unknown recipes to Forge's prompt; FAIL does not abort a local 1.12 load.
+        remapInstalled(event, RegistryManager.ACTIVE.<T>getRegistry(event.getName()), false);
     }
 
     @SubscribeEvent public static void remapRemovedOrbSound(RegistryEvent.MissingMappings<SoundEvent> event) {
