@@ -33,10 +33,14 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.registry.ForgeRegistries;
 import net.minecraftforge.registries.IForgeRegistry;
 import net.minecraftforge.registries.IForgeRegistryEntry;
+import net.minecraftforge.registries.RegistryManager;
 
-/** Read compatibility for released Cyano 1.10 worlds; new saves use base identities. */
+/** Read compatibility for old Advantage worlds; new saves use base identities. */
 @Mod.EventBusSubscriber(modid = "basepower")
 public final class LegacyIdentity {
+    private static final ResourceLocation MMDLIB_CRUSHER_REGISTRY =
+            new ResourceLocation("mmdlib", "crusher_registry");
+
     private LegacyIdentity() { }
 
     public static void requireReplacementsOnly(java.util.function.Predicate<String> loaded) {
@@ -83,6 +87,21 @@ public final class LegacyIdentity {
 
     @SubscribeEvent public static void remapEnchantments(RegistryEvent.MissingMappings<Enchantment> event) {
         remapInstalled(event, ForgeRegistries.ENCHANTMENTS);
+    }
+
+    // Forge 1.12 filters generic subscribers by the exact entry class. Subscribe
+    // without a type filter so MMDLib stays optional at compile time.
+    @SubscribeEvent
+    @SuppressWarnings("rawtypes")
+    public static void remapCrusherRecipes(RegistryEvent.MissingMappings event) {
+        if (MMDLIB_CRUSHER_REGISTRY.equals(event.getName())) {
+            remapEventRegistry((RegistryEvent.MissingMappings<?>) event);
+        }
+    }
+
+    private static <T extends IForgeRegistryEntry<T>> void remapEventRegistry(RegistryEvent.MissingMappings<T> event) {
+        // The event's registry is the staging snapshot; replacements live in the active registry.
+        remapInstalled(event, RegistryManager.ACTIVE.<T>getRegistry(event.getName()));
     }
 
     @SubscribeEvent public static void remapRemovedOrbSound(RegistryEvent.MissingMappings<SoundEvent> event) {
