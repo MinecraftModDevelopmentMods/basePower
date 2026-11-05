@@ -1,0 +1,8 @@
+{
+    "variants": {
+        "facing=north": { "model": "basepower:item_filter_smelt"           },
+        "facing=south": { "model": "basepower:item_filter_smelt", "y": 180 },
+        "facing=west":  { "model": "basepower:item_filter_smelt", "y": 270 },
+        "facing=east":  { "model": "basepower:item_filter_smelt", "y": 90  }
+    }
+}

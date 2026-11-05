@@ -101,7 +101,7 @@ try {
     $inputReport.runner = Get-Record $PSCommandPath
     $inputReport.expectations = Get-Record (Join-Path $PSScriptRoot 'resources/gui-label-expectations.json')
     New-Item -ItemType Directory -Path (Join-Path $runtime 'mods') | Out-Null
-    $candidates = @{ poweradvantage = $PowerJar; steamadvantage = $SteamJar; electricadvantage = $ElectricJar; advantageclientresources = $ProbeJar }
+    $candidates = @{ basepower = $PowerJar; basesteam = $SteamJar; baseelectric = $ElectricJar; advantageclientresources = $ProbeJar }
     $candidateRecords = [ordered]@{}
     $versions = @{}
     foreach ($id in $candidates.Keys) {
@@ -143,7 +143,7 @@ try {
     $arguments = @([regex]::Matches($attributes['org.eclipse.jdt.launching.PROGRAM_ARGUMENTS'], '"[^"]*"|\S+') | ForEach-Object { $_.Value.Trim('"') })
     $vmArguments = @([regex]::Matches($attributes['org.eclipse.jdt.launching.VM_ARGUMENTS'], '"[^"]*"|\S+') | ForEach-Object { $_.Value.Trim('"') })
     $vmArguments += '-Dadvantageworks.clientResources=true','-Dadvantageworks.requireExtensions=true','-Dadvantageworks.machineGuiLayouts=true','-Xmx2G'
-    foreach ($id in 'poweradvantage','steamadvantage','electricadvantage') { $vmArguments += "-Dadvantageworks.expectedVersion.$id=$($versions[$id])" }
+    foreach ($id in 'basepower','basesteam','baseelectric') { $vmArguments += "-Dadvantageworks.expectedVersion.$id=$($versions[$id])" }
     $inputReport.environment = $environment
     $inputReport.program_arguments = $arguments
     $inputReport.vm_arguments = $vmArguments
@@ -172,7 +172,7 @@ try {
     $phase = 'native-report'
     $report = Get-Content -LiteralPath (Join-Path $runtime 'client-resources.json') -Raw | ConvertFrom-Json
     Assert-GuiReport $report (Join-Path $runtime 'machine-gui-layouts')
-    foreach ($id in 'poweradvantage','steamadvantage','electricadvantage') {
+    foreach ($id in 'basepower','basesteam','baseelectric') {
         if ($report.mod_versions.$id -cne $versions[$id]) { throw "Native loaded version mismatch: $id" }
     }
     foreach ($record in $candidateRecords.Values) {

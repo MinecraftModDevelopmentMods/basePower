@@ -1,0 +1,24 @@
+{
+	"type": "forge:ore_shaped",
+	"pattern": [
+		"x",
+		"y",
+		"z"
+	],
+	"key": {
+		"x": {
+			"item": "basepower:item_conveyor"
+		},
+		"y": {
+			"item": "minecraft:coal",
+			"data": 32767
+		},
+		"z": {
+			"item": "minecraft:wooden_pressure_plate"
+		}
+	},
+	"result": {
+		"item": "basepower:item_filter_fuel"
+	},
+	"group": "conveyors"
+}

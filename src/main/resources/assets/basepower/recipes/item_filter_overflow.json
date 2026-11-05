@@ -1,0 +1,19 @@
+{
+	"type": "forge:ore_shaped",
+	"pattern": [
+		"x",
+		"z"
+	],
+	"key": {
+		"x": {
+			"item": "basepower:item_conveyor"
+		},
+		"z": {
+			"item": "minecraft:wooden_pressure_plate"
+		}
+	},
+	"result": {
+		"item": "basepower:item_filter_overflow"
+	},
+	"group": "conveyors"
+}

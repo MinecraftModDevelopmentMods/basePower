@@ -1,4 +1,11 @@
-Unreleased test-coverage repairs for 1.12.2
+2.4.4.112021 - basePower for Minecraft 1.12.2
+
+- Bring basePower to Forge 1.12.2. Upgrade worlds from the original Advantage mods or the 1.10.2 base mods, keeping blocks, items, fluids and machine contents.
+- Preserve the world-generation settings for oil, sulfur and lithium when moving to OreSpawn 4 on 1.12.2.
+- Keep the saved MMDLib crusher recipe IDs when replacing the old 1.12.2 Advantage mods.
+- Fix the still so pipes fill the input tank and can only drain the output. Crude oil from Mineralogy also works in the still.
+
+Earlier 1.12.2 test-coverage repairs
 
 - Restore the missing carbon-dust recipe name from registered coal and charcoal powders, without replacing existing entries or changing recipe amounts.
 - Enable Forge's universal bucket during mod construction so oil buckets work without another mod enabling them first.

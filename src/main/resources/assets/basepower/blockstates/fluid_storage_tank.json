@@ -1,0 +1,8 @@
+{
+    "variants": {
+        "facing=east": { "model": "basepower:fluid_storage_tank", "y": 90 },
+        "facing=north": { "model": "basepower:fluid_storage_tank" },
+        "facing=south": { "model": "basepower:fluid_storage_tank", "y": 180 },
+        "facing=west": { "model": "basepower:fluid_storage_tank", "y": 270 }
+    }
+}

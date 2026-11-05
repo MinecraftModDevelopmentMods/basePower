@@ -51,7 +51,7 @@ final class NativeRecipeProgressionProbe {
         return empty(stack) ? null : stack.getItem().getRegistryName() + "@" + stack.getMetadata();
     }
     private static boolean owned(String token) {
-        return token != null && (token.startsWith("poweradvantage:") || token.startsWith("steamadvantage:") || token.startsWith("electricadvantage:"));
+        return token != null && (token.startsWith("basepower:") || token.startsWith("basesteam:") || token.startsWith("baseelectric:"));
     }
     private static void add(JsonArray target, String value) { target.add(value == null ? JsonNull.INSTANCE : new JsonPrimitive(value)); }
     private static Object invoke(Object value, String method) throws Exception {
@@ -193,7 +193,7 @@ final class NativeRecipeProgressionProbe {
             @Override public void sendPacket(Packet<?> packet) {}
         };
         player.interactionManager.setGameType(net.minecraft.world.GameType.SURVIVAL);
-        Class<?> power=Class.forName("com.mcmoddev.poweradvantage.PowerAdvantage");
+        Class<?> power=Class.forName("zone.moddev.mc.basepower.PowerAdvantage");
         JsonObject report=new JsonObject();
         report.addProperty("minecraft","1.12.2"); report.addProperty("label",label);
         report.addProperty("mode",power.getField("recipeMode").get(null).toString());

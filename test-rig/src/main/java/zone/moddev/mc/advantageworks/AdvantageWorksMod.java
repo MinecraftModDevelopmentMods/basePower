@@ -5,7 +5,7 @@ import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLServerStartingEvent;
 
 @Mod(modid = "advantageworkstest", name = "Advantage Works Test Harness", version = "1.1.0.112021",
-        acceptableRemoteVersions = "*", dependencies = "required-after:poweradvantage")
+        acceptableRemoteVersions = "*", dependencies = "required-after:basepower")
 public final class AdvantageWorksMod {
     @Mod.Instance("advantageworkstest") public static AdvantageWorksMod instance;
     @Mod.EventHandler public void preInit(FMLPreInitializationEvent event) {
