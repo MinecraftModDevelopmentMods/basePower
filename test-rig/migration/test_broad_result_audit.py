@@ -34,6 +34,9 @@ class BroadResultAuditTests(unittest.TestCase):
         self.runtime.mkdir()
         source = Path(__file__).resolve().parents[1] / "src/main/resources" / audit.RESOURCE
         definition = source.read_bytes()
+        for old, new in ((b"poweradvantage", b"basepower"), (b"steamadvantage", b"basesteam"),
+                         (b"electricadvantage", b"baseelectric")):
+            definition = definition.replace(new, old)
         self.stations = json.loads(definition)["stations"]
         self.definitions = {s["id"]: s for s in self.stations}
         jars = []

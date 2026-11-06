@@ -41,9 +41,9 @@ class Native115DestinationTest(unittest.TestCase):
     def test_native_identity_and_version_are_both_required(self):
         jar = self.root / "example.jar"
         with zipfile.ZipFile(jar, "w") as archive:
-            archive.writestr("META-INF/mods.toml", '[[mods]]\nmodId="poweradvantage"\nversion="2.4.6.115021"\n')
-        jar_identity(jar, "poweradvantage", "2.4.6.115021")
-        for identity, version in (("steamadvantage", "2.4.6.115021"), ("poweradvantage", "2.4.4.113021")):
+            archive.writestr("META-INF/mods.toml", '[[mods]]\nmodId="basepower"\nversion="2.4.7.115021"\n')
+        jar_identity(jar, "basepower", "2.4.7.115021")
+        for identity, version in (("basesteam", "2.4.7.115021"), ("basepower", "2.4.4.113021")):
             with self.assertRaises(ValueError):
                 jar_identity(jar, identity, version)
 
@@ -76,8 +76,8 @@ class Native115DestinationTest(unittest.TestCase):
         self.assertTrue(differences(locked, native_normalized({"id": "minecraft:chest", "Lock": "different"})))
 
     def test_custom_machine_empty_key_is_not_dropped_or_defaulted(self):
-        old = native_normalized({"id": "poweradvantage:machine", "Lock": ""})
-        new = native_normalized({"id": "poweradvantage:machine"})
+        old = native_normalized({"id": "basepower:machine", "Lock": ""})
+        new = native_normalized({"id": "basepower:machine"})
         self.assertTrue(differences(old, new))
 
     def test_startup_errors_cannot_hide_behind_a_successful_snapshot(self):

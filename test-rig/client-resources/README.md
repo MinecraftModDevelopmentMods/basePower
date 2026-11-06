@@ -95,7 +95,7 @@ The static checks do not require artifacts, Gradle, Java or a graphical client:
 
 ```powershell
 ./test-rig/client-resources/test-launcher.ps1 -StaticOnly
-./test-rig/client-resources/test-probe-contract.ps1
+./test-rig/client-resources/test-probe-contract.ps1 -ReferenceRoot '<archived 7f45e73 test-rig/client-resources directory>'
 ```
 
 Before running Gradle, check that the shared `D:/GradleCaches/minecraft-mods-shared`

@@ -122,13 +122,13 @@ def raw_checks(records, definitions, mods, minecraft, forge):
     return dict(status="PASS", assertions=dict(counts), manualRequired=manual)
 
 
-def drill_snapshot(records, definitions, initial=False):
+def drill_snapshot(records, definitions, initial=False, *, steam="steamadvantage", electric="electricadvantage"):
     # Recompute the twelve witnesses from native SNBT, not summary PASS counts.
     import nbtlib
     result = {}
     for sid, block, track, capacity in (
-            ("S-05", "steamadvantage:steam_drill", "steamadvantage:steam_track", 50),
-            ("E-06", "electricadvantage:electric_drill", "electricadvantage:electric_track", 500)):
+            ("S-05", f"{steam}:steam_drill", f"{steam}:steam_track", 50),
+            ("E-06", f"{electric}:electric_drill", f"{electric}:electric_track", 500)):
         spec = definitions[sid]
         snapshot = records[sid]["snapshot"]
         rows = {tuple(row["pos"]): row for row in snapshot}
@@ -296,9 +296,10 @@ def profile_audit(evidence, runtime, name, report, pins, definitions, line):
                 sid + ": raw checkpoints are not ordered across operation and cold restart")
     initial_records = {sid: evidence.json(directory / (sid + "-checkpoint-initial.json"))
                        for sid in ("S-05", "E-06")}
-    initial = drill_snapshot(initial_records, definitions, initial=True)
-    before = drill_snapshot(records["first"], definitions)
-    after = drill_snapshot(records["restarted"], definitions)
+    namespaces = {"steam": "basesteam", "electric": "baseelectric"} if "basepower" in mods else {}
+    initial = drill_snapshot(initial_records, definitions, initial=True, **namespaces)
+    before = drill_snapshot(records["first"], definitions, **namespaces)
+    after = drill_snapshot(records["restarted"], definitions, **namespaces)
     require(report["phases"]["initial"] == dict(status="PASS", drills=initial), name + ": initial drill summary masked")
     require(report["beforeRestart"] == before and report["afterRestart"] == after,
             name + ": drill summary differs from native snapshots")
@@ -338,7 +339,10 @@ def audit(runtime, line, requested=PROFILES):
         pins = decode(manifest_data)["target" + line]
         require(sha(evidence.read(runtime / "runner-source.py")) == report["runnerSha256"], "Archived broad runner changed")
         jars = indexed(pins["jars"], "id", "target mod pins")
-        require(set(jars) == {"poweradvantage", "steamadvantage", "electricadvantage", "advantageworkstest", "basemetals", "orespawn"},
+        support = {"advantageworkstest", "basemetals", "orespawn"}
+        legacy = {"poweradvantage", "steamadvantage", "electricadvantage"}
+        current = {"basepower", "basesteam", "baseelectric"}
+        require(set(jars) == legacy | support or (line == "115" and set(jars) == current | support),
                 "Complete pinned current-profile inputs required")
         harness = Path(jars["advantageworkstest"]["path"])
         harness_bytes = evidence.read(harness)

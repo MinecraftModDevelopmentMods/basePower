@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "basepower:block/steel_frame"
+    }
+  }
+}

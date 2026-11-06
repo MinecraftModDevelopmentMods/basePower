@@ -65,10 +65,10 @@ final class WorldgenSamplingJob {
         squareX = spawnX >> 4;
         squareZ = spawnZ >> 4;
         centers.put("spawn", squareX + "," + squareZ);
-        expectedBiomes.put("poweradvantage:crude_oil", "DESERT");
+        expectedBiomes.put("basepower:crude_oil", "DESERT");
         expectedBiomes.put("mineralogy:crude_oil", "OCEAN");
-        expectedBiomes.put("electricadvantage:li_ore", null);
-        expectedBiomes.put("electricadvantage:sulfur_ore", null);
+        expectedBiomes.put("baseelectric:li_ore", null);
+        expectedBiomes.put("baseelectric:sulfur_ore", null);
         expectedBiomes.put("mineralogy:sulfur_ore", null);
         for (String id : expectedBiomes.keySet()) {
             counts.put(id, 0L);

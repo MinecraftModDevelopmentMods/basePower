@@ -1,4 +1,4 @@
-param([string]$ReferenceRoot = (Join-Path $PSScriptRoot '../../../../PA114/PowerAdvantage/test-rig/client-resources'))
+param([Parameter(Mandatory = $true)][string]$ReferenceRoot)
 $ErrorActionPreference = 'Stop'
 $ReferenceRoot = (Resolve-Path -LiteralPath $ReferenceRoot).Path
 $referenceHashes = @{
@@ -24,7 +24,8 @@ foreach ($name in 'ClientResourceProbe','TankVisualProbe','OilRenderProbe','Reci
     Assert-Contract ($hash -eq $referenceHashes[$name]) "Reference SHA-256 mismatch for $name.java; expected $($referenceHashes[$name]), got $hash. Do not substitute a different baseline."
     $source = Get-Content -LiteralPath $sourcePath -Raw
     $target = Get-Content -LiteralPath (Join-Path $PSScriptRoot "$relative/$name.java") -Raw
-    $expected = Normalize-Probe $source
+    $expected = ((Normalize-Probe $source) -creplace '(?<!cyano\.)(?<!mcmoddev\.)poweradvantage', 'basepower').
+        Replace('steamadvantage', 'basesteam').Replace('electricadvantage', 'baseelectric')
     $actual = Normalize-Probe $target
     # Keep every original assertion, including its operands, thresholds and message.
     foreach ($assertion in [regex]::Matches($expected, '(?s)\brequire\(.*?\);')) {
@@ -55,7 +56,7 @@ foreach ($name in 'ClientResourceProbe','TankVisualProbe','OilRenderProbe','Reci
 $pack = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'resources/pack.mcmeta') -Raw | ConvertFrom-Json
 Assert-Contract ($pack.pack.pack_format -eq 5) 'Native 1.15 probe resource pack must use format 5.'
 $metadata = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'resources/META-INF/mods.toml') -Raw
-foreach ($pin in 'loaderVersion="[31,32)"','versionRange="[1.15.2]"','versionRange="[31.2.57]"','versionRange="[2.4.6.115021]"') {
+foreach ($pin in 'loaderVersion="[31,32)"','versionRange="[1.15.2]"','versionRange="[31.2.57]"','versionRange="[2.4.7.115021]"') {
     Assert-Contract ($metadata.Contains($pin)) "Missing native probe metadata pin: $pin"
 }
 $runner = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'run.ps1') -Raw

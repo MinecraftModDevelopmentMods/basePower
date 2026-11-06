@@ -23,7 +23,7 @@ REQUIRED = {
               "conveyor/blocked", "conveyor/item-entity", "conveyor/nbt-preserved", "filter/block", "filter/food", "filter/fuel", "filter/ore",
               "filter/plant", "filter/smelt", "filter/inventory-0", "filter/inventory-1", "filter/inventory-2",
               "filter/inventory-3", "filter/overflow-0", "filter/overflow-1", "filter/overflow-2", "filter/overflow-3",
-              "drain/minecraft_water", "drain/poweradvantage_crude_oil", "drain/poweradvantage_refined_oil",
+              "drain/minecraft_water", "drain/basepower_crude_oil", "drain/basepower_refined_oil",
               "drain/non-source", "tank/filter-true", "tank/filter-false", "tank/full", "fluid-switch/true",
               "fluid-switch/false", "discharge/true", "discharge/false", "conveyor/locked-source", "conveyor/locked-destination",
               "still/production", "still/no-fuel", "still/invalid", "still/full", "still/one-space", "still/redstone"},
@@ -140,19 +140,38 @@ def pin(args):
     base = read_json(args.base)
     destination = args.output.resolve()
     if destination.exists(): raise FileExistsError(destination)
+    original = base["target115"]
+    original_seed = (args.base.parent / original["seed"]).resolve()
+    seed = getattr(args, "seed", None)
+    if seed is None:
+        seed = original_seed
+        verify_code(seed, original["serverCode"])
+    else:
+        seed = seed.resolve()
+        require_disjoint(seed, original_seed)
+    require_disjoint(destination, seed)
+    if digest(seed / original["launcher"]) != original["launcher_sha256"].upper():
+        raise AssertionError("Installed Forge launcher differs from its pinned hash")
     destination.mkdir(parents=True)
     replacements = {
-        "poweradvantage": RIG.parent / "build/libs/PowerAdvantage-2.4.6.115021.jar",
-        "steamadvantage": RIG.parent.parent / "SteamAdvantage/SteamAdvantage/build/libs/SteamAdvantage-2.2.7.115021.jar",
-        "electricadvantage": RIG.parent.parent / "ElectricAdvantage/ElectricAdvantage/build/libs/ElectricAdvantage-2.2.7.115021.jar",
+        "basepower": RIG.parent / "build/libs/basePower-2.4.7.115021.jar",
+        "basesteam": RIG.parent.parent / "SteamAdvantage/SteamAdvantage/build/libs/baseSteam-2.2.8.115021.jar",
+        "baseelectric": RIG.parent.parent / "ElectricAdvantage/ElectricAdvantage/build/libs/baseElectric-2.2.8.115021.jar",
         "advantageworkstest": RIG / "build/gradle/libs/AdvantageWorksTestHarness-1.1.0.115021.jar",
     }
     if getattr(args, "original_production", False):
         replacements = {key: value for key, value in replacements.items() if key == "advantageworkstest"}
     target = copy.deepcopy(base["target115"])
+    renamed = {"poweradvantage": ("basepower", "2.4.7.115021"),
+               "steamadvantage": ("basesteam", "2.2.8.115021"),
+               "electricadvantage": ("baseelectric", "2.2.8.115021")}
     for jar in target["jars"]:
-        source = replacements.get(jar["id"], Path(jar["path"]))
+        if not getattr(args, "original_production", False) and jar["id"] in renamed:
+            jar["id"], jar["version"] = renamed[jar["id"]]
+        source = replacements.get(jar["id"], (args.base.parent / jar["path"]).resolve())
         checksum = digest(source)
+        if jar["id"] not in replacements and checksum != jar["sha256"].upper():
+            raise AssertionError(f"Retained dependency jar has changed: {source}")
         folder = destination / "artifacts" / checksum
         folder.mkdir(parents=True, exist_ok=True)
         path = folder / source.name
@@ -163,7 +182,8 @@ def pin(args):
         if jar["id"] in replacements: jar["sourceRef"] = "LOCAL_OPERATING_CANDIDATE_" + args.label
     target["qualificationStatus"] = "UNQUALIFIED_OPERATING_CANDIDATE"
     target["scope"] = args.label
-    target["serverCode"] = {"files": code_files(Path(target["seed"]))}
+    target["seed"] = str(seed)
+    target["serverCode"] = {"files": code_files(seed)}
     path = destination / "inputs.json"
     write_json(path, {"target115": target, "baseManifest": str(args.base.resolve()), "baseSha256": digest(args.base)})
     pinned_profile(path, "target115")
@@ -243,6 +263,7 @@ def main():
     p = commands.add_parser("pin")
     p.add_argument("--base", type=Path, required=True); p.add_argument("--output", type=Path, required=True)
     p.add_argument("--label", required=True)
+    p.add_argument("--seed", type=Path, help="Independently installed Forge server seed")
     p.add_argument("--original-production", action="store_true", help="Keep the original three production jars; replace only the test harness")
     r = commands.add_parser("run")
     r.add_argument("--manifest", type=Path, required=True); r.add_argument("--output", type=Path, required=True)

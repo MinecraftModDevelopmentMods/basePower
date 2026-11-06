@@ -34,7 +34,7 @@ def read_json(path):
 
 
 def fixtures(pins):
-    definition = deepcopy(oil_transfer.fixtures())
+    definition = oil_transfer.fixtures("basepower")
     mineralogy = [jar for jar in pins["jars"] if jar["id"] == "mineralogy"]
     if mineralogy:
         if (len(mineralogy) != 1 or mineralogy[0]["version"] != MINERALOGY_VERSION
@@ -146,8 +146,8 @@ def construction_commands(definition):
     commands = []
     for lane in definition:
         commands.append("fill " + " ".join(map(str, lane["min"] + lane["max"])) + " minecraft:air replace")
-        blocks = [(p, "poweradvantage:fluid_pipe") for p in lane["pipes"]]
-        blocks += [(lane["drain"], "poweradvantage:fluid_drain"), (lane["output"], lane["tank"])]
+        blocks = [(p, "basepower:fluid_pipe") for p in lane["pipes"]]
+        blocks += [(lane["drain"], "basepower:fluid_drain"), (lane["output"], lane["tank"])]
         x, y, z = lane["source"]
         blocks += [([x + dx, y, z + dz], "minecraft:glass") for dx, dz in ((-1, 0), (1, 0), (0, -1), (0, 1))]
         commands.extend("setblock " + " ".join(map(str, pos)) + " " + block for pos, block in blocks)

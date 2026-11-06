@@ -47,6 +47,7 @@ class HarvestIsolationTests(unittest.TestCase):
         source = (Path(__file__).resolve().parents[1] /
                   "src/main/java/zone/moddev/mc/advantageworks/NativeHarvestProbe.java").read_text()
         region = source.split("        String sulfur =", 1)[1].split("        JsonObject solar =", 1)[0]
+        region = region.replace("baseelectric:", "electricadvantage:").replace("basepower:", "poweradvantage:")
         self.assertEqual("3FF0AC4C13CA1B737679F67128CE2F41C5A0873E89258D456628BA8A309BAA9A",
                          hashlib.sha256(region.encode()).hexdigest().upper())
         self.assertIn("Actual drop quantity changed: ", source)
@@ -103,7 +104,7 @@ class HarvestIsolationTests(unittest.TestCase):
     def test_no_drop_case_cannot_hide_an_unexpected_live_entity(self):
         document = sample()
         row(document, "lithium/wood-fails")["dropEvidence"][0]["actualDrops"] = [
-            dict(entityId=99999, uuid=str(UUID(int=99999)), item="electricadvantage:sulfur_powder", count=4, removed=False)]
+            dict(entityId=99999, uuid=str(UUID(int=99999)), item="baseelectric:sulfur_powder", count=4, removed=False)]
         with self.assertRaisesRegex(AssertionError, "disagree"):
             native.require_isolation(document)
 

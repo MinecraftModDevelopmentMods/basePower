@@ -41,15 +41,15 @@ def fixture():
             "machineBounds": {"min": [16384, 78, 16384], "max": [16415, 88, 16415]}}
 
 
-def validate_tags(result, mode, rubber):
+def validate_tags(result, mode, rubber, *, power="poweradvantage", electric="electricadvantage"):
     tags = result["tags"]
-    assert "electricadvantage:electric_conduit" in tags["wires"]
+    assert f"{electric}:electric_conduit" in tags["wires"]
     assert {"basemetals:coal_powder", "basemetals:charcoal_powder"} <= set(tags["dusts/carbon"])
-    assert ("poweradvantage:bioplastic_ingot" in tags["rubber"]) == rubber
-    assert {"poweradvantage:bioplastic_ingot", "electricadvantage:petrolplastic_ingot"} <= set(tags["plastic"])
-    assert "electricadvantage:control_circuit" in tags["circuit_boards"]
-    assert "electricadvantage:blank_circuit_board" not in tags["circuit_boards"]
-    assert "electricadvantage:solder" in tags["solder"]
+    assert (f"{power}:bioplastic_ingot" in tags["rubber"]) == rubber
+    assert {f"{power}:bioplastic_ingot", f"{electric}:petrolplastic_ingot"} <= set(tags["plastic"])
+    assert f"{electric}:control_circuit" in tags["circuit_boards"]
+    assert f"{electric}:blank_circuit_board" not in tags["circuit_boards"]
+    assert f"{electric}:solder" in tags["solder"]
     for metal in ("lead", "tin", "silver"):
         assert (f"basemetals:{metal}_ingot" in tags["solder"]) == (mode == "NORMAL")
 

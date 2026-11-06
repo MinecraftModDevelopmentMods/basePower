@@ -1,0 +1,71 @@
+{
+  "description": "Approved namespace-only adapters. Reverse these exact edits to verify the original historical source hashes.",
+  "files": {
+    "migration/lifecycle.py": [
+      {
+        "current": "    check(contents(before) == contents(after), \"inventory or custom item NBT changed\")\n    check(counts([after]) == {\"minecraft:dirt\": 7, \"minecraft:apple\": 13}, \"seeded inventory lost or duplicated\")\n    namespace = fixture[\"block\"].split(\":\")[0]\n    conduit = \"steam_pipe\" if fixture[\"energyType\"] == \"steam\" else \"electric_conduit\"\n    check(movement[\"oldPosition\"][\"block\"] == f\"{namespace}:{conduit}\", \"old position is not a conduit\")\n    old_energy = before[\"energy\"][fixture[\"energyType\"]]\n    new_energy = after[\"energy\"][fixture[\"energyType\"]]\n",
+        "historical": "    check(contents(before) == contents(after), \"inventory or custom item NBT changed\")\n    check(counts([after]) == {\"minecraft:dirt\": 7, \"minecraft:apple\": 13}, \"seeded inventory lost or duplicated\")\n    check(movement[\"oldPosition\"][\"block\"] == (\"steamadvantage:steam_pipe\" if fixture[\"energyType\"] == \"steam\"\n                                               else \"electricadvantage:electric_conduit\"), \"old position is not a conduit\")\n    old_energy = before[\"energy\"][fixture[\"energyType\"]]\n    new_energy = after[\"energy\"][fixture[\"energyType\"]]\n"
+      },
+      {
+        "current": "            self.command(\"fill \" + \" \".join(map(str, f[\"min\"] + f[\"max\"])) + \" minecraft:air replace\")\n            if \"from\" in f:\n                self.block(f[\"control\"], \"minecraft:redstone_block\")\n                self.block(f[\"from\"], f[\"block\"] + \"[facing=\" + f[\"facing\"] + \"]\")\n                self.block(f[\"to\"], f[\"block\"].replace(\"_drill\", \"_track\"))\n                self.block(offset(f[\"from\"], f[\"direction\"]), \"minecraft:bedrock\")\n                self.block(offset(f[\"to\"], f[\"direction\"]), \"minecraft:bedrock\")\n",
+        "historical": "            self.command(\"fill \" + \" \".join(map(str, f[\"min\"] + f[\"max\"])) + \" minecraft:air replace\")\n            if \"from\" in f:\n                mod = f[\"block\"].split(\":\")[0]\n                self.block(f[\"control\"], \"minecraft:redstone_block\")\n                self.block(f[\"from\"], f[\"block\"] + \"[facing=\" + f[\"facing\"] + \"]\")\n                self.block(f[\"to\"], mod + (\":steam_track\" if mod == \"steamadvantage\" else \":electric_track\"))\n                self.block(offset(f[\"from\"], f[\"direction\"]), \"minecraft:bedrock\")\n                self.block(offset(f[\"to\"], f[\"direction\"]), \"minecraft:bedrock\")\n"
+      }
+    ],
+    "migration/endurance.py": [
+      {
+        "current": "        return item_counts([self.entry(station, p) for p in positions])\n\n    def batch(self, label, *, power=\"poweradvantage\"):\n        result = {\"label\": label, \"outputs\": {}, \"world_time\": self.documents[\"W-01\"][\"worldTime\"]}\n        for name, station, relative, neighbours, input_id, output_id, _, count in PROCESSING:\n",
+        "historical": "        return item_counts([self.entry(station, p) for p in positions])\n\n    def batch(self, label):\n        result = {\"label\": label, \"outputs\": {}, \"world_time\": self.documents[\"W-01\"][\"worldTime\"]}\n        for name, station, relative, neighbours, input_id, output_id, _, count in PROCESSING:\n"
+      },
+      {
+        "current": "        outputs = [self.entry(\"W-03\", p)[\"data\"].get(\"Tank\", {}) for p in ((4, 1, 8), (6, 1, 8), (8, 1, 8))]\n        outputs.append(self.entry(\"W-03\", (6, 1, 8))[\"data\"].get(\"InputTank\", {}))\n        input_amount = sum(t.get(\"Amount\", 0) for t in outputs if t.get(\"FluidName\") == f\"{power}:crude_oil\")\n        require(input_amount == 0, f\"{self.name}: oil input remaining {input_amount}\")\n        require(sum(t.get(\"Amount\", 0) for t in outputs) == 1000, f\"{self.name}: oil output {outputs}\")\n        require(all(t.get(\"FluidName\") == f\"{power}:refined_oil\" for t in outputs if t.get(\"Amount\", 0)),\n                f\"{self.name}: wrong oil output identity\")\n        result[\"outputs\"][\"distillation-mB\"] = 1000\n",
+        "historical": "        outputs = [self.entry(\"W-03\", p)[\"data\"].get(\"Tank\", {}) for p in ((4, 1, 8), (6, 1, 8), (8, 1, 8))]\n        outputs.append(self.entry(\"W-03\", (6, 1, 8))[\"data\"].get(\"InputTank\", {}))\n        input_amount = sum(t.get(\"Amount\", 0) for t in outputs if t.get(\"FluidName\") == \"poweradvantage:crude_oil\")\n        require(input_amount == 0, f\"{self.name}: oil input remaining {input_amount}\")\n        require(sum(t.get(\"Amount\", 0) for t in outputs) == 1000, f\"{self.name}: oil output {outputs}\")\n        require(all(t.get(\"FluidName\") == \"poweradvantage:refined_oil\" for t in outputs if t.get(\"Amount\", 0)),\n                f\"{self.name}: wrong oil output identity\")\n        result[\"outputs\"][\"distillation-mB\"] = 1000\n"
+      }
+    ],
+    "migration/oil_transfer.py": [
+      {
+        "current": "\n\ndef fixtures(namespace=\"poweradvantage\"):\n    result = []\n    for index, (oil, tank) in enumerate((\n",
+        "historical": "\n\ndef fixtures():\n    result = []\n    for index, (oil, tank) in enumerate((\n"
+      },
+      {
+        "current": "        result.append({\"id\": f\"OIL-{oil}-{tank}\", \"min\": [x, 72, 2048], \"max\": [x + 31, 88, 2079],\n                       \"source\": source, \"drain\": drain, \"pipes\": pipes, \"output\": output,\n                       \"fluid\": namespace + \":\" + oil, \"bucket\": namespace + \":\" + oil + \"_bucket\",\n                       \"tank\": namespace + \":\" + tank, \"witnesses\": [source, drain, *pipes, output]})\n    return result\n\n",
+        "historical": "        result.append({\"id\": f\"OIL-{oil}-{tank}\", \"min\": [x, 72, 2048], \"max\": [x + 31, 88, 2079],\n                       \"source\": source, \"drain\": drain, \"pipes\": pipes, \"output\": output,\n                       \"fluid\": \"poweradvantage:\" + oil, \"bucket\": \"poweradvantage:\" + oil + \"_bucket\",\n                       \"tank\": \"poweradvantage:\" + tank, \"witnesses\": [source, drain, *pipes, output]})\n    return result\n\n"
+      },
+      {
+        "current": "    rows = []\n    for f in definition:\n        namespace = f[\"tank\"].split(\":\", 1)[0]\n        source = at(snapshot, f[\"id\"], f[\"source\"])\n        drain = at(snapshot, f[\"id\"], f[\"drain\"])\n        output = at(snapshot, f[\"id\"], f[\"output\"])\n        require(source[\"block\"] == \"minecraft:air\", f\"Source not collected: {f['id']}\")\n        require(drain[\"block\"] == namespace + \":fluid_drain\", f\"Drain missing: {f['id']}\")\n        require(output[\"block\"] == f[\"tank\"], f\"Container changed: {f['id']}\")\n        for pos in f[\"pipes\"]:\n            require(at(snapshot, f[\"id\"], pos)[\"block\"] == namespace + \":fluid_pipe\", f\"Pipe missing: {f['id']}\")\n        held = parse(drain).get(\"Tank\", {}).get(\"Amount\", 0)\n        tank = parse(output).get(\"Tank\", {})\n",
+        "historical": "    rows = []\n    for f in definition:\n        source = at(snapshot, f[\"id\"], f[\"source\"])\n        drain = at(snapshot, f[\"id\"], f[\"drain\"])\n        output = at(snapshot, f[\"id\"], f[\"output\"])\n        require(source[\"block\"] == \"minecraft:air\", f\"Source not collected: {f['id']}\")\n        require(drain[\"block\"] == \"poweradvantage:fluid_drain\", f\"Drain missing: {f['id']}\")\n        require(output[\"block\"] == f[\"tank\"], f\"Container changed: {f['id']}\")\n        for pos in f[\"pipes\"]:\n            require(at(snapshot, f[\"id\"], pos)[\"block\"] == \"poweradvantage:fluid_pipe\", f\"Pipe missing: {f['id']}\")\n        held = parse(drain).get(\"Tank\", {}).get(\"Amount\", 0)\n        tank = parse(output).get(\"Tank\", {})\n"
+      }
+    ],
+    "migration/progression.py": [
+      {
+        "current": "\n\ndef validate_tags(result, mode, rubber, *, power=\"poweradvantage\", electric=\"electricadvantage\"):\n    tags = result[\"tags\"]\n    assert f\"{electric}:electric_conduit\" in tags[\"wires\"]\n    assert {\"basemetals:coal_powder\", \"basemetals:charcoal_powder\"} <= set(tags[\"dusts/carbon\"])\n    assert (f\"{power}:bioplastic_ingot\" in tags[\"rubber\"]) == rubber\n    assert {f\"{power}:bioplastic_ingot\", f\"{electric}:petrolplastic_ingot\"} <= set(tags[\"plastic\"])\n    assert f\"{electric}:control_circuit\" in tags[\"circuit_boards\"]\n    assert f\"{electric}:blank_circuit_board\" not in tags[\"circuit_boards\"]\n    assert f\"{electric}:solder\" in tags[\"solder\"]\n    for metal in (\"lead\", \"tin\", \"silver\"):\n        assert (f\"basemetals:{metal}_ingot\" in tags[\"solder\"]) == (mode == \"NORMAL\")\n",
+        "historical": "\n\ndef validate_tags(result, mode, rubber):\n    tags = result[\"tags\"]\n    assert \"electricadvantage:electric_conduit\" in tags[\"wires\"]\n    assert {\"basemetals:coal_powder\", \"basemetals:charcoal_powder\"} <= set(tags[\"dusts/carbon\"])\n    assert (\"poweradvantage:bioplastic_ingot\" in tags[\"rubber\"]) == rubber\n    assert {\"poweradvantage:bioplastic_ingot\", \"electricadvantage:petrolplastic_ingot\"} <= set(tags[\"plastic\"])\n    assert \"electricadvantage:control_circuit\" in tags[\"circuit_boards\"]\n    assert \"electricadvantage:blank_circuit_board\" not in tags[\"circuit_boards\"]\n    assert \"electricadvantage:solder\" in tags[\"solder\"]\n    for metal in (\"lead\", \"tin\", \"silver\"):\n        assert (f\"basemetals:{metal}_ingot\" in tags[\"solder\"]) == (mode == \"NORMAL\")\n"
+      }
+    ],
+    "migration/recipe_unlocks.py": [
+      {
+        "current": "\n\ndef fixture(extensions=\"both\", *, namespaces=(\"poweradvantage\", \"steamadvantage\", \"electricadvantage\")):\n    recipes = []\n    for mod, root, expansion in (\n        (namespaces[0], POWER, None),\n        (namespaces[1], POWER.parent / \"SteamAdvantage/SteamAdvantage\", \"steam\"),\n        (namespaces[2], POWER.parent / \"ElectricAdvantage/ElectricAdvantage\", \"electric\"),\n    ):\n        if expansion and extensions not in (\"both\", expansion):\n            continue\n        data = root / \"src/main/resources/data\" / mod\n",
+        "historical": "\n\ndef fixture(extensions=\"both\"):\n    recipes = []\n    for mod, root in (\n        (\"poweradvantage\", POWER),\n        (\"steamadvantage\", POWER.parent / \"SteamAdvantage/SteamAdvantage\"),\n        (\"electricadvantage\", POWER.parent / \"ElectricAdvantage/ElectricAdvantage\"),\n    ):\n        if mod == \"steamadvantage\" and extensions not in (\"both\", \"steam\"):\n            continue\n        if mod == \"electricadvantage\" and extensions not in (\"both\", \"electric\"):\n            continue\n        data = root / \"src/main/resources/data\" / mod\n"
+      },
+      {
+        "current": "    expected = 35 + (24 if extensions in (\"both\", \"steam\") else 0) + (50 if extensions in (\"both\", \"electric\") else 0)\n    assert len(recipes) == expected, \"Update the expected recipe-book inventory deliberately\"\n    aliases = dict(zip((\"poweradvantage\", \"steamadvantage\", \"electricadvantage\"), namespaces))\n    return {\"recipes\": recipes, \"materials\": [\n        aliases.get(namespace, namespace) + \":\" + name for namespace, name in\n        (item.split(\":\", 1) for item in MATERIALS)]}\n\n\n",
+        "historical": "    expected = 35 + (24 if extensions in (\"both\", \"steam\") else 0) + (50 if extensions in (\"both\", \"electric\") else 0)\n    assert len(recipes) == expected, \"Update the expected recipe-book inventory deliberately\"\n    return {\"recipes\": recipes, \"materials\": MATERIALS}\n\n\n"
+      }
+    ],
+    "migration/test_native114_broad.py": [
+      {
+        "current": "class BroadOracleTests(unittest.TestCase):\n    def setUp(self):\n        source = (broad.RIG / \"src/main/resources/assets/advantageworkstest/works/works-1.13.2.json\").read_text()\n        definition = json.loads(source.replace(\"basepower\", \"poweradvantage\").replace(\"basesteam\", \"steamadvantage\")\n                                .replace(\"baseelectric\", \"electricadvantage\"))\n        self.stations = [s for s in definition[\"stations\"] if s[\"id\"] in broad.DRILL_BAYS]\n\n",
+        "historical": "class BroadOracleTests(unittest.TestCase):\n    def setUp(self):\n        definition = broad.read_json(broad.RIG / \"src/main/resources/assets/advantageworkstest/works/works-1.13.2.json\")\n        self.stations = [s for s in definition[\"stations\"] if s[\"id\"] in broad.DRILL_BAYS]\n\n"
+      }
+    ],
+    "migration/test_recipe_unlocks.py": [
+      {
+        "current": "from collections import Counter\n\nfrom recipe_unlocks import MATERIALS, fixture as recipe_fixture\n\n\ndef fixture(extensions=\"both\"):\n    return recipe_fixture(extensions, namespaces=(\"basepower\", \"basesteam\", \"baseelectric\"))\n\n\n",
+        "historical": "from collections import Counter\n\nfrom recipe_unlocks import MATERIALS, fixture\n\n\n"
+      },
+      {
+        "current": "        recipes = fixture()[\"recipes\"]\n        self.assertEqual(Counter(recipe[\"id\"].split(\":\")[0] for recipe in recipes),\n                         {\"basepower\": 35, \"basesteam\": 24, \"baseelectric\": 50})\n        self.assertEqual(109, len({recipe[\"id\"] for recipe in recipes}))\n        self.assertTrue(all(\":crushing_\" not in recipe[\"id\"] for recipe in recipes))\n",
+        "historical": "        recipes = fixture()[\"recipes\"]\n        self.assertEqual(Counter(recipe[\"id\"].split(\":\")[0] for recipe in recipes),\n                         {\"poweradvantage\": 35, \"steamadvantage\": 24, \"electricadvantage\": 50})\n        self.assertEqual(109, len({recipe[\"id\"] for recipe in recipes}))\n        self.assertTrue(all(\":crushing_\" not in recipe[\"id\"] for recipe in recipes))\n"
+      }
+    ]
+  }
+}

@@ -15,14 +15,14 @@ import net.minecraft.util.Direction;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.IBlockReader;
-import zone.moddev.mc.poweradvantage.gui.FilteredFluidTankGUI;
+import zone.moddev.mc.basepower.gui.FilteredFluidTankGUI;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
-import zone.moddev.mc.poweradvantage.registry.MachineGUIRegistry;
-import zone.moddev.mc.poweradvantage.init.Blocks;
-import zone.moddev.mc.poweradvantage.machines.fluidmachines.MetalTankTileEntity;
+import zone.moddev.mc.basepower.registry.MachineGUIRegistry;
+import zone.moddev.mc.basepower.init.Blocks;
+import zone.moddev.mc.basepower.machines.fluidmachines.MetalTankTileEntity;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -78,7 +78,7 @@ final class TankVisualProbe {
     }
 
     private static int renderWater(Minecraft minecraft, MetalTankTileEntity tile) {
-        FilteredFluidTankGUI definition = new FilteredFluidTankGUI(new ResourceLocation("poweradvantage", "textures/gui/container/fluid_metal_tank_gui.png"));
+        FilteredFluidTankGUI definition = new FilteredFluidTankGUI(new ResourceLocation("basepower", "textures/gui/container/fluid_metal_tank_gui.png"));
         final int width = 128, height = 96;
         PlayerInventory inventory = new PlayerInventory(null);
         SimpleMachineGUI.Container container = definition.createContainer(1, inventory, tile);

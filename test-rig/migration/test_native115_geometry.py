@@ -112,6 +112,10 @@ class PortContracts(unittest.TestCase):
         records = approval["corrections"]
         self.assertIn("migration/extended_lifecycle.py", records)
         self.assertLessEqual(set(records), {"migration/extended_lifecycle.py", "migration/test_native115_geometry.py"})
+        overlay = json.loads((RIG / "migration/base115-namespace-overlay.json").read_text())["files"]
+        self.assertEqual(set(overlay), {"migration/lifecycle.py", "migration/endurance.py", "migration/oil_transfer.py",
+                                       "migration/progression.py", "migration/recipe_unlocks.py",
+                                       "migration/test_native114_broad.py", "migration/test_recipe_unlocks.py"})
 
         def verify(data, expected, record):
             self.assertEqual(record["historicalSha256"], expected)
@@ -139,6 +143,19 @@ class PortContracts(unittest.TestCase):
             with self.subTest(path=relative):
                 if relative in records:
                     verify((RIG / relative).read_bytes(), checksum, records[relative])
+                elif relative in overlay:
+                    current = (RIG / relative).read_bytes()
+                    for hunk in overlay[relative]:
+                        edited = hunk["current"].encode()
+                        self.assertEqual(current.count(edited), 1)
+                        current = current.replace(edited, hunk["historical"].encode(), 1)
+                    self.assertEqual(hashlib.sha256(current).hexdigest().upper(), checksum)
+                elif relative == "src/main/resources/assets/advantageworkstest/works/works-1.13.2.json":
+                    current = (RIG / relative).read_bytes()
+                    for new, old in ((b"basepower", b"poweradvantage"), (b"basesteam", b"steamadvantage"),
+                                     (b"baseelectric", b"electricadvantage")):
+                        current = current.replace(new, old)
+                    self.assertEqual(hashlib.sha256(current).hexdigest().upper(), checksum)
                 else:
                     self.assertEqual(digest(RIG / relative), checksum)
 

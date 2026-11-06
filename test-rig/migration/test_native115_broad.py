@@ -26,11 +26,11 @@ class BroadOracleTests(unittest.TestCase):
             row = dict(pos=list(position), block=case["block"], state='facing=' + case["facing"], nbt=data)
             rows.append(row)
             if not moved:
-                rows.append(dict(pos=list(case["rear"]), block="steamadvantage:steam_track"
-                                 if station["id"] == "S-05" else "electricadvantage:electric_track", state="track"))
+                rows.append(dict(pos=list(case["rear"]), block="basesteam:steam_track"
+                                 if station["id"] == "S-05" else "baseelectric:electric_track", state="track"))
             if moved:
-                rows.append(dict(pos=list(case["origin"]), block="steamadvantage:steam_pipe"
-                                 if station["id"] == "S-05" else "electricadvantage:electric_conduit", state="pipe"))
+                rows.append(dict(pos=list(case["origin"]), block="basesteam:steam_pipe"
+                                 if station["id"] == "S-05" else "baseelectric:electric_conduit", state="pipe"))
         return dict(snapshot=rows)
 
     def states(self, moved=False):
@@ -63,7 +63,7 @@ class BroadOracleTests(unittest.TestCase):
     def test_live_steam_bit_may_replace_the_conduit_left_in_the_old_cell(self):
         station = self.stations[0]
         doc = self.snapshot(station, True)
-        doc["snapshot"][1]["block"] = "steamadvantage:drillbit"
+        doc["snapshot"][1]["block"] = "basesteam:drillbit"
         self.assertTrue(broad.drill_state(station, doc)["S-05:down-facing"]["moved"])
 
     def test_missing_duplicate_wrong_facing_and_off_track_fail(self):
@@ -135,7 +135,7 @@ class BroadOracleTests(unittest.TestCase):
             broad.assertions_state({station["id"]: record}, [station])
 
     def test_decoupled_modset_cannot_silently_contain_base_metals(self):
-        expected = dict(minecraft="1.15.2", forge="31.2.57", poweradvantage="2.4.6.115021")
+        expected = dict(minecraft="1.15.2", forge="31.2.57", basepower="2.4.7.115021")
         broad.loaded_mods({"S-05": dict(mods=expected)}, expected)
         actual = dict(expected, basemetals="3.0.1.115021")
         with self.assertRaisesRegex(AssertionError, "loaded mod identities"):

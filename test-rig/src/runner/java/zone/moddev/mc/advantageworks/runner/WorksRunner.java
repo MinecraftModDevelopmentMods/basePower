@@ -594,7 +594,7 @@ public final class WorksRunner {
         if (!config.isDirectory() && !config.mkdirs()) {
             throw new IllegalStateException("Cannot create config directory " + config);
         }
-        write(new File(config, "poweradvantage.cfg"),
+        write(new File(config, "basepower.cfg"),
                 "options {\n    S:recipe_mode=" + profile.recipeMode + "\n}\n");
         String properties = "allow-flight=true\n"
                 + "difficulty=0\n"

@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=east": {
+      "model": "basepower:block/converter_rf_quantum",
+      "y": 90
+    },
+    "facing=north": {
+      "model": "basepower:block/converter_rf_quantum"
+    },
+    "facing=south": {
+      "model": "basepower:block/converter_rf_quantum",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "basepower:block/converter_rf_quantum",
+      "y": 270
+    }
+  }
+}

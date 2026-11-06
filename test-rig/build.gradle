@@ -55,7 +55,7 @@ repositories {
 }
 
 def powerCompileJar = file(project.findProperty('powerAdvantageDeobfJar')
-        ?: '../build/libs-dev/PowerAdvantage-2.4.6.115021-deobf.jar')
+        ?: '../build/libs-dev/basePower-2.4.7.115021-deobf.jar')
 
 dependencies {
     implementation minecraft.dependency(
@@ -196,7 +196,7 @@ tasks.register('verifyHarnessIsolation') {
     description = 'Confirms the PowerAdvantage release contains no test-harness content.'
     doLast {
         File powerJar = file(project.findProperty('powerAdvantageReleaseJar')
-                ?: '../build/libs/PowerAdvantage-2.4.6.115021.jar')
+                ?: '../build/libs/basePower-2.4.7.115021.jar')
         if (!powerJar.isFile()) {
             throw new GradleException("Build PowerAdvantage first: ${powerJar}")
         }

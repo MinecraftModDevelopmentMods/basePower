@@ -53,10 +53,10 @@ class FullProcessMachineOracleTests(unittest.TestCase):
         with self.assertRaises(AssertionError): validate_restart(before, after)
 
     def test_only_exact_zero_volume_named_tank_representation_may_change(self):
-        for original, expected in (("{Amount:0,FluidName:\"poweradvantage:crude_oil\"}", "PASS"),
-                                   ("{Amount:1,FluidName:\"poweradvantage:crude_oil\"}", "FAIL"),
-                                   ("{Amount:0,FluidName:\"poweradvantage:crude_oil\",Hidden:1}", "FAIL"),
-                                   ("{Amount:0b,FluidName:\"poweradvantage:crude_oil\"}", "FAIL")):
+        for original, expected in (("{Amount:0,FluidName:\"basepower:crude_oil\"}", "PASS"),
+                                   ("{Amount:1,FluidName:\"basepower:crude_oil\"}", "FAIL"),
+                                   ("{Amount:0,FluidName:\"basepower:crude_oil\",Hidden:1}", "FAIL"),
+                                   ("{Amount:0b,FluidName:\"basepower:crude_oil\"}", "FAIL")):
             before, after = self.pair()
             before["cases"][0]["positions"][0]["nbt"] = "{Tank:" + original + "}"
             after["cases"][0]["positions"][0]["nbt"] = "{Tank:{Empty:1b}}"

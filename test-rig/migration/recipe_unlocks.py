@@ -23,16 +23,14 @@ MATERIALS = [
 ]
 
 
-def fixture(extensions="both"):
+def fixture(extensions="both", *, namespaces=("poweradvantage", "steamadvantage", "electricadvantage")):
     recipes = []
-    for mod, root in (
-        ("poweradvantage", POWER),
-        ("steamadvantage", POWER.parent / "SteamAdvantage/SteamAdvantage"),
-        ("electricadvantage", POWER.parent / "ElectricAdvantage/ElectricAdvantage"),
+    for mod, root, expansion in (
+        (namespaces[0], POWER, None),
+        (namespaces[1], POWER.parent / "SteamAdvantage/SteamAdvantage", "steam"),
+        (namespaces[2], POWER.parent / "ElectricAdvantage/ElectricAdvantage", "electric"),
     ):
-        if mod == "steamadvantage" and extensions not in ("both", "steam"):
-            continue
-        if mod == "electricadvantage" and extensions not in ("both", "electric"):
+        if expansion and extensions not in ("both", expansion):
             continue
         data = root / "src/main/resources/data" / mod
         for file in sorted((data / "recipes").glob("*.json")):
@@ -47,7 +45,10 @@ def fixture(extensions="both"):
             }})
     expected = 35 + (24 if extensions in ("both", "steam") else 0) + (50 if extensions in ("both", "electric") else 0)
     assert len(recipes) == expected, "Update the expected recipe-book inventory deliberately"
-    return {"recipes": recipes, "materials": MATERIALS}
+    aliases = dict(zip(("poweradvantage", "steamadvantage", "electricadvantage"), namespaces))
+    return {"recipes": recipes, "materials": [
+        aliases.get(namespace, namespace) + ":" + name for namespace, name in
+        (item.split(":", 1) for item in MATERIALS)]}
 
 
 def run(args):

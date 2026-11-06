@@ -82,7 +82,7 @@ class NativeEnduranceTests(unittest.TestCase):
             with patch("semantic_machine_audit.endurance_batch", return_value={"status": "PASS", "failures": []}), \
                     patch.object(endurance.Rig, "batch", return_value={"retained": True}) as historical:
                 self.assertEqual({"retained": True}, rig.batch("cycle-001"))
-                historical.assert_called_once_with("cycle-001")
+                historical.assert_called_once_with("cycle-001", power="basepower")
 
     def test_smoke_result_never_qualifies_as_endurance(self):
         with tempfile.TemporaryDirectory() as directory:
