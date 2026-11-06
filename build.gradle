@@ -314,7 +314,7 @@ tasks.register('verifyReleaseConfiguration') {
     group = 'verification'
     description = 'Validates release identity, target metadata, and optional integration policy.'
     doLast {
-        if (project.mod_version != '2.4.5.113021') {
+        if (project.mod_version != '2.4.6.113021') {
             throw new GradleException("Unexpected PowerAdvantage release version: ${project.mod_version}")
         }
         if (project.minecraft_version != '1.13.2'
@@ -349,7 +349,7 @@ tasks.register('verifyReleaseConfiguration') {
         String mainSource = file(
                 'src/main/java/zone/moddev/mc/basepower/PowerAdvantage.java').getText('UTF-8')
         if (!mainSource.contains('MODID = "basepower"')
-                || !mainSource.contains('VERSION = "2.4.5.113021"')
+                || !mainSource.contains('VERSION = "2.4.6.113021"')
                 || !mainSource.contains('@Mod(PowerAdvantage.MODID)')) {
             throw new GradleException('PowerAdvantage source identity changed')
         }

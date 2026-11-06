@@ -38,7 +38,7 @@ foreach ($name in 'ClientResourceProbe','TankVisualProbe','OilRenderProbe','Reci
 $pack = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'resources/pack.mcmeta') -Raw | ConvertFrom-Json
 Assert-Contract ($pack.pack.pack_format -eq 4) 'The native 1.13 probe resource pack must keep format 4.'
 $metadata = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'resources/META-INF/mods.toml') -Raw
-foreach ($pin in 'loaderVersion="[25,)"','versionRange="[2.4.5.113021,)"') {
+foreach ($pin in 'loaderVersion="[25,)"','versionRange="[2.4.6.113021,)"') {
     Assert-Contract ($metadata.Contains($pin)) "Missing original native probe metadata: $pin"
 }
 $runner = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'run.ps1') -Raw

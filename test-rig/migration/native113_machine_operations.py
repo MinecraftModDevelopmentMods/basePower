@@ -142,7 +142,7 @@ def pin(args):
     if destination.exists(): raise FileExistsError(destination)
     destination.mkdir(parents=True)
     replacements = {
-        "poweradvantage": RIG.parent / "build/libs/basePower-2.4.5.113021.jar",
+        "poweradvantage": RIG.parent / "build/libs/basePower-2.4.6.113021.jar",
         "steamadvantage": RIG.parent.parent / "SteamAdvantage/SteamAdvantage/build/libs/baseSteam-2.2.7.113021.jar",
         "electricadvantage": RIG.parent.parent / "ElectricAdvantage/ElectricAdvantage/build/libs/baseElectric-2.2.7.113021.jar",
         "advantageworkstest": RIG / "build/gradle/libs/AdvantageWorksTestHarness-1.1.0.113021.jar",
