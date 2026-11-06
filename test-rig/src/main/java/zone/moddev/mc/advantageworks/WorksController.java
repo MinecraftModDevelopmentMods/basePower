@@ -894,8 +894,8 @@ final class WorksController {
     }
 
     private static BlockState legacyState(String name, Block block, int metadata) {
-        if (name != null && (name.startsWith("poweradvantage:")
-                || name.startsWith("steamadvantage:") || name.startsWith("electricadvantage:"))) {
+        if (name != null && (name.startsWith("basepower:")
+                || name.startsWith("basesteam:") || name.startsWith("baseelectric:"))) {
             return LegacyMigrationApi.decodeBlockState(new ResourceLocation(name), block, metadata);
         }
         if (block instanceof FlowingFluidBlock) {
@@ -913,7 +913,7 @@ final class WorksController {
     private static Fluid fluid(String name) {
         if (name == null || name.trim().isEmpty()) return null;
         ResourceLocation id = name.indexOf(':') >= 0 ? new ResourceLocation(name)
-                : new ResourceLocation("poweradvantage", name);
+                : new ResourceLocation("basepower", name);
         Fluid value = Registry.FLUID.getOptional(id).orElse(null);
         if (value == null) {
             String migratedName = LegacyMigrationApi.fluidTarget(name);

@@ -1,0 +1,238 @@
+{
+  "description": "Exact reversible test-harness namespace adapters; historical digests and thresholds stay unchanged.",
+  "files": {
+    "migration/endurance.py": [
+      {
+        "byteOffset": 6689,
+        "current": "    def batch(self, label, *, power=\"poweradvantage\"):\n",
+        "historical": "    def batch(self, label):\n"
+      },
+      {
+        "byteOffset": 8937,
+        "current": "        input_amount = sum(t.get(\"Amount\", 0) for t in outputs if t.get(\"FluidName\") == f\"{power}:crude_oil\")\n",
+        "historical": "        input_amount = sum(t.get(\"Amount\", 0) for t in outputs if t.get(\"FluidName\") == \"poweradvantage:crude_oil\")\n"
+      },
+      {
+        "byteOffset": 9238,
+        "current": "        require(all(t.get(\"FluidName\") == f\"{power}:refined_oil\" for t in outputs if t.get(\"Amount\", 0)),\n",
+        "historical": "        require(all(t.get(\"FluidName\") == \"poweradvantage:refined_oil\" for t in outputs if t.get(\"Amount\", 0)),\n"
+      }
+    ],
+    "migration/lifecycle.py": [
+      {
+        "byteOffset": 3887,
+        "current": "    namespace = fixture[\"block\"].split(\":\", 1)[0]\n    conduit = \"steam_pipe\" if fixture[\"energyType\"] == \"steam\" else \"electric_conduit\"\n    check(movement[\"oldPosition\"][\"block\"] == f\"{namespace}:{conduit}\", \"old position is not a conduit\")\n",
+        "historical": "    check(movement[\"oldPosition\"][\"block\"] == (\"steamadvantage:steam_pipe\" if fixture[\"energyType\"] == \"steam\"\n                                               else \"electricadvantage:electric_conduit\"), \"old position is not a conduit\")\n"
+      },
+      {
+        "byteOffset": 6092,
+        "current": "",
+        "historical": "                mod = f[\"block\"].split(\":\")[0]\n"
+      },
+      {
+        "byteOffset": 6244,
+        "current": "                self.block(f[\"to\"], f[\"block\"].replace(\"_drill\", \"_track\"))\n",
+        "historical": "                self.block(f[\"to\"], mod + (\":steam_track\" if mod == \"steamadvantage\" else \":electric_track\"))\n"
+      }
+    ],
+    "migration/oil_transfer.py": [
+      {
+        "byteOffset": 348,
+        "current": "def fixtures(namespace=\"poweradvantage\"):\n",
+        "historical": "def fixtures():\n"
+      },
+      {
+        "byteOffset": 1132,
+        "current": "                       \"fluid\": f\"{namespace}:{oil}\", \"bucket\": f\"{namespace}:{oil}_bucket\",\n                       \"tank\": f\"{namespace}:{tank}\", \"witnesses\": [source, drain, *pipes, output]})\n",
+        "historical": "                       \"fluid\": \"poweradvantage:\" + oil, \"bucket\": \"poweradvantage:\" + oil + \"_bucket\",\n                       \"tank\": \"poweradvantage:\" + tank, \"witnesses\": [source, drain, *pipes, output]})\n"
+      },
+      {
+        "byteOffset": 1661,
+        "current": "        namespace = f[\"tank\"].split(\":\", 1)[0]\n",
+        "historical": ""
+      },
+      {
+        "byteOffset": 1796,
+        "current": "        require(drain[\"block\"] == f\"{namespace}:fluid_drain\", f\"Drain missing: {f['id']}\")\n",
+        "historical": "        require(drain[\"block\"] == \"poweradvantage:fluid_drain\", f\"Drain missing: {f['id']}\")\n"
+      },
+      {
+        "byteOffset": 1997,
+        "current": "            require(at(snapshot, f[\"id\"], pos)[\"block\"] == f\"{namespace}:fluid_pipe\", f\"Pipe missing: {f['id']}\")\n",
+        "historical": "            require(at(snapshot, f[\"id\"], pos)[\"block\"] == \"poweradvantage:fluid_pipe\", f\"Pipe missing: {f['id']}\")\n"
+      }
+    ],
+    "migration/progression.py": [
+      {
+        "byteOffset": 2373,
+        "current": "def validate_tags(result, mode, rubber, *, power=\"poweradvantage\", electric=\"electricadvantage\"):\n",
+        "historical": "def validate_tags(result, mode, rubber):\n"
+      },
+      {
+        "byteOffset": 2497,
+        "current": "    assert f\"{electric}:electric_conduit\" in tags[\"wires\"]\n",
+        "historical": "    assert \"electricadvantage:electric_conduit\" in tags[\"wires\"]\n"
+      },
+      {
+        "byteOffset": 2653,
+        "current": "    assert (f\"{power}:bioplastic_ingot\" in tags[\"rubber\"]) == rubber\n    assert {f\"{power}:bioplastic_ingot\", f\"{electric}:petrolplastic_ingot\"} <= set(tags[\"plastic\"])\n    assert f\"{electric}:control_circuit\" in tags[\"circuit_boards\"]\n    assert f\"{electric}:blank_circuit_board\" not in tags[\"circuit_boards\"]\n    assert f\"{electric}:solder\" in tags[\"solder\"]\n",
+        "historical": "    assert (\"poweradvantage:bioplastic_ingot\" in tags[\"rubber\"]) == rubber\n    assert {\"poweradvantage:bioplastic_ingot\", \"electricadvantage:petrolplastic_ingot\"} <= set(tags[\"plastic\"])\n    assert \"electricadvantage:control_circuit\" in tags[\"circuit_boards\"]\n    assert \"electricadvantage:blank_circuit_board\" not in tags[\"circuit_boards\"]\n    assert \"electricadvantage:solder\" in tags[\"solder\"]\n"
+      }
+    ],
+    "migration/recipe_unlocks.py": [
+      {
+        "byteOffset": 1079,
+        "current": "def fixture(extensions=\"both\", *, namespaces=None):\n    namespaces = namespaces or {}\n",
+        "historical": "def fixture(extensions=\"both\"):\n"
+      },
+      {
+        "byteOffset": 1608,
+        "current": "        mod = namespaces.get(mod, mod)\n",
+        "historical": ""
+      },
+      {
+        "byteOffset": 2550,
+        "current": "    materials = [namespaces.get(namespace, namespace) + \":\" + path\n                 for namespace, path in (item.split(\":\", 1) for item in MATERIALS)]\n    return {\"recipes\": recipes, \"materials\": materials}\n",
+        "historical": "    return {\"recipes\": recipes, \"materials\": MATERIALS}\n"
+      }
+    ],
+    "migration/test_native114_broad.py": [
+      {
+        "byteOffset": 292,
+        "current": "        import json\n        from historical_station_fixture import historical_station_bytes\n        definition = json.loads(historical_station_bytes())\n",
+        "historical": "        definition = broad.read_json(broad.RIG / \"src/main/resources/assets/advantageworkstest/works/works-1.13.2.json\")\n"
+      }
+    ],
+    "migration/test_native115_broad.py": [
+      {
+        "byteOffset": 292,
+        "current": "        import json\n        from historical_station_fixture import historical_station_bytes\n        definition = json.loads(historical_station_bytes())\n",
+        "historical": "        definition = broad.read_json(broad.RIG / \"src/main/resources/assets/advantageworkstest/works/works-1.13.2.json\")\n"
+      }
+    ],
+    "migration/test_native115_geometry.py": [
+      {
+        "byteOffset": 7628,
+        "current": "                from historical_station_fixture import historical_bytes\n                data = historical_bytes(relative)\n",
+        "historical": ""
+      },
+      {
+        "byteOffset": 7790,
+        "current": "                    verify(data, checksum, records[relative])\n",
+        "historical": "                    verify((RIG / relative).read_bytes(), checksum, records[relative])\n"
+      },
+      {
+        "byteOffset": 7874,
+        "current": "                    self.assertEqual(hashlib.sha256(data).hexdigest().upper(), checksum)\n",
+        "historical": "                    self.assertEqual(digest(RIG / relative), checksum)\n"
+      }
+    ],
+    "migration/test_native115_harvest.py": [
+      {
+        "byteOffset": 2481,
+        "current": "        region = region.replace(\"baseelectric:\", \"electricadvantage:\").replace(\"basepower:\", \"poweradvantage:\")\n",
+        "historical": ""
+      }
+    ],
+    "migration/test_recipe_unlocks.py": [
+      {
+        "byteOffset": 49,
+        "current": "from native116 import BASE_NAMESPACES\nfrom recipe_unlocks import MATERIALS, fixture as historical_fixture\n\n\ndef fixture(extensions=\"both\"):\n    return historical_fixture(extensions, namespaces=BASE_NAMESPACES)\n",
+        "historical": "from recipe_unlocks import MATERIALS, fixture\n"
+      },
+      {
+        "byteOffset": 507,
+        "current": "                         {\"basepower\": 35, \"basesteam\": 24, \"baseelectric\": 50})\n",
+        "historical": "                         {\"poweradvantage\": 35, \"steamadvantage\": 24, \"electricadvantage\": 50})\n"
+      }
+    ],
+    "src/test/java/zone/moddev/mc/advantageworks/ConnectedSessionTest.java": [
+      {
+        "byteOffset": 658,
+        "current": "        ConnectedSession.validate(definition(\"{id:'source',x:1,y:80,z:1,name:'basepower:infinite_steam'}\"));\n",
+        "historical": "        ConnectedSession.validate(definition(\"{id:'source',x:1,y:80,z:1,name:'poweradvantage:infinite_steam'}\"));\n"
+      }
+    ],
+    "src/test/java/zone/moddev/mc/advantageworks/LifecycleProbeTest.java": [
+      {
+        "byteOffset": 649,
+        "current": "        fixture.block = \"basesteam:steam_drill\";\n",
+        "historical": "        fixture.block = \"steamadvantage:steam_drill\";\n"
+      },
+      {
+        "byteOffset": 1021,
+        "current": "        LifecycleProbe.Fixture f = fixture(); f.bucket = \"basepower:crude_oil_bucket\";\n",
+        "historical": "        LifecycleProbe.Fixture f = fixture(); f.bucket = \"poweradvantage:crude_oil_bucket\";\n"
+      },
+      {
+        "byteOffset": 1529,
+        "current": "                f.bucket = \"basepower:\" + oil + \"_bucket\";\n",
+        "historical": "                f.bucket = \"poweradvantage:\" + oil + \"_bucket\";\n"
+      },
+      {
+        "byteOffset": 2850,
+        "current": "                \"basepower:crude_oil_bucket_extra\", \"basepower:other_oil_bucket\")) {\n",
+        "historical": "                \"poweradvantage:crude_oil_bucket_extra\", \"poweradvantage:other_oil_bucket\")) {\n"
+      },
+      {
+        "byteOffset": 4924,
+        "current": "        LifecycleProbe.Fixture f = fixture(); f.bucket = \"basepower:crude_oil_bucket\";\n",
+        "historical": "        LifecycleProbe.Fixture f = fixture(); f.bucket = \"poweradvantage:crude_oil_bucket\";\n"
+      }
+    ],
+    "src/test/java/zone/moddev/mc/advantageworks/WorksDefinitionTest.java": [
+      {
+        "byteOffset": 803,
+        "current": "                if (!placement.block.equals(\"basesteam:steam_drill\")) continue;\n",
+        "historical": "                if (!placement.block.equals(\"steamadvantage:steam_drill\")) continue;\n"
+      },
+      {
+        "byteOffset": 2100,
+        "current": "                if (assertion.id.endsWith(\"-fluid\")) assertEquals(\"basepower:refined_oil\", assertion.fluid);\n",
+        "historical": "                if (assertion.id.endsWith(\"-fluid\")) assertEquals(\"poweradvantage:refined_oil\", assertion.fluid);\n"
+      },
+      {
+        "byteOffset": 4352,
+        "current": "                \"basepower:fluid_drain\", \"basepower:fluid_discharge\",\n                \"basepower:fluid_storage_tank\", \"basepower:fluid_metal_tank\",\n                \"basepower:still\", \"basepower:fluid_pipe\",\n                \"basepower:fluid_pipe_terminal\", \"basepower:fluid_switch\",\n                \"basepower:item_conveyor\", \"basepower:item_filter_block\",\n                \"basepower:item_filter_food\", \"basepower:item_filter_fuel\",\n                \"basepower:item_filter_inventory\", \"basepower:item_filter_ore\",\n                \"basepower:item_filter_plant\", \"basepower:item_filter_smelt\",\n                \"basepower:item_filter_overflow\", \"basepower:steel_frame\",\n                \"basepower:infinite_steam\", \"basepower:infinite_electricity\",\n                \"basepower:infinite_quantum\", \"basepower:crude_oil\",\n                \"basepower:refined_oil\", \"basepower:converter_rf_steam\",\n                \"basepower:converter_rf_electricity\", \"basepower:converter_rf_quantum\",\n                \"basepower:converter_tr_electricity\");\n",
+        "historical": "                \"poweradvantage:fluid_drain\", \"poweradvantage:fluid_discharge\",\n                \"poweradvantage:fluid_storage_tank\", \"poweradvantage:fluid_metal_tank\",\n                \"poweradvantage:still\", \"poweradvantage:fluid_pipe\",\n                \"poweradvantage:fluid_pipe_terminal\", \"poweradvantage:fluid_switch\",\n                \"poweradvantage:item_conveyor\", \"poweradvantage:item_filter_block\",\n                \"poweradvantage:item_filter_food\", \"poweradvantage:item_filter_fuel\",\n                \"poweradvantage:item_filter_inventory\", \"poweradvantage:item_filter_ore\",\n                \"poweradvantage:item_filter_plant\", \"poweradvantage:item_filter_smelt\",\n                \"poweradvantage:item_filter_overflow\", \"poweradvantage:steel_frame\",\n                \"poweradvantage:infinite_steam\", \"poweradvantage:infinite_electricity\",\n                \"poweradvantage:infinite_quantum\", \"poweradvantage:crude_oil\",\n                \"poweradvantage:refined_oil\", \"poweradvantage:converter_rf_steam\",\n                \"poweradvantage:converter_rf_electricity\", \"poweradvantage:converter_rf_quantum\",\n                \"poweradvantage:converter_tr_electricity\");\n"
+      },
+      {
+        "byteOffset": 5414,
+        "current": "                \"basesteam:steam_pipe\", \"basesteam:steam_track\",\n                \"basesteam:steam_boiler_coal\", \"basesteam:steam_boiler_electric\",\n                \"basesteam:steam_boiler_geothermal\", \"basesteam:steam_boiler_oil\",\n                \"basesteam:steam_tank\", \"basesteam:steam_furnace\",\n                \"basesteam:steam_crusher\", \"basesteam:steam_drill\",\n                \"basesteam:steam_elevator\", \"basesteam:steam_switch\",\n                \"basesteam:steam_still\", \"basesteam:steam_pump\",\n                \"basesteam:drillbit\", \"basesteam:platform\",\n                \"basesteam:pump_pipe_steam\");\n",
+        "historical": "                \"steamadvantage:steam_pipe\", \"steamadvantage:steam_track\",\n                \"steamadvantage:steam_boiler_coal\", \"steamadvantage:steam_boiler_electric\",\n                \"steamadvantage:steam_boiler_geothermal\", \"steamadvantage:steam_boiler_oil\",\n                \"steamadvantage:steam_tank\", \"steamadvantage:steam_furnace\",\n                \"steamadvantage:steam_crusher\", \"steamadvantage:steam_drill\",\n                \"steamadvantage:steam_elevator\", \"steamadvantage:steam_switch\",\n                \"steamadvantage:steam_still\", \"steamadvantage:steam_pump\",\n                \"steamadvantage:drillbit\", \"steamadvantage:platform\",\n                \"steamadvantage:pump_pipe_steam\");\n"
+      },
+      {
+        "byteOffset": 6054,
+        "current": "                \"baseelectric:electric_conduit\", \"baseelectric:li_ore\",\n                \"baseelectric:sulfur_ore\", \"baseelectric:electric_track\",\n                \"baseelectric:laser_turret\", \"baseelectric:laser_turret_evil\",\n                \"baseelectric:led_bar\", \"baseelectric:photovoltaic_generator\",\n                \"baseelectric:hydroelectric_generator\", \"baseelectric:steam_powered_generator\",\n                \"baseelectric:electric_furnace\", \"baseelectric:electric_battery_array\",\n                \"baseelectric:electric_crusher\", \"baseelectric:electric_drill\",\n                \"baseelectric:electric_fabricator\", \"baseelectric:growth_chamber\",\n                \"baseelectric:growth_chamber_controller\", \"baseelectric:electric_oven\",\n                \"baseelectric:electric_switch\", \"baseelectric:electric_pump\",\n                \"baseelectric:electric_still\", \"baseelectric:plastic_refinery\",\n                \"baseelectric:pump_pipe_electric\");\n",
+        "historical": "                \"electricadvantage:electric_conduit\", \"electricadvantage:li_ore\",\n                \"electricadvantage:sulfur_ore\", \"electricadvantage:electric_track\",\n                \"electricadvantage:laser_turret\", \"electricadvantage:laser_turret_evil\",\n                \"electricadvantage:led_bar\", \"electricadvantage:photovoltaic_generator\",\n                \"electricadvantage:hydroelectric_generator\", \"electricadvantage:steam_powered_generator\",\n                \"electricadvantage:electric_furnace\", \"electricadvantage:electric_battery_array\",\n                \"electricadvantage:electric_crusher\", \"electricadvantage:electric_drill\",\n                \"electricadvantage:electric_fabricator\", \"electricadvantage:growth_chamber\",\n                \"electricadvantage:growth_chamber_controller\", \"electricadvantage:electric_oven\",\n                \"electricadvantage:electric_switch\", \"electricadvantage:electric_pump\",\n                \"electricadvantage:electric_still\", \"electricadvantage:plastic_refinery\",\n                \"electricadvantage:pump_pipe_electric\");\n"
+      },
+      {
+        "byteOffset": 7037,
+        "current": "                \"basepower:starch\", \"basepower:bioplastic_ingot\",\n                \"basepower:sprocket\", \"basepower:rotator_tool\",\n                \"basesteam:steam_governor\", \"basesteam:steam_drill_bit\",\n                \"basesteam:blackpowder_cartridge\", \"basesteam:musket\",\n                \"baseelectric:blank_circuit_board\", \"baseelectric:control_circuit\",\n                \"baseelectric:integrated_circuit\", \"baseelectric:psu\",\n                \"baseelectric:silicon_ingot\", \"baseelectric:silicon_mix\",\n                \"baseelectric:solder_mix\", \"baseelectric:solder\",\n                \"baseelectric:lead_acid_battery\", \"baseelectric:nickel_hydride_battery\",\n                \"baseelectric:alkaline_battery\", \"baseelectric:lithium_battery\",\n                \"baseelectric:li_ingot\", \"baseelectric:li_powder\",\n                \"baseelectric:li_nugget\", \"baseelectric:sulfur_powder\",\n                \"baseelectric:petrolplastic_ingot\");\n",
+        "historical": "                \"poweradvantage:starch\", \"poweradvantage:bioplastic_ingot\",\n                \"poweradvantage:sprocket\", \"poweradvantage:rotator_tool\",\n                \"steamadvantage:steam_governor\", \"steamadvantage:steam_drill_bit\",\n                \"steamadvantage:blackpowder_cartridge\", \"steamadvantage:musket\",\n                \"electricadvantage:blank_circuit_board\", \"electricadvantage:control_circuit\",\n                \"electricadvantage:integrated_circuit\", \"electricadvantage:psu\",\n                \"electricadvantage:silicon_ingot\", \"electricadvantage:silicon_mix\",\n                \"electricadvantage:solder_mix\", \"electricadvantage:solder\",\n                \"electricadvantage:lead_acid_battery\", \"electricadvantage:nickel_hydride_battery\",\n                \"electricadvantage:alkaline_battery\", \"electricadvantage:lithium_battery\",\n                \"electricadvantage:li_ingot\", \"electricadvantage:li_powder\",\n                \"electricadvantage:li_nugget\", \"electricadvantage:sulfur_powder\",\n                \"electricadvantage:petrolplastic_ingot\");\n"
+      }
+    ],
+    "src/test/java/zone/moddev/mc/advantageworks/WorldgenSamplingJobTest.java": [
+      {
+        "byteOffset": 8543,
+        "current": "        expected.put(\"basepower:crude_oil\", \"DESERT\");\n",
+        "historical": "        expected.put(\"poweradvantage:crude_oil\", \"DESERT\");\n"
+      },
+      {
+        "byteOffset": 8653,
+        "current": "        expected.put(\"baseelectric:li_ore\", null);\n        expected.put(\"baseelectric:sulfur_ore\", null);\n",
+        "historical": "        expected.put(\"electricadvantage:li_ore\", null);\n        expected.put(\"electricadvantage:sulfur_ore\", null);\n"
+      },
+      {
+        "byteOffset": 12893,
+        "current": "                    if ((x & 15) == 0 && y == 0) return \"basepower:crude_oil\";\n",
+        "historical": "                    if ((x & 15) == 0 && y == 0) return \"poweradvantage:crude_oil\";\n"
+      },
+      {
+        "byteOffset": 13053,
+        "current": "                    if ((x & 15) == 2 && y == 48) return \"baseelectric:li_ore\";\n                    if ((x & 15) == 3 && y == 49) return \"baseelectric:sulfur_ore\";\n",
+        "historical": "                    if ((x & 15) == 2 && y == 48) return \"electricadvantage:li_ore\";\n                    if ((x & 15) == 3 && y == 49) return \"electricadvantage:sulfur_ore\";\n"
+      }
+    ]
+  }
+}

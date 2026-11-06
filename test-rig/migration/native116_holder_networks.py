@@ -6,6 +6,7 @@ import shutil
 import extended_lifecycle as historical
 from matrix import digest
 import native116_extended
+from native116_lifecycle import native_fixtures
 from native116_partial import campaign, common_parser, exercise_bridge, exercise_partial
 from native116_ticket_networks import NativeTicketExtendedRun, NativeTicketNetworkRun
 
@@ -76,7 +77,8 @@ def main():
             result["status"] = "FAIL"
         progress(result)
         return result
-    return campaign(args, "holder-" + args.campaign, definitions[args.campaign](), exercise, runner_type)
+    definition = native_fixtures(definitions[args.campaign]())
+    return campaign(args, "holder-" + args.campaign, definition, exercise, runner_type)
 
 
 if __name__ == "__main__":

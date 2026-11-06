@@ -18,7 +18,7 @@ import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.registries.ForgeRegistries;
 import org.apache.logging.log4j.LogManager;
-import zone.moddev.mc.poweradvantage.init.ItemGroups;
+import zone.moddev.mc.basepower.init.ItemGroups;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -52,7 +52,7 @@ public final class ClientResourceProbe {
             verifyNetworkBootstrap(result);
             com.google.gson.JsonArray mods = new com.google.gson.JsonArray();
             JsonObject versions = new JsonObject();
-            for (String id : new String[]{"poweradvantage", "steamadvantage", "electricadvantage"}) {
+            for (String id : new String[]{"basepower", "basesteam", "baseelectric"}) {
                 boolean loaded = net.minecraftforge.fml.ModList.get().isLoaded(id);
                 if (loaded) {
                     mods.add(id);
@@ -63,11 +63,11 @@ public final class ClientResourceProbe {
             }
             result.add("advantage_mods", mods);
             result.add("mod_versions", versions);
-            require(versions.has("poweradvantage") && zone.moddev.mc.poweradvantage.PowerAdvantage.VERSION
-                    .equals(versions.get("poweradvantage").getAsString()), "Power metadata does not match the compiled version");
-            require("2.4.7.116051".equals(versions.get("poweradvantage").getAsString()), "Wrong native Power candidate");
-            for (String id : new String[]{"steamadvantage", "electricadvantage"}) {
-                if (versions.has(id)) require("2.2.8.116051".equals(versions.get(id).getAsString()), "Wrong native expansion candidate: " + id);
+            require(versions.has("basepower") && zone.moddev.mc.basepower.PowerAdvantage.VERSION
+                    .equals(versions.get("basepower").getAsString()), "Power metadata does not match the compiled version");
+            require("2.4.8.116051".equals(versions.get("basepower").getAsString()), "Wrong native Power candidate");
+            for (String id : new String[]{"basesteam", "baseelectric"}) {
+                if (versions.has(id)) require("2.2.9.116051".equals(versions.get(id).getAsString()), "Wrong native expansion candidate: " + id);
             }
             require(minecraft.getModelManager().getMissingModel() != null, "Timed out before model baking");
             require(minecraft.getOverlay() == null, "Timed out before native resource loading completed");
@@ -98,7 +98,7 @@ public final class ClientResourceProbe {
             require(items > 0 && states > 0, "Power Advantage content is not registered");
             require(!contents.isEmpty(), "Power Advantage creative tab is empty");
             require(!ItemGroups.tab_powerAdvantage.getIconItem().isEmpty(), "Power Advantage creative tab has no icon");
-            require(I18n.get("block.poweradvantage.still").equals(I18n.get("tile.poweradvantage.still.name")),
+            require(I18n.get("block.basepower.still").equals(I18n.get("tile.basepower.still.name")),
                     "Legacy GUI translation differs from modern block name");
             TankVisualProbe.verify(minecraft, result);
             MachineGuiLayoutProbe.verify(minecraft, result);
@@ -124,8 +124,8 @@ public final class ClientResourceProbe {
     }
 
     private static boolean included(String namespace) {
-        return "poweradvantage".equals(namespace) || (Boolean.getBoolean("advantageworks.requireExtensions")
-                && ("steamadvantage".equals(namespace) || "electricadvantage".equals(namespace)));
+        return "basepower".equals(namespace) || (Boolean.getBoolean("advantageworks.requireExtensions")
+                && ("basesteam".equals(namespace) || "baseelectric".equals(namespace)));
     }
 
     private static void verifyNetworkBootstrap(JsonObject result) {

@@ -182,10 +182,10 @@ public class WorldgenSamplingJobTest {
         for (long packed : chunks) square(halo, (int) (packed >> 32), (int) packed, 2);
         for (long packed : halo) world.populateChunk((int) (packed >> 32), (int) packed);
         Map<String, String> expected = new LinkedHashMap<>();
-        expected.put("poweradvantage:crude_oil", "DESERT");
+        expected.put("basepower:crude_oil", "DESERT");
         expected.put("mineralogy:crude_oil", "OCEAN");
-        expected.put("electricadvantage:li_ore", null);
-        expected.put("electricadvantage:sulfur_ore", null);
+        expected.put("baseelectric:li_ore", null);
+        expected.put("baseelectric:sulfur_ore", null);
         expected.put("mineralogy:sulfur_ore", null);
         Map<String, Long> counts = new LinkedHashMap<>(), violations = new LinkedHashMap<>(), boundaries = new LinkedHashMap<>();
         for (String id : expected.keySet()) {
@@ -263,10 +263,10 @@ public class WorldgenSamplingJobTest {
                     minY = Math.min(minY, y);
                     maxY = Math.max(maxY, y);
                     if ((z & 15) != 0) return null;
-                    if ((x & 15) == 0 && y == 0) return "poweradvantage:crude_oil";
+                    if ((x & 15) == 0 && y == 0) return "basepower:crude_oil";
                     if ((x & 15) == 1 && y == 96) return "mineralogy:crude_oil";
-                    if ((x & 15) == 2 && y == 48) return "electricadvantage:li_ore";
-                    if ((x & 15) == 3 && y == 49) return "electricadvantage:sulfur_ore";
+                    if ((x & 15) == 2 && y == 48) return "baseelectric:li_ore";
+                    if ((x & 15) == 3 && y == 49) return "baseelectric:sulfur_ore";
                     if ((x & 15) == 4 && y == 50) return "mineralogy:sulfur_ore";
                     return "minecraft:stone";
                 }

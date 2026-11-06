@@ -75,7 +75,8 @@ def exercise(runner, progress):
 def main():
     parser = common_parser(__doc__)
     args = parser.parse_args()
-    return campaign(args, "extended", historical.fixtures(), exercise, NativeExtendedRun)
+    from native116_lifecycle import native_fixtures
+    return campaign(args, "extended", native_fixtures(historical.fixtures()), exercise, NativeExtendedRun)
 
 
 if __name__ == "__main__":

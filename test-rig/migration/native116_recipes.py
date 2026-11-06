@@ -18,12 +18,12 @@ import nbtlib
 from matrix import WORLD, digest, fingerprint, stage, write_json
 from native116_code import Server
 from native116 import TEST_FLAT, stage
-from native116 import RIG, output_path, pinned_profile, require_clean_log, require_disjoint
-from progression import fixture as progression_fixture, validate_tags
+from native116 import RIG, base_identity, output_path, pinned_profile, require_clean_log, require_disjoint
+from progression import fixture as historical_progression_fixture, validate_tags
 from recipe_unlocks import MATERIALS
 
 
-MOD_COUNTS = {"poweradvantage": 35, "steamadvantage": 24, "electricadvantage": 50}
+MOD_COUNTS = {"basepower": 35, "basesteam": 24, "baseelectric": 50}
 RECIPE_TYPES = {"minecraft:crafting_shaped", "minecraft:crafting_shapeless", "minecraft:smelting"}
 UNLOCK_BOOTS = (
     ("NORMAL", "normal", ("sweep", "persist")),
@@ -37,6 +37,12 @@ MODES = ("NORMAL", "TECH_PROGRESSION", "APOCALYPTIC")
 
 def read_json(path):
     return json.loads(path.read_text(encoding="utf-8-sig"))
+
+
+def progression_fixture():
+    original = historical_progression_fixture()
+    return dict(original, naturalResources=[base_identity(item) for item in original["naturalResources"]],
+                exclusions={base_identity(item): reason for item, reason in original["exclusions"].items()})
 
 
 def recipe_fixture(jars):
@@ -73,12 +79,12 @@ def recipe_fixture(jars):
     counts = Counter(row["id"].split(":")[0] for row in recipes)
     if counts != MOD_COUNTS:
         raise AssertionError(f"Packaged recipe inventory changed: {dict(counts)}; expected {MOD_COUNTS}")
-    return {"recipes": recipes, "materials": MATERIALS}, sources
+    return {"recipes": recipes, "materials": [base_identity(item) for item in MATERIALS]}, sources
 
 
 def native_target(manifest):
     entry = read_json(manifest)["target116"]
-    required = {"advantageworkstest", "poweradvantage", "steamadvantage", "electricadvantage", "basemetals", "orespawn"}
+    required = {"advantageworkstest", *MOD_COUNTS, "basemetals", "orespawn"}
     if {jar["id"] for jar in entry["jars"]} != required:
         raise ValueError("This campaign requires exactly the native harness and five packaged mods")
     target = pinned_profile(manifest, "target116")
@@ -112,7 +118,7 @@ def stage_native(runtime, target, port, campaign):
 
 
 def configure(runtime, mode, rubber=True):
-    config = runtime / "config/poweradvantage-common.toml"
+    config = runtime / "config/basepower-common.toml"
     config.parent.mkdir(exist_ok=True)
     config.write_text(f'[options]\nrecipeMode = "{mode}"\nplasticEqualsRubber = {str(rubber).lower()}\n', encoding="utf-8")
 
@@ -136,7 +142,7 @@ def validate_unlock(result, definition, operation):
 
 
 def validate_progression(result, mode, rubber):
-    validate_tags(result, mode, rubber)
+    validate_tags(result, mode, rubber, power="basepower", electric="baseelectric")
     if result["mode"] != mode or result["plasticEqualsRubber"] != rubber:
         raise AssertionError("Native progression ignored its requested mode/rubber configuration")
     if result["status"] != "PASS" or result["blocked"] != 0 or result["blockedRecipes"]:

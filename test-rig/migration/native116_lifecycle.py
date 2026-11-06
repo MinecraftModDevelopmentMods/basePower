@@ -35,13 +35,20 @@ def require_equal_hashes(actual, expected, detail):
         raise AssertionError(detail)
 
 
-def verify_source(args):
+def verify_source(args, *, allow_native_rebrand=False):
     source = args.source.resolve()
     before = fingerprint(source)
     require_equal_hashes(fingerprint(source / WORLD), read_json(args.source_hashes),
                          "Protected retained13 source world fingerprint mismatch")
     profile = pinned_profile(args.source_manifest.resolve(), args.source_key)
-    if not profile[1].startswith(("forge-1.13.2-25.0.223", "forge-1.14.4-28.2.26")):
+    native_rebrand = allow_native_rebrand and args.source_key == "target116"
+    if native_rebrand:
+        receipt = read_json(source / "native116-rebrand-results.json")
+        if (receipt["status"] != "PASS" or not receipt["sourceUnchanged"]
+                or receipt["targetManifestSha256"] != digest(args.source_manifest)
+                or receipt["phases"]["restarted"]["snapshotSha256"] != digest(source / "migration-restarted.json")):
+            raise AssertionError("Expected a passing, pinned rebrand conversion and restart receipt")
+    elif not profile[1].startswith(("forge-1.13.2-25.0.223", "forge-1.14.4-28.2.26")):
         raise ValueError("The retained source must use its archived native 1.13.2 or accepted 1.14.4 profile")
     expected = sorted((jar.name, digest(jar)) for jar in profile[2])
     staged = sorted((entry["file"], entry["sha256"].upper())
@@ -169,6 +176,10 @@ class NativeLifecycleRun(lifecycle.LifecycleRun):
         super().__init__(*args)
         self.observations = []
         self._unload_context = None
+
+    def block(self, pos, state):
+        from native116 import base_identity
+        super().block(pos, base_identity(state))
 
     def _raw_probe(self, operation, label):
         path = self.runtime / "advantage-works-results" / f"lifecycle-{label}.json"
@@ -414,22 +425,27 @@ def frozen_import(runner, source):
     return result
 
 
+def native_fixtures(fixtures):
+    from native116 import base_identity
+    return [dict(f, block=base_identity(f["block"])) if "block" in f else f for f in fixtures]
+
+
 def run(args):
     if not 1 <= args.port <= 65535 or not args.java8.is_file():
         raise ValueError("Supply an available TCP port and an existing Java 8 executable")
     output = output_path(args.output)
     for protected in (args.source, args.source_manifest, args.source_hashes, args.target_manifest):
         require_disjoint(output, protected)
-    source_before, history = verify_source(args)
+    source_before, history = verify_source(args, allow_native_rebrand=True)
     target = pinned_profile(args.target_manifest.resolve(), "target116")
     identities = {entry["id"] for entry in read_json(args.target_manifest)["target116"]["jars"]}
-    if not {"steamadvantage", "electricadvantage", "basemetals"}.issubset(identities):
+    if not {"basesteam", "baseelectric", "basemetals"}.issubset(identities):
         raise ValueError("Full lifecycle requires native Steam, Electric and Base Metals")
     for protected in (target[0], *target[2]):
         require_disjoint(output, protected)
     with socket.socket() as listener:
         listener.bind(("127.0.0.1", args.port))
-    definition = lifecycle.fixtures()
+    definition = native_fixtures(lifecycle.fixtures())
     helper_before = {path.name: digest(path) for path in (Path(lifecycle.__file__), Path(__file__))}
     output.mkdir(parents=True, exist_ok=False)
     report_path = output / "native116-lifecycle-results.json"

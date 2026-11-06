@@ -5,8 +5,8 @@
   "startupTimeoutSeconds": 180,
   "stationRunSeconds": 5,
   "recipeMode": "NORMAL",
-  "sourceCommit": "bcb75bfa91c14751ebf1e31865e1ec0ffa82c0b7",
-  "sourceVersion": "2.4.7.116051",
+  "sourceCommit": "a21d0653129912e8d45bc443080b211eb09ae88c",
+  "sourceVersion": "2.4.8.116051",
   "forge": {
     "version": "1.16.5-36.2.34",
     "installerPath": "build/native116-artifacts/53B73DBBCC486F38726E76CE923B13381044984C83C762847C7193340F97130F/forge-1.16.5-36.2.34-installer.jar",
@@ -18,44 +18,40 @@
       "id": "advantageworkstest",
       "version": "1.1.0.116051",
       "file": "AdvantageWorksTestHarness-1.1.0.116051.jar",
-      "path": "build/native116-artifacts/607D4C91275D0CD1236CAB98A1C7F70B8A798726D75FAD2BB27563993BEF159A/AdvantageWorksTestHarness-1.1.0.116051.jar",
+      "path": "build/native116-artifacts/1C688FFB362362354631D9F935B62B27CFCF2CE7F6837D82011FE0E8A5757A17/AdvantageWorksTestHarness-1.1.0.116051.jar",
       "workspaceProduced": true,
-      "originPath": "D:\\PowerAdvantage\\_verification\\advantage-116-port-20261027\\harness-k-power-f\\AdvantageWorksTestHarness-1.1.0.116051.jar",
-      "sha256": "607D4C91275D0CD1236CAB98A1C7F70B8A798726D75FAD2BB27563993BEF159A",
-      "sourceRef": "c7a79fc9894e067ed0645daad253e1355628d138",
+      "sha256": "1C688FFB362362354631D9F935B62B27CFCF2CE7F6837D82011FE0E8A5757A17",
+      "sourceRef": "LOCAL_CANDIDATE_base116-c",
       "pinStatus": "PINNED_UNQUALIFIED"
     },
     {
-      "id": "poweradvantage",
-      "version": "2.4.7.116051",
-      "file": "PowerAdvantage-2.4.7.116051.jar",
-      "path": "build/native116-artifacts/5BE5C05D9F78BAF730553B71D07D76BA923EA0A54ABCA53F4149386B27019E71/PowerAdvantage-2.4.7.116051.jar",
+      "id": "basepower",
+      "version": "2.4.8.116051",
+      "file": "basePower-2.4.8.116051.jar",
+      "path": "build/native116-artifacts/408C6B9D5BF065E37B76B59AB3E6DD649DFE045638F197C63532281939D701C7/basePower-2.4.8.116051.jar",
       "workspaceProduced": true,
-      "originPath": "D:\\PowerAdvantage\\_verification\\advantage-116-port-20261027\\power-bootstrap-f\\PowerAdvantage-2.4.7.116051.jar",
-      "sha256": "5BE5C05D9F78BAF730553B71D07D76BA923EA0A54ABCA53F4149386B27019E71",
-      "sourceRef": "bcb75bfa91c14751ebf1e31865e1ec0ffa82c0b7",
+      "sha256": "408C6B9D5BF065E37B76B59AB3E6DD649DFE045638F197C63532281939D701C7",
+      "sourceRef": "a21d0653129912e8d45bc443080b211eb09ae88c",
       "pinStatus": "PINNED_UNQUALIFIED"
     },
     {
-      "id": "steamadvantage",
-      "version": "2.2.8.116051",
-      "file": "SteamAdvantage-2.2.8.116051.jar",
-      "path": "build/native116-artifacts/0E8EF7DA681A5105E5206F166A36F56AEF356DFD227F1C3910DE7BDC606AA148/SteamAdvantage-2.2.8.116051.jar",
+      "id": "basesteam",
+      "version": "2.2.9.116051",
+      "file": "baseSteam-2.2.9.116051.jar",
+      "path": "build/native116-artifacts/7E80AE5BC4C290949F803E95D63A316AE0985B0AB1D9A6D1AB2DEFF7202629B4/baseSteam-2.2.9.116051.jar",
       "workspaceProduced": true,
-      "originPath": "D:\\PowerAdvantage\\_verification\\advantage-116-port-20261027\\Steam F Build 20261027-a\\artifacts\\SteamAdvantage-2.2.8.116051.jar",
-      "sha256": "0E8EF7DA681A5105E5206F166A36F56AEF356DFD227F1C3910DE7BDC606AA148",
-      "sourceRef": "5be1ce9faf7465d072f2c8b0e3206899bafb34e8",
+      "sha256": "7E80AE5BC4C290949F803E95D63A316AE0985B0AB1D9A6D1AB2DEFF7202629B4",
+      "sourceRef": "eb1ed9d453a33f57c2a13982742f9a2b731a343e",
       "pinStatus": "PINNED_UNQUALIFIED"
     },
     {
-      "id": "electricadvantage",
-      "version": "2.2.8.116051",
-      "file": "ElectricAdvantage-2.2.8.116051.jar",
-      "path": "build/native116-artifacts/A9B62DD737E42455FEE72BD2D855C9C5EDBF5A9C5EAD7B48C650C9073A35B129/ElectricAdvantage-2.2.8.116051.jar",
+      "id": "baseelectric",
+      "version": "2.2.9.116051",
+      "file": "baseElectric-2.2.9.116051.jar",
+      "path": "build/native116-artifacts/B90425685A97B542249E09FC079683885366A08F18FB9733A0B856AC3E160AB6/baseElectric-2.2.9.116051.jar",
       "workspaceProduced": true,
-      "originPath": "D:\\PowerAdvantage\\_verification\\advantage-116-port-20261027\\Electric F Build 20261027-a\\ElectricAdvantage-2.2.8.116051.jar",
-      "sha256": "A9B62DD737E42455FEE72BD2D855C9C5EDBF5A9C5EAD7B48C650C9073A35B129",
-      "sourceRef": "9a8fdf53a111499f2ebc969ac24a6f3e1017c18e",
+      "sha256": "B90425685A97B542249E09FC079683885366A08F18FB9733A0B856AC3E160AB6",
+      "sourceRef": "46aa54b7e77b8e91a1378c1bb9d3595e98d10bd2",
       "pinStatus": "PINNED_UNQUALIFIED"
     },
     {
@@ -64,7 +60,6 @@
       "file": "OreSpawn-4.1.0.116051.jar",
       "path": "build/native116-artifacts/CDF59D83F191C5FBCD8921228DB577066A63A8FEB25CA79DB4EAEEA32D32DB04/OreSpawn-4.1.0.116051.jar",
       "workspaceProduced": true,
-      "originPath": "D:\\PowerAdvantage\\PA116\\PowerAdvantage\\test-rig\\build\\native116-artifacts\\CDF59D83F191C5FBCD8921228DB577066A63A8FEB25CA79DB4EAEEA32D32DB04\\OreSpawn-4.1.0.116051.jar",
       "sha256": "CDF59D83F191C5FBCD8921228DB577066A63A8FEB25CA79DB4EAEEA32D32DB04",
       "sourceRef": "a113e5d767169189f0e35ade1e173a12d550b00e",
       "pinStatus": "PINNED_UNQUALIFIED"
@@ -75,7 +70,6 @@
       "file": "Mineralogy-6.1.4.116051.jar",
       "path": "build/native116-artifacts/6A46E7D24B9394F0BFBCE82E47E76CBC4DBA260DD3D7499F9B3A946029E8D7F7/Mineralogy-6.1.4.116051.jar",
       "workspaceProduced": true,
-      "originPath": "D:\\PowerAdvantage\\PA116\\PowerAdvantage\\test-rig\\build\\native116-artifacts\\6A46E7D24B9394F0BFBCE82E47E76CBC4DBA260DD3D7499F9B3A946029E8D7F7\\Mineralogy-6.1.4.116051.jar",
       "sha256": "6A46E7D24B9394F0BFBCE82E47E76CBC4DBA260DD3D7499F9B3A946029E8D7F7",
       "sourceRef": "f6d603d54ee7e6ad7424a5dd44e7a2858c89c846",
       "pinStatus": "PINNED_UNQUALIFIED"
@@ -94,7 +88,7 @@
     {
       "id": "desert-oil-enabled",
       "section": "fluid_deposits",
-      "entry": "poweradvantage:fluid_deposit/desert_crude_oil",
+      "entry": "basepower:fluid_deposit/desert_crude_oil",
       "present": true,
       "field": "enabled",
       "expectedBoolean": true
@@ -118,7 +112,7 @@
     {
       "id": "electric-sulfur-disabled",
       "section": "ores",
-      "entry": "electricadvantage:ore/sulfur",
+      "entry": "baseelectric:ore/sulfur",
       "present": true,
       "field": "enabled",
       "expectedBoolean": false
@@ -126,7 +120,7 @@
     {
       "id": "electric-lithium-fallback-enabled",
       "section": "ores",
-      "entry": "electricadvantage:ore/lithium",
+      "entry": "baseelectric:ore/lithium",
       "present": true,
       "field": "enabled",
       "expectedBoolean": true
@@ -135,7 +129,7 @@
   "profileMutations": [
     {
       "section": "ores",
-      "entry": "electricadvantage:ore/sulfur",
+      "entry": "baseelectric:ore/sulfur",
       "field": "enabled",
       "booleanValue": true
     }
@@ -144,7 +138,7 @@
     {
       "id": "electric-sulfur-user-enable-persists",
       "section": "ores",
-      "entry": "electricadvantage:ore/sulfur",
+      "entry": "baseelectric:ore/sulfur",
       "present": true,
       "field": "enabled",
       "expectedBoolean": true
@@ -168,13 +162,13 @@
   ],
   "worldgenExpectations": {
     "minimumCounts": {
-      "poweradvantage:crude_oil": 1,
+      "basepower:crude_oil": 1,
       "mineralogy:crude_oil": 1,
       "mineralogy:sulfur_ore": 1,
-      "electricadvantage:li_ore": 1
+      "baseelectric:li_ore": 1
     },
     "maximumCounts": {
-      "electricadvantage:sulfur_ore": 0
+      "baseelectric:sulfur_ore": 0
     },
     "zeroBiomeViolations": true
   },

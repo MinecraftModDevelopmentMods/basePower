@@ -110,12 +110,12 @@ final class NativeHarvestProbe {
                 require(world.setBlock(POS, requested, 2), "Cannot place harvest witness");
                 BlockState state = world.getBlockState(POS);
                 require(state.equals(requested), "Native connection state changed before mining");
-                boolean expectedSolid = blockId.endsWith("_ore") || blockId.equals("electricadvantage:electric_conduit");
+                boolean expectedSolid = blockId.endsWith("_ore") || blockId.equals("baseelectric:electric_conduit");
                 require(state.canOcclude() == expectedSolid, "Legacy solid/non-solid property changed");
                 row.addProperty("actualSolid", state.canOcclude());
                 boolean fullCollision = !VoxelShapes.joinIsNotEmpty(state.getCollisionShape(world, POS),
                         VoxelShapes.block(), IBooleanFunction.NOT_SAME);
-                require(fullCollision != blockId.equals("electricadvantage:electric_conduit"),
+                require(fullCollision != blockId.equals("baseelectric:electric_conduit"),
                         "Legacy wire/frame/scaffold collision geometry changed");
                 row.addProperty("fullCollision", fullCollision);
                 if (level >= 0) require(state.getHarvestTool() == ToolType.PICKAXE
@@ -174,11 +174,11 @@ final class NativeHarvestProbe {
         };
         player.setPos(POS.getX() + 0.5, POS.getY() + 1, POS.getZ() + 0.5);
         JsonArray rows = new JsonArray();
-        String sulfur = "electricadvantage:sulfur_ore", lithium = "electricadvantage:li_ore";
+        String sulfur = "baseelectric:sulfur_ore", lithium = "baseelectric:li_ore";
         witness(world, player, rows, "sulfur/hand-fails", sulfur, 0, null, false, false, "", 0, 0, 1);
         witness(world, player, rows, "sulfur/axe-fails", sulfur, 0, Items.IRON_AXE, false, false, "", 0, 0, 1);
-        witness(world, player, rows, "sulfur/wood", sulfur, 0, Items.WOODEN_PICKAXE, false, true, "electricadvantage:sulfur_powder", 1, 4, 8);
-        witness(world, player, rows, "sulfur/stone", sulfur, 0, Items.STONE_PICKAXE, false, true, "electricadvantage:sulfur_powder", 1, 4, 8);
+        witness(world, player, rows, "sulfur/wood", sulfur, 0, Items.WOODEN_PICKAXE, false, true, "baseelectric:sulfur_powder", 1, 4, 8);
+        witness(world, player, rows, "sulfur/stone", sulfur, 0, Items.STONE_PICKAXE, false, true, "baseelectric:sulfur_powder", 1, 4, 8);
         witness(world, player, rows, "sulfur/silk", sulfur, 0, Items.WOODEN_PICKAXE, true, true, sulfur, 1, 1, 1);
         witness(world, player, rows, "lithium/hand-fails", lithium, 1, null, false, false, "", 0, 0, 1);
         witness(world, player, rows, "lithium/wood-fails", lithium, 1, Items.WOODEN_PICKAXE, false, false, "", 0, 0, 1);
@@ -187,11 +187,11 @@ final class NativeHarvestProbe {
         witness(world, player, rows, "lithium/stone", lithium, 1, Items.STONE_PICKAXE, false, true, lithium, 1, 1, 1);
         witness(world, player, rows, "lithium/diamond", lithium, 1, Items.DIAMOND_PICKAXE, false, true, lithium, 1, 1, 1);
         witness(world, player, rows, "lithium/silk", lithium, 1, Items.STONE_PICKAXE, true, true, lithium, 1, 1, 1);
-        witness(world, player, rows, "frame/hand", "poweradvantage:steel_frame", -1, null, false, true, "poweradvantage:steel_frame", 1, 1, 1);
-        witness(world, player, rows, "frame/silk", "poweradvantage:steel_frame", -1, Items.DIAMOND_PICKAXE, true, true, "poweradvantage:steel_frame", 1, 1, 1);
+        witness(world, player, rows, "frame/hand", "basepower:steel_frame", -1, null, false, true, "basepower:steel_frame", 1, 1, 1);
+        witness(world, player, rows, "frame/silk", "basepower:steel_frame", -1, Items.DIAMOND_PICKAXE, true, true, "basepower:steel_frame", 1, 1, 1);
         for (int mask = 0; mask < 64; mask++) {
             for (String family : new String[] {"wire", "scaffold"}) {
-                String identity = "electricadvantage:" + (family.equals("wire") ? "electric_conduit" : "electric_track");
+                String identity = "baseelectric:" + (family.equals("wire") ? "electric_conduit" : "electric_track");
                 String prefix = family + "/" + mask;
                 witness(world, player, rows, prefix + "/hand", identity, -1, null, false, true, identity, 1, 1, 1, mask);
                 witness(world, player, rows, prefix + "/silk", identity, -1, Items.DIAMOND_PICKAXE, true, true, identity, 1, 1, 1, mask);
@@ -200,7 +200,7 @@ final class NativeHarvestProbe {
         JsonObject solar = new JsonObject();
         solar.addProperty("id", "solar/native-solidity");
         try {
-            Block block = ForgeRegistries.BLOCKS.getValue(new ResourceLocation("electricadvantage:photovoltaic_generator"));
+            Block block = ForgeRegistries.BLOCKS.getValue(new ResourceLocation("baseelectric:photovoltaic_generator"));
             require(block != null && block != net.minecraft.block.Blocks.AIR, "Missing native photovoltaic block");
             world.setBlock(POS, block.defaultBlockState(), 2);
             require(world.getBlockState(POS).canOcclude(), "Legacy photovoltaic solid=true was lost");

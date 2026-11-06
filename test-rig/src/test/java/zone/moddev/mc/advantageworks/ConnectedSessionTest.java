@@ -15,7 +15,7 @@ public class ConnectedSessionTest {
     }
 
     @Test(expected = IllegalArgumentException.class) public void rejectsInfinitePower() {
-        ConnectedSession.validate(definition("{id:'source',x:1,y:80,z:1,name:'poweradvantage:infinite_steam'}"));
+        ConnectedSession.validate(definition("{id:'source',x:1,y:80,z:1,name:'basepower:infinite_steam'}"));
     }
 
     @Test(expected = IllegalArgumentException.class) public void rejectsOverlappingPlacements() {

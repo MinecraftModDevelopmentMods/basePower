@@ -62,7 +62,7 @@ def parsed(row):
         raise AssertionError("Invalid raw tile NBT: " + str(error)) from error
 
 
-def rows_by_id(rows, holds):
+def rows_by_id(rows, holds, *, electric="electricadvantage"):
     expected = definitions()
     require(isinstance(rows, list) and len(rows) == 9, "Missing nine independent witnesses")
     require(len({row["id"] for row in rows}) == 9, "Duplicate witness")
@@ -77,9 +77,9 @@ def rows_by_id(rows, holds):
         signal = holds and case["held"]
         require(row.get("signal") is signal, key + ": actual neighbor signal differs")
         require(row.get("holdBlock") == ("minecraft:redstone_block" if signal else "minecraft:air"), key + ": wrong hold block")
-        require(row.get("block") == "electricadvantage:electric_drill", key + ": stationary drill changed")
+        require(row.get("block") == f"{electric}:electric_drill", key + ": stationary drill changed")
         require(type(row.get("active")) is bool, key + ": missing actual ACTIVE")
-        state = "Block{electricadvantage:electric_drill}[active=" + str(row["active"]).lower() + ",facing=north]"
+        state = f"Block{{{electric}:electric_drill}}[active=" + str(row["active"]).lower() + ",facing=north]"
         require(row.get("state") == state, key + ": raw block state disagrees with ACTIVE/facing")
         require(isinstance(row.get("energy"), (int, float)) and math.isfinite(row["energy"])
                 and 0 <= row["energy"] <= 500, key + ": invalid finite reserve")
@@ -145,13 +145,13 @@ def validate_readiness(document, phase, release_time):
     require(previous_time == release_time, "Operated before/after the independently selected readiness boundary")
 
 
-def validate_seed(fixture):
+def validate_seed(fixture, *, electric="electricadvantage"):
     require(fixture.get("schema") == 1 and fixture.get("constructionCallsThisProcess") == 9,
             "Not nine fresh-only constructed seeds")
     require(fixture.get("initialEnergy") == 500 and fixture.get("processToken"), "Missing finite seed authority")
     initial = fixture["initial"]
     validate_readiness(fixture, "seed", initial["worldTime"])
-    previous = rows_by_id(initial["cases"], False)
+    previous = rows_by_id(initial["cases"], False, electric=electric)
     for row in previous.values():
         require(row["energy"] == 500 and row["progress"] == 0 and not row["active"], "Seed did not begin empty of work")
         require(not (set(parsed(row)) & TARGET_KEYS), "Initial setup injected a mining target")
@@ -160,7 +160,7 @@ def validate_seed(fixture):
     require(1 <= len(trace) <= 16, "No bounded natural seed trace")
     for index, frame in enumerate(trace, 1):
         clock(frame, previous_time, index)
-        current = rows_by_id(frame["cases"], False)
+        current = rows_by_id(frame["cases"], False, electric=electric)
         for key, row in current.items():
             old = previous[key]
             advance = row["progress"] - old["progress"]
@@ -174,8 +174,8 @@ def validate_seed(fixture):
             else:
                 require(has_target and advance == 1, key + ": seed stopped operating")
         previous, previous_time = current, frame["worldTime"]
-    before = rows_by_id(fixture["preHold"], False)
-    frozen = rows_by_id(fixture["cases"], True)
+    before = rows_by_id(fixture["preHold"], False, electric=electric)
+    frozen = rows_by_id(fixture["cases"], True, electric=electric)
     require(fixture.get("worldTime") == previous_time, "Freeze did not follow natural work immediately")
     for key, row in before.items():
         require(same_saved(row, previous[key]), key + ": seed changed before the hold")
@@ -186,17 +186,17 @@ def validate_seed(fixture):
     return dict(status="PASS", cases=9, naturalSeedTicks=len(trace), phases=list(range(8)))
 
 
-def validate_reload(fixture, report):
-    validate_seed(fixture)
+def validate_reload(fixture, report, *, electric="electricadvantage"):
+    validate_seed(fixture, electric=electric)
     require(report.get("schema") == 1 and report.get("constructionCallsThisProcess") == 0,
             "Restart reconstructed the world")
     require(report.get("processToken") and report["processToken"] != fixture["processToken"], "Not a full-process restart")
     require(report.get("held") is True and report.get("observationTicks") == OBSERVATION_TICKS,
             "Incomplete or nonquiescent final measurement")
-    frozen = rows_by_id(fixture["cases"], True)
+    frozen = rows_by_id(fixture["cases"], True, electric=electric)
     restored = report["restored"]
     validate_readiness(report, "restart", restored["worldTime"])
-    previous = rows_by_id(restored["cases"], True)
+    previous = rows_by_id(restored["cases"], True, electric=electric)
     require(restored["worldTime"] >= fixture["worldTime"], "World time moved backwards across restart")
     for key in frozen:
         require(same_saved(frozen[key], previous[key]), key + ": complete frozen block/NBT changed during restart")
@@ -205,7 +205,7 @@ def validate_reload(fixture, report):
     previous_time = restored["worldTime"]
     for index, frame in enumerate(ticks, 1):
         clock(frame, previous_time, index)
-        current = rows_by_id(frame["cases"], True)
+        current = rows_by_id(frame["cases"], True, electric=electric)
         for key, row in current.items():
             old = previous[key]
             before_tag, after_tag = typed(parsed(old)), typed(parsed(row))
@@ -270,6 +270,10 @@ def run(args):
     output = output_path(args.output)
     manifest = args.manifest.resolve()
     target = pinned_profile(manifest, "target116")
+    identities = {row["id"] for row in read_json(manifest)["target116"]["jars"]}
+    electric = identities & {"baseelectric", "electricadvantage"}
+    require(len(electric) == 1, "Exactly one pinned Electric implementation is required")
+    electric = next(iter(electric))
     for protected in (manifest, target[0], *target[2]):
         require_disjoint(output, protected)
     require(args.java8.is_file() and 1024 <= args.port <= 65535, "Supply existing Java 8 and available nonprivileged port")
@@ -303,7 +307,7 @@ def run(args):
         require(not failure.exists(), "Seed probe failed; retained " + str(failure))
         fixture_path = output / "redstone-reload-fixture.json"
         fixture = read_json(fixture_path)
-        report["phases"]["seed"] = validate_seed(fixture)
+        report["phases"]["seed"] = validate_seed(fixture, electric=electric)
         report["fixtureSha256"] = digest(fixture_path)
         server.send("save-all flush")
         server.close()
@@ -321,7 +325,7 @@ def run(args):
         measured = read_json(output / "advantage-works-results/redstone-reload-restarted.json")
         # Store a failed semantic verdict before shutdown; never resample until green.
         try:
-            report["phases"]["reload"] = validate_reload(fixture, measured)
+            report["phases"]["reload"] = validate_reload(fixture, measured, electric=electric)
         except AssertionError as error:
             report["phases"]["reload"] = dict(status="FAIL", failure=str(error))
         server.send("save-all flush")

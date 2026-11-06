@@ -2,10 +2,10 @@
 
 **Minecraft 1.16.5, version 2.4.8.116051. Local test candidate.**
 
-See the [1.16 port record](docs/1.16/PORT-STATUS.md) for current checks and remaining
-work. The accepted [1.15 test record](docs/1.15/CURRENT-QUALIFICATION.md) is retained
-as historical evidence, not a pass for this version. Manual 1.16 acceptance is
-still required.
+See the [base* 1.16.5 test record](docs/1.16/BASE-RELEASE-CANDIDATE.md)
+for the current jars, upgrade checks and manual walkthrough. The earlier
+[1.16 port record](docs/1.16/PORT-STATUS.md) covers the Advantage-named
+builds and does not qualify the current jars.
 
 The [test-suite review](docs/1.16/TEST-SUITE-AUDIT.md) separates operating checks
 from saved-state and presence checks. It records the remaining machine coverage

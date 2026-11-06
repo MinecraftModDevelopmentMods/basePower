@@ -48,7 +48,7 @@ class NativeLifecycleTests(unittest.TestCase):
         java.write_bytes(b"not-launched")
         target = self.root / "target.json"
         write_json(target, {"target116": {"jars": [{"id": key} for key in
-                                                   ("steamadvantage", "electricadvantage", "basemetals")]}})
+                                                   ("basesteam", "baseelectric", "basemetals")]}})
         return argparse.Namespace(source=source, source_manifest=manifest, source_key="target113",
                                   source_hashes=hashes, target_manifest=target, java8=java,
                                   output=self.root / "output", port=25580)

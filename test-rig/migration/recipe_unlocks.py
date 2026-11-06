@@ -23,7 +23,8 @@ MATERIALS = [
 ]
 
 
-def fixture(extensions="both"):
+def fixture(extensions="both", *, namespaces=None):
+    namespaces = namespaces or {}
     recipes = []
     for mod, root in (
         ("poweradvantage", POWER),
@@ -34,6 +35,7 @@ def fixture(extensions="both"):
             continue
         if mod == "electricadvantage" and extensions not in ("both", "electric"):
             continue
+        mod = namespaces.get(mod, mod)
         data = root / "src/main/resources/data" / mod
         for file in sorted((data / "recipes").glob("*.json")):
             recipe = json.loads(file.read_text())
@@ -47,7 +49,9 @@ def fixture(extensions="both"):
             }})
     expected = 35 + (24 if extensions in ("both", "steam") else 0) + (50 if extensions in ("both", "electric") else 0)
     assert len(recipes) == expected, "Update the expected recipe-book inventory deliberately"
-    return {"recipes": recipes, "materials": MATERIALS}
+    materials = [namespaces.get(namespace, namespace) + ":" + path
+                 for namespace, path in (item.split(":", 1) for item in MATERIALS)]
+    return {"recipes": recipes, "materials": materials}
 
 
 def run(args):
