@@ -20,6 +20,7 @@ import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.minecraftforge.fml.DeferredWorkQueue;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.fml.loading.FMLPaths;
 import zone.moddev.mc.basepower.config.PowerAdvantageConfig;
@@ -42,7 +43,7 @@ import zone.moddev.mc.basepower.migration.LegacyWorldDataHook;
 public final class PowerAdvantage {
     public static final String MODID = "basepower";
     public static final String NAME = "Power Advantage";
-    public static final String VERSION = "2.4.5.113021";
+    public static final String VERSION = "2.4.6.113021";
     public static final Logger LOGGER = LogManager.getLogger(MODID);
 
     private static PowerAdvantage instance;
@@ -75,7 +76,6 @@ public final class PowerAdvantage {
         instance = this;
 
         AdvantageLegacyMigrations.registerPowerAdvantage();
-        LegacyWorldDataHook.register();
         MinecraftForge.EVENT_BUS.addListener(ConduitRegistry.getInstance()::onChunkLoad);
         MinecraftForge.EVENT_BUS.addListener(ConduitRegistry.getInstance()::onChunkUnload);
         MinecraftForge.EVENT_BUS.addListener(RecipeDiscovery::onPlayerLogin);
@@ -134,6 +134,8 @@ public final class PowerAdvantage {
     }
 
     private void commonSetup(FMLCommonSetupEvent event) {
+        // Forge stores these hooks in a shared, unsynchronized list.
+        DeferredWorkQueue.runLater(LegacyWorldDataHook::register);
         PowerAdvantageConfig.apply();
         ModSupport.configureForgeEnergyConversions();
         Recipes.initDistillationRecipes(PowerAdvantageConfig.distillationRecipes());

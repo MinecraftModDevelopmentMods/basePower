@@ -69,7 +69,7 @@ public final class ClientResourceProbe {
             result.add("mod_versions", versions);
             require(versions.has("basepower") && zone.moddev.mc.basepower.PowerAdvantage.VERSION
                     .equals(versions.get("basepower").getAsString()), "Power metadata does not match the compiled version");
-            require("2.4.5.113021".equals(versions.get("basepower").getAsString()), "Wrong native Power candidate");
+            require("2.4.6.113021".equals(versions.get("basepower").getAsString()), "Wrong native Power candidate");
             for (String id : new String[]{"basesteam", "baseelectric"}) {
                 if (versions.has(id)) require("2.2.7.113021".equals(versions.get(id).getAsString()), "Wrong native expansion candidate: " + id);
             }

@@ -2,6 +2,8 @@
 
 > **Commissioning notice:** This harness builds disposable works. It is not a gameplay mod, registers no content, and must never be shipped inside a PowerAdvantage jar.
 
+The packaged-current profile uses the [released Base Metals 3.0.2 jar](https://www.curseforge.com/minecraft/mc-mods/base-metals/files/9474008). Stage it as `.cache/BaseMetals-3.0.2.113021.jar` inside the test rig; the profile checks the exact bytes.
+
 The rig turns the 20 cards from the Advantage Works 1.10 handbook plus a public-API fixture into one walkable superflat server world. Power Works lies west of the central concourse, Steam Works north, Electric Works east, and the drill, lift, turbine, pumping, musket, and turret proving grounds south. See the [1.13 migration guide](../docs/1.13/MIGRATION.md) for this port's qualification status.
 
 Use the [current qualification and remaining-tests checklist](../docs/1.13/CURRENT-QUALIFICATION.md)

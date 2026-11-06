@@ -11,6 +11,6 @@ description='''Build-only model, texture and translation checks. Never distribut
 [[dependencies.advantageclientresources]]
 modId="basepower"
 mandatory=true
-versionRange="[2.4.5.113021,)"
+versionRange="[2.4.6.113021,)"
 ordering="AFTER"
 side="CLIENT"

@@ -8,7 +8,7 @@
   "stationRunSeconds": 5,
   "recipeMode": "NORMAL",
   "sourceCommit": "working-tree-from-d4ebfea",
-  "sourceVersion": "2.4.5.113021",
+  "sourceVersion": "2.4.6.113021",
   "forge": {
     "version": "1.13.2-25.0.223",
     "installerPath": ".cache/forge-1.13.2-25.0.223-installer.jar",
@@ -26,31 +26,31 @@
     },
     {
       "id": "basepower",
-      "version": "2.4.5.113021",
-      "file": "basePower-2.4.5.113021.jar",
-      "path": "../build/libs/basePower-2.4.5.113021.jar",
-      "sha256": "99A99E103AE23C5C4DD831FFDF3E4C5AFDB89307224B08529B7AD94807A34DDF"
+      "version": "2.4.6.113021",
+      "file": "basePower-2.4.6.113021.jar",
+      "path": "../build/libs/basePower-2.4.6.113021.jar",
+      "sha256": "901CAD27BC21B7237CDDAC7B8E7A237183E60AE48B92075DD74BF011D2A18585"
     },
     {
       "id": "basesteam",
       "version": "2.2.7.113021",
       "file": "baseSteam-2.2.7.113021.jar",
       "path": "../../SteamAdvantage/SteamAdvantage/build/libs/baseSteam-2.2.7.113021.jar",
-      "sha256": "435787C910F6B297E20FB0777CD4DB9154AEEBC19E816D563AE7802773DEAD97"
+      "sha256": "5E04D04CE6ED3E137ECCBB269F94A2509C80FB31F87A048E0233AABAFB655F83"
     },
     {
       "id": "baseelectric",
       "version": "2.2.7.113021",
       "file": "baseElectric-2.2.7.113021.jar",
       "path": "../../ElectricAdvantage/ElectricAdvantage/build/libs/baseElectric-2.2.7.113021.jar",
-      "sha256": "C8DADD930C76C054D8B999712A9010E54836BBAEA7AA060B087127166932846E"
+      "sha256": "1170E52BB32BFD62311C325F70E9178C17EB3DE6E2D016759A848902BE1E3B50"
     },
     {
       "id": "basemetals",
-      "version": "3.0.1.113021",
-      "file": "BaseMetals-3.0.1.113021.jar",
-      "path": "../../../../BaseMetals/BaseMetals 113/BaseMetals/build/libs/BaseMetals-3.0.1.113021.jar",
-      "sha256": "4ACDD0F12ECE2258B3FA0394F9328E025AB02605B9CB0EBD17BB23F822E03542",
+      "version": "3.0.2.113021",
+      "file": "BaseMetals-3.0.2.113021.jar",
+      "path": ".cache/BaseMetals-3.0.2.113021.jar",
+      "sha256": "B7B21DB677B0B410011EDDC0542E6ECF21746CB7869C370B9430EC8E8E5A6C51",
       "workspaceProduced": true
     },
     {

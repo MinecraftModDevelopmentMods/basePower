@@ -3,6 +3,7 @@
 basePower continues DrCyano's Power Advantage with conveyors, filters, fluid plumbing and the shared systems used by baseSteam and baseElectric.
 
 - Use Forge 25.0.223, Java 8, Base Metals 3.0.2.113021 and MMD OreSpawn 4.1.0.113021. The older Base Metals 3.0.1 download can crash while converting an old world.
+- Use basePower 2.4.6.113021 or newer on 1.13.2. The first 1.13.2 build could hit an intermittent Forge load and save crash when starting alongside Base Metals.
 - Back up the world and config. Replace the old Advantage or base* jars together, then open a copy of your world first. Save it, close Minecraft completely, and reopen the copy before upgrading your main world.
 
 The upgrade understands original Advantage 1.10.2 and the released base* builds for 1.10.2 and 1.12.2. Check that the other mods in your world also support 1.13.2.

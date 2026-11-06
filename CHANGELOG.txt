@@ -1,3 +1,7 @@
+2.4.6.113021 - basePower for Minecraft 1.13.2
+
+- Fix an intermittent world load and save crash when basePower and Base Metals start together.
+
 2.4.5.113021 - basePower for Minecraft 1.13.2
 
 - Bring basePower to Forge 1.13.2 under the basePower name.

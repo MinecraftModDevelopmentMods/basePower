@@ -68,7 +68,7 @@ modLoader="javafml"
 loaderVersion="[25,)" # native Forge
 [[mods]] # mandatory header
 modId="basepower" # inline comment
-version="2.4.5.113021" # native candidate
+version="2.4.6.113021" # native candidate
 [[dependencies.basepower]]
 modId="minecraft"
 mandatory=true
@@ -76,15 +76,15 @@ versionRange="[1.13.2]"
 '@
 Assert-NativeMetadata $native 'basepower'
 $checks++
-Assert-Throws { Assert-NativeMetadata ($native.Replace('2.4.5.113021','2.4.3.113021')) 'basepower' }
-Assert-Throws { Assert-NativeMetadata ($native.Replace('2.4.5.113021','2.4.4.114041')) 'basepower' }
-Assert-Throws { Assert-NativeMetadata ($native.Replace('2.4.5.113021','2.4.4.115021')) 'basepower' }
+Assert-Throws { Assert-NativeMetadata ($native.Replace('2.4.6.113021','2.4.3.113021')) 'basepower' }
+Assert-Throws { Assert-NativeMetadata ($native.Replace('2.4.6.113021','2.4.4.114041')) 'basepower' }
+Assert-Throws { Assert-NativeMetadata ($native.Replace('2.4.6.113021','2.4.4.115021')) 'basepower' }
 Assert-Throws { Assert-NativeMetadata ($native.Replace('[25,)','[28,)')) 'basepower' }
-Assert-Throws { Assert-NativeMetadata ($native.Replace('2.4.5.113021','${version}')) 'basepower' }
+Assert-Throws { Assert-NativeMetadata ($native.Replace('2.4.6.113021','${version}')) 'basepower' }
 Assert-Throws { Assert-NativeMetadata $native 'baseelectric' }
 Assert-Throws { Assert-NativeMetadata '' 'basepower' }
 foreach ($id in 'basesteam','baseelectric') {
-    $expansion = $native.Replace('basepower', $id).Replace('2.4.5.113021','2.2.7.113021')
+    $expansion = $native.Replace('basepower', $id).Replace('2.4.6.113021','2.2.7.113021')
     Assert-NativeMetadata $expansion $id
     $checks++
     Assert-Throws { Assert-NativeMetadata ($expansion.Replace('2.2.7.113021','2.2.5.114041')) $id }
@@ -126,7 +126,7 @@ if ($StaticOnly) {
     return
 }
 $project = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
-$power = Join-Path $project 'build/libs-dev/basePower-2.4.5.113021-deobf.jar'
+$power = Join-Path $project 'build/libs-dev/basePower-2.4.6.113021-deobf.jar'
 Assert-NativeMetadata (Read-JarMetadata $power) 'basepower'
 $checks++
 [xml]$launch = Get-Content -LiteralPath (Join-Path $project 'runClientAllAdvantage.launch') -Raw
