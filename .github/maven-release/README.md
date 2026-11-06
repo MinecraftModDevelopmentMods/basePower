@@ -1,5 +1,21 @@
 # MMD Maven releases
 
+## New Forge releases
+
+Use **Release basePower** on the MMD repository's default branch. After the
+version branch passes CI, tag the exact tested commit and add the CI run, artifact
+ID, archive SHA-256 and tested main-jar SHA-256 to `releases.json`. Run
+**check-only** first, then **publish**. The workflow uploads the checked player
+jar to CurseForge, verifies the public download, and publishes those same bytes
+to MMD Maven before creating the GitHub release.
+
+If CurseForge has accepted the file but it isn't public yet, wait for approval.
+Start a new run with the recorded CurseForge file ID so it verifies that upload
+without submitting the jar again. The release workflow currently covers Java 8
+Forge targets only.
+
+## Existing CurseForge releases
+
 Use **Actions > Publish to MMD Maven** on the MMD repository's default branch.
 Select a version listed in `releases.json` and run **check-only** first. Once it
 passes, run **publish** for that same version.

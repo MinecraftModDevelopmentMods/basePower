@@ -1,4 +1,4 @@
-"""Check an approved release without rebuilding it or uploading to CurseForge."""
+"""Stage checksum-sealed CI files and verify the public release destinations."""
 
 import hashlib
 import json
@@ -46,7 +46,7 @@ def github(path):
     return subprocess.check_output(["gh", "api", path])
 
 
-def stage(manifest, version, release, work):
+def stage(manifest, version, release, work, candidate=False):
     repo = manifest["repository"]
     require(os.environ.get("GITHUB_REPOSITORY", repo) == repo, "Wrong source repository")
     artifact_id = release["artifactId"]
@@ -54,6 +54,8 @@ def stage(manifest, version, release, work):
     require(ci["head_sha"] == release["commit"] and ci["conclusion"] == "success"
             and ci["path"] == ".github/workflows/ci.yml" and ci["event"] == "push"
             and ci["head_branch"] == release["branch"], "CI provenance changed")
+    if candidate:
+        require(release.get("tag") == version, "New publication requires the exact release tag")
     if release.get("tag"):
         ref = json.loads(github(f"repos/{repo}/commits/{release['tag']}"))
         require(ref["sha"] == release["commit"], "Release tag moved")
@@ -75,18 +77,42 @@ def stage(manifest, version, release, work):
             require(name not in sums and re.fullmatch(r"[a-fA-F0-9]{64}", sha), "Malformed CI checksums")
             sums[name] = sha.lower()
         require(set(sums) == set(jars), "CI did not seal exactly the three release jars")
-        require(sums[jars[0]] == release["mainSha256"], "CI main jar does not match the published release")
+        require(sums[jars[0]] == release["mainSha256"], "CI main jar does not match the approved release")
         for name in jars:
             member = "build/libs/" + name
             require(bundle.namelist().count(member) == 1, f"Missing or duplicate CI jar: {name}")
             data = bundle.read(member)
             require(digest(data) == sums[name], f"Bad CI checksum: {name}")
             (work / name).write_bytes(data)
-    file_id = release["curseFileId"]
-    public = read_url(f"https://edge.forgecdn.net/files/{file_id // 1000}/{file_id % 1000}/{jars[0]}")
-    require(digest(public) == release["mainSha256"], "CurseForge bytes changed")
+        if candidate:
+            changelog = bundle.read("CHANGELOG.txt").decode("utf-8-sig").strip()
+            require(version in changelog.splitlines()[0], "Changelog does not start with the release version")
+            notes = "\n\n".join(changelog.split("\n\n", 2)[:2])
+            (work / "release-notes.txt").write_text(notes + "\n", encoding="utf-8")
     (work / "verified.json").write_text(json.dumps(sums), encoding="ascii")
-    print(f"CurseForge file {file_id} matches {jars[0]}: {release['mainSha256']}")
+    if not candidate:
+        verify_curseforge(manifest, version, release, release["curseFileId"])
+
+
+def verify_curseforge(manifest, version, release, file_id, project_id=None):
+    require(type(file_id) is int and file_id > 0, "Invalid CurseForge file ID")
+    jar = jar_names(manifest, version)[0]
+    if project_id is not None:
+        url = f"https://www.curseforge.com/api/v1/mods/{project_id}/files/{file_id}/download"
+    else:
+        url = f"https://edge.forgecdn.net/files/{file_id // 1000}/{file_id % 1000}/{jar}"
+    for delay in (0, 5, 15, 30, 60):
+        time.sleep(delay if project_id is not None else 0)
+        try:
+            public = read_url(url)
+        except HTTPError as error:
+            if error.code == 404 and project_id is not None:
+                continue
+            raise
+        require(digest(public) == release["mainSha256"], "CurseForge bytes changed")
+        print(f"CurseForge file {file_id} matches {jar}: {release['mainSha256']}")
+        return
+    raise ValueError(f"CurseForge file {file_id} is not public yet; resume with that file ID")
 
 
 def jar_names(manifest, version):
@@ -135,8 +161,11 @@ def main():
     manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
     require(version in manifest["releases"], f"Version is not approved: {version}")
     release, work = manifest["releases"][version], Path(folder)
-    if mode == "stage":
-        stage(manifest, version, release, work)
+    if mode in ("stage", "stage-candidate"):
+        stage(manifest, version, release, work, candidate=mode == "stage-candidate")
+    elif mode == "verify-curseforge":
+        verify_curseforge(manifest, version, release, int(os.environ["CURSEFORGE_FILE_ID"]),
+                          int(os.environ["CURSEFORGE_PROJECT_ID"]))
     elif mode in ("check", "require-absent"):
         state = destination_state(manifest, version, release, work)
         require(mode == "check" or state == "absent", "Destination is not empty")
