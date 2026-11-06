@@ -17,22 +17,22 @@ NATURAL_RESOURCES = [
     "minecraft:gunpowder", "minecraft:flint", "minecraft:leather", "minecraft:string",
     "minecraft:feather", "minecraft:blaze_rod", "minecraft:ender_pearl", "minecraft:quartz",
     "basemetals:copper_ore", "basemetals:tin_ore", "basemetals:zinc_ore", "basemetals:lead_ore",
-    "basemetals:nickel_ore", "basemetals:silver_ore", "electricadvantage:li_ore",
-    "electricadvantage:sulfur_ore",
+    "basemetals:nickel_ore", "basemetals:silver_ore", "baseelectric:li_ore",
+    "baseelectric:sulfur_ore",
 ]
 
 EXCLUSIONS = {
-    "poweradvantage:infinite_steam": "Creative-only source, intentionally no survival recipe",
-    "poweradvantage:infinite_electricity": "Creative-only source, intentionally no survival recipe",
-    "poweradvantage:infinite_quantum": "Creative-only source, intentionally no survival recipe",
-    "poweradvantage:crude_oil": "World fluid block, placed and collected through its bucket",
-    "poweradvantage:refined_oil": "World fluid block, produced by distillation and placed through its bucket",
-    "poweradvantage:fluid_pipe_terminal": "Hidden state of an ordinary pipe adjacent to a fluid capability",
-    "steamadvantage:drillbit": "Hidden helper placed by a working steam drill; craft steam_drill_bit instead",
-    "steamadvantage:platform": "Elevator-generated helper with no block drops",
-    "steamadvantage:pump_pipe_steam": "Hidden helper created by a steam pump",
-    "electricadvantage:pump_pipe_electric": "Hidden helper created by an electric pump",
-    "electricadvantage:laser_turret_evil": "Hidden converted state of the craftable laser turret",
+    "basepower:infinite_steam": "Creative-only source, intentionally no survival recipe",
+    "basepower:infinite_electricity": "Creative-only source, intentionally no survival recipe",
+    "basepower:infinite_quantum": "Creative-only source, intentionally no survival recipe",
+    "basepower:crude_oil": "World fluid block, placed and collected through its bucket",
+    "basepower:refined_oil": "World fluid block, produced by distillation and placed through its bucket",
+    "basepower:fluid_pipe_terminal": "Hidden state of an ordinary pipe adjacent to a fluid capability",
+    "basesteam:drillbit": "Hidden helper placed by a working steam drill; craft steam_drill_bit instead",
+    "basesteam:platform": "Elevator-generated helper with no block drops",
+    "basesteam:pump_pipe_steam": "Hidden helper created by a steam pump",
+    "baseelectric:pump_pipe_electric": "Hidden helper created by an electric pump",
+    "baseelectric:laser_turret_evil": "Hidden converted state of the craftable laser turret",
 }
 
 
@@ -43,13 +43,13 @@ def fixture():
 
 def validate_tags(result, mode, rubber):
     tags = result["tags"]
-    assert "electricadvantage:electric_conduit" in tags["wires"]
+    assert "baseelectric:electric_conduit" in tags["wires"]
     assert {"basemetals:coal_powder", "basemetals:charcoal_powder"} <= set(tags["dusts/carbon"])
-    assert ("poweradvantage:bioplastic_ingot" in tags["rubber"]) == rubber
-    assert {"poweradvantage:bioplastic_ingot", "electricadvantage:petrolplastic_ingot"} <= set(tags["plastic"])
-    assert "electricadvantage:control_circuit" in tags["circuit_boards"]
-    assert "electricadvantage:blank_circuit_board" not in tags["circuit_boards"]
-    assert "electricadvantage:solder" in tags["solder"]
+    assert ("basepower:bioplastic_ingot" in tags["rubber"]) == rubber
+    assert {"basepower:bioplastic_ingot", "baseelectric:petrolplastic_ingot"} <= set(tags["plastic"])
+    assert "baseelectric:control_circuit" in tags["circuit_boards"]
+    assert "baseelectric:blank_circuit_board" not in tags["circuit_boards"]
+    assert "baseelectric:solder" in tags["solder"]
     for metal in ("lead", "tin", "silver"):
         assert (f"basemetals:{metal}_ingot" in tags["solder"]) == (mode == "NORMAL")
 
@@ -96,7 +96,7 @@ def run(args):
         for rubber in (True, False)]
     try:
         for mode, rubber in cases:
-            config = output / "config/poweradvantage-common.toml"
+            config = output / "config/basepower-common.toml"
             config.parent.mkdir(exist_ok=True)
             config.write_text(f'[options]\nrecipeMode = "{mode}"\nplasticEqualsRubber = {str(rubber).lower()}\n')
             for phase in ("initial", "restart"):

@@ -11,14 +11,14 @@ from matrix import POWER, RIG, Server, digest, stage, write_json
 MATERIALS = [
     "minecraft:iron_ingot", "basemetals:steel_ingot", "basemetals:copper_ingot",
     "basemetals:lead_ingot", "basemetals:brass_ingot", "basemetals:steel_bars",
-    "poweradvantage:steel_frame", "poweradvantage:fluid_pipe", "poweradvantage:item_conveyor",
-    "steamadvantage:steam_pipe", "poweradvantage:bioplastic_ingot", "basemetals:copper_rod",
-    "electricadvantage:silicon_ingot", "electricadvantage:integrated_circuit",
+    "basepower:steel_frame", "basepower:fluid_pipe", "basepower:item_conveyor",
+    "basesteam:steam_pipe", "basepower:bioplastic_ingot", "basemetals:copper_rod",
+    "baseelectric:silicon_ingot", "baseelectric:integrated_circuit",
     "basemetals:tin_powder", "minecraft:sand", "minecraft:gunpowder",
-    "basemetals:steel_plate", "electricadvantage:psu",
-    "poweradvantage:starch", "electricadvantage:li_ingot", "electricadvantage:li_nugget",
-    "electricadvantage:li_powder", "electricadvantage:li_ore",
-    "electricadvantage:silicon_mix", "electricadvantage:solder_mix",
+    "basemetals:steel_plate", "baseelectric:psu",
+    "basepower:starch", "baseelectric:li_ingot", "baseelectric:li_nugget",
+    "baseelectric:li_powder", "baseelectric:li_ore",
+    "baseelectric:silicon_mix", "baseelectric:solder_mix",
     "minecraft:potato",
 ]
 
@@ -26,13 +26,13 @@ MATERIALS = [
 def fixture(extensions="both"):
     recipes = []
     for mod, root in (
-        ("poweradvantage", POWER),
-        ("steamadvantage", POWER.parent / "SteamAdvantage/SteamAdvantage"),
-        ("electricadvantage", POWER.parent / "ElectricAdvantage/ElectricAdvantage"),
+        ("basepower", POWER),
+        ("basesteam", POWER.parent / "SteamAdvantage/SteamAdvantage"),
+        ("baseelectric", POWER.parent / "ElectricAdvantage/ElectricAdvantage"),
     ):
-        if mod == "steamadvantage" and extensions not in ("both", "steam"):
+        if mod == "basesteam" and extensions not in ("both", "steam"):
             continue
-        if mod == "electricadvantage" and extensions not in ("both", "electric"):
+        if mod == "baseelectric" and extensions not in ("both", "electric"):
             continue
         data = root / "src/main/resources/data" / mod
         for file in sorted((data / "recipes").glob("*.json")):
@@ -60,9 +60,9 @@ def run(args):
     manifest = json.loads((RIG / "profiles" / (profile + ".json")).read_text())
     jars = []
     for mod in manifest["mods"]:
-        if mod["id"] == "steamadvantage" and args.extensions not in ("both", "steam"):
+        if mod["id"] == "basesteam" and args.extensions not in ("both", "steam"):
             continue
-        if mod["id"] == "electricadvantage" and args.extensions not in ("both", "electric"):
+        if mod["id"] == "baseelectric" and args.extensions not in ("both", "electric"):
             continue
         jar = (RIG / mod["path"]).resolve()
         if digest(jar) != mod["sha256"]:
@@ -79,7 +79,7 @@ def run(args):
               "inputs": json.loads((output / "input-jars.json").read_text())}
 
     def boot(mode, label, operations):
-        config = output / "config/poweradvantage-common.toml"
+        config = output / "config/basepower-common.toml"
         config.parent.mkdir(exist_ok=True)
         config.write_text(f'[options]\nrecipeMode = "{mode}"\n')
         server = Server(output, args.java8, launcher, label)

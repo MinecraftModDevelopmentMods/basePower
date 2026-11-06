@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "x",
+    "y",
+    "z"
+  ],
+  "key": {
+    "x": {
+      "item": "basepower:item_conveyor"
+    },
+    "y": {
+      "tag": "minecraft:saplings"
+    },
+    "z": {
+      "item": "minecraft:oak_pressure_plate"
+    }
+  },
+  "result": {
+    "item": "basepower:item_filter_plant"
+  },
+  "group": "basepower:item_filter_plant"
+}

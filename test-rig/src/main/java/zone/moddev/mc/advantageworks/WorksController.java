@@ -206,10 +206,10 @@ final class WorksController {
         }
         WorldServer world = overworld(server);
         Map<String, String> expectedBiomes = new LinkedHashMap<>();
-        expectedBiomes.put("poweradvantage:crude_oil", "DESERT");
+        expectedBiomes.put("basepower:crude_oil", "DESERT");
         expectedBiomes.put("mineralogy:crude_oil", "OCEAN");
-        expectedBiomes.put("electricadvantage:li_ore", null);
-        expectedBiomes.put("electricadvantage:sulfur_ore", null);
+        expectedBiomes.put("baseelectric:li_ore", null);
+        expectedBiomes.put("baseelectric:sulfur_ore", null);
         expectedBiomes.put("mineralogy:sulfur_ore", null);
 
         Set<Long> chunks = new LinkedHashSet<>();
@@ -953,8 +953,8 @@ final class WorksController {
     }
 
     private static IBlockState legacyState(String name, Block block, int metadata) {
-        if (name != null && (name.startsWith("poweradvantage:")
-                || name.startsWith("steamadvantage:") || name.startsWith("electricadvantage:"))) {
+        if (name != null && (name.startsWith("basepower:")
+                || name.startsWith("basesteam:") || name.startsWith("baseelectric:"))) {
             return LegacyMigrationApi.decodeBlockState(new ResourceLocation(name), block, metadata);
         }
         if (block instanceof BlockFlowingFluid) {
@@ -972,7 +972,7 @@ final class WorksController {
     private static Fluid fluid(String name) {
         if (name == null || name.trim().isEmpty()) return null;
         ResourceLocation id = name.indexOf(':') >= 0 ? new ResourceLocation(name)
-                : new ResourceLocation("poweradvantage", name);
+                : new ResourceLocation("basepower", name);
         Fluid value = IRegistry.field_212619_h.func_212608_b(id);
         if (value == null) {
             String migratedName = LegacyMigrationApi.fluidTarget(name);

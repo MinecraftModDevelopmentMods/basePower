@@ -80,6 +80,9 @@ def run(args):
     status, error = "FAIL", None
     try:
         with ExitStack() as context:
+            context.enter_context(patch.object(lifecycle, "NAMESPACES", {
+                "poweradvantage": "basepower", "steamadvantage": "basesteam", "electricadvantage": "baseelectric",
+            }))
             for item in (lifecycle, extended_lifecycle, pipe_only_lifecycle):
                 context.enter_context(patch.object(item, "profiles", lambda _: {"target113": target}))
                 context.enter_context(patch.object(item, "stage", stage))

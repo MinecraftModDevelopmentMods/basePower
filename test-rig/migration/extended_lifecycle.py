@@ -9,7 +9,7 @@ import time
 import traceback
 
 from endurance import require
-from lifecycle import FACINGS, LifecycleRun, at, contents, counts, move_result, offset, parse
+from lifecycle import FACINGS, LifecycleRun, at, block_id, contents, counts, move_result, offset, parse
 from matrix import POWER, RIG, WORLD, copy_fixture, digest, fingerprint, profiles, stage, write_json
 
 
@@ -33,7 +33,7 @@ def fixtures():
                      "min": [base, 72, 2048], "max": [base + 31, 90, 2079],
                      "from": origin, "to": route[-1], "route": route,
                      "controls": [offset(pos, control) for pos in route], "hold": offset(route[-1], control),
-                     "block": mod + (":steam_drill" if steam else ":electric_drill"),
+                     "block": block_id(mod + (":steam_drill" if steam else ":electric_drill")),
                      "energyType": "steam" if steam else "electricity", "initialEnergy": 40 if steam else 400,
                      "facing": facing, "direction": direction, "track": track, "junction": junction,
                      "rear": offset(route[-1], direction, -1), "source": offset(origin, control, -1)}

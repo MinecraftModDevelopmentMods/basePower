@@ -7,30 +7,30 @@
   "shutdownTimeoutSeconds": 60,
   "stationRunSeconds": 5,
   "recipeMode": "NORMAL",
-  "sourceCommit": "working-tree-from-40811a0",
-  "sourceVersion": "2.4.4.113021",
+  "sourceCommit": "working-tree-from-d4ebfea",
+  "sourceVersion": "2.4.5.113021",
   "mods": [
     {
       "id": "advantageworkstest",
       "version": "1.1.0.113021",
       "file": "AdvantageWorksTestHarness-1.1.0.113021-deobf.jar",
-      "path": "build/libs-dev/AdvantageWorksTestHarness-1.1.0.113021-deobf.jar",
+      "path": "build/gradle/libs-dev/AdvantageWorksTestHarness-1.1.0.113021-deobf.jar",
       "workspaceProduced": true,
-      "sha256": "5816997BCBE8C2061FB4815F59AAD038F8FD914BB413A050BD9FB2A588597952"
+      "sha256": "57A8A9020B864FD3E623F80951AE4614773FD3F80F72B163E43675EB187B99A3"
     },
     {
-      "id": "steamadvantage",
-      "version": "2.2.5.113021",
-      "file": "SteamAdvantage-2.2.5.113021-deobf.jar",
-      "path": "../../SteamAdvantage/SteamAdvantage/build/libs-dev/SteamAdvantage-2.2.5.113021-deobf.jar",
-      "sha256": "CD0FF2C4F79484211DF3BBF1CA63F48C43620FEB764390FAC614AD3DDE0AF5C3"
+      "id": "basesteam",
+      "version": "2.2.7.113021",
+      "file": "baseSteam-2.2.7.113021-deobf.jar",
+      "path": "../../SteamAdvantage/SteamAdvantage/build/libs-dev/baseSteam-2.2.7.113021-deobf.jar",
+      "sha256": "F56F3FC2DF9EEE77ACC50DF228FAD0A7ABCF02A57F864AB8B84348F8D033DF84"
     },
     {
-      "id": "electricadvantage",
-      "version": "2.2.5.113021",
-      "file": "ElectricAdvantage-2.2.5.113021-deobf.jar",
-      "path": "../../ElectricAdvantage/ElectricAdvantage/build/libs-dev/ElectricAdvantage-2.2.5.113021-deobf.jar",
-      "sha256": "5991D71D6C4FFD41968463C2E9D1D8941FAB2B65E0F9CF6E9412E7B0879373E5"
+      "id": "baseelectric",
+      "version": "2.2.7.113021",
+      "file": "baseElectric-2.2.7.113021-deobf.jar",
+      "path": "../../ElectricAdvantage/ElectricAdvantage/build/libs-dev/baseElectric-2.2.7.113021-deobf.jar",
+      "sha256": "620074389CE2CE432BBD27256CBBEF3D3195C66461002D10B36C65B7ECF39B18"
     }
   ]
 }

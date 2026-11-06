@@ -37,7 +37,7 @@ class BroadResultAuditTests(unittest.TestCase):
         self.stations = json.loads(definition)["stations"]
         self.definitions = {s["id"]: s for s in self.stations}
         jars = []
-        for name in ("poweradvantage", "steamadvantage", "electricadvantage", "advantageworkstest", "basemetals", "orespawn"):
+        for name in ("basepower", "basesteam", "baseelectric", "advantageworkstest", "basemetals", "orespawn"):
             path = self.root / (name + ".jar")
             if name == "advantageworkstest":
                 with zipfile.ZipFile(path, "w") as archive:
@@ -134,7 +134,7 @@ class BroadResultAuditTests(unittest.TestCase):
         result = []
         for a in spec["assertions"]:
             block = a.get("block")
-            if block not in ("steamadvantage:steam_drill", "electricadvantage:electric_drill"):
+            if block not in ("basesteam:steam_drill", "baseelectric:electric_drill"):
                 continue
             direction = a.get("meta", audit.DIRECTIONS.index(a.get("expectedText", "down")))
             origin = [x + y for x, y in zip(spec["origin"], a["pos"])]
@@ -146,7 +146,7 @@ class BroadResultAuditTests(unittest.TestCase):
                    + 'tag:{AdvBayStock:' + json.dumps(key) + '}}]}')
             result.append(dict(pos=pos, block=block, state="facing=" + audit.DIRECTIONS[direction], nbt=tag))
             if not moved:
-                result.append(dict(pos=rear, block="steamadvantage:steam_track" if spec["id"] == "S-05" else "electricadvantage:electric_track", state="track"))
+                result.append(dict(pos=rear, block="basesteam:steam_track" if spec["id"] == "S-05" else "baseelectric:electric_track", state="track"))
         return result
 
     def assert_rejected(self, contains=None, requested=audit.PROFILES):
@@ -240,7 +240,7 @@ class BroadResultAuditTests(unittest.TestCase):
         self.assert_rejected("wrong raw result")
 
     def test_loaded_mod_version_mismatch_rejected(self):
-        self.mutate_raw(lambda rows: rows["W-01"]["mods"].update(poweradvantage="wrong"))
+        self.mutate_raw(lambda rows: rows["W-01"]["mods"].update(basepower="wrong"))
         self.assert_rejected("loaded mod set")
 
     def test_error_and_shutdown_error_cannot_be_masked(self):
@@ -277,7 +277,7 @@ class BroadResultAuditTests(unittest.TestCase):
         self.assert_rejected("differs from native snapshots")
 
     def test_mod_bytes_and_staging_receipt_both_required(self):
-        (self.profile() / "mods/poweradvantage.jar").write_bytes(b"changed")
+        (self.profile() / "mods/basepower.jar").write_bytes(b"changed")
         self.assert_rejected("mod bytes differ")
 
     def test_extra_mod_rejected(self):

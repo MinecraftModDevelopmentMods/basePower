@@ -15,9 +15,9 @@ import net.minecraft.util.EnumHand;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraft.world.IBlockReader;
-import zone.moddev.mc.poweradvantage.registry.MachineGUIRegistry;
+import zone.moddev.mc.basepower.registry.MachineGUIRegistry;
 import cyano.poweradvantage.api.fluid.IAdvantageFluidHandler;
-import zone.moddev.mc.poweradvantage.util.FluidContainerHelper;
+import zone.moddev.mc.basepower.util.FluidContainerHelper;
 
 /**
  * <p>

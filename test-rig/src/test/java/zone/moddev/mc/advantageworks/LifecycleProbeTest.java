@@ -13,7 +13,7 @@ public class LifecycleProbeTest {
         fixture.from = new int[] {2063, 80, 2063};
         fixture.to = new int[] {2063, 80, 2064};
         fixture.hold = new int[] {2063, 81, 2064};
-        fixture.block = "steamadvantage:steam_drill";
+        fixture.block = "basesteam:steam_drill";
         fixture.energyType = "steam";
         fixture.initialEnergy = 40;
         fixture.witnesses = Arrays.asList(fixture.from, fixture.to, fixture.hold);
@@ -22,11 +22,11 @@ public class LifecycleProbeTest {
 
     @Test public void boundedMoveAccepted() { LifecycleProbe.validate(fixture()); }
     @Test public void boundedOilBucketAccepted() {
-        LifecycleProbe.Fixture f = fixture(); f.bucket = "poweradvantage:crude_oil_bucket";
+        LifecycleProbe.Fixture f = fixture(); f.bucket = "basepower:crude_oil_bucket";
         f.source = new int[] {2060, 80, 2060}; LifecycleProbe.validate(f);
     }
     @Test(expected = IllegalArgumentException.class) public void oilBucketOutsideBoundsRejected() {
-        LifecycleProbe.Fixture f = fixture(); f.bucket = "poweradvantage:crude_oil_bucket";
+        LifecycleProbe.Fixture f = fixture(); f.bucket = "basepower:crude_oil_bucket";
         f.source = new int[] {2080, 80, 2060}; LifecycleProbe.validate(f);
     }
     @Test(expected = IllegalArgumentException.class) public void arbitraryBucketRejected() {

@@ -208,7 +208,7 @@ def prepare_fixture(source, destination):
 def hook_mod(hook):
     if "/basemetals/" in hook["owner"]:
         return "bm"
-    if "/poweradvantage/" in hook["owner"]:
+    if "/poweradvantage/" in hook["owner"] or "/basepower/" in hook["owner"]:
         return "pa"
     raise AssertionError("Unexpected hook owner")
 
@@ -233,7 +233,12 @@ def order_evidence(runtime, mode, label=None):
     proof = {}
     for suffix, (class_name, methods) in SUFFIXES.items():
         applications = groups[class_name]
-        bm, pa = "basemetals_legacy_" + suffix, "poweradvantage_legacy_" + suffix
+        bm = "basemetals_legacy_" + suffix
+        candidates = [name for name in ("poweradvantage_legacy_" + suffix, "basepower_legacy_" + suffix)
+                      if name in registration["forced"]]
+        if len(candidates) != 1:
+            raise AssertionError(f"Expected exactly one Power migration transformer for {class_name}")
+        pa = candidates[0]
         expected = [n for n in registration["forced"] if n in (bm, pa)]
         requested = [bm, pa] if mode == "bm-first" else [pa, bm] if mode == "pa-first" else expected
         if expected != requested or [e["transformer"] for e in applications] != expected:

@@ -21,10 +21,12 @@ from native113_campaign_support import (prepare, read_json, require_native_boot,
                                  verify_source, verify_staged)
 
 
-NAMES = ("fresh113", "original110-chained113-native113")
+NAMES = ("fresh113", "released-base112-migrated113")
 
 
 class NativeEnduranceRig(endurance.Rig):
+    power_namespace = "basepower"
+
     def start(self, build=False):
         if build: native113_chunk_readiness.acquire(self)
         return super().start(build)
@@ -37,7 +39,8 @@ class NativeEnduranceRig(endurance.Rig):
 
     def batch(self, label):
         measured = semantic_machine_audit.endurance_batch(
-            {station: self.documents[station] for station in ("S-04", "E-03", "W-04", "W-03")}, self.definitions)
+            {station: self.documents[station] for station in ("S-04", "E-03", "W-04", "W-03")}, self.definitions,
+            {"poweradvantage": "basepower", "steamadvantage": "basesteam", "electricadvantage": "baseelectric"})
         evidence = self.runtime / ("semantic-batch-" + label + ".json")
         with evidence.open("x", encoding="utf-8") as stream:
             json.dump(measured, stream, indent=2)

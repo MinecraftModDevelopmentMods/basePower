@@ -67,27 +67,27 @@ $native = @'
 modLoader="javafml"
 loaderVersion="[25,)" # native Forge
 [[mods]] # mandatory header
-modId="poweradvantage" # inline comment
-version="2.4.4.113021" # native candidate
-[[dependencies.poweradvantage]]
+modId="basepower" # inline comment
+version="2.4.5.113021" # native candidate
+[[dependencies.basepower]]
 modId="minecraft"
 mandatory=true
 versionRange="[1.13.2]"
 '@
-Assert-NativeMetadata $native 'poweradvantage'
+Assert-NativeMetadata $native 'basepower'
 $checks++
-Assert-Throws { Assert-NativeMetadata ($native.Replace('2.4.4.113021','2.4.3.113021')) 'poweradvantage' }
-Assert-Throws { Assert-NativeMetadata ($native.Replace('2.4.4.113021','2.4.4.114041')) 'poweradvantage' }
-Assert-Throws { Assert-NativeMetadata ($native.Replace('2.4.4.113021','2.4.4.115021')) 'poweradvantage' }
-Assert-Throws { Assert-NativeMetadata ($native.Replace('[25,)','[28,)')) 'poweradvantage' }
-Assert-Throws { Assert-NativeMetadata ($native.Replace('2.4.4.113021','${version}')) 'poweradvantage' }
-Assert-Throws { Assert-NativeMetadata $native 'electricadvantage' }
-Assert-Throws { Assert-NativeMetadata '' 'poweradvantage' }
-foreach ($id in 'steamadvantage','electricadvantage') {
-    $expansion = $native.Replace('poweradvantage', $id).Replace('2.4.4.113021','2.2.5.113021')
+Assert-Throws { Assert-NativeMetadata ($native.Replace('2.4.5.113021','2.4.3.113021')) 'basepower' }
+Assert-Throws { Assert-NativeMetadata ($native.Replace('2.4.5.113021','2.4.4.114041')) 'basepower' }
+Assert-Throws { Assert-NativeMetadata ($native.Replace('2.4.5.113021','2.4.4.115021')) 'basepower' }
+Assert-Throws { Assert-NativeMetadata ($native.Replace('[25,)','[28,)')) 'basepower' }
+Assert-Throws { Assert-NativeMetadata ($native.Replace('2.4.5.113021','${version}')) 'basepower' }
+Assert-Throws { Assert-NativeMetadata $native 'baseelectric' }
+Assert-Throws { Assert-NativeMetadata '' 'basepower' }
+foreach ($id in 'basesteam','baseelectric') {
+    $expansion = $native.Replace('basepower', $id).Replace('2.4.5.113021','2.2.7.113021')
     Assert-NativeMetadata $expansion $id
     $checks++
-    Assert-Throws { Assert-NativeMetadata ($expansion.Replace('2.2.5.113021','2.2.5.114041')) $id }
+    Assert-Throws { Assert-NativeMetadata ($expansion.Replace('2.2.7.113021','2.2.5.114041')) $id }
 }
 $environment = @{ MC_VERSION = '1.13.2'; FORGE_VERSION = '25.0.223'; MCP_MAPPINGS = 'snapshot_20180921-1.13'; MCP_VERSION = '20190213.203750'; target = 'fmluserdevclient' }
 $attributes = @{ 'org.eclipse.jdt.launching.PROGRAM_ARGUMENTS' = '--main net.minecraftforge.userdev.LaunchTesting --cache D:\native\1.13.2-25.0.223 --'; 'org.eclipse.jdt.launching.MAIN_TYPE' = 'net.minecraftforge.launcher.Main' }
@@ -126,8 +126,8 @@ if ($StaticOnly) {
     return
 }
 $project = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
-$power = Join-Path $project 'build/libs-dev/PowerAdvantage-2.4.4.113021-deobf.jar'
-Assert-NativeMetadata (Read-JarMetadata $power) 'poweradvantage'
+$power = Join-Path $project 'build/libs-dev/basePower-2.4.5.113021-deobf.jar'
+Assert-NativeMetadata (Read-JarMetadata $power) 'basepower'
 $checks++
 [xml]$launch = Get-Content -LiteralPath (Join-Path $project 'runClientAllAdvantage.launch') -Raw
 $found = @{}
@@ -137,7 +137,7 @@ foreach ($entry in ($launch.launchConfiguration.listAttribute | Where-Object { $
     if (-not $path -or [IO.Path]::GetExtension($path) -ne '.jar') { continue }
     $metadata = Read-JarMetadata $path
     $header = if ($metadata) { [regex]::Match($metadata, '(?ms)^\[\[mods\]\]\s*(.*?)(?=^\[|\z)').Groups[1].Value }
-    foreach ($id in 'basemetals','orespawn','steamadvantage','electricadvantage') {
+    foreach ($id in 'basemetals','orespawn','basesteam','baseelectric') {
         if ($header -match ('(?m)^modId\s*=\s*"' + $id + '"[ \t]*(?:#[^\r\n]*)?\r?$')) {
             Assert-NativeMetadata $metadata $id
             $found[$id] = $true

@@ -10,13 +10,13 @@ permissions:
   contents: read
 
 concurrency:
-  group: poweradvantage-release-tag-${{ github.ref_name }}
+  group: basepower-release-tag-${{ github.ref_name }}
   cancel-in-progress: false
 
 jobs:
   validate-release-tag:
     name: Validate tag for manual release confirmation
-    if: github.repository == 'MinecraftModDevelopmentMods/PowerAdvantage'
+    if: github.repository == 'MinecraftModDevelopmentMods/basePower'
     runs-on: ubuntu-latest
     timeout-minutes: 10
 

@@ -24,7 +24,7 @@ import net.minecraftforge.common.util.FakePlayer;
 
 /** Independent operating contracts. Only setup seeds inputs; all work uses world ticks. */
 public final class ElectricOperationalCases {
-    private static final String EA = "electricadvantage:";
+    private static final String EA = "baseelectric:";
     private static final String ELECTRICITY = "electricity";
     private static final String GREENHOUSE = "greenhouse";
     private static final int Y = 2;
@@ -165,7 +165,7 @@ public final class ElectricOperationalCases {
                         int x = CELLS[i];
                         c.block(x, Y, Z, EA + "plastic_refinery");
                         if (i != 1) c.electricSupply(x - 1, Y, Z, 4000);
-                        if (i != 2) reserve(c, x, Y, Z, "getTank", "poweradvantage:refined_oil", i == 4 ? 99 : 200);
+                        if (i != 2) reserve(c, x, Y, Z, "getTank", "basepower:refined_oil", i == 4 ? 99 : 200);
                     }
                     rejectFluid(c, CELLS[2], "minecraft:water", 200);
                     c.put(CELLS[3], Y, Z, 0, EA + "petrolplastic_ingot", 64);
@@ -189,15 +189,15 @@ public final class ElectricOperationalCases {
                         int x = CELLS[i];
                         c.block(x, Y, Z, EA + "electric_still");
                         if (i != 1) c.electricSupply(x - 1, Y, Z, 1000);
-                        if (i != 2) reserve(c, x, Y, Z, "getInputTank", "poweradvantage:crude_oil", i == 4 ? 1 : 40);
+                        if (i != 2) reserve(c, x, Y, Z, "getInputTank", "basepower:crude_oil", i == 4 ? 1 : 40);
                     }
                     rejectFluid(c, CELLS[2], "minecraft:water", 40);
-                    reserve(c, CELLS[3], Y, Z, "getOutputTank", "poweradvantage:refined_oil", 1000);
+                    reserve(c, CELLS[3], Y, Z, "getOutputTank", "basepower:refined_oil", 1000);
                     equal(c, "setup.fullOutput", tankAmount(c, CELLS[3], 1), 1000);
                 }, c -> {
                     equal(c, "positive.input", tankAmount(c, CELLS[0], 0), 0);
                     equal(c, "positive.output", tankAmount(c, CELLS[0], 1), 20);
-                    fluidIs(c, CELLS[0], 1, "poweradvantage:refined_oil");
+                    fluidIs(c, CELLS[0], 1, "basepower:refined_oil");
                     close(c, "positive.energyDebit", 1000 - pairEnergy(c, CELLS[0]), 320, 0.01f);
                     for (int i = 1; i < CELLS.length; i++) {
                         equal(c, "negative" + i + ".input", tankAmount(c, CELLS[i], 0), i == 2 ? 0 : i == 4 ? 1 : 40);
@@ -210,7 +210,7 @@ public final class ElectricOperationalCases {
                 + "mutation. The 48 finite mB then operate on natural ticks, making 24 mB refined oil for 384 electricity.", 80, c -> {
                     c.block(8, Y, Z, EA + "electric_still");
                     c.electricSupply(7, Y, Z, 1000);
-                    net.minecraft.fluid.Fluid oil = net.minecraft.util.registry.IRegistry.field_212619_h.func_212608_b(new ResourceLocation("poweradvantage:crude_oil"));
+                    net.minecraft.fluid.Fluid oil = net.minecraft.util.registry.IRegistry.field_212619_h.func_212608_b(new ResourceLocation("basepower:crude_oil"));
                     c.require(oil != null, "Crude oil exists for faced automation");
                     int stored = 0;
                     for (EnumFacing face : EnumFacing.values()) {
@@ -224,12 +224,12 @@ public final class ElectricOperationalCases {
                 }, c -> {
                     equal(c, "faced.input", tankAmount(c, 8, 0), 0);
                     equal(c, "faced.output", tankAmount(c, 8, 1), 24);
-                    fluidIs(c, 8, 1, "poweradvantage:refined_oil");
+                    fluidIs(c, 8, 1, "basepower:refined_oil");
                     close(c, "faced.energyDebit", 1000 - pairEnergy(c, 8), 384, 0.01f);
                     for (EnumFacing face : EnumFacing.values()) {
                         FluidStack simulated = fluids(c, 8, face).drain(24, false);
                         equal(c, "face." + face + ".drainable", simulated == null ? 0 : simulated.amount, 24);
-                        c.require(new ResourceLocation("poweradvantage:refined_oil").equals(
+                        c.require(new ResourceLocation("basepower:refined_oil").equals(
                                 net.minecraft.util.registry.IRegistry.field_212619_h.getKey(simulated.getFluid())),
                                 "Face offers the real refined product " + face);
                         equal(c, "face." + face + ".drainSimulationUnchanged", tankAmount(c, 8, 1), 24);

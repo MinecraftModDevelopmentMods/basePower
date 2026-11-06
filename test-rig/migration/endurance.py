@@ -164,10 +164,11 @@ class Rig:
         # Shared bidirectional pipes may return refined oil to the supply tank.
         outputs = [self.entry("W-03", p)["data"].get("Tank", {}) for p in ((4, 1, 8), (6, 1, 8), (8, 1, 8))]
         outputs.append(self.entry("W-03", (6, 1, 8))["data"].get("InputTank", {}))
-        input_amount = sum(t.get("Amount", 0) for t in outputs if t.get("FluidName") == "poweradvantage:crude_oil")
+        power_namespace = getattr(self, "power_namespace", "poweradvantage")
+        input_amount = sum(t.get("Amount", 0) for t in outputs if t.get("FluidName") == power_namespace + ":crude_oil")
         require(input_amount == 0, f"{self.name}: oil input remaining {input_amount}")
         require(sum(t.get("Amount", 0) for t in outputs) == 1000, f"{self.name}: oil output {outputs}")
-        require(all(t.get("FluidName") == "poweradvantage:refined_oil" for t in outputs if t.get("Amount", 0)),
+        require(all(t.get("FluidName") == power_namespace + ":refined_oil" for t in outputs if t.get("Amount", 0)),
                 f"{self.name}: wrong oil output identity")
         result["outputs"]["distillation-mB"] = 1000
         self.invariants()

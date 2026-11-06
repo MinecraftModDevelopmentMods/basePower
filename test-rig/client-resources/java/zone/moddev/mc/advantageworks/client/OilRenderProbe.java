@@ -15,8 +15,8 @@ import net.minecraft.item.ItemBucket;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.IWorldReader;
-import zone.moddev.mc.poweradvantage.init.Fluids;
-import zone.moddev.mc.poweradvantage.init.Items;
+import zone.moddev.mc.basepower.init.Fluids;
+import zone.moddev.mc.basepower.init.Items;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Proxy;
@@ -42,10 +42,10 @@ final class OilRenderProbe {
         JsonArray cases = new JsonArray();
         result.add("fluid_rendering", cases);
         boolean valid = true;
-        valid &= check(minecraft, Fluids.crude_oil.getDefaultState(), "poweradvantage:blocks/crude_oil_still", false, cases);
-        valid &= check(minecraft, Fluids.flowing_crude_oil.getFlowingFluidState(5, false), "poweradvantage:blocks/crude_oil_flow", true, cases);
-        valid &= check(minecraft, Fluids.refined_oil.getDefaultState(), "poweradvantage:blocks/refined_oil_still", false, cases);
-        valid &= check(minecraft, Fluids.flowing_refined_oil.getFlowingFluidState(5, false), "poweradvantage:blocks/refined_oil_flow", true, cases);
+        valid &= check(minecraft, Fluids.crude_oil.getDefaultState(), "basepower:blocks/crude_oil_still", false, cases);
+        valid &= check(minecraft, Fluids.flowing_crude_oil.getFlowingFluidState(5, false), "basepower:blocks/crude_oil_flow", true, cases);
+        valid &= check(minecraft, Fluids.refined_oil.getDefaultState(), "basepower:blocks/refined_oil_still", false, cases);
+        valid &= check(minecraft, Fluids.flowing_refined_oil.getFlowingFluidState(5, false), "basepower:blocks/refined_oil_flow", true, cases);
         valid &= check(minecraft, net.minecraft.init.Fluids.WATER.getDefaultState(), "minecraft:block/water_still", false, cases);
         valid &= check(minecraft, net.minecraft.init.Fluids.LAVA.getDefaultState(), "minecraft:block/lava_still", false, cases);
         if (!valid) throw new IllegalStateException("Native fluid renderer used the wrong sprite or tint: " + cases);

@@ -169,13 +169,16 @@ function Canonical-Source([string]$Source) {
     $Source = [regex]::Replace($Source, '/\*[\s\S]*?\*/|//[^\r\n]*', '')
     [regex]::Replace($Source, '\s+', '')
 }
+function Convert-ReleaseIds([string]$Source) {
+    $Source -creplace '(?<!cyano\.)\bpoweradvantage\b', 'basepower' -creplace '\bsteamadvantage\b', 'basesteam' -creplace '\belectricadvantage\b', 'baseelectric'
+}
 $reference = Join-Path $ReferenceRoot $relative
 Assert-Contract ((Get-FileHash -LiteralPath $reference -Algorithm SHA256).Hash -eq 'E669E62922A7F5008498069E778808BEA28BDCB1E0FB933FD15845A5D9AE810A') 'GUI reference changed; do not substitute another accepted oracle.'
-$expected = Canonical-Source (Convert-Gui (Get-Content -LiteralPath $reference -Raw))
+$expected = Canonical-Source (Convert-ReleaseIds (Convert-Gui (Get-Content -LiteralPath $reference -Raw)))
 $actual = Canonical-Source (Get-Content -LiteralPath (Join-Path $PSScriptRoot $relative) -Raw)
 Assert-Contract ($actual -ceq $expected) 'GUI fixtures, captions, pixels, slot coordinates, helper bounds or controls changed beyond the declared 1.13 native adaptation.'
 $labels = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'resources/gui-label-expectations.json') -Raw | ConvertFrom-Json
-$referenceLabels = Get-Content -LiteralPath (Join-Path $ReferenceRoot 'resources/gui-label-expectations.json') -Raw | ConvertFrom-Json
+$referenceLabels = Convert-ReleaseIds (Get-Content -LiteralPath (Join-Path $ReferenceRoot 'resources/gui-label-expectations.json') -Raw) | ConvertFrom-Json
 Assert-Contract (($labels | ConvertTo-Json -Depth 6 -Compress) -ceq ($referenceLabels | ConvertTo-Json -Depth 6 -Compress)) 'Independent equipment names or label rows changed.'
 Assert-Contract (@($labels.machines.PSObject.Properties).Count -eq 39) 'Exactly 39 human-reviewed equipment names are required.'
 Assert-Contract ($labels.locale -eq 'en_us' -and $labels.inventory -ceq 'Inventory') 'Required literal captions are missing.'

@@ -1,3 +1,11 @@
+2.4.5.113021 - basePower for Minecraft 1.13.2
+
+- Bring basePower to Forge 1.13.2 under the basePower name.
+- Read both original Advantage and released base* worlds through the 1.13 block conversion, keeping machine inventories, fluid amounts and saved power.
+- Convert filled oil buckets and keep the original configuration files when importing settings.
+- Convert old vanilla item IDs in machine inventories, including sugar cane stored in growth chambers.
+- Put all three mods' player-facing items on one creative tab named basePower.
+
 Unreleased test-coverage repairs for 1.13.2
 
 - Keep steel frames non-opaque on dedicated servers as well as clients.

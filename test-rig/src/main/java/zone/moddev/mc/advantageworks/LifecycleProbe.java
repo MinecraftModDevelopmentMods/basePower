@@ -29,7 +29,7 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.world.ChunkEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
 import net.minecraftforge.fml.event.server.FMLServerStartingEvent;
-import zone.moddev.mc.poweradvantage.conduitnetwork.ConduitRegistry;
+import zone.moddev.mc.basepower.conduitnetwork.ConduitRegistry;
 
 /** Observes real tile movement and chunk lifecycles only in marked disposable worlds. */
 final class LifecycleProbe {
@@ -71,7 +71,7 @@ final class LifecycleProbe {
             throw new IllegalArgumentException("Missing witnesses");
         for (int[] pos : fixture.witnesses) requireInside(fixture, pos);
         if (fixture.bucket != null) {
-            if (!fixture.bucket.matches("poweradvantage:(crude|refined)_oil_bucket"))
+            if (!fixture.bucket.matches("basepower:(crude|refined)_oil_bucket"))
                 throw new IllegalArgumentException("Unsupported oil bucket");
             requireInside(fixture, fixture.source);
             if (fixture.source[1] >= fixture.max[1])
@@ -97,8 +97,8 @@ final class LifecycleProbe {
             for (int axis = 0; axis < 3; axis++) distance += Math.abs(fixture.from[axis] - fixture.to[axis]);
             if ((fixture.route == null && distance != 1) || fixture.initialEnergy <= 0 || !Float.isFinite(fixture.initialEnergy))
                 throw new IllegalArgumentException("Invalid movement fixture");
-            if (!"steamadvantage:steam_drill".equals(fixture.block)
-                    && !"electricadvantage:electric_drill".equals(fixture.block))
+            if (!"basesteam:steam_drill".equals(fixture.block)
+                    && !"baseelectric:electric_drill".equals(fixture.block))
                 throw new IllegalArgumentException("Not an Advantage drill");
             if (fixture.route != null) {
                 if (fixture.route.size() < 2 || fixture.route.size() > 8 || fixture.controls == null

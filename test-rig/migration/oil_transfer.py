@@ -24,8 +24,8 @@ def fixtures():
         output = [x + 12, y - 3, z]
         result.append({"id": f"OIL-{oil}-{tank}", "min": [x, 72, 2048], "max": [x + 31, 88, 2079],
                        "source": source, "drain": drain, "pipes": pipes, "output": output,
-                       "fluid": "poweradvantage:" + oil, "bucket": "poweradvantage:" + oil + "_bucket",
-                       "tank": "poweradvantage:" + tank, "witnesses": [source, drain, *pipes, output]})
+                       "fluid": "basepower:" + oil, "bucket": "basepower:" + oil + "_bucket",
+                       "tank": "basepower:" + tank, "witnesses": [source, drain, *pipes, output]})
     return result
 
 
@@ -37,10 +37,10 @@ def inspect(snapshot, definition, expected):
         drain = at(snapshot, f["id"], f["drain"])
         output = at(snapshot, f["id"], f["output"])
         require(source["block"] == "minecraft:air", f"Source not collected: {f['id']}")
-        require(drain["block"] == "poweradvantage:fluid_drain", f"Drain missing: {f['id']}")
+        require(drain["block"] == "basepower:fluid_drain", f"Drain missing: {f['id']}")
         require(output["block"] == f["tank"], f"Container changed: {f['id']}")
         for pos in f["pipes"]:
-            require(at(snapshot, f["id"], pos)["block"] == "poweradvantage:fluid_pipe", f"Pipe missing: {f['id']}")
+            require(at(snapshot, f["id"], pos)["block"] == "basepower:fluid_pipe", f"Pipe missing: {f['id']}")
         held = parse(drain).get("Tank", {}).get("Amount", 0)
         tank = parse(output).get("Tank", {})
         require(held == 0, f"Oil stuck in drain ({held} mB): {f['id']}")
@@ -87,8 +87,8 @@ def run(args):
         runner.probe("load", "oil-loaded")
         for f in definition:
             runner.command("fill " + " ".join(map(str, f["min"] + f["max"])) + " minecraft:air replace")
-            for pos in f["pipes"]: runner.block(pos, "poweradvantage:fluid_pipe")
-            runner.block(f["drain"], "poweradvantage:fluid_drain")
+            for pos in f["pipes"]: runner.block(pos, "basepower:fluid_pipe")
+            runner.block(f["drain"], "basepower:fluid_drain")
             runner.block(f["output"], f["tank"])
             x, y, z = f["source"]
             for dx, dz in ((-1, 0), (1, 0), (0, -1), (0, 1)):

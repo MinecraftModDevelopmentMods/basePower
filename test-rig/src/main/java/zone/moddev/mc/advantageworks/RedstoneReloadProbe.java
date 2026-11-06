@@ -213,7 +213,7 @@ final class RedstoneReloadProbe {
         force(witness);
         for (int dx = -1; dx <= 1; dx++) for (int dy = -1; dy <= 1; dy++) for (int dz = -1; dz <= 1; dz++)
             world.setBlockState(witness.pos.add(dx, dy, dz), Blocks.AIR.getDefaultState(), 2);
-        Block block = net.minecraftforge.registries.ForgeRegistries.BLOCKS.getValue(new ResourceLocation("electricadvantage:electric_drill"));
+        Block block = net.minecraftforge.registries.ForgeRegistries.BLOCKS.getValue(new ResourceLocation("baseelectric:electric_drill"));
         if (block == null || block == Blocks.AIR) throw new IllegalStateException("Electric drill registry absent");
         world.setBlockState(witness.pos, block.getDefaultState().with(BlockStateProperties.FACING, EnumFacing.NORTH), 2);
         for (int dx = -1; dx <= 1; dx++) for (int dy = -1; dy <= 1; dy++)

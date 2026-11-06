@@ -5,8 +5,8 @@
   "startupTimeoutSeconds": 180,
   "stationRunSeconds": 5,
   "recipeMode": "NORMAL",
-  "sourceCommit": "working-tree-from-40811a0",
-  "sourceVersion": "2.4.4.113021",
+  "sourceCommit": "working-tree-from-d4ebfea",
+  "sourceVersion": "2.4.5.113021",
   "forge": {
     "version": "1.13.2-25.0.223",
     "installerPath": ".cache/forge-1.13.2-25.0.223-installer.jar",
@@ -18,30 +18,30 @@
       "id": "advantageworkstest",
       "version": "1.1.0.113021",
       "file": "AdvantageWorksTestHarness-1.1.0.113021.jar",
-      "path": "build/libs/AdvantageWorksTestHarness-1.1.0.113021.jar",
+      "path": "build/gradle/libs/AdvantageWorksTestHarness-1.1.0.113021.jar",
       "workspaceProduced": true,
-      "sha256": "2A260DF4B66454B57ECB6B021BCF26B3A812CA5FC0A8B9C4C9E904879AA67A1C"
+      "sha256": "D3612632090D7CAB2DF87AB7F51C603A6E4ABDFE20F838A224547AC5E63ECDBE"
     },
     {
-      "id": "poweradvantage",
-      "version": "2.4.4.113021",
-      "file": "PowerAdvantage-2.4.4.113021.jar",
-      "path": "../build/libs/PowerAdvantage-2.4.4.113021.jar",
-      "sha256": "E5B62769812AE02393A305CF33D2E168BFB2B6D370AB04D43409B94F5740D193"
+      "id": "basepower",
+      "version": "2.4.5.113021",
+      "file": "basePower-2.4.5.113021.jar",
+      "path": "../build/libs/basePower-2.4.5.113021.jar",
+      "sha256": "99A99E103AE23C5C4DD831FFDF3E4C5AFDB89307224B08529B7AD94807A34DDF"
     },
     {
-      "id": "steamadvantage",
-      "version": "2.2.5.113021",
-      "file": "SteamAdvantage-2.2.5.113021.jar",
-      "path": "../../SteamAdvantage/SteamAdvantage/build/libs/SteamAdvantage-2.2.5.113021.jar",
-      "sha256": "A87F141913D511DB025FEE6D6FBA4000098598D8692B4BA53E7E80C67B14ACCA"
+      "id": "basesteam",
+      "version": "2.2.7.113021",
+      "file": "baseSteam-2.2.7.113021.jar",
+      "path": "../../SteamAdvantage/SteamAdvantage/build/libs/baseSteam-2.2.7.113021.jar",
+      "sha256": "435787C910F6B297E20FB0777CD4DB9154AEEBC19E816D563AE7802773DEAD97"
     },
     {
-      "id": "electricadvantage",
-      "version": "2.2.5.113021",
-      "file": "ElectricAdvantage-2.2.5.113021.jar",
-      "path": "../../ElectricAdvantage/ElectricAdvantage/build/libs/ElectricAdvantage-2.2.5.113021.jar",
-      "sha256": "C785155C05133D1A408613D2C9738A32C9818E31C2599ECBD9F2FE76965DB5BA"
+      "id": "baseelectric",
+      "version": "2.2.7.113021",
+      "file": "baseElectric-2.2.7.113021.jar",
+      "path": "../../ElectricAdvantage/ElectricAdvantage/build/libs/baseElectric-2.2.7.113021.jar",
+      "sha256": "C8DADD930C76C054D8B999712A9010E54836BBAEA7AA060B087127166932846E"
     },
     {
       "id": "orespawn",
@@ -73,7 +73,7 @@
     {
       "id": "desert-oil-enabled",
       "section": "fluid_deposits",
-      "entry": "poweradvantage:fluid_deposit/desert_crude_oil",
+      "entry": "basepower:fluid_deposit/desert_crude_oil",
       "present": true,
       "field": "enabled",
       "expectedBoolean": true
@@ -97,7 +97,7 @@
     {
       "id": "electric-sulfur-disabled",
       "section": "ores",
-      "entry": "electricadvantage:ore/sulfur",
+      "entry": "baseelectric:ore/sulfur",
       "present": true,
       "field": "enabled",
       "expectedBoolean": false
@@ -105,7 +105,7 @@
     {
       "id": "electric-lithium-fallback-enabled",
       "section": "ores",
-      "entry": "electricadvantage:ore/lithium",
+      "entry": "baseelectric:ore/lithium",
       "present": true,
       "field": "enabled",
       "expectedBoolean": true
@@ -114,7 +114,7 @@
   "profileMutations": [
     {
       "section": "ores",
-      "entry": "electricadvantage:ore/sulfur",
+      "entry": "baseelectric:ore/sulfur",
       "field": "enabled",
       "booleanValue": true
     }
@@ -123,7 +123,7 @@
     {
       "id": "electric-sulfur-user-enable-persists",
       "section": "ores",
-      "entry": "electricadvantage:ore/sulfur",
+      "entry": "baseelectric:ore/sulfur",
       "present": true,
       "field": "enabled",
       "expectedBoolean": true
@@ -147,13 +147,13 @@
   ],
   "worldgenExpectations": {
     "minimumCounts": {
-      "poweradvantage:crude_oil": 1,
+      "basepower:crude_oil": 1,
       "mineralogy:crude_oil": 1,
       "mineralogy:sulfur_ore": 1,
-      "electricadvantage:li_ore": 1
+      "baseelectric:li_ore": 1
     },
     "maximumCounts": {
-      "electricadvantage:sulfur_ore": 0
+      "baseelectric:sulfur_ore": 0
     },
     "zeroBiomeViolations": true
   }
