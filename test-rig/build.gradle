@@ -61,7 +61,7 @@ dependencies {
     testImplementation sourceSets.runner.output
     testImplementation 'junit:junit:4.13.2'
     compileOnly files(project.findProperty('powerAdvantageDeobfJar')
-            ?: '../build/libs-dev/PowerAdvantage-2.4.5.114041-deobf.jar')
+            ?: '../build/libs-dev/basePower-2.4.6.114041-deobf.jar')
 }
 
 tasks.named('processResources', ProcessResources) {
@@ -171,7 +171,7 @@ tasks.register('verifyHarnessIsolation') {
     description = 'Confirms the PowerAdvantage release contains no test-harness content.'
     doLast {
         File powerJar = file(project.findProperty('powerAdvantageReleaseJar')
-                ?: '../build/libs/PowerAdvantage-2.4.5.114041.jar')
+                ?: '../build/libs/basePower-2.4.6.114041.jar')
         if (!powerJar.isFile()) {
             throw new GradleException("Build PowerAdvantage first: ${powerJar}")
         }

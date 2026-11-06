@@ -6,6 +6,7 @@ import shutil
 import extended_lifecycle as historical
 from matrix import digest
 import native114_extended
+from native114_lifecycle import native_fixtures
 from native114_partial import campaign, common_parser, exercise_bridge, exercise_partial
 from native114_ticket_networks import NativeTicketExtendedRun, NativeTicketNetworkRun
 
@@ -54,7 +55,7 @@ def bridge_fixtures():
 
 
 def extended_fixtures():
-    return [f for f in historical.fixtures() if "route" in f] + linear_fixtures()
+    return native_fixtures([f for f in historical.fixtures() if "route" in f]) + linear_fixtures()
 
 
 def main():

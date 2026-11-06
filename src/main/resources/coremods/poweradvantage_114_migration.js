@@ -7,11 +7,11 @@ var MethodInsnNode = Java.type('org.objectweb.asm.tree.MethodInsnNode');
 var VarInsnNode = Java.type('org.objectweb.asm.tree.VarInsnNode');
 
 // Only the pre-datafix migration needs bytecode integration on Forge 1.14.
-var hook = 'zone/moddev/mc/poweradvantage/migration/LegacyWorldDataHook';
+var hook = 'zone/moddev/mc/basepower/migration/LegacyWorldDataHook';
 
 function initializeCoreMod() {
     return {
-        'poweradvantage_legacy_world_info': {
+        'basepower_legacy_world_info': {
             'target': { 'type': 'CLASS', 'name': 'net.minecraft.world.storage.SaveFormat' },
             'transformer': function(classNode) {
                 var patched = false;
@@ -30,7 +30,7 @@ function initializeCoreMod() {
                 return classNode;
             }
         },
-        'poweradvantage_legacy_chunk_status': {
+        'basepower_legacy_chunk_status': {
             'target': { 'type': 'CLASS', 'name': 'net.minecraft.world.chunk.storage.ChunkLoader' },
             'transformer': function(classNode) {
                 var descriptor = '(Lnet/minecraft/world/dimension/DimensionType;' +
@@ -63,7 +63,7 @@ function initializeCoreMod() {
                 return classNode;
             }
         },
-        'poweradvantage_legacy_worldgen_guard': {
+        'basepower_legacy_worldgen_guard': {
             'target': { 'type': 'CLASS', 'name': 'net.minecraft.world.gen.WorldGenRegion' },
             'transformer': function(classNode) {
                 var descriptor = '(Lnet/minecraft/util/math/BlockPos;' +

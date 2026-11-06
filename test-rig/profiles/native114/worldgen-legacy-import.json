@@ -6,7 +6,7 @@
   "stationRunSeconds": 5,
   "recipeMode": "NORMAL",
   "sourceCommit": "working-tree-unqualified",
-  "sourceVersion": "2.4.5.114041",
+  "sourceVersion": "2.4.6.114041",
   "forge": {
     "version": "1.14.4-28.2.26",
     "installerPath": ".cache/forge-1.14.4-28.2.26-installer.jar",
@@ -18,33 +18,33 @@
       "id": "advantageworkstest",
       "version": "1.1.0.114041",
       "file": "AdvantageWorksTestHarness-1.1.0.114041.jar",
-      "path": "build/libs/AdvantageWorksTestHarness-1.1.0.114041.jar",
+      "path": "build/gradle/libs/AdvantageWorksTestHarness-1.1.0.114041.jar",
       "workspaceProduced": true,
-      "sha256": "09DE1F386774C4C2B36AE95A4E636D35D6A2BCCAEE938BD5A05E6EE356652C3B"
+      "sha256": "7FA157B2098A4D32AB064AA8EF09F778F21F4B53A93DE533E497F07E1C7CC137"
     },
     {
-      "id": "poweradvantage",
-      "version": "2.4.5.114041",
-      "file": "PowerAdvantage-2.4.5.114041.jar",
-      "path": "../build/libs/PowerAdvantage-2.4.5.114041.jar",
+      "id": "basepower",
+      "version": "2.4.6.114041",
+      "file": "basePower-2.4.6.114041.jar",
+      "path": "../build/libs/basePower-2.4.6.114041.jar",
       "workspaceProduced": true,
-      "sha256": "33F57A1401A13597DCA53F4E49EAEDDD2D5CB3C3F406D5200902D5BA9CB41352"
+      "sha256": "C97A457D4B29FED49226EAA14DFD653C05E55CB30811899688DCBF08DF2F241B"
     },
     {
-      "id": "steamadvantage",
-      "version": "2.2.6.114041",
-      "file": "SteamAdvantage-2.2.6.114041.jar",
-      "path": "../../SteamAdvantage/SteamAdvantage/build/libs/SteamAdvantage-2.2.6.114041.jar",
+      "id": "basesteam",
+      "version": "2.2.8.114041",
+      "file": "baseSteam-2.2.8.114041.jar",
+      "path": "../../SteamAdvantage/SteamAdvantage/build/libs/baseSteam-2.2.8.114041.jar",
       "workspaceProduced": true,
-      "sha256": "444872113E13D806D4520CCBD9B3230C931353D43875BAE57EB9B5FC86614669"
+      "sha256": "2CB0774379011ED0CAEFDAC3ACE9B5025C6AC879EECB92ACCE01D130678B68C0"
     },
     {
-      "id": "electricadvantage",
-      "version": "2.2.6.114041",
-      "file": "ElectricAdvantage-2.2.6.114041.jar",
-      "path": "../../ElectricAdvantage/ElectricAdvantage/build/libs/ElectricAdvantage-2.2.6.114041.jar",
+      "id": "baseelectric",
+      "version": "2.2.8.114041",
+      "file": "baseElectric-2.2.8.114041.jar",
+      "path": "../../ElectricAdvantage/ElectricAdvantage/build/libs/baseElectric-2.2.8.114041.jar",
       "workspaceProduced": true,
-      "sha256": "5BE41447AF5AA3AF60C145B3A862BC42802C620C637D1E65810B350A6A9AFBA9"
+      "sha256": "8E02EACFDF896AC73DD6451934858E7CD104FEBD9678F53892D2F9C7CD04A8BA"
     },
     {
       "id": "orespawn",
@@ -63,7 +63,7 @@
   "buildWorks": false,
   "worldgenSampleRadius": 8,
   "stableWorldgenCountExclusions": [
-    "poweradvantage:crude_oil"
+    "basepower:crude_oil"
   ],
   "shutdownTimeoutSeconds": 300,
   "lifecycleStations": [],
@@ -81,7 +81,7 @@
     {
       "id": "legacy-oil-retained",
       "section": "ores",
-      "entry": "poweradvantage:legacy/poweradvantage_crude_oil_0",
+      "entry": "basepower:legacy/basepower_crude_oil_0",
       "present": true,
       "field": "enabled",
       "expectedBoolean": true
@@ -89,7 +89,7 @@
     {
       "id": "legacy-lithium-retained",
       "section": "ores",
-      "entry": "electricadvantage:legacy/electricadvantage_li_ore_0",
+      "entry": "baseelectric:legacy/baseelectric_li_ore_0",
       "present": true,
       "field": "enabled",
       "expectedBoolean": true
@@ -97,7 +97,7 @@
     {
       "id": "legacy-sulfur-retained",
       "section": "ores",
-      "entry": "electricadvantage:legacy/electricadvantage_sulfur_ore_1",
+      "entry": "baseelectric:legacy/baseelectric_sulfur_ore_1",
       "present": true,
       "field": "enabled",
       "expectedBoolean": true
@@ -105,19 +105,19 @@
     {
       "id": "modern-oil-not-duplicated",
       "section": "fluid_deposits",
-      "entry": "poweradvantage:fluid_deposit/desert_crude_oil",
+      "entry": "basepower:fluid_deposit/desert_crude_oil",
       "present": false
     },
     {
       "id": "modern-lithium-not-duplicated",
       "section": "ores",
-      "entry": "electricadvantage:ore/lithium",
+      "entry": "baseelectric:ore/lithium",
       "present": false
     },
     {
       "id": "modern-sulfur-not-duplicated",
       "section": "ores",
-      "entry": "electricadvantage:ore/sulfur",
+      "entry": "baseelectric:ore/sulfur",
       "present": false
     }
   ],
@@ -125,7 +125,7 @@
     {
       "id": "legacy-oil-retained",
       "section": "ores",
-      "entry": "poweradvantage:legacy/poweradvantage_crude_oil_0",
+      "entry": "basepower:legacy/basepower_crude_oil_0",
       "present": true,
       "field": "enabled",
       "expectedBoolean": true
@@ -133,7 +133,7 @@
     {
       "id": "legacy-lithium-retained",
       "section": "ores",
-      "entry": "electricadvantage:legacy/electricadvantage_li_ore_0",
+      "entry": "baseelectric:legacy/baseelectric_li_ore_0",
       "present": true,
       "field": "enabled",
       "expectedBoolean": true
@@ -141,7 +141,7 @@
     {
       "id": "legacy-sulfur-retained",
       "section": "ores",
-      "entry": "electricadvantage:legacy/electricadvantage_sulfur_ore_1",
+      "entry": "baseelectric:legacy/baseelectric_sulfur_ore_1",
       "present": true,
       "field": "enabled",
       "expectedBoolean": true
@@ -149,19 +149,19 @@
     {
       "id": "modern-oil-not-duplicated",
       "section": "fluid_deposits",
-      "entry": "poweradvantage:fluid_deposit/desert_crude_oil",
+      "entry": "basepower:fluid_deposit/desert_crude_oil",
       "present": false
     },
     {
       "id": "modern-lithium-not-duplicated",
       "section": "ores",
-      "entry": "electricadvantage:ore/lithium",
+      "entry": "baseelectric:ore/lithium",
       "present": false
     },
     {
       "id": "modern-sulfur-not-duplicated",
       "section": "ores",
-      "entry": "electricadvantage:ore/sulfur",
+      "entry": "baseelectric:ore/sulfur",
       "present": false
     }
   ],
@@ -174,14 +174,14 @@
     },
     {
       "id": "power-provider",
-      "path": "config/poweradvantage-orespawn.json",
-      "contains": "poweradvantage:legacy/poweradvantage_crude_oil_0",
+      "path": "config/basepower-orespawn.json",
+      "contains": "basepower:legacy/basepower_crude_oil_0",
       "minimumOccurrences": 1
     },
     {
       "id": "electric-provider",
-      "path": "config/electricadvantage-orespawn.json",
-      "contains": "electricadvantage:legacy/electricadvantage_li_ore_0",
+      "path": "config/baseelectric-orespawn.json",
+      "contains": "baseelectric:legacy/baseelectric_li_ore_0",
       "minimumOccurrences": 1
     }
   ],
@@ -194,22 +194,22 @@
     },
     {
       "id": "power-provider",
-      "path": "config/poweradvantage-orespawn.json",
-      "contains": "poweradvantage:legacy/poweradvantage_crude_oil_0",
+      "path": "config/basepower-orespawn.json",
+      "contains": "basepower:legacy/basepower_crude_oil_0",
       "minimumOccurrences": 1
     },
     {
       "id": "electric-provider",
-      "path": "config/electricadvantage-orespawn.json",
-      "contains": "electricadvantage:legacy/electricadvantage_li_ore_0",
+      "path": "config/baseelectric-orespawn.json",
+      "contains": "baseelectric:legacy/baseelectric_li_ore_0",
       "minimumOccurrences": 1
     }
   ],
   "worldgenExpectations": {
     "minimumCounts": {
-      "poweradvantage:crude_oil": 1,
-      "electricadvantage:li_ore": 1,
-      "electricadvantage:sulfur_ore": 1
+      "basepower:crude_oil": 1,
+      "baseelectric:li_ore": 1,
+      "baseelectric:sulfur_ore": 1
     },
     "maximumCounts": {
       "mineralogy:crude_oil": 0,

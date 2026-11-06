@@ -1,19 +1,10 @@
-# PowerAdvantage
+# basePower for Minecraft 1.14.4
 
-**Minecraft 1.14.4**
+basePower continues DrCyano's Power Advantage. It provides conveyors, fluids and the shared systems used by baseSteam and baseElectric. Look for the sprocket on the **basePower** creative tab for items from all three mods.
 
-This port has passed the automated machine/migration tests and a manual check of
-visuals and recipe unlocks. See the [qualification report](docs/1.14/BROADER-QUALIFICATION.md)
-for coverage and limits. Use disposable copies for upgrades.
+Use Forge 28.2.26 and Java 8 with Base Metals 3.0.1.114041 and OreSpawn 4.1.1.114041. Back up the world and configuration and open a copy first. Keep the three base* mods together, and check that the other mods in your world support Minecraft 1.14.4.
 
-Power Advantage provides shared power, fluids, item transport and compatibility APIs for Steam Advantage and Electric Advantage.
-
-This port keeps existing registry names and carries forward migration from 1.10 and 1.12.
-Always back up a world before upgrading, and check that its other mods also support the target version.
-The archived [1.13 qualification notes](docs/1.13/CURRENT-QUALIFICATION.md) separate its tested scenarios from remaining gaps;
-they are not a guarantee that an entire modpack can be upgraded without losses.
-The [1.14 qualification report](docs/1.14/BROADER-QUALIFICATION.md) records the
-repeated checks, exact tested jars and remaining limits for this candidate.
+See the [1.14.4 upgrade and testing notes](docs/1.14/BASE-IDENTITY-MIGRATION.md) for the upgrade routes, what the tests check, and what still needs a player.
 
 Recipe-book discovery now follows relevant ingredients. See the [all-Advantage material checklist and automated discovery tests](docs/1.13/RECIPE-DISCOVERY.md). To regenerate the checked-in unlock JSON after changing recipes, run `node tools/generate-recipe-unlocks.js`; `check` rejects missing or stale ingredient criteria.
 
@@ -49,20 +40,20 @@ Eclipse copies production resources from `build/resources/main`, not directly fr
 
 To test all three Advantage mods together, run `gradlew.bat prepareCombinedEclipseLaunch`, refresh Eclipse, and launch `runClientAllAdvantage.launch`. This additional profile loads the pinned Steam/Electric deobf jars, Base Metals and OreSpawn alongside Power's Eclipse output. It uses the same `run` directory and test saves; it does not copy, open or modify a save automatically. The ordinary `runClient.launch` remains Power-only. Alternative checkout layouts can pass `-PsteamAdvantageDeobfJar=<path>` and `-PelectricAdvantageDeobfJar=<path>`; supplied jars must match the `test-rig/profiles/native114/dev-core.json` pins. Regenerate the combined launch after refreshing its dependencies or the base launch.
 
-The combined [client resource probe](test-rig/client-resources/README.md) checks native baked models, textures, creative entries, translated item names, fluid rendering and tank gauges without opening a save. Static resource and locale regressions also run under `check`. Automated recipe-book fixtures and the accepted manual visual/recipe-unlock checks have separate scopes; see the [current port status](docs/1.14/PORT-STATUS.md).
+The combined [client resource probe](test-rig/client-resources/README.md) checks baked models, textures, creative entries, translated item names, fluid rendering and tank gauges without opening a save. Static resource and locale regressions also run under `check`. The recipe-book probe uses exported native recipes, but does not replace checking unlock notifications in play.
 
-The [broader 1.14 test results and play-test checklist](docs/1.14/BROADER-QUALIFICATION.md) separate migration, connected machinery, endurance and manual checks. Test worlds and reports stay local; use disposable copies when trying an old save.
+The [earlier 1.14 qualification report](docs/1.14/BROADER-QUALIFICATION.md) covers the pre-rename builds. It is not evidence for the new base* jars.
 
 ## Compatibility
 
-The implementation namespace is `zone.moddev.mc.poweradvantage`. The historical `cyano.poweradvantage.api` surface, including `FluidNetworkApi`, remains available to dependent mods. Registry names, fluids, tile IDs, NBT keys, OreSpawn provider IDs, and configuration meaning remain stable.
+The implementation namespace is `zone.moddev.mc.basepower`. The historical `cyano.poweradvantage.api` surface, including `FluidNetworkApi`, remains available to dependent mods. The saved-world migration maps original Advantage identities to their base* equivalents. Existing base* worlds keep their registry names, fluids, tile IDs, and machine data.
 
 Forge 1.14 handles oil rendering, fluid containers, registered menus, tag updates
 and parts-loot events directly. Advantage's public fluid contract is bridged to
 native sided fluid capabilities; its millibucket units and saved tank keys remain
 unchanged. The remaining coremod runs before vanilla's legacy-world data fixes.
 
-PowerAdvantage owns the shared pre-flattening migration hook used by all three Advantage mods. See [the 1.13 migration guide](docs/1.13/MIGRATION.md) before opening an irreplaceable 1.10 or 1.12 world. The [Advantage Works rig](test-rig/README.md) provides repeatable machine, restart, world-generation, and migration checks.
+basePower owns the shared pre-flattening migration hook used by all three mods. The [Advantage Works rig](test-rig/README.md) provides repeatable machine, restart, world-generation, and migration checks.
 
 The [endurance protocol](docs/1.13/ENDURANCE.md) exercises repeat-batch operation in fresh and migrated disposable worlds, followed by a complete server-process restart. Its coverage limits are separate from frozen-state migration and manual client acceptance.
 
@@ -87,7 +78,9 @@ The historical 1.10 handbook remains on the [1.10.2 branch](https://github.com/M
 The local [test-coverage backport](docs/1.14/TEST-COVERAGE-BACKPORT.md) records the
 repaired candidate, measured machine jobs, restart checks and GUI captures.
 
-## Generator Follow-Up
+## Archived Advantage Builds
+
+These checkpoints apply only to the earlier builds, before the base* rename.
 
 The [generator follow-up](docs/1.14/TEST-COVERAGE-BACKPORT.md#generator-follow-up) records the older `pa114-candidate-c` inputs.
 Its 126 operating jobs and 126 cold checks, 39 GUI windows, 351 caption cases,
@@ -97,7 +90,7 @@ is retained. This is a pre-final Steam-control checkpoint, not qualification of
 the newer SteamAdvantage jars or harness. Those still need the final sweep.
 Manual play-testing and release review remain separate.
 
-## Final T Candidate
+**Final pre-rename candidate**
 
 The [final-t checkpoint](docs/1.14/TEST-COVERAGE-BACKPORT.md#final-t-candidate)
 records profile `pa114-candidate-e` and its exact jar hashes. All 132 operating

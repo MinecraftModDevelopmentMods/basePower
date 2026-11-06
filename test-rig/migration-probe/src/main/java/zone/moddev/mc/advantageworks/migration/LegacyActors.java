@@ -73,10 +73,10 @@ final class LegacyActors {
         Files.write(new File("actor-fixture.json").toPath(), JSON.toJson(definition).getBytes(StandardCharsets.UTF_8));
 
         EntityMinecartChest cart = new EntityMinecartChest(world, 148.5, 80, 8.5);
-        cart.setInventorySlotContents(0, stack("electricadvantage:lithium_battery", 3));
-        cart.setInventorySlotContents(1, stack("steamadvantage:musket", 1));
+        cart.setInventorySlotContents(0, stack("baseelectric:lithium_battery", 3));
+        cart.setInventorySlotContents(1, stack("basesteam:musket", 1));
         add(world, cart, "cart");
-        EntityItem dropped = new EntityItem(world, 152.5, 80, 8.5, stack("steamadvantage:musket", 1));
+        EntityItem dropped = new EntityItem(world, 152.5, 80, 8.5, stack("basesteam:musket", 1));
         dropped.setPickupDelay(32767);
         add(world, dropped, "dropped-musket");
         EntityItem bucket = new EntityItem(world, 156.5, 80, 8.5, oilBucket());
@@ -87,12 +87,12 @@ final class LegacyActors {
         wolf.setTamed(true); wolf.setOwnerId(PLAYER); wolf.setSitting(true);
         add(world, wolf, "owned-wolf");
         BlockPos pos = new BlockPos(164, 81, 8);
-        world.setBlockState(pos, Block.REGISTRY.getObject(new ResourceLocation("electricadvantage:hydroelectric_generator")).getDefaultState(), 2);
+        world.setBlockState(pos, Block.REGISTRY.getObject(new ResourceLocation("baseelectric:hydroelectric_generator")).getDefaultState(), 2);
         TileEntity parent = world.getTileEntity(pos);
         Entity turbine = null;
         for (String prefix : new String[] {"zone.moddev.mc", "com.mcmoddev", "cyano"}) {
             try {
-                Class<?> type = Class.forName(prefix + ".electricadvantage.entities.HydroturbineEntity");
+                Class<?> type = Class.forName(prefix + ".baseelectric.entities.HydroturbineEntity");
                 turbine = (Entity) type.getConstructor(net.minecraft.world.World.class, TileEntity.class).newInstance(world, parent);
                 break;
             } catch (ClassNotFoundException ignored) { }
@@ -107,8 +107,8 @@ final class LegacyActors {
 
     private static NBTTagList inventory() {
         NBTTagList result = new NBTTagList();
-        String[] names = {"steamadvantage:musket", "electricadvantage:lithium_battery", "electricadvantage:lead_acid_battery",
-                "electricadvantage:alkaline_battery", "electricadvantage:nickel_hydride_battery", "poweradvantage:sprocket",
+        String[] names = {"basesteam:musket", "baseelectric:lithium_battery", "baseelectric:lead_acid_battery",
+                "baseelectric:alkaline_battery", "baseelectric:nickel_hydride_battery", "basepower:sprocket",
                 "minecraft:dirt", "minecraft:apple"};
         int slot = 0;
         for (String name : names) {
@@ -143,7 +143,7 @@ final class LegacyActors {
         if (item.isDamageable()) result.setItemDamage(5);
         if (name.endsWith(":musket")) {
             for (ResourceLocation enchantment : net.minecraft.enchantment.Enchantment.REGISTRY.getKeys()) {
-                if (enchantment.toString().startsWith("steamadvantage:")) {
+                if (enchantment.toString().startsWith("basesteam:")) {
                     result.addEnchantment(net.minecraft.enchantment.Enchantment.REGISTRY.getObject(enchantment), 1);
                 }
             }
@@ -153,7 +153,7 @@ final class LegacyActors {
 
     private static ItemStack oilBucket() {
         if (!Item.REGISTRY.containsKey(new ResourceLocation("forge:bucketfilled"))) {
-            return stack("poweradvantage:crude_oil", 1);
+            return stack("basepower:crude_oil", 1);
         }
         ItemStack stack = stack("forge:bucketfilled", 1);
         stack.getTagCompound().setString("FluidName", "crude_oil");

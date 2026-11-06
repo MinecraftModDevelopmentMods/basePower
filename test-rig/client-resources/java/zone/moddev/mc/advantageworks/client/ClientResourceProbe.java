@@ -1,5 +1,6 @@
 package zone.moddev.mc.advantageworks.client;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
@@ -8,6 +9,7 @@ import net.minecraft.client.renderer.model.BakedQuad;
 import net.minecraft.client.renderer.model.IBakedModel;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.item.Item;
+import net.minecraft.item.ItemGroup;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.Direction;
 import net.minecraft.util.NonNullList;
@@ -18,15 +20,18 @@ import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.registries.ForgeRegistries;
 import org.apache.logging.log4j.LogManager;
-import zone.moddev.mc.poweradvantage.init.ItemGroups;
+import zone.moddev.mc.basepower.init.ItemGroups;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 
 /** Runs after native resource baking, without opening or generating a world. */
 @Mod(ClientResourceProbe.MODID)
@@ -49,9 +54,9 @@ public final class ClientResourceProbe {
                     && "28.2.26".equals(result.get("forge").getAsString()), "Wrong native client target");
             require(minecraft.world == null && minecraft.player == null && !minecraft.isIntegratedServerRunning(),
                     "Resource probe must not open a world or connect to a server");
-            com.google.gson.JsonArray mods = new com.google.gson.JsonArray();
+            JsonArray mods = new JsonArray();
             JsonObject versions = new JsonObject();
-            for (String id : new String[]{"poweradvantage", "steamadvantage", "electricadvantage"}) {
+            for (String id : new String[]{"basepower", "basesteam", "baseelectric"}) {
                 boolean loaded = net.minecraftforge.fml.ModList.get().isLoaded(id);
                 if (loaded) {
                     mods.add(id);
@@ -62,11 +67,11 @@ public final class ClientResourceProbe {
             }
             result.add("advantage_mods", mods);
             result.add("mod_versions", versions);
-            require(versions.has("poweradvantage") && zone.moddev.mc.poweradvantage.PowerAdvantage.VERSION
-                    .equals(versions.get("poweradvantage").getAsString()), "Power metadata does not match the compiled version");
-            require("2.4.5.114041".equals(versions.get("poweradvantage").getAsString()), "Wrong native Power candidate");
-            for (String id : new String[]{"steamadvantage", "electricadvantage"}) {
-                if (versions.has(id)) require("2.2.6.114041".equals(versions.get(id).getAsString()), "Wrong native expansion candidate: " + id);
+            require(versions.has("basepower") && zone.moddev.mc.basepower.PowerAdvantage.VERSION
+                    .equals(versions.get("basepower").getAsString()), "Power metadata does not match the compiled version");
+            require("2.4.6.114041".equals(versions.get("basepower").getAsString()), "Wrong native Power candidate");
+            for (String id : new String[]{"basesteam", "baseelectric"}) {
+                if (versions.has(id)) require("2.2.8.114041".equals(versions.get(id).getAsString()), "Wrong native expansion candidate: " + id);
             }
             require(minecraft.getModelManager().getMissingModel() != null, "Timed out before model baking");
             require(minecraft.getLoadingGui() == null, "Timed out before native resource loading completed");
@@ -92,12 +97,9 @@ public final class ClientResourceProbe {
                     states++;
                 }
             }
-            NonNullList<ItemStack> contents = NonNullList.create();
-            ItemGroups.tab_powerAdvantage.fill(contents);
             require(items > 0 && states > 0, "Power Advantage content is not registered");
-            require(!contents.isEmpty(), "Power Advantage creative tab is empty");
-            require(!ItemGroups.tab_powerAdvantage.getIcon().isEmpty(), "Power Advantage creative tab has no icon");
-            require(I18n.format("block.poweradvantage.still").equals(I18n.format("tile.poweradvantage.still.name")),
+            int creativeEntries = verifyCreativeTab(result);
+            require(I18n.format("block.basepower.still").equals(I18n.format("tile.basepower.still.name")),
                     "Legacy GUI translation differs from modern block name");
             TankVisualProbe.verify(minecraft, result);
             MachineGuiLayoutProbe.verify(minecraft, result);
@@ -106,9 +108,9 @@ public final class ClientResourceProbe {
             result.addProperty("status", "PASS");
             result.addProperty("items", items);
             result.addProperty("block_states", states);
-            result.addProperty("creative_entries", contents.size());
+            result.addProperty("creative_entries", creativeEntries);
             result.addProperty("screen", minecraft.currentScreen == null ? "none" : minecraft.currentScreen.getClass().getName());
-            LogManager.getLogger(MODID).info("ADVANTAGE_CLIENT_RESOURCES PASS items={} block_states={} creative_entries={}", items, states, contents.size());
+            LogManager.getLogger(MODID).info("ADVANTAGE_CLIENT_RESOURCES PASS items={} block_states={} creative_entries={}", items, states, creativeEntries);
         } catch (RuntimeException | LinkageError | AssertionError failure) {
             result.addProperty("status", "FAIL");
             result.addProperty("error", failure.toString());
@@ -120,9 +122,60 @@ public final class ClientResourceProbe {
         }
     }
 
+    private static int verifyCreativeTab(JsonObject result) {
+        ItemGroup shared = ItemGroups.tab_powerAdvantage;
+        // Fluids use buckets; the other entries are generated machine parts or variants.
+        Set<String> hidden = new HashSet<>(Arrays.asList(
+                "basepower:crude_oil", "basepower:refined_oil", "basepower:fluid_pipe_terminal",
+                "basesteam:drillbit", "basesteam:pump_pipe_steam",
+                "baseelectric:laser_turret_evil", "baseelectric:pump_pipe_electric"));
+        Set<String> expected = new HashSet<>();
+        for (Item item : ForgeRegistries.ITEMS) {
+            ResourceLocation id = item.getRegistryName();
+            if (id != null && included(id.getNamespace()) && !hidden.contains(id.toString())) {
+                expected.add(id.toString());
+            }
+        }
+
+        int matchingTabs = 0;
+        JsonArray tabs = new JsonArray();
+        JsonArray visible = new JsonArray();
+        List<String> failures = new ArrayList<>();
+        for (ItemGroup tab : ItemGroup.GROUPS) {
+            if (tab == null) continue;
+            String label = tab.getTabLabel();
+            tabs.add(label);
+            if ("basepower".equals(label) || "poweradvantage".equals(label)
+                    || "basesteam".equals(label) || "steamadvantage".equals(label)
+                    || "baseelectric".equals(label) || "electricadvantage".equals(label)) matchingTabs++;
+            if (tab == ItemGroup.SEARCH || tab == ItemGroup.HOTBAR || tab == ItemGroup.INVENTORY) continue;
+            NonNullList<ItemStack> contents = NonNullList.create();
+            tab.fill(contents);
+            for (ItemStack stack : contents) {
+                ResourceLocation id = stack.getItem().getRegistryName();
+                if (id == null || !included(id.getNamespace())) continue;
+                String name = id.toString();
+                if (tab != shared) failures.add(name + " is on " + label);
+                else if (!expected.remove(name)) failures.add("Unexpected or duplicate stack: " + name);
+                else visible.add(name);
+            }
+        }
+        result.add("creative_tab_labels", tabs);
+        result.add("creative_visible_items", visible);
+        result.addProperty("creative_tab_title", I18n.format(shared.getTranslationKey()));
+        if (matchingTabs != 1) failures.add("Expected one base* creative tab, found " + matchingTabs);
+        if (!"basePower".equals(I18n.format(shared.getTranslationKey()))) failures.add("Wrong creative tab title");
+        if (!new ResourceLocation("basepower", "sprocket").equals(shared.getIcon().getItem().getRegistryName())) {
+            failures.add("Wrong creative tab icon");
+        }
+        if (!expected.isEmpty()) failures.add("Missing creative items: " + expected);
+        require(failures.isEmpty(), failures.toString());
+        return visible.size();
+    }
+
     private static boolean included(String namespace) {
-        return "poweradvantage".equals(namespace) || (Boolean.getBoolean("advantageworks.requireExtensions")
-                && ("steamadvantage".equals(namespace) || "electricadvantage".equals(namespace)));
+        return "basepower".equals(namespace) || (Boolean.getBoolean("advantageworks.requireExtensions")
+                && ("basesteam".equals(namespace) || "baseelectric".equals(namespace)));
     }
 
     private static void verifyModel(IBakedModel model, IBakedModel missing, BlockState state, String id, boolean requireQuads) {

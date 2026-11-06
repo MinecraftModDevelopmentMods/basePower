@@ -21,7 +21,10 @@ public final class AdvantageWorksMod {
         MachineOperationalProbe.register();
         RedstoneReloadProbe.register();
         NativeHarvestProbe.register();
-        WorksController.getInstance().loadDefinition();
+        WorksController controller = WorksController.getInstance();
+        controller.loadDefinition();
+        MinecraftForge.EVENT_BUS.addListener(controller::tickWorldgen);
+        MinecraftForge.EVENT_BUS.addListener(controller::clearWorldgen);
         MinecraftForge.EVENT_BUS.addListener(this::serverStarting);
     }
 

@@ -1,0 +1,30 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "xx",
+    "x*",
+    " x"
+  ],
+  "key": {
+    "x": {
+      "tag": "forge:ingots/iron"
+    },
+    "*": {
+      "tag": "forge:sprockets"
+    }
+  },
+  "result": {
+    "item": "basepower:rotator_tool"
+  },
+  "group": "basepower:rotator_tool",
+  "conditions": [
+    {
+      "type": "basepower:tag_not_empty",
+      "tag": "forge:ingots/iron"
+    },
+    {
+      "type": "basepower:tag_not_empty",
+      "tag": "forge:sprockets"
+    }
+  ]
+}

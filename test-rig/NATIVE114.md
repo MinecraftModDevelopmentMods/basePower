@@ -1,5 +1,9 @@
 # Native 1.14.4 Harness
 
+The current profiles use the basePower, baseSteam and baseElectric mod IDs.
+The [current upgrade and testing notes](../docs/1.14/BASE-IDENTITY-MIGRATION.md)
+separate their evidence from earlier Advantage builds.
+
 This test-only destination targets Forge 28.2.26, snapshot 20190719-1.14.3,
 MCP 20190829.143755, FG 7.0.34, Gradle 9.6.1 and Java 8 bytecode. Run Gradle
 with Java 17. When projects share a Gradle cache, run their builds one at a time,
@@ -37,9 +41,9 @@ real tick and restart witnesses, not merely matching serialized NBT. See the
 [broader qualification record](../docs/1.14/BROADER-QUALIFICATION.md) for their
 current live results, including passenger/leash restoration and respawn.
 
-The native works descriptor changes only the target header. It selects the
-immutable 1.13.2 station specification, preserving all 21 station IDs, bounds,
-placements, controls, quantities, assertions, bug markers and manual observations.
+The native works descriptor selects the established station specification, with
+the current registry namespaces. All 21 station IDs, bounds, placements,
+controls, quantities, assertions, bug markers and manual observations remain.
 The definition regression compares every station and district. Existing command
 names and PASS/FAIL/EXPECTED_FAIL/UNEXPECTED_PASS/SKIP/MANUAL_REQUIRED meanings
 remain unchanged. All original tests remain present.

@@ -59,7 +59,15 @@ public final class LegacyOreSpawnConfigBridge {
      * OreSpawn 4 provider-override location.
      */
     public static synchronized Result migrate(Path configDirectory, String modId) throws IOException {
+        return migrate(configDirectory, modId, modId);
+    }
+
+    public static synchronized Result migrate(Path configDirectory, String modId, String legacyModId)
+            throws IOException {
         Path source = configDirectory.resolve("orespawn").resolve(modId + ".json");
+        if (!Files.isRegularFile(source)) {
+            source = configDirectory.resolve("orespawn").resolve(legacyModId + ".json");
+        }
         Path target = configDirectory.resolve(modId + "-orespawn.json");
         if (!Files.isRegularFile(source) || Files.exists(target)
                 || Files.exists(configDirectory.resolve("orespawn-worldgen.json"))) {
@@ -84,6 +92,9 @@ public final class LegacyOreSpawnConfigBridge {
                 JsonObject oldOre = oreElement.getAsJsonObject();
                 String output = string(oldOre, "blockID", "");
                 if (!isRegistryName(output)) continue;
+                if (output.startsWith(legacyModId + ":")) {
+                    output = modId + output.substring(legacyModId.length());
+                }
 
                 JsonObject ore = convertOre(oldOre, output, dimensionId);
                 if (ore == null) continue;

@@ -3,6 +3,7 @@
 import time
 
 import extended_lifecycle as historical
+from native114_lifecycle import native_fixtures
 from native114_partial import NativeExtendedRun, campaign, common_parser, orders
 
 
@@ -75,7 +76,7 @@ def exercise(runner, progress):
 def main():
     parser = common_parser(__doc__)
     args = parser.parse_args()
-    return campaign(args, "extended", historical.fixtures(), exercise, NativeExtendedRun)
+    return campaign(args, "extended", native_fixtures(historical.fixtures()), exercise, NativeExtendedRun)
 
 
 if __name__ == "__main__":

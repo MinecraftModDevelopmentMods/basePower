@@ -23,7 +23,7 @@ REQUIRED = {
               "conveyor/blocked", "conveyor/item-entity", "conveyor/nbt-preserved", "filter/block", "filter/food", "filter/fuel", "filter/ore",
               "filter/plant", "filter/smelt", "filter/inventory-0", "filter/inventory-1", "filter/inventory-2",
               "filter/inventory-3", "filter/overflow-0", "filter/overflow-1", "filter/overflow-2", "filter/overflow-3",
-              "drain/minecraft_water", "drain/poweradvantage_crude_oil", "drain/poweradvantage_refined_oil",
+              "drain/minecraft_water", "drain/basepower_crude_oil", "drain/basepower_refined_oil",
               "drain/non-source", "tank/filter-true", "tank/filter-false", "tank/full", "fluid-switch/true",
               "fluid-switch/false", "discharge/true", "discharge/false", "conveyor/locked-source", "conveyor/locked-destination",
               "still/production", "still/no-fuel", "still/invalid", "still/full", "still/one-space", "still/redstone"},
@@ -142,15 +142,25 @@ def pin(args):
     if destination.exists(): raise FileExistsError(destination)
     destination.mkdir(parents=True)
     replacements = {
-        "poweradvantage": RIG.parent / "build/libs/PowerAdvantage-2.4.5.114041.jar",
-        "steamadvantage": RIG.parent.parent / "SteamAdvantage/SteamAdvantage/build/libs/SteamAdvantage-2.2.6.114041.jar",
-        "electricadvantage": RIG.parent.parent / "ElectricAdvantage/ElectricAdvantage/build/libs/ElectricAdvantage-2.2.6.114041.jar",
+        "basepower": RIG.parent / "build/libs/basePower-2.4.6.114041.jar",
+        "basesteam": RIG.parent.parent / "SteamAdvantage/SteamAdvantage/build/libs/baseSteam-2.2.8.114041.jar",
+        "baseelectric": RIG.parent.parent / "ElectricAdvantage/ElectricAdvantage/build/libs/baseElectric-2.2.8.114041.jar",
         "advantageworkstest": RIG / "build/gradle/libs/AdvantageWorksTestHarness-1.1.0.114041.jar",
     }
     if getattr(args, "original_production", False):
         replacements = {key: value for key, value in replacements.items() if key == "advantageworkstest"}
     target = copy.deepcopy(base["target114"])
+    if getattr(args, "seed", None) is not None:
+        seed = args.seed.resolve()
+        if digest(seed / LAUNCHER) != target["launcher_sha256"].upper() or not (seed / "libraries").is_dir():
+            raise ValueError("Replacement seed must use the same pinned Forge launcher")
+        target["seed"] = str(seed)
+    renamed = {"poweradvantage": ("basepower", "2.4.6.114041"),
+               "steamadvantage": ("basesteam", "2.2.8.114041"),
+               "electricadvantage": ("baseelectric", "2.2.8.114041")}
     for jar in target["jars"]:
+        if not getattr(args, "original_production", False) and jar["id"] in renamed:
+            jar["id"], jar["version"] = renamed[jar["id"]]
         source = replacements.get(jar["id"], Path(jar["path"]))
         checksum = digest(source)
         folder = destination / "artifacts" / checksum
@@ -243,6 +253,7 @@ def main():
     p = commands.add_parser("pin")
     p.add_argument("--base", type=Path, required=True); p.add_argument("--output", type=Path, required=True)
     p.add_argument("--label", required=True)
+    p.add_argument("--seed", type=Path, help="Fresh Forge installation with the same pinned launcher")
     p.add_argument("--original-production", action="store_true", help="Keep the original three production jars; replace only the test harness")
     r = commands.add_parser("run")
     r.add_argument("--manifest", type=Path, required=True); r.add_argument("--output", type=Path, required=True)

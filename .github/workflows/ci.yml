@@ -1,4 +1,4 @@
-name: Power Advantage 1.14 CI
+name: basePower 1.14 CI
 
 on:
   push:
@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: poweradvantage-1.14-${{ github.workflow }}-${{ github.ref }}
+  group: basepower-1.14-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
-      - name: Check out PowerAdvantage
+      - name: Check out basePower
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Check out pinned OreSpawn
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -73,20 +73,21 @@ jobs:
       - name: Upload audited release candidate
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: PowerAdvantage-1.14.4-${{ github.sha }}
+          name: basePower-1.14.4-${{ github.sha }}
           if-no-files-found: error
           retention-days: 30
           path: |
-            build/libs/PowerAdvantage-2.4.5.114041.jar
-            build/libs/PowerAdvantage-2.4.5.114041-sources.jar
-            build/libs/PowerAdvantage-2.4.5.114041-javadoc.jar
+            build/libs/basePower-2.4.6.114041.jar
+            build/libs/basePower-2.4.6.114041-sources.jar
+            build/libs/basePower-2.4.6.114041-javadoc.jar
+            build/libs-dev/basePower-2.4.6.114041-deobf.jar
             build/release/SHA256SUMS
             CHANGELOG.txt
       - name: Upload diagnostics on failure
         if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: PowerAdvantage-1.14.4-diagnostics-${{ github.sha }}
+          name: basePower-1.14.4-diagnostics-${{ github.sha }}
           if-no-files-found: ignore
           retention-days: 14
           path: |

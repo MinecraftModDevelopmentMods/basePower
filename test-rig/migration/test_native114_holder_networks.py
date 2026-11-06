@@ -40,7 +40,10 @@ class HolderNetworkTests(unittest.TestCase):
             self.assertEqual(len(path), len(set(map(tuple,path))))
 
     def test_drill_geometry_is_not_changed_to_accept_network_results(self):
-        self.assertEqual(extended_fixtures()[:18], [f for f in extended_lifecycle.fixtures() if "route" in f])
+        original = [f for f in extended_lifecycle.fixtures() if "route" in f]
+        expected = [dict(f, block="basesteam:steam_drill" if f["energyType"] == "steam"
+                         else "baseelectric:electric_drill") for f in original]
+        self.assertEqual(expected, extended_fixtures()[:18])
 
     def test_native_fill_is_still_bounded_below_vanilla_volume_limit(self):
         for f in linear_fixtures() + bridge_fixtures():

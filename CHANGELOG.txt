@@ -1,4 +1,10 @@
-Unreleased - Minecraft 1.14.4
+2.4.6.114041 - basePower for Minecraft 1.14.4
+
+- Continue Power Advantage under the basePower name on Forge 1.14.4.
+- Open worlds from the original Advantage mods and earlier base* releases without replacing their machines.
+- Put all three mods' items on one basePower creative tab.
+
+Earlier 1.14.4 fixes
 
 - Keep steel frames non-opaque on dedicated servers without changing their collision or drops.
 

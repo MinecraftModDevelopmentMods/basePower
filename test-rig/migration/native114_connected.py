@@ -173,7 +173,7 @@ def run(args):
     target = pinned_profile(args.target_manifest.resolve(), "target114")
     target_pins = read_json(args.target_manifest)["target114"]
     identities = {entry["id"] for entry in target_pins["jars"]}
-    if not {"steamadvantage", "electricadvantage"}.issubset(identities):
+    if not {"basesteam", "baseelectric"}.issubset(identities):
         raise ValueError("Connected qualification requires native Steam and Electric candidates")
     require_disjoint(output, target[0])
     for jar in target[2]:
