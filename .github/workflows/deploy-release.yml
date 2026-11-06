@@ -1,0 +1,152 @@
+name: Release basePower
+run-name: ${{ inputs.mode }} basePower ${{ inputs.version }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Approved version from .github/maven-release/releases.json
+        required: true
+        type: string
+      mode:
+        description: Check the exact release, or publish it
+        required: true
+        default: check-only
+        type: choice
+        options: [check-only, publish]
+      existing_curseforge_file_id:
+        description: Resume with an already uploaded CurseForge file (never upload it again)
+        required: false
+        type: string
+
+permissions:
+  actions: read
+  contents: write
+
+defaults:
+  run:
+    shell: bash
+
+concurrency:
+  group: mmd-maven-publication
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Publish one verified release to CurseForge, Maven, and GitHub
+    if: github.repository == 'MinecraftModDevelopmentMods/basePower' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      RELEASE_VERSION: ${{ inputs.version }}
+      EXISTING_CF_FILE: ${{ inputs.existing_curseforge_file_id }}
+      CURSEFORGE_PROJECT_ID: '1780140'
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Check out the publication workflow
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Install Java for the Maven publisher
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Verify the tag, CI artifact, and Maven destination
+        id: preflight
+        run: |
+          set -euo pipefail
+          [[ "$RELEASE_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          [[ -z "$EXISTING_CF_FILE" || "$EXISTING_CF_FILE" =~ ^[1-9][0-9]*$ ]]
+          release_work="$RUNNER_TEMP/release"
+          python3 .github/maven-release/verify.py stage-candidate "$RELEASE_VERSION" "$release_work"
+          bash gradlew -p .github/maven-release generatePomFileForMavenJavaPublication \
+            "-PreleaseVersion=$RELEASE_VERSION" "-PreleaseWork=$release_work" --no-daemon
+          state=$(python3 .github/maven-release/verify.py check "$RELEASE_VERSION" "$release_work")
+          if [[ "$state" == present && -z "$EXISTING_CF_FILE" ]]; then
+            echo "Maven already has this release. Supply its existing CurseForge file ID." >&2
+            exit 1
+          fi
+          mc=$(jq -er --arg v "$RELEASE_VERSION" '.releases[$v].branch | capture("^master-(?<mc>1\\.[0-9]+\\.[0-9]+)$").mc' .github/maven-release/releases.json)
+          case "$mc" in
+            1.10.2|1.12.2|1.13.2|1.14.4|1.15.2|1.16.5) ;;
+            *) echo "This publisher only handles the Java 8 Forge releases" >&2; exit 1 ;;
+          esac
+          echo "minecraft=$mc" >> "$GITHUB_OUTPUT"
+          echo "state=$state" >> "$GITHUB_OUTPUT"
+          echo "RELEASE_WORK=$release_work" >> "$GITHUB_ENV"
+          echo "Verified $RELEASE_VERSION for Minecraft $mc. Maven: $state." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Check publication credentials
+        if: inputs.mode == 'publish'
+        env:
+          CURSEFORGE_TOKEN: ${{ secrets.CURSEFORGE_TOKEN }}
+          MAVEN_UPLOAD_URL: ${{ secrets.MAVEN_UPLOAD_URL }}
+          MAVEN_UPLOAD_USERNAME: ${{ secrets.MAVEN_UPLOAD_USERNAME }}
+          MAVEN_UPLOAD_PASSWORD: ${{ secrets.MAVEN_UPLOAD_PASSWORD }}
+        run: |
+          set -euo pipefail
+          test -n "$EXISTING_CF_FILE" || test -n "$CURSEFORGE_TOKEN"
+          test -n "$MAVEN_UPLOAD_USERNAME" && test -n "$MAVEN_UPLOAD_PASSWORD"
+          [[ "$MAVEN_UPLOAD_URL" == https://maven.moddev.zone/releases || "$MAVEN_UPLOAD_URL" == https://maven.moddev.zone/releases/ ]]
+          if [[ -z "$EXISTING_CF_FILE" && "$GITHUB_RUN_ATTEMPT" != 1 ]]; then
+            echo "Do not retry an upload. Start a new dispatch with the existing file ID." >&2
+            exit 1
+          fi
+
+      - name: Upload the player jar to CurseForge
+        if: inputs.mode == 'publish' && inputs.existing_curseforge_file_id == ''
+        id: curseforge
+        uses: Kira-NT/mc-publish@52307b03863581dec6b652b83e597aec02ebb075 # v3.3.1
+        with:
+          curseforge-id: '1780140'
+          curseforge-token: ${{ secrets.CURSEFORGE_TOKEN }}
+          name: basePower ${{ inputs.version }} for Minecraft ${{ steps.preflight.outputs.minecraft }} (Forge)
+          version: ${{ inputs.version }}
+          version-type: release
+          changelog-file: ${{ env.RELEASE_WORK }}/release-notes.txt
+          files: ${{ env.RELEASE_WORK }}/basePower-${{ inputs.version }}.jar
+          game-versions: ${{ steps.preflight.outputs.minecraft }}
+          game-version-filter: none
+          loaders: forge
+          environment: client | server
+          java: Java 8
+          curseforge-dependencies: |
+            240967(required)
+            245586(required)
+            243157(optional)
+          fail-mode: fail
+
+      - name: Verify the public CurseForge download
+        if: inputs.mode == 'publish' || inputs.existing_curseforge_file_id != ''
+        env:
+          UPLOADED_CF_FILE: ${{ steps.curseforge.outputs.curseforge-version }}
+        run: |
+          set -euo pipefail
+          export CURSEFORGE_FILE_ID="${EXISTING_CF_FILE:-$UPLOADED_CF_FILE}"
+          [[ "$CURSEFORGE_FILE_ID" =~ ^[1-9][0-9]*$ ]]
+          echo "CurseForge file ID: $CURSEFORGE_FILE_ID. Use this ID to resume if approval is pending." >> "$GITHUB_STEP_SUMMARY"
+          python3 .github/maven-release/verify.py verify-curseforge "$RELEASE_VERSION" "$RELEASE_WORK"
+
+      - name: Publish the same release to MMD Maven
+        if: inputs.mode == 'publish' && steps.preflight.outputs.state == 'absent'
+        env:
+          MAVEN_UPLOAD_URL: ${{ secrets.MAVEN_UPLOAD_URL }}
+          MAVEN_UPLOAD_USERNAME: ${{ secrets.MAVEN_UPLOAD_USERNAME }}
+          MAVEN_UPLOAD_PASSWORD: ${{ secrets.MAVEN_UPLOAD_PASSWORD }}
+        run: |
+          set -euo pipefail
+          python3 .github/maven-release/verify.py require-absent "$RELEASE_VERSION" "$RELEASE_WORK"
+          bash gradlew -p .github/maven-release publishMavenJavaPublicationToReleaseRepository \
+            "-PreleaseVersion=$RELEASE_VERSION" "-PreleaseWork=$RELEASE_WORK" --no-daemon
+
+      - name: Verify Maven and publish the GitHub release
+        if: inputs.mode == 'publish'
+        run: |
+          set -euo pipefail
+          python3 .github/maven-release/verify.py verify "$RELEASE_VERSION" "$RELEASE_WORK" | tee -a "$GITHUB_STEP_SUMMARY"
+          gh release create "$RELEASE_VERSION" --verify-tag \
+            --title "basePower $RELEASE_VERSION" --notes-file "$RELEASE_WORK/release-notes.txt" \
+            "$RELEASE_WORK/"*.jar
