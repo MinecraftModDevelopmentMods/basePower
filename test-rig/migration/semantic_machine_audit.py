@@ -258,7 +258,7 @@ def endurance_batch(documents, definitions, *, identity=lambda value: value):
     return dict(status="FAIL" if failures else "PASS", failures=failures)
 
 
-def audit_endurance(root, definitions_path):
+def audit_endurance(root, definitions_path, *, identity=lambda value: value):
     definitions = {row["id"]: row for row in json.loads(definitions_path.read_text())["stations"]}
     stations = ("S-04", "E-03", "W-04", "W-03")
     labels = [f"cycle-{n:03d}" for n in range(1, 31)] + ["before-restart", "after-restart", "restart-resumed"]
@@ -271,7 +271,7 @@ def audit_endurance(root, definitions_path):
                 path = root / profile / "advantage-works-results" / f"{station}-checkpoint-{label}.json"
                 hashes[str(path)] = hashlib.sha256(path.read_bytes()).hexdigest().upper()
                 documents[station] = json.loads(path.read_text())
-            result = endurance_batch(documents, definitions)
+            result = endurance_batch(documents, definitions, identity=identity)
             current_time = documents["W-03"]["worldTime"]
             if current_time <= previous_time:
                 result["status"] = "FAIL"
@@ -293,8 +293,17 @@ def main():
                         default=Path(__file__).parents[1] / "src/main/resources/assets/advantageworkstest/works/works-1.13.2.json")
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--ticks", type=int, default=512)
+    parser.add_argument("--base-family", action="store_true", help="Require base* IDs in a 1.16.5 endurance audit")
     args = parser.parse_args()
-    result = audit_connected(args.connected_root, args.ticks) if args.connected_root else audit_endurance(args.endurance_root, args.definitions)
+    if args.base_family and not args.endurance_root:
+        parser.error("--base-family requires --endurance-root")
+    if args.base_family:
+        from native116 import base_identity
+        result = audit_endurance(args.endurance_root, args.definitions, identity=base_identity)
+    elif args.endurance_root:
+        result = audit_endurance(args.endurance_root, args.definitions)
+    else:
+        result = audit_connected(args.connected_root, args.ticks)
     # Never overwrite earlier good or bad evidence.
     with args.output.open("x", encoding="utf-8") as stream: json.dump(result, stream, indent=2)
     print(json.dumps({key: value for key, value in result.items() if key not in ("results", "inputHashes")}, indent=2))
