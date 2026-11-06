@@ -6,7 +6,7 @@ import net.minecraft.fluid.Fluid;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.registry.Registry;
-import zone.moddev.mc.poweradvantage.init.Fluids;
+import zone.moddev.mc.basepower.init.Fluids;
 
 /**
  * Stable Advantage millibucket value object. Native Forge fluid capabilities

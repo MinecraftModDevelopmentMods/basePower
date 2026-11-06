@@ -1,0 +1,27 @@
+{
+  "variants": {
+    "facing=down": {
+      "model": "basepower:block/item_conveyor",
+      "x": 90
+    },
+    "facing=up": {
+      "model": "basepower:block/item_conveyor",
+      "x": 270
+    },
+    "facing=north": {
+      "model": "basepower:block/item_conveyor"
+    },
+    "facing=south": {
+      "model": "basepower:block/item_conveyor",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "basepower:block/item_conveyor",
+      "y": 270
+    },
+    "facing=east": {
+      "model": "basepower:block/item_conveyor",
+      "y": 90
+    }
+  }
+}

@@ -1,6 +1,6 @@
-# PowerAdvantage
+# basePower
 
-**Minecraft 1.16.5, version 2.4.7.116051. Source port candidate.**
+**Minecraft 1.16.5, version 2.4.8.116051. Local test candidate.**
 
 See the [1.16 port record](docs/1.16/PORT-STATUS.md) for current checks and remaining
 work. The accepted [1.15 test record](docs/1.15/CURRENT-QUALIFICATION.md) is retained
@@ -16,12 +16,14 @@ inputs, real server ticks, blocked and starved controls, and full-process
 restarts. They check useful output and retained resources, not just animation
 or a rising progress counter.
 
-Power Advantage provides shared power, fluids, item transport and compatibility APIs for Steam Advantage and Electric Advantage.
+basePower continues DrCyano's Power Advantage. It provides shared power,
+fluids and item transport for baseSteam and baseElectric.
 
 **Back up the entire world before upgrading. Test only disposable copies.**
-The port retains existing registry names and legacy migration code. Upgrade tests
-use disposable original and maintained saves, including connected machines.
-Check every other mod's target-version support too.
+The released base* versions already use the new registry names. This port
+also maps original Advantage names and saved machine data to base* names.
+Upgrade tests use disposable copies; check every other mod's target-version
+support before opening your own world.
 The accepted [1.14 results](docs/1.14/BROADER-QUALIFICATION.md) are historical
 evidence, not qualification of this port or a whole modpack.
 

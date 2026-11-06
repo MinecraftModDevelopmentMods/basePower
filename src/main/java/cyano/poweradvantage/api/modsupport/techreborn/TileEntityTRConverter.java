@@ -3,7 +3,7 @@ package cyano.poweradvantage.api.modsupport.techreborn;
 import cyano.poweradvantage.api.ConduitType;
 import cyano.poweradvantage.api.modsupport.rf.TileEntityRFConverter;
 import net.minecraft.tileentity.TileEntityType;
-import zone.moddev.mc.poweradvantage.PowerAdvantage;
+import zone.moddev.mc.basepower.PowerAdvantage;
 
 /**
  * Compatibility base for the historical Tech Reborn-labelled converter.

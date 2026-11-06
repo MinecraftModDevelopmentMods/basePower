@@ -1,6 +1,6 @@
 package cyano.poweradvantage.api;
 
-import zone.moddev.mc.poweradvantage.conduitnetwork.ConduitRegistry;
+import zone.moddev.mc.basepower.conduitnetwork.ConduitRegistry;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.BlockState;
 import net.minecraft.util.math.BlockPos;

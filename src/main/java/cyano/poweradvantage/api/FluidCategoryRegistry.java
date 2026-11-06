@@ -26,7 +26,7 @@ public final class FluidCategoryRegistry {
 
     static {
         registerAlias(CRUDE_OIL, "crude_oil");
-        registerAlias(CRUDE_OIL, "poweradvantage:crude_oil");
+        registerAlias(CRUDE_OIL, "basepower:crude_oil");
         registerAlias(CRUDE_OIL, "mineralogy_crude_oil");
         registerAlias(CRUDE_OIL, "mineralogy:crude_oil");
         registerAlias(CRUDE_OIL, "oil");
