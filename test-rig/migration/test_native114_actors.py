@@ -22,7 +22,7 @@ class NativeActorOracleTest(unittest.TestCase):
                          expected_state(old, "actors", survival=True)["entities"]["wolf"])
 
     def test_dimension_oracle_keeps_live_relationships_and_quantities(self):
-        old = {"file": {"Inventory": [{"id": "steamadvantage:musket", "Count": 3}]},
+        old = {"file": {"Inventory": [{"id": "basesteam:musket", "Count": 3}]},
                "entities": {"horse": {"Pos": [1, 2, 3], "Health": 20}},
                "relationships": {"horse": {"passengerUuids": ["wolf"]}}, "adapter": {"Dimension": -1}}
         result = expected_state(old, "dimensions", survival=True)

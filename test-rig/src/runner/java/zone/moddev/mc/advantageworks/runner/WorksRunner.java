@@ -116,7 +116,7 @@ public final class WorksRunner {
             }
             if (profile.worldgenSampleRadius > 0) {
                 Thread.sleep(stationRunSeconds * 1000L);
-                send(first, "advworks sample-worldgen " + profile.worldgenSampleRadius);
+                sampleWorldgen(first, results, profile);
             }
             send(first, "save-all");
             send(first, "stop");
@@ -126,7 +126,7 @@ public final class WorksRunner {
             copyIfPresent(latestLog, new File(results, "first-run.log"));
             File firstWorldgen = new File(results, "worldgen-first-run.json");
             if (profile.worldgenSampleRadius > 0) {
-                copyIfPresent(new File(results, "worldgen-sample.json"), firstWorldgen);
+                Files.move(new File(results, "worldgen-sample.json").toPath(), firstWorldgen.toPath());
                 requireWorldgenSummary(firstWorldgen, profile.worldgenExpectations, "first-run");
             }
             requireProfileAssertions(runtime, results, profile, "first-run",
@@ -148,7 +148,7 @@ public final class WorksRunner {
                 checkStations(second, lifecycleStations, selectedLifecycle);
             }
             if (profile.worldgenSampleRadius > 0) {
-                send(second, "advworks sample-worldgen " + profile.worldgenSampleRadius);
+                sampleWorldgen(second, results, profile);
             }
             send(second, "save-all");
             send(second, "stop");
@@ -157,7 +157,7 @@ public final class WorksRunner {
             copyIfPresent(latestLog, new File(results, "restart-run.log"));
             File restartWorldgen = new File(results, "worldgen-restart-run.json");
             if (profile.worldgenSampleRadius > 0) {
-                copyIfPresent(new File(results, "worldgen-sample.json"), restartWorldgen);
+                Files.move(new File(results, "worldgen-sample.json").toPath(), restartWorldgen.toPath());
                 requireWorldgenSummary(restartWorldgen, profile.worldgenExpectations, "restart-run");
                 if (profile.requireStableWorldgenCounts) {
                     requireStableWorldgenCounts(firstWorldgen, restartWorldgen,
@@ -234,6 +234,22 @@ public final class WorksRunner {
             }
         }));
         return process;
+    }
+
+    private static void sampleWorldgen(Process process, File results, Profile profile) throws Exception {
+        File sample = new File(results, "worldgen-sample.json");
+        if (sample.exists()) throw new IllegalStateException("Stale worldgen sample: " + sample);
+        send(process, "advworks sample-worldgen " + profile.worldgenSampleRadius);
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(profile.shutdownTimeoutSeconds);
+        while (!sample.isFile()) {
+            if (!process.isAlive()) throw new IllegalStateException("Server exited before writing " + sample);
+            if (System.nanoTime() >= deadline) {
+                send(process, "stop");
+                requireExit(process, profile.shutdownTimeoutSeconds);
+                throw new IllegalStateException("Worldgen sample timed out: " + sample);
+            }
+            Thread.sleep(100);
+        }
     }
 
     private static void waitForReady(Process process, File log, int timeoutSeconds) throws Exception {
@@ -478,7 +494,7 @@ public final class WorksRunner {
         if (!config.isDirectory() && !config.mkdirs()) {
             throw new IllegalStateException("Cannot create config directory " + config);
         }
-        write(new File(config, "poweradvantage.cfg"),
+        write(new File(config, "basepower.cfg"),
                 "options {\n    S:recipe_mode=" + profile.recipeMode + "\n}\n");
         String properties = "allow-flight=true\n"
                 + "difficulty=0\n"

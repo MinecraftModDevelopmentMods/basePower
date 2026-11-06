@@ -5,10 +5,10 @@ from native114_player_layout import verdict
 
 class NativeLayoutOracleTest(unittest.TestCase):
     def test_scope_is_exact_player_data_not_unparented_fixture_turbine_operation(self):
-        player = {"Inventory": [{"id": "steamadvantage:musket", "Count": 1, "Slot": 35,
-                   "tag": {"Nested": {"Items": [{"id": "electricadvantage:lithium_battery", "Count": 3, "tag": {"energy": 123}}]}}}],
-                  "EnderItems": [{"id": "poweradvantage:crude_oil_bucket", "Count": 1, "Slot": 26}]}
-        expected = {"file": player, "adapter": player, "entities": {"unparented-turbine": {"id": "electricadvantage:hydroturbine"}}}
+        player = {"Inventory": [{"id": "basesteam:musket", "Count": 1, "Slot": 35,
+                   "tag": {"Nested": {"Items": [{"id": "baseelectric:lithium_battery", "Count": 3, "tag": {"energy": 123}}]}}}],
+                  "EnderItems": [{"id": "basepower:crude_oil_bucket", "Count": 1, "Slot": 26}]}
+        expected = {"file": player, "adapter": player, "entities": {"unparented-turbine": {"id": "baseelectric:hydroturbine"}}}
         self.assertEqual("PASS", verdict(expected, {"file": player, "adapter": player})["status"])
 
     def test_extra_nested_item_tag_is_rejected(self):

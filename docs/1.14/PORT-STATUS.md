@@ -1,5 +1,6 @@
-# Advantage 1.14.4 Port
+# Archived Advantage 1.14.4 Port
 
+> For the renamed builds, see [basePower 1.14.4 upgrade and testing notes](BASE-IDENTITY-MIGRATION.md).
 > The earlier acceptance below applies to the archived candidate. See the
 > [stronger regression record](TEST-COVERAGE-BACKPORT.md) for the locally repaired
 > jars and their new machine, migration, restart and GUI results.

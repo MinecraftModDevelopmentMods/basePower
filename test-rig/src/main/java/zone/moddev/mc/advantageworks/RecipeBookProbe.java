@@ -26,7 +26,7 @@ final class RecipeBookProbe {
         List<IRecipe<?>> recipes = new ArrayList<>();
         for (IRecipe<?> recipe : server.getRecipeManager().getRecipes()) {
             String namespace = recipe.getId().getNamespace();
-            if (!(namespace.equals("poweradvantage") || namespace.equals("steamadvantage") || namespace.equals("electricadvantage"))) continue;
+            if (!(namespace.equals("basepower") || namespace.equals("basesteam") || namespace.equals("baseelectric"))) continue;
             if (recipe.getType() != IRecipeType.CRAFTING && recipe.getType() != IRecipeType.SMELTING) continue;
             String output = id(recipe.getRecipeOutput());
             require(output.equals(recipe.getGroup()), "Mixed-output recipe group: " + recipe.getId() + " -> " + recipe.getGroup());
@@ -47,7 +47,7 @@ final class RecipeBookProbe {
             buffer.readBytes(bytes);
             Files.write(Paths.get("recipes-" + label + ".bin"), bytes);
         } finally { buffer.release(); }
-        IRecipe starch = server.getRecipeManager().getRecipe(new ResourceLocation("poweradvantage:starch_from_potato")).orElse(null);
+        IRecipe starch = server.getRecipeManager().getRecipe(new ResourceLocation("basepower:starch_from_potato")).orElse(null);
         require(starch != null && starch.getType() == IRecipeType.CRAFTING, "Missing native potato crafting recipe");
         int cases = 0;
         for (int width : new int[] {2, 3}) for (String potato : new String[] {"minecraft:potato", "minecraft:poisonous_potato"}) {
@@ -60,7 +60,7 @@ final class RecipeBookProbe {
                 IRecipe<?> selected = world.getRecipeManager().getRecipe(IRecipeType.CRAFTING, grid, world).orElse(null);
                 require(selected != null && selected.getId().equals(starch.getId()), "Conflicting native potato crafting recipe");
                 ItemStack result = starch.getCraftingResult(grid);
-                require(id(result).equals("poweradvantage:starch") && result.getCount() == 1, "Starch output changed");
+                require(id(result).equals("basepower:starch") && result.getCount() == 1, "Starch output changed");
                 require(grid.getStackInSlot(slot).getCount() == count, "Result preview mutated input");
                 ItemStack consumed = grid.decrStackSize(slot, 1);
                 require(consumed.getCount() == 1 && grid.getStackInSlot(slot).getCount() == count - 1,

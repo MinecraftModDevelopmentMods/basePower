@@ -1,0 +1,28 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "xxx",
+    "   ",
+    "xxx"
+  ],
+  "key": {
+    "x": {
+      "tag": "forge:ingots/copper"
+    }
+  },
+  "result": {
+    "item": "basepower:fluid_pipe",
+    "count": 6
+  },
+  "conditions": [
+    {
+      "type": "basepower:recipe_mode",
+      "mode": "NORMAL"
+    },
+    {
+      "type": "basepower:tag_not_empty",
+      "tag": "forge:ingots/copper"
+    }
+  ],
+  "group": "basepower:fluid_pipe"
+}

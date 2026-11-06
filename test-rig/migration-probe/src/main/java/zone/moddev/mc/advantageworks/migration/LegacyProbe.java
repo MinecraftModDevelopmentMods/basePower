@@ -121,7 +121,7 @@ public final class LegacyProbe {
         JsonArray definition = new JsonArray();
         List<ResourceLocation> names = new ArrayList<>();
         for (ResourceLocation name : Block.REGISTRY.getKeys()) {
-            if (name.toString().matches("(poweradvantage|steamadvantage|electricadvantage):.*")) names.add(name);
+            if (name.toString().matches("(basepower|basesteam|baseelectric):.*")) names.add(name);
         }
         names.sort((left, right) -> left.toString().compareTo(right.toString()));
         int index = 0;
@@ -165,7 +165,7 @@ public final class LegacyProbe {
         }
         List<ResourceLocation> itemNames = new ArrayList<>();
         for (ResourceLocation name : net.minecraft.item.Item.REGISTRY.getKeys()) {
-            if (name.toString().matches("(poweradvantage|steamadvantage|electricadvantage):.*")) itemNames.add(name);
+            if (name.toString().matches("(basepower|basesteam|baseelectric):.*")) itemNames.add(name);
         }
         itemNames.sort((left, right) -> left.toString().compareTo(right.toString()));
         for (int start = 0; start < itemNames.size(); start += 25) {
@@ -183,7 +183,7 @@ public final class LegacyProbe {
                 stack.setTagCompound(tag);
                 if (itemNames.get(start + slot).toString().endsWith(":musket")) {
                     for (ResourceLocation enchantment : net.minecraft.enchantment.Enchantment.REGISTRY.getKeys()) {
-                        if (enchantment.toString().startsWith("steamadvantage:")) {
+                        if (enchantment.toString().startsWith("basesteam:")) {
                             stack.addEnchantment(net.minecraft.enchantment.Enchantment.REGISTRY.getObject(enchantment), 1);
                         }
                     }

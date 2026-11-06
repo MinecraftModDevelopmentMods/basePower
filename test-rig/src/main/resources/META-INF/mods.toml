@@ -5,14 +5,14 @@ license="LGPL-3.0-only"
 [[mods]]
 modId="advantageworkstest"
 version="${version}"
-displayName="Advantage Works Test Harness"
+displayName="basePower"
 authors="Minecraft Mod Development"
 description='''Server-side commissioning harness for the Advantage family. Not for distribution.'''
 
 [[dependencies.advantageworkstest]]
-modId="poweradvantage"
+modId="basepower"
 mandatory=true
-versionRange="[2.4.5.114041,)"
+versionRange="[2.4.6.114041,)"
 ordering="AFTER"
 side="SERVER"
 

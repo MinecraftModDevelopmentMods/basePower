@@ -36,6 +36,8 @@ import net.minecraft.world.biome.Biome;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.dimension.DimensionType;
 import net.minecraftforge.common.BiomeDictionary;
+import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.event.world.WorldEvent;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraft.fluid.Fluid;
@@ -45,12 +47,15 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.IdentityHashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BooleanSupplier;
 
 final class WorksController {
     private static final WorksController INSTANCE = new WorksController();
@@ -64,6 +69,8 @@ final class WorksController {
     private final Map<String, String> statuses = new LinkedHashMap<>();
     private final WorksResultWriter resultWriter = new WorksResultWriter();
     private String activeExclusiveStation;
+    private ServerWorld samplingWorld;
+    private BooleanSupplier sampleStep;
 
     static WorksController getInstance() {
         return INSTANCE;
@@ -204,12 +211,13 @@ final class WorksController {
         if (radius < 1 || radius > 16) {
             throw commandError("Worldgen sample radius must be between 1 and 16 chunks");
         }
+        if (sampleStep != null) throw commandError("A worldgen sample is already running");
         ServerWorld world = overworld(server);
         Map<String, String> expectedBiomes = new LinkedHashMap<>();
-        expectedBiomes.put("poweradvantage:crude_oil", "DESERT");
+        expectedBiomes.put("basepower:crude_oil", "DESERT");
         expectedBiomes.put("mineralogy:crude_oil", "OCEAN");
-        expectedBiomes.put("electricadvantage:li_ore", null);
-        expectedBiomes.put("electricadvantage:sulfur_ore", null);
+        expectedBiomes.put("baseelectric:li_ore", null);
+        expectedBiomes.put("baseelectric:sulfur_ore", null);
         expectedBiomes.put("mineralogy:sulfur_ore", null);
 
         Set<Long> chunks = new LinkedHashSet<>();
@@ -239,53 +247,82 @@ final class WorksController {
             int chunkZ = (int) (long) packed;
             addChunkSquare(populationChunks, chunkX, chunkZ, 2);
         }
-        for (Long packed : populationChunks) {
-            int chunkX = (int) (packed >> 32);
-            int chunkZ = (int) (long) packed;
-            world.getChunk(chunkX, chunkZ);
+        Iterator<Long> populate = populationChunks.iterator();
+        Iterator<Long> scan = chunks.iterator();
+        Map<Block, String> observedBlocks = new IdentityHashMap<>();
+        for (String id : expectedBiomes.keySet()) {
+            Block block = ForgeRegistries.BLOCKS.getValue(new ResourceLocation(id));
+            if (block != null && block != Blocks.AIR) observedBlocks.put(block, id);
         }
+        samplingWorld = world;
+        sampleStep = () -> {
+            if (populate.hasNext()) {
+                long packed = populate.next();
+                world.getChunk((int) (packed >> 32), (int) packed);
+            } else if (scan.hasNext()) {
+                scanWorldgenChunk(world, scan.next(), observedBlocks, expectedBiomes, counts, violations, boundaryBlocks);
+            } else {
+                Map<String, Object> payload = new LinkedHashMap<>();
+                payload.put("radius", radius);
+                payload.put("chunksScanned", chunks.size());
+                payload.put("centers", centers);
+                payload.put("counts", counts);
+                payload.put("biomeViolations", violations);
+                payload.put("biomeBoundaryBlocks", boundaryBlocks);
+                resultWriter.write("worldgen", "sample", payload);
+                return false;
+            }
+            return true;
+        };
+        return "Queued a worldgen sample of " + chunks.size() + " chunks";
+    }
 
+    synchronized void tickWorldgen(TickEvent.WorldTickEvent event) {
+        if (event.phase != TickEvent.Phase.END || event.world != samplingWorld || sampleStep == null) return;
+        // Chunk generation must stay on the server thread, but not all in one tick.
+        long deadline = System.nanoTime() + 10_000_000L;
+        do {
+            if (!sampleStep.getAsBoolean()) {
+                sampleStep = null;
+                samplingWorld = null;
+                return;
+            }
+        } while (System.nanoTime() < deadline);
+    }
+
+    synchronized void clearWorldgen(WorldEvent.Unload event) {
+        if (event.getWorld() == samplingWorld) {
+            sampleStep = null;
+            samplingWorld = null;
+        }
+    }
+
+    private static void scanWorldgenChunk(ServerWorld world, long packed, Map<Block, String> observedBlocks,
+                                         Map<String, String> expectedBiomes, Map<String, Long> counts,
+                                         Map<String, Long> violations, Map<String, Long> boundaryBlocks) {
+        int chunkX = (int) (packed >> 32), chunkZ = (int) packed;
+        Chunk chunk = world.getChunk(chunkX, chunkZ);
+        int minX = chunkX << 4, minZ = chunkZ << 4;
+        Biome chunkCenter = world.getBiome(new BlockPos(minX + 8, world.getSeaLevel(), minZ + 8));
         BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
-        for (Long packed : chunks) {
-            int chunkX = (int) (packed >> 32);
-            int chunkZ = (int) (long) packed;
-            Chunk chunk = world.getChunk(chunkX, chunkZ);
-            int minX = chunkX << 4;
-            int minZ = chunkZ << 4;
-            Biome chunkCenterBiome = world.getBiome(
-                    new BlockPos(minX + 8, world.getSeaLevel(), minZ + 8));
-            for (int localX = 0; localX < 16; localX++) {
-                for (int localZ = 0; localZ < 16; localZ++) {
-                    cursor.setPos(minX + localX, 0, minZ + localZ);
-                    for (int y = 0; y <= 96; y++) {
-                        cursor.setY(y);
-                        ResourceLocation id = ForgeRegistries.BLOCKS.getKey(
-                                chunk.getBlockState(cursor).getBlock());
-                        String name = id == null ? null : id.toString();
-                        if (name == null || !counts.containsKey(name)) continue;
-                        counts.put(name, counts.get(name) + 1L);
-                        String expectedBiome = expectedBiomes.get(name);
-                        if (expectedBiome != null && !matchesExpectedBiome(expectedBiome, chunkCenterBiome)) {
-                            violations.put(name, violations.get(name) + 1L);
-                        } else if (expectedBiome != null
-                                && !matchesExpectedBiome(expectedBiome, world.getBiome(cursor))) {
-                            boundaryBlocks.put(name, boundaryBlocks.get(name) + 1L);
-                        }
-                        }
+        for (int localX = 0; localX < 16; localX++) {
+            for (int localZ = 0; localZ < 16; localZ++) {
+                cursor.setPos(minX + localX, 0, minZ + localZ);
+                for (int y = 0; y <= 96; y++) {
+                    cursor.setY(y);
+                    String name = observedBlocks.get(chunk.getBlockState(cursor).getBlock());
+                    if (name == null) continue;
+                    counts.put(name, counts.get(name) + 1L);
+                    String expected = expectedBiomes.get(name);
+                    if (expected == null) continue;
+                    if (!matchesExpectedBiome(expected, chunkCenter)) {
+                        violations.put(name, violations.get(name) + 1L);
+                    } else if (!matchesExpectedBiome(expected, world.getBiome(cursor))) {
+                        boundaryBlocks.put(name, boundaryBlocks.get(name) + 1L);
                     }
                 }
             }
-
-        Map<String, Object> payload = new LinkedHashMap<>();
-        payload.put("radius", radius);
-        payload.put("chunksScanned", chunks.size());
-        payload.put("centers", centers);
-        payload.put("counts", counts);
-        payload.put("biomeViolations", violations);
-        payload.put("biomeBoundaryBlocks", boundaryBlocks);
-        File result = resultWriter.write("worldgen", "sample", payload);
-        return "Worldgen sample wrote " + chunks.size() + " chunks to " + result.getPath()
-                + ": " + counts;
+        }
     }
 
     private static void addBiomeSample(ServerWorld world, Set<Long> chunks,
@@ -954,8 +991,8 @@ final class WorksController {
     }
 
     private static BlockState legacyState(String name, Block block, int metadata) {
-        if (name != null && (name.startsWith("poweradvantage:")
-                || name.startsWith("steamadvantage:") || name.startsWith("electricadvantage:"))) {
+        if (name != null && (name.startsWith("basepower:")
+                || name.startsWith("basesteam:") || name.startsWith("baseelectric:"))) {
             return LegacyMigrationApi.decodeBlockState(new ResourceLocation(name), block, metadata);
         }
         if (block instanceof FlowingFluidBlock) {
@@ -973,7 +1010,7 @@ final class WorksController {
     private static Fluid fluid(String name) {
         if (name == null || name.trim().isEmpty()) return null;
         ResourceLocation id = name.indexOf(':') >= 0 ? new ResourceLocation(name)
-                : new ResourceLocation("poweradvantage", name);
+                : new ResourceLocation("basepower", name);
         Fluid value = Registry.FLUID.getValue(id).orElse(null);
         if (value == null) {
             String migratedName = LegacyMigrationApi.fluidTarget(name);

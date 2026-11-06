@@ -17,7 +17,7 @@ import semantic_machine_audit
 from native114_code import INVENTORY, verify_code
 from audit_endurance import expected_inventory_acknowledgements
 from matrix import WORLD, compare, digest, fingerprint, write_json
-from native114 import native_normalized, output_path, pinned_profile, require_disjoint
+from native114 import base_identity, native_normalized, output_path, pinned_profile, require_disjoint
 from native114_lifecycle import (prepare, read_json, require_native_boot,
                                  verify_source, verify_staged)
 
@@ -66,12 +66,13 @@ def verify_fresh_world(runtime, phase):
 class NativeEnduranceRig(endurance.Rig):
     def batch(self, label):
         measured = semantic_machine_audit.endurance_batch(
-            {station: self.documents[station] for station in ("S-04", "E-03", "W-04", "W-03")}, self.definitions)
+            {station: self.documents[station] for station in ("S-04", "E-03", "W-04", "W-03")},
+            self.definitions, identity=base_identity)
         evidence = self.runtime / ("semantic-batch-" + label + ".json")
         with evidence.open("x", encoding="utf-8") as stream:
             json.dump(measured, stream, indent=2)
         endurance.require(measured["status"] == "PASS", "Independent batch measurements failed: " + str(measured))
-        return super().batch(label)
+        return super().batch(label, power="basepower")
 
     def boot(self, phase):
         verify_code(self.runtime)
@@ -199,8 +200,6 @@ def run(args):
             launcher = prepare_endurance(runtime, target, [], args.port + index, args.source if index else None)
             verify_code(runtime, target_code)
             write_json(runtime / INVENTORY, target_code)
-            for marker in ("migration-operate.allow", "advantage-works.allow"):
-                (runtime / marker).touch()
             rig = NativeEnduranceRig(name, runtime, args.java8, launcher, definitions)
             rigs.append(rig)
             if index:
@@ -213,6 +212,8 @@ def run(args):
                 write_json(runtime / "native114-import-comparison.json", preserved)
                 endurance.require(preserved["status"] == "PASS", "Copied source did not preserve frozen state")
                 require_native_boot(runtime / "console-frozen-import.log")
+            for marker in ("migration-operate.allow", "advantage-works.allow"):
+                (runtime / marker).touch()
             rig.boot("endurance")
             rig.start(build=True)
         initial_ticks = {r.name: r.documents["W-01"]["worldTime"] for r in rigs}

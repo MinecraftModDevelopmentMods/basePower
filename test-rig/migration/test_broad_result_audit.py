@@ -14,6 +14,8 @@ import broad_result_audit as audit
 
 
 LINE = Path(__file__).resolve().parents[3].name.removeprefix("PA")
+POWER, STEAM, ELECTRIC = (("basepower", "basesteam", "baseelectric") if LINE == "114"
+                          else ("poweradvantage", "steamadvantage", "electricadvantage"))
 
 
 def write(path, data):
@@ -37,7 +39,7 @@ class BroadResultAuditTests(unittest.TestCase):
         self.stations = json.loads(definition)["stations"]
         self.definitions = {s["id"]: s for s in self.stations}
         jars = []
-        for name in ("poweradvantage", "steamadvantage", "electricadvantage", "advantageworkstest", "basemetals", "orespawn"):
+        for name in (POWER, STEAM, ELECTRIC, "advantageworkstest", "basemetals", "orespawn"):
             path = self.root / (name + ".jar")
             if name == "advantageworkstest":
                 with zipfile.ZipFile(path, "w") as archive:
@@ -106,8 +108,8 @@ class BroadResultAuditTests(unittest.TestCase):
             write(directory / "advantage-works-results" / (sid + "-checkpoint-operated.json"),
                   dict(station=sid, minecraft=minecraft, forge=forge, mods=mods, checkpoint="operated", worldTime=1,
                        snapshot=raw[sid]["snapshot"]))
-        initial = audit.drill_snapshot(initial, self.definitions, initial=True)
-        moved = audit.drill_snapshot(raw, self.definitions)
+        initial = audit.drill_snapshot(initial, self.definitions, initial=True, steam=STEAM, electric=ELECTRIC)
+        moved = audit.drill_snapshot(raw, self.definitions, steam=STEAM, electric=ELECTRIC)
         counts = dict(Counter(a["status"] for record in raw.values() for a in record["assertions"]))
         checks = dict(status="PASS", assertions=counts, manualRequired=list(audit.STATIONS))
         result = dict(profile=name, status="PASS", expectedMods=mods, beforeRestart=moved, afterRestart=deepcopy(moved), phases={
@@ -134,7 +136,7 @@ class BroadResultAuditTests(unittest.TestCase):
         result = []
         for a in spec["assertions"]:
             block = a.get("block")
-            if block not in ("steamadvantage:steam_drill", "electricadvantage:electric_drill"):
+            if block not in (f"{STEAM}:steam_drill", f"{ELECTRIC}:electric_drill"):
                 continue
             direction = a.get("meta", audit.DIRECTIONS.index(a.get("expectedText", "down")))
             origin = [x + y for x, y in zip(spec["origin"], a["pos"])]
@@ -146,7 +148,7 @@ class BroadResultAuditTests(unittest.TestCase):
                    + 'tag:{AdvBayStock:' + json.dumps(key) + '}}]}')
             result.append(dict(pos=pos, block=block, state="facing=" + audit.DIRECTIONS[direction], nbt=tag))
             if not moved:
-                result.append(dict(pos=rear, block="steamadvantage:steam_track" if spec["id"] == "S-05" else "electricadvantage:electric_track", state="track"))
+                result.append(dict(pos=rear, block=f"{STEAM}:steam_track" if spec["id"] == "S-05" else f"{ELECTRIC}:electric_track", state="track"))
         return result
 
     def assert_rejected(self, contains=None, requested=audit.PROFILES):
@@ -240,7 +242,7 @@ class BroadResultAuditTests(unittest.TestCase):
         self.assert_rejected("wrong raw result")
 
     def test_loaded_mod_version_mismatch_rejected(self):
-        self.mutate_raw(lambda rows: rows["W-01"]["mods"].update(poweradvantage="wrong"))
+        self.mutate_raw(lambda rows: rows["W-01"]["mods"].update({POWER: "wrong"}))
         self.assert_rejected("loaded mod set")
 
     def test_error_and_shutdown_error_cannot_be_masked(self):
@@ -277,7 +279,7 @@ class BroadResultAuditTests(unittest.TestCase):
         self.assert_rejected("differs from native snapshots")
 
     def test_mod_bytes_and_staging_receipt_both_required(self):
-        (self.profile() / "mods/poweradvantage.jar").write_bytes(b"changed")
+        (self.profile() / "mods" / (POWER + ".jar")).write_bytes(b"changed")
         self.assert_rejected("mod bytes differ")
 
     def test_extra_mod_rejected(self):

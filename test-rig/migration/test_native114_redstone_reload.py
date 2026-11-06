@@ -14,13 +14,13 @@ def row(case, progress, held=False, energy=None, targeted=True):
     bits = struct.unpack(">i", struct.pack(">f", energy))[0]
     states = ','.join('{Name:"minecraft:obsidian"}' for _ in range(9))
     items = '{Slot:0b,id:"minecraft:dirt",Count:7b,tag:{AdvWorksWitness:"' + case["id"] + '"}},{Slot:1b,id:"minecraft:apple",Count:13b}'
-    nbt = ('{id:"electricadvantage:electric_drill",x:%d,y:%d,z:%d,Energy:[I;%d],progress:%ds,'
+    nbt = ('{id:"baseelectric:electric_drill",x:%d,y:%d,z:%d,Energy:[I;%d],progress:%ds,'
            'Items:[%s],targetX:%d,targetY:%d,targetZ:%d,TargetStates:[%s]}') % (
                x, y, z, bits, progress, items, x, y, z - 1, states)
     if not targeted:
         nbt = nbt[:nbt.index(',targetX:')] + '}'
-    return dict(case, block="electricadvantage:electric_drill", active=True,
-                state="Block{electricadvantage:electric_drill}[active=true,facing=north]",
+    return dict(case, block="baseelectric:electric_drill", active=True,
+                state="Block{baseelectric:electric_drill}[active=true,facing=north]",
                 signal=held, holdBlock="minecraft:redstone_block" if held else "minecraft:air",
                 energy=energy, progress=progress, nbt=nbt,
                 targets=[dict(pos=[x + dx, y + dy, z - 1], state="Block{minecraft:obsidian}")

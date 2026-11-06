@@ -52,7 +52,7 @@ public class AssertionChecksTest {
         tank.putInt("Amount", 1000);
         tank.putString("FluidName", "minecraft:water");
         assertEquals(1000, AssertionChecks.fluidAmount(tile, "Tank", "minecraft:water"));
-        assertEquals(0, AssertionChecks.fluidAmount(tile, "Tank", "poweradvantage:crude_oil"));
+        assertEquals(0, AssertionChecks.fluidAmount(tile, "Tank", "basepower:crude_oil"));
     }
 
     private Map<String, Object> row(String status) { return Collections.singletonMap("status", status); }

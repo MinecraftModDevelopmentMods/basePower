@@ -239,14 +239,14 @@ final class LegacyDimensionEntities {
         leashApi(horse, new String[] {"setLeashHolder", "setLeashedToEntity", "func_110162_b"},
                 new Class<?>[] {Entity.class, boolean.class}, knot, false);
         BlockPos generator = new BlockPos(176, 101, 8);
-        ResourceLocation generatorId = new ResourceLocation("electricadvantage:hydroelectric_generator");
+        ResourceLocation generatorId = new ResourceLocation("baseelectric:hydroelectric_generator");
         if (!Block.REGISTRY.containsKey(generatorId)) throw new IllegalStateException("Missing source generator");
         world.setBlockState(generator, Block.REGISTRY.getObject(generatorId).getDefaultState(), 2);
         TileEntity tile = world.getTileEntity(generator);
         if (tile == null) throw new IllegalStateException("Missing generator tile");
         Entity turbine = null;
         for (String prefix : new String[] {"zone.moddev.mc", "com.mcmoddev", "cyano"}) {
-            try { turbine = (Entity) Class.forName(prefix + ".electricadvantage.entities.HydroturbineEntity")
+            try { turbine = (Entity) Class.forName(prefix + ".baseelectric.entities.HydroturbineEntity")
                     .getConstructor(World.class, TileEntity.class).newInstance(world, tile); break; }
             catch (ClassNotFoundException ignored) { }
         }
@@ -280,8 +280,8 @@ final class LegacyDimensionEntities {
 
     private static NBTTagList inventory() {
         NBTTagList result = new NBTTagList();
-        String[] names = {"steamadvantage:musket", "electricadvantage:lithium_battery", "electricadvantage:lead_acid_battery",
-                "electricadvantage:alkaline_battery", "electricadvantage:nickel_hydride_battery"};
+        String[] names = {"basesteam:musket", "baseelectric:lithium_battery", "baseelectric:lead_acid_battery",
+                "baseelectric:alkaline_battery", "baseelectric:nickel_hydride_battery"};
         for (int slot = 0; slot < names.length; slot++) {
             NBTTagCompound nbt = stack(names[slot], slot == 0 ? 1 : 3).writeToNBT(new NBTTagCompound());
             nbt.setByte("Slot", (byte) slot); result.appendTag(nbt);
@@ -290,7 +290,7 @@ final class LegacyDimensionEntities {
         if (Item.REGISTRY.containsKey(new ResourceLocation("forge:bucketfilled"))) {
             oil = stack("forge:bucketfilled", 1); oil.getTagCompound().setString("FluidName", "crude_oil");
             oil.getTagCompound().setInteger("Amount", 1000);
-        } else oil = stack("poweradvantage:crude_oil", 1);
+        } else oil = stack("basepower:crude_oil", 1);
         NBTTagCompound nbt = oil.writeToNBT(new NBTTagCompound()); nbt.setByte("Slot", (byte) 5); result.appendTag(nbt);
         return result;
     }
@@ -304,7 +304,7 @@ final class LegacyDimensionEntities {
         if (name.contains("battery")) tag.setFloat("energy", 123f);
         result.setTagCompound(tag); if (item.isDamageable()) result.setItemDamage(5);
         if (name.endsWith(":musket")) for (ResourceLocation enchantment : net.minecraft.enchantment.Enchantment.REGISTRY.getKeys()) {
-            if (enchantment.toString().startsWith("steamadvantage:")) result.addEnchantment(net.minecraft.enchantment.Enchantment.REGISTRY.getObject(enchantment), 1);
+            if (enchantment.toString().startsWith("basesteam:")) result.addEnchantment(net.minecraft.enchantment.Enchantment.REGISTRY.getObject(enchantment), 1);
         }
         return result;
     }

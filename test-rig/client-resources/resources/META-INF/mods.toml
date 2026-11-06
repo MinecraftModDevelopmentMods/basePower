@@ -5,13 +5,13 @@ license="GPL-3.0-only"
 [[mods]]
 modId="advantageclientresources"
 version="1"
-displayName="Advantage Client Resource Probe"
+displayName="basePower"
 description='''Build-only model, texture and translation checks. Never distribute with the mod.'''
 
 [[dependencies.advantageclientresources]]
-modId="poweradvantage"
+modId="basepower"
 mandatory=true
-versionRange="[2.4.5.114041,2.5.0)"
+versionRange="[2.4.6.114041,2.5.0)"
 ordering="AFTER"
 side="CLIENT"
 

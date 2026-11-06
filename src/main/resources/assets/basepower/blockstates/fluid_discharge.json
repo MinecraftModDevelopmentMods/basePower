@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=east": {
+      "model": "basepower:block/fluid_discharge",
+      "y": 90
+    },
+    "facing=north": {
+      "model": "basepower:block/fluid_discharge"
+    },
+    "facing=south": {
+      "model": "basepower:block/fluid_discharge",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "basepower:block/fluid_discharge",
+      "y": 270
+    }
+  }
+}

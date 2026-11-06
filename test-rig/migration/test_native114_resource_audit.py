@@ -54,11 +54,11 @@ class LegacySnbtGrammarTests(unittest.TestCase):
 
 def sample():
     return [
-        witness("electricadvantage:electric_battery_array",
-                '{Energy:[I;1174011904],Items:[{Slot:0b,id:"electricadvantage:lithium_battery",Count:1b,tag:{energy:8000.0f}}]}'),
-        witness("steamadvantage:steam_boiler_coal",
+        witness("baseelectric:electric_battery_array",
+                '{Energy:[I;1174011904],Items:[{Slot:0b,id:"baseelectric:lithium_battery",Count:1b,tag:{energy:8000.0f}}]}'),
+        witness("basesteam:steam_boiler_coal",
                 '{Energy:[I;1088421888,0],BurnTime:802,BurnTimeTotal:1600,Items:[{Slot:0b,id:"minecraft:coal",Count:31b}],Tank:{FluidName:"minecraft:water",Amount:3992}}', 65),
-        witness("electricadvantage:steam_powered_generator",
+        witness("baseelectric:steam_powered_generator",
                 '{Energy:[I;1147797504,0],Items:[],steam:29.452f}', 141),
     ]
 
@@ -89,11 +89,11 @@ class ResourceAuditTest(unittest.TestCase):
         before = sample()
         after = copy.deepcopy(before)
         backup = copy.deepcopy(before)
-        limits = {"electricadvantage:electric_battery_array": 8}
+        limits = {"baseelectric:electric_battery_array": 8}
         self.check(before, after, "PASS", slot_limits=limits)
         self.assertEqual(before, backup)
         self.assertEqual(after, backup)
-        self.assertEqual(limits, {"electricadvantage:electric_battery_array": 8})
+        self.assertEqual(limits, {"baseelectric:electric_battery_array": 8})
 
     def test_root_nonresource_native_metadata_is_not_blanket_nbt_equality(self):
         before = [witness(snbt='{Items:[],Lock:""}')]
@@ -102,8 +102,8 @@ class ResourceAuditTest(unittest.TestCase):
         self.check(before, after, "PASS")
 
     def test_target_only_energy_and_extra_positive_channel_fail(self):
-        before = [witness("electricadvantage:electric_furnace", "{Items:[]}")]
-        self.check(before, [witness("electricadvantage:electric_furnace", "{Items:[],Energy:[I;%d]}" % bits(100))])
+        before = [witness("baseelectric:electric_furnace", "{Items:[]}")]
+        self.check(before, [witness("baseelectric:electric_furnace", "{Items:[],Energy:[I;%d]}" % bits(100))])
         self.check([witness(snbt="{Energy:[I;%d,0]}" % bits(1))],
                    [witness(snbt="{Energy:[I;%d,%d]}" % (bits(1), bits(2)))])
 
@@ -127,7 +127,7 @@ class ResourceAuditTest(unittest.TestCase):
     def test_exact_zero_named_fluid_and_native_empty_representations_match(self):
         for field in ("Tank", "TankIn", "TankOut", "InputTank"):
             with self.subTest(field=field):
-                self.check([witness(snbt='{%s:{FluidName:"poweradvantage:crude_oil",Amount:0}}' % field)],
+                self.check([witness(snbt='{%s:{FluidName:"basepower:crude_oil",Amount:0}}' % field)],
                            [witness(snbt='{%s:{Empty:1b}}' % field)], "PASS")
                 self.check([witness(snbt="{}")], [witness(snbt='{%s:{Empty:0b}}' % field)], "PASS")
 
@@ -143,7 +143,7 @@ class ResourceAuditTest(unittest.TestCase):
             with self.subTest(tank=tank): self.check(before, [witness(snbt="{Tank:" + tank + "}")])
 
     def test_known_fluid_namespace_normalizations_are_retained(self):
-        for old, new in (("water", "minecraft:water"), ("crude_oil", "poweradvantage:crude_oil")):
+        for old, new in (("water", "minecraft:water"), ("crude_oil", "basepower:crude_oil")):
             self.check([witness(snbt='{Tank:{FluidName:"%s",Amount:25}}' % old)],
                        [witness(snbt='{Tank:{FluidName:"%s",Amount:25}}' % new)], "PASS")
 
@@ -188,11 +188,11 @@ class ResourceAuditTest(unittest.TestCase):
             self.check([row], [row])
 
     def test_constructor_proven_furnace_and_other_slot_limits(self):
-        for block, limit in (("electricadvantage:electric_furnace", 10),
-                             ("electricadvantage:electric_crusher", 9),
-                             ("electricadvantage:electric_drill", 6),
-                             ("steamadvantage:steam_furnace", 7),
-                             ("steamadvantage:steam_drill", 5)):
+        for block, limit in (("baseelectric:electric_furnace", 10),
+                             ("baseelectric:electric_crusher", 9),
+                             ("baseelectric:electric_drill", 6),
+                             ("basesteam:steam_furnace", 7),
+                             ("basesteam:steam_drill", 5)):
             self.assertEqual(limit, SLOT_LIMITS[block])
             valid = [witness(block, '{Items:[{Slot:%db,id:"minecraft:coal",Count:1b}]}' % (limit - 1))]
             invalid = [witness(block, '{Items:[{Slot:%db,id:"minecraft:coal",Count:1b}]}' % limit)]
@@ -211,16 +211,16 @@ class ResourceAuditTest(unittest.TestCase):
 
     def test_known_legacy_damage_bucket_and_empty_tag_representations_match(self):
         old = [witness(snbt='{id:"Chest",Items:[{Slot:0b,id:"forge:bucketfilled",Count:1b,Damage:0s,tag:{FluidName:"crude_oil",Amount:1000}}]}')]
-        new = [witness(snbt='{id:"minecraft:chest",Items:[{Slot:0b,id:"poweradvantage:crude_oil_bucket",Count:1b,tag:{}}]}')]
+        new = [witness(snbt='{id:"minecraft:chest",Items:[{Slot:0b,id:"basepower:crude_oil_bucket",Count:1b,tag:{}}]}')]
         self.check(old, new, "PASS")
-        damaged = [witness(snbt='{Items:[{Slot:0b,id:"steamadvantage:musket",Count:1b,Damage:5s}]}')]
-        modern = [witness(snbt='{Items:[{Slot:0b,id:"steamadvantage:musket",Count:1b,tag:{Damage:5}}]}')]
+        damaged = [witness(snbt='{Items:[{Slot:0b,id:"basesteam:musket",Count:1b,Damage:5s}]}')]
+        modern = [witness(snbt='{Items:[{Slot:0b,id:"basesteam:musket",Count:1b,tag:{Damage:5}}]}')]
         self.check(damaged, modern, "PASS")
 
     def test_enchantments_use_explicit_world_registry_maps(self):
-        old = [witness(snbt='{Items:[{Slot:0b,id:"steamadvantage:musket",Count:1b,tag:{ench:[{id:11s,lvl:2s}]}}]}')]
-        new = [witness(snbt='{Items:[{Slot:0b,id:"steamadvantage:musket",Count:1b,tag:{Enchantments:[{id:"steamadvantage:spreadshot",lvl:2s}]}}]}')]
-        self.check(old, new, "PASS", before_enchantments={11: "steamadvantage:spreadshot"})
+        old = [witness(snbt='{Items:[{Slot:0b,id:"basesteam:musket",Count:1b,tag:{ench:[{id:11s,lvl:2s}]}}]}')]
+        new = [witness(snbt='{Items:[{Slot:0b,id:"basesteam:musket",Count:1b,tag:{Enchantments:[{id:"basesteam:spreadshot",lvl:2s}]}}]}')]
+        self.check(old, new, "PASS", before_enchantments={11: "basesteam:spreadshot"})
         self.check(old, new, before_enchantments={11: "minecraft:binding_curse"})
 
     def test_battery_defaults_match_native_full_charge_but_charge_creation_fails(self):
@@ -234,10 +234,10 @@ class ResourceAuditTest(unittest.TestCase):
             self.check(invalid, invalid)
 
     def test_legacy_battery_stack_counts_are_preserved_not_repaired(self):
-        original = [witness(snbt='{Items:[{Slot:0b,id:"electricadvantage:lithium_battery",Count:3b,tag:{energy:123.0f}}]}')]
+        original = [witness(snbt='{Items:[{Slot:0b,id:"baseelectric:lithium_battery",Count:3b,tag:{energy:123.0f}}]}')]
         self.check(original, copy.deepcopy(original), "PASS")
         for count, charge in ((1,123), (4,123), (3,124)):
-            changed = [witness(snbt='{Items:[{Slot:0b,id:"electricadvantage:lithium_battery",Count:%db,tag:{energy:%df}}]}' % (count, charge))]
+            changed = [witness(snbt='{Items:[{Slot:0b,id:"baseelectric:lithium_battery",Count:%db,tag:{energy:%df}}]}' % (count, charge))]
             self.check(original, changed)
 
     def test_lossy_legacy_byte_summaries_require_matching_binary_and_keep_real_values(self):
