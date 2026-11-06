@@ -8,7 +8,7 @@ class RecipeUnlockRunnerTest(unittest.TestCase):
     def test_fixture_covers_crafting_and_smelting_but_not_crushing(self):
         recipes = fixture()["recipes"]
         self.assertEqual(Counter(recipe["id"].split(":")[0] for recipe in recipes),
-                         {"poweradvantage": 35, "steamadvantage": 24, "electricadvantage": 50})
+                         {"basepower": 35, "basesteam": 24, "baseelectric": 50})
         self.assertEqual(109, len({recipe["id"] for recipe in recipes}))
         self.assertTrue(all(":crushing_" not in recipe["id"] for recipe in recipes))
 

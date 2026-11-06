@@ -56,7 +56,7 @@ public final class TransformerOrderBridge {
         List<String> natural = names(input);
         for (String suffix : SUFFIXES) {
             int bm = find(output, "basemetals_legacy_" + suffix);
-            int pa = find(output, "poweradvantage_legacy_" + suffix);
+            int pa = find(output, "poweradvantage_legacy_" + suffix, "basepower_legacy_" + suffix);
             if (!mode.equals("natural") && ((bm < pa) != mode.equals("bm-first"))) {
                 ITransformer<?> saved = output.get(bm);
                 output.set(bm, output.get(pa));
@@ -80,14 +80,14 @@ public final class TransformerOrderBridge {
         return output;
     }
 
-    private static int find(List<ITransformer<?>> values, String expected) {
+    private static int find(List<ITransformer<?>> values, String... expected) {
         int found = -1;
         for (int i = 0; i < values.size(); i++) {
-            if (!name(values.get(i)).equals(expected)) continue;
-            if (found != -1) throw new IllegalStateException("Duplicate transformer: " + expected);
+            if (!Arrays.asList(expected).contains(name(values.get(i)))) continue;
+            if (found != -1) throw new IllegalStateException("Duplicate transformer: " + Arrays.toString(expected));
             found = i;
         }
-        if (found == -1) throw new IllegalStateException("Missing transformer: " + expected);
+        if (found == -1) throw new IllegalStateException("Missing transformer: " + Arrays.toString(expected));
         return found;
     }
 
@@ -100,7 +100,8 @@ public final class TransformerOrderBridge {
     private static boolean selected(String name) {
         for (String suffix : SUFFIXES) {
             if (name.equals("basemetals_legacy_" + suffix)
-                    || name.equals("poweradvantage_legacy_" + suffix)) return true;
+                    || name.equals("poweradvantage_legacy_" + suffix)
+                    || name.equals("basepower_legacy_" + suffix)) return true;
         }
         return false;
     }

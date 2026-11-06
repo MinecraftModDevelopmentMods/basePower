@@ -9,8 +9,8 @@ displayName="Advantage Client Resource Probe"
 description='''Build-only model, texture and translation checks. Never distribute with the mod.'''
 
 [[dependencies.advantageclientresources]]
-modId="poweradvantage"
+modId="basepower"
 mandatory=true
-versionRange="[2.4.4.113021,)"
+versionRange="[2.4.5.113021,)"
 ordering="AFTER"
 side="CLIENT"

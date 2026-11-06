@@ -47,8 +47,8 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.crafting.VanillaRecipeTypes;
 import net.minecraftforge.fml.event.server.FMLServerStartingEvent;
 import net.minecraftforge.registries.ForgeRegistries;
-import zone.moddev.mc.poweradvantage.PowerAdvantage;
-import zone.moddev.mc.poweradvantage.RecipeMode;
+import zone.moddev.mc.basepower.PowerAdvantage;
+import zone.moddev.mc.basepower.RecipeMode;
 
 /** Manufacture from declared natural resources; no pre-supplied Advantage parts. */
 final class ProgressionProbe {
@@ -191,7 +191,7 @@ final class ProgressionProbe {
             if (exclusions.has(id)) {
                 row.addProperty("status", "INTENTIONAL_EXCLUSION");
                 row.addProperty("reason", exclusions.get(id).getAsString());
-            } else if (PowerAdvantage.recipeMode == RecipeMode.APOCALYPTIC && id.equals("electricadvantage:photovoltaic_generator")) {
+            } else if (PowerAdvantage.recipeMode == RecipeMode.APOCALYPTIC && id.equals("baseelectric:photovoltaic_generator")) {
                 row.addProperty("status", "INTENTIONAL_MODE_RESTRICTION");
                 row.addProperty("reason", "Legacy Apocalyptic mode forbids new photovoltaic generators; use hydro or steam generation");
             } else if (known.containsKey(id)) {
@@ -252,8 +252,8 @@ final class ProgressionProbe {
 
     private static boolean advantage(ItemStack stack) { return !stack.isEmpty() && owned(stack.getItem().getRegistryName()); }
     private static boolean owned(ResourceLocation id) {
-        return id != null && (id.getNamespace().equals("poweradvantage") || id.getNamespace().equals("steamadvantage")
-                || id.getNamespace().equals("electricadvantage"));
+        return id != null && (id.getNamespace().equals("basepower") || id.getNamespace().equals("basesteam")
+                || id.getNamespace().equals("baseelectric"));
     }
     static String id(ItemStack stack) { return stack.getItem().getRegistryName().toString(); }
     static void require(boolean value, String reason) { if (!value) throw new IllegalStateException(reason); }

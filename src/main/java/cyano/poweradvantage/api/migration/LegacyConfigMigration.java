@@ -72,7 +72,13 @@ public final class LegacyConfigMigration {
     }
 
     public static Result migrate(Path configDirectory, String modId, Mapping... mappings) throws IOException {
+        return migrate(configDirectory, modId, modId, mappings);
+    }
+
+    public static Result migrate(Path configDirectory, String modId, String legacyModId, Mapping... mappings)
+            throws IOException {
         Path legacyFile = configDirectory.resolve(modId + ".cfg");
+        if (!Files.isRegularFile(legacyFile)) legacyFile = configDirectory.resolve(legacyModId + ".cfg");
         Path targetFile = configDirectory.resolve(modId + "-common.toml");
         Path reportFile = configDirectory.resolve(modId + "-legacy-config-migration.txt");
         if (!Files.isRegularFile(legacyFile) || Files.exists(targetFile)) {
@@ -107,7 +113,7 @@ public final class LegacyConfigMigration {
         }
 
         List<String> toml = new ArrayList<>();
-        toml.add("# Generated once from " + modId + ".cfg by the Advantage 1.13 migration.");
+        toml.add("# Generated once from " + legacyFile.getFileName() + " by the Advantage 1.13 migration.");
         toml.add("# The original cfg file has deliberately been retained.");
         toml.add("");
         for (Map.Entry<String, List<String>> section : sections.entrySet()) {

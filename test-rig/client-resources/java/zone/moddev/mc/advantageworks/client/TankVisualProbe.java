@@ -17,10 +17,10 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.IBlockReader;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
-import zone.moddev.mc.poweradvantage.gui.FilteredFluidTankGUI;
-import zone.moddev.mc.poweradvantage.gui.FluidTankGUI;
-import zone.moddev.mc.poweradvantage.init.Blocks;
-import zone.moddev.mc.poweradvantage.machines.fluidmachines.MetalTankTileEntity;
+import zone.moddev.mc.basepower.gui.FilteredFluidTankGUI;
+import zone.moddev.mc.basepower.gui.FluidTankGUI;
+import zone.moddev.mc.basepower.init.Blocks;
+import zone.moddev.mc.basepower.machines.fluidmachines.MetalTankTileEntity;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -69,7 +69,7 @@ final class TankVisualProbe {
     }
 
     private static int renderWater(Minecraft minecraft, MetalTankTileEntity tile) {
-        FilteredFluidTankGUI definition = new FilteredFluidTankGUI(new ResourceLocation("poweradvantage", "textures/gui/container/fluid_metal_tank_gui.png"));
+        FilteredFluidTankGUI definition = new FilteredFluidTankGUI(new ResourceLocation("basepower", "textures/gui/container/fluid_metal_tank_gui.png"));
         SimpleMachineGUI.GUIContainer screen = definition.new GUIContainer(new InventoryPlayer(null), tile);
         screen.mc = minecraft;
         tile.getTank().setFluid(new FluidStack(net.minecraft.init.Fluids.WATER, 10000));

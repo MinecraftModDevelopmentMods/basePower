@@ -50,7 +50,7 @@ public class ProfileManifestTest {
                 JsonArray exclusions = profile.getAsJsonArray("stableWorldgenCountExclusions");
                 assertNotNull(exclusions);
                 assertEquals(1, exclusions.size());
-                assertEquals("poweradvantage:crude_oil", exclusions.get(0).getAsString());
+                assertEquals("basepower:crude_oil", exclusions.get(0).getAsString());
                 JsonArray fixtures = profile.getAsJsonArray("configFixtures");
                 assertNotNull(fixtures);
                 assertEquals(2, fixtures.size());

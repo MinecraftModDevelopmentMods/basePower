@@ -28,24 +28,24 @@ public class LegacyOreSpawnConfigBridgeTest {
         byte[] original = Files.readAllBytes(source);
 
         LegacyOreSpawnConfigBridge.Result result =
-                LegacyOreSpawnConfigBridge.migrate(config, "poweradvantage");
+                LegacyOreSpawnConfigBridge.migrate(config, "basepower", "poweradvantage");
 
         assertTrue(result.wasMigrated());
         assertEquals(1, result.getRuleCount());
-        assertTrue(Files.exists(config.resolve("poweradvantage-orespawn.json")));
+        assertTrue(Files.exists(config.resolve("basepower-orespawn.json")));
         assertEquals(new String(original, StandardCharsets.UTF_8),
                 new String(Files.readAllBytes(source), StandardCharsets.UTF_8));
         try (Reader reader = Files.newBufferedReader(result.getTarget(), StandardCharsets.UTF_8)) {
             JsonObject provider = new JsonParser().parse(reader).getAsJsonObject();
             JsonObject ores = provider.getAsJsonObject("ores");
-            assertTrue(ores.has("poweradvantage:legacy/poweradvantage_crude_oil_0"));
+            assertTrue(ores.has("basepower:legacy/basepower_crude_oil_0"));
             assertFalse(provider.getAsJsonObject("fluid_deposits")
-                    .has("poweradvantage:fluid_deposit/desert_crude_oil"));
+                    .has("basepower:fluid_deposit/desert_crude_oil"));
         }
         String report = new String(Files.readAllBytes(
                 config.resolve("orespawn-os3-migration-report.json")), StandardCharsets.UTF_8);
         assertTrue(report.contains("os1_config_source"));
-        assertTrue(report.contains("poweradvantage:legacy/poweradvantage_crude_oil_0"));
+        assertTrue(report.contains("basepower:legacy/basepower_crude_oil_0"));
     }
 
     @Test
@@ -57,9 +57,9 @@ public class LegacyOreSpawnConfigBridgeTest {
         Files.write(config.resolve("orespawn-worldgen.json"), "{}".getBytes(StandardCharsets.UTF_8));
 
         LegacyOreSpawnConfigBridge.Result result =
-                LegacyOreSpawnConfigBridge.migrate(config, "poweradvantage");
+                LegacyOreSpawnConfigBridge.migrate(config, "basepower", "poweradvantage");
 
         assertFalse(result.wasMigrated());
-        assertFalse(Files.exists(config.resolve("poweradvantage-orespawn.json")));
+        assertFalse(Files.exists(config.resolve("basepower-orespawn.json")));
     }
 }

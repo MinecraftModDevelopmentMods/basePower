@@ -20,7 +20,7 @@ $relative = 'java/zone/moddev/mc/advantageworks/client'
 foreach ($name in 'ClientResourceProbe','TankVisualProbe','OilRenderProbe','RecipeBookGroupingProbe') {
     $lines = & git -C $ReferenceRoot show "$referenceCommit`:test-rig/client-resources/$relative/$name.java"
     if ($LASTEXITCODE -ne 0) { throw "Missing frozen native probe: $name" }
-    $source = ($lines -join "`n")
+    $source = ($lines -join "`n") -creplace '(?<!cyano\.)\bpoweradvantage\b', 'basepower' -creplace '\bsteamadvantage\b', 'basesteam' -creplace '\belectricadvantage\b', 'baseelectric'
     $target = Get-Content -LiteralPath (Join-Path $PSScriptRoot "$relative/$name.java") -Raw
     $expected = Canonical-Source $source
     $actual = Canonical-Source $target
@@ -38,7 +38,7 @@ foreach ($name in 'ClientResourceProbe','TankVisualProbe','OilRenderProbe','Reci
 $pack = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'resources/pack.mcmeta') -Raw | ConvertFrom-Json
 Assert-Contract ($pack.pack.pack_format -eq 4) 'The native 1.13 probe resource pack must keep format 4.'
 $metadata = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'resources/META-INF/mods.toml') -Raw
-foreach ($pin in 'loaderVersion="[25,)"','versionRange="[2.4.4.113021,)"') {
+foreach ($pin in 'loaderVersion="[25,)"','versionRange="[2.4.5.113021,)"') {
     Assert-Contract ($metadata.Contains($pin)) "Missing original native probe metadata: $pin"
 }
 $runner = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'run.ps1') -Raw

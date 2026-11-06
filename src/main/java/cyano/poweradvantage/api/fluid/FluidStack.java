@@ -6,7 +6,7 @@ import net.minecraft.fluid.Fluid;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.registry.IRegistry;
-import zone.moddev.mc.poweradvantage.init.Fluids;
+import zone.moddev.mc.basepower.init.Fluids;
 
 /**
  * Forge 25's transitional fluid stack is unfinished, so Advantage keeps its

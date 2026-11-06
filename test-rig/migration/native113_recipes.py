@@ -23,7 +23,7 @@ from progression import fixture as progression_fixture, validate_tags
 from recipe_unlocks import MATERIALS
 
 
-MOD_COUNTS = {"poweradvantage": 35, "steamadvantage": 24, "electricadvantage": 50}
+MOD_COUNTS = {"basepower": 35, "basesteam": 24, "baseelectric": 50}
 RECIPE_TYPES = {"minecraft:crafting_shaped", "minecraft:crafting_shapeless", "minecraft:smelting"}
 UNLOCK_BOOTS = (
     ("NORMAL", "normal", ("sweep", "persist")),
@@ -78,7 +78,7 @@ def recipe_fixture(jars):
 
 def native_target(manifest):
     entry = read_json(manifest)["target113"]
-    required = {"advantageworkstest", "poweradvantage", "steamadvantage", "electricadvantage", "basemetals", "orespawn"}
+    required = {"advantageworkstest", "basepower", "basesteam", "baseelectric", "basemetals", "orespawn"}
     if {jar["id"] for jar in entry["jars"]} != required:
         raise ValueError("This campaign requires exactly the native harness and five packaged mods")
     target = pinned_profile(manifest, "target113")
@@ -112,7 +112,7 @@ def stage_native(runtime, target, port, campaign):
 
 
 def configure(runtime, mode, rubber=True):
-    config = runtime / "config/poweradvantage-common.toml"
+    config = runtime / "config/basepower-common.toml"
     config.parent.mkdir(exist_ok=True)
     config.write_text(f'[options]\nrecipeMode = "{mode}"\nplasticEqualsRubber = {str(rubber).lower()}\n', encoding="utf-8")
 

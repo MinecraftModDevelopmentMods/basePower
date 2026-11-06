@@ -1,10 +1,10 @@
 package cyano.poweradvantage.api.simple;
 
 
-import zone.moddev.mc.poweradvantage.PowerAdvantage;
-import zone.moddev.mc.poweradvantage.math.Integer2D;
-import zone.moddev.mc.poweradvantage.registry.ITileEntityGUI;
-import zone.moddev.mc.poweradvantage.registry.MachineGUIRegistry;
+import zone.moddev.mc.basepower.PowerAdvantage;
+import zone.moddev.mc.basepower.math.Integer2D;
+import zone.moddev.mc.basepower.registry.ITileEntityGUI;
+import zone.moddev.mc.basepower.registry.MachineGUIRegistry;
 import net.minecraft.client.gui.inventory.GuiContainer;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.InventoryPlayer;

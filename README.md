@@ -1,10 +1,14 @@
-# PowerAdvantage
+# basePower for Minecraft 1.13.2
 
-Power Advantage provides shared power, fluid, item transport, and compatibility APIs for its Minecraft 1.13.2 expansion mods.
+basePower continues DrCyano's Power Advantage with conveyors, filters, fluid plumbing and the shared systems used by baseSteam and baseElectric.
 
-This port keeps existing registry names and includes migration from 1.10 and 1.12.
-Always back up a world before upgrading, and check that its other mods also support the target version.
-The [qualification notes](docs/1.13/CURRENT-QUALIFICATION.md) separate tested scenarios from remaining gaps;
+- Use Forge 25.0.223, Java 8, Base Metals 3.0.2.113021 and MMD OreSpawn 4.1.0.113021. The older Base Metals 3.0.1 download can crash while converting an old world.
+- Back up the world and config. Replace the old Advantage or base* jars together, then open a copy of your world first. Save it, close Minecraft completely, and reopen the copy before upgrading your main world.
+
+The upgrade understands original Advantage 1.10.2 and the released base* builds for 1.10.2 and 1.12.2. Check that the other mods in your world also support 1.13.2.
+
+All three mods share the **basePower** creative tab. Look for the sprocket.
+The [base* upgrade notes](docs/1.13/BASE-IDENTITY-MIGRATION.md) separate tested scenarios from remaining gaps;
 they are not a guarantee that an entire modpack can be upgraded without losses.
 
 Recipe-book discovery now follows relevant ingredients. See the [all-Advantage material checklist and automated discovery tests](docs/1.13/RECIPE-DISCOVERY.md). To regenerate the checked-in unlock JSON after changing recipes, run `node tools/generate-recipe-unlocks.js`; `check` rejects missing or stale ingredient criteria.
@@ -15,7 +19,7 @@ The [manufacturing progression audit](docs/1.13/MANUFACTURING-PROGRESSION.md) tr
 
 The `master-1.13.2` build uses ForgeGradle 7.0.34 and Gradle 9.6.1. Run Gradle with Java 17; Gradle resolves the Java 8 production toolchain.
 
-Build the pinned Base Metals `3.0.1.113021` and OreSpawn `4.1.0.113021` deobf jars in their sibling checkouts, then run:
+Build the pinned Base Metals `3.0.2.113021` and OreSpawn `4.1.0.113021` deobf jars in their sibling checkouts, then run:
 
 ```text
 gradlew.bat clean check build javadoc verifyReleaseDependencies verifyReleaseArtifacts writeReleaseChecksums verifyEclipseProductionClasspath
@@ -31,6 +35,7 @@ Advantage's own archives normalize text to LF.
 All Advantage archives also exclude empty directories left behind by older source layouts.
 
 Release jars are written to `build/libs`; `deobfJar` writes the sibling-development jar to `build/libs-dev`.
+For publishing, use the [MMD release workflow](https://github.com/MinecraftModDevelopmentMods/basePower/actions/workflows/deploy-release.yml). It publishes the same checked jar to CurseForge and MMD Maven.
 
 For Eclipse, import this repository as an existing Gradle project and run:
 
@@ -53,7 +58,7 @@ The [client resource probe](test-rig/client-resources/README.md) checks native b
 The [stronger regression-test backport](docs/1.13/TEST-COVERAGE-BACKPORT.md)
 records the local repairs, tested jar hashes and remaining manual checks.
 
-The implementation namespace is `zone.moddev.mc.poweradvantage`. The historical `cyano.poweradvantage.api` surface, including `FluidNetworkApi`, remains available to dependent mods. Registry names, fluids, tile IDs, NBT keys, OreSpawn provider IDs, and configuration meaning remain stable.
+The implementation namespace is `zone.moddev.mc.basepower`. The historical `cyano.poweradvantage.api` surface, including `FluidNetworkApi`, remains available. World migration translates old Advantage registry, fluid and tile names to the corresponding base* names while retaining saved machine data.
 
 PowerAdvantage owns the shared pre-flattening migration hook used by all three Advantage mods. See [the 1.13 migration guide](docs/1.13/MIGRATION.md) before opening an irreplaceable 1.10 or 1.12 world. The [Advantage Works rig](test-rig/README.md) provides repeatable machine, restart, world-generation, and migration checks.
 

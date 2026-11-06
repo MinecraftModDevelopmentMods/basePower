@@ -77,9 +77,9 @@ def rows_by_id(rows, holds):
         signal = holds and case["held"]
         require(row.get("signal") is signal, key + ": actual neighbor signal differs")
         require(row.get("holdBlock") == ("minecraft:redstone_block" if signal else "minecraft:air"), key + ": wrong hold block")
-        require(row.get("block") == "electricadvantage:electric_drill", key + ": stationary drill changed")
+        require(row.get("block") == "baseelectric:electric_drill", key + ": stationary drill changed")
         require(type(row.get("active")) is bool, key + ": missing actual ACTIVE")
-        state = "Block{electricadvantage:electric_drill}[active=" + str(row["active"]).lower() + ",facing=north]"
+        state = "Block{baseelectric:electric_drill}[active=" + str(row["active"]).lower() + ",facing=north]"
         require(row.get("state") == state, key + ": raw block state disagrees with ACTIVE/facing")
         require(isinstance(row.get("energy"), (int, float)) and math.isfinite(row["energy"])
                 and 0 <= row["energy"] <= 500, key + ": invalid finite reserve")
@@ -241,7 +241,7 @@ def pin(args):
         raise FileExistsError(destination)
     replacements = {"advantageworkstest": args.harness.resolve()}
     if args.electric_jar:
-        replacements["electricadvantage"] = args.electric_jar.resolve()
+        replacements["baseelectric"] = args.electric_jar.resolve()
     target = copy.deepcopy(document["target113"])
     require(set(replacements).issubset({jar["id"] for jar in target["jars"]}), "Missing replaced mod ID in base")
     sources = [(jar, replacements.get(jar["id"], (base.parent / jar["path"]).resolve())) for jar in target["jars"]]

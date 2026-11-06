@@ -11,8 +11,8 @@ class OilTransferTests(unittest.TestCase):
         snapshot = {"cases": {}}
         for f in definition:
             rows = [{"pos": f["source"], "block": "minecraft:air"}]
-            rows.append({"pos": f["drain"], "block": "poweradvantage:fluid_drain", "tileIdentity": 1, "nbt": "{Tank:{Empty:1b}}"})
-            rows.extend({"pos": p, "block": "poweradvantage:fluid_pipe"} for p in f["pipes"])
+            rows.append({"pos": f["drain"], "block": "basepower:fluid_drain", "tileIdentity": 1, "nbt": "{Tank:{Empty:1b}}"})
+            rows.extend({"pos": p, "block": "basepower:fluid_pipe"} for p in f["pipes"])
             rows.append({"pos": f["output"], "block": f["tank"], "tileIdentity": 2,
                          "nbt": '{Tank:{Amount:1000,FluidName:"' + f["fluid"] + '"}}'})
             snapshot["cases"][f["id"]] = rows
@@ -31,7 +31,7 @@ class OilTransferTests(unittest.TestCase):
         definition, original = self.sample()
         for amount in (0, 999, 1001, 2000):
             snapshot = copy.deepcopy(original)
-            snapshot["cases"][definition[0]["id"]][-1]["nbt"] = '{Tank:{Amount:' + str(amount) + ',FluidName:"poweradvantage:crude_oil"}}'
+            snapshot["cases"][definition[0]["id"]][-1]["nbt"] = '{Tank:{Amount:' + str(amount) + ',FluidName:"basepower:crude_oil"}}'
             with self.assertRaises(AssertionError): inspect(snapshot, definition, 1000)
         original["cases"][definition[0]["id"]][1]["nbt"] = '{Tank:{Amount:1}}'
         with self.assertRaises(AssertionError): inspect(original, definition, 1000)

@@ -11,8 +11,8 @@ final class BayDrillAssertions {
     private BayDrillAssertions() { }
 
     static boolean applies(WorksDefinition.Station station, WorksDefinition.Assertion assertion) {
-        return ("S-05".equals(station.id) && "steamadvantage:steam_drill".equals(assertion.block))
-                || ("E-06".equals(station.id) && "electricadvantage:electric_drill".equals(assertion.block));
+        return ("S-05".equals(station.id) && "basesteam:steam_drill".equals(assertion.block))
+                || ("E-06".equals(station.id) && "baseelectric:electric_drill".equals(assertion.block));
     }
 
     static int[] rearTrack(WorksDefinition.Station station, WorksDefinition.Assertion assertion) {
@@ -22,8 +22,8 @@ final class BayDrillAssertions {
         if (direction < 0 || direction >= REAR.length) throw new IllegalArgumentException("Invalid drill facing");
         int[] rear = assertion.pos.clone();
         for (int i = 0; i < 3; i++) rear[i] += REAR[direction][i];
-        String track = assertion.block.startsWith("steamadvantage:")
-                ? "steamadvantage:steam_track" : "electricadvantage:electric_track";
+        String track = assertion.block.startsWith("basesteam:")
+                ? "basesteam:steam_track" : "baseelectric:electric_track";
         if (station.placements.stream().noneMatch(p -> track.equals(p.block) && Arrays.equals(p.pos, rear))) {
             throw new IllegalArgumentException("Drill bay has no declared rear track");
         }

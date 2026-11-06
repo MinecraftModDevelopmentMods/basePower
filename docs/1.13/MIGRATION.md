@@ -1,6 +1,6 @@
 # Advantage 1.13.2 World Migration
 
-This release contains migration support for Advantage worlds created by Minecraft 1.10.2 and 1.12.2. PowerAdvantage owns one shared pre-flattening hook; SteamAdvantage and ElectricAdvantage register their legacy state, tile, entity, item, fluid, and NBT codecs with it. See the [original-release and chained migration matrix](MIGRATION-MATRIX.md) for qualified fixtures and remaining acceptance gates.
+basePower owns the shared hook that converts old Advantage and base* worlds before Minecraft flattens legacy block metadata. baseSteam and baseElectric register their own machine and entity mappings. See the [base* upgrade notes](BASE-IDENTITY-MIGRATION.md) for the current candidate and the [original-release and chained migration matrix](MIGRATION-MATRIX.md) for earlier Advantage builds.
 
 The [current-candidate qualification and remaining tests](CURRENT-QUALIFICATION.md)
 separates exact-artifact reruns, state preservation, measured operation and the
@@ -18,14 +18,14 @@ repaired bridge while retaining the historical failed evidence.
 ## Before conversion
 
 1. Back up the complete instance and world outside Minecraft.
-2. Install matching 1.13.2 releases of PowerAdvantage, SteamAdvantage, ElectricAdvantage, Base Metals, and OreSpawn where the old world used them.
+2. Install matching 1.13.2 builds of basePower, baseSteam and baseElectric where the old world used them, plus OreSpawn and Base Metals with the leaves data-fixer repair.
 3. Remove unrelated 1.10/1.12 jars. A mod without a 1.13 port cannot be made compatible by the Advantage migration.
 4. Convert a copy first and retain the original world unchanged.
-5. Check the latest log and `<world>/poweradvantage-migration-report.txt` before accepting the conversion.
+5. Check the latest log and `<world>/basepower-migration-report.txt` before accepting the conversion.
 
 The migration reads the old Forge registry snapshot before vanilla flattening. Numeric block IDs and metadata are mapped to current states, including six-way drill facings, conveyors, filters, switches, pipes, fluids, tanks, helpers, machines, and converter variants.
 
-Nested NBT traversal covers tile entities, ordinary entities, player data, inventories, item stacks, durable-item damage, Forge universal buckets, and named fluids. Existing quantities are not intentionally changed. Loose files are copied to `*.poweradvantage-legacy-backup` before mutation.
+Nested NBT traversal covers tile entities, ordinary entities, player data, inventories, item stacks, durable-item damage, Forge universal buckets, and named fluids. Existing quantities are not intentionally changed. The migration keeps backups of affected loose files before rewriting them.
 
 ## Configuration
 

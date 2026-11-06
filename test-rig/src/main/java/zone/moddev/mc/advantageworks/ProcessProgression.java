@@ -27,9 +27,9 @@ import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.WorldServer;
 import net.minecraftforge.registries.ForgeRegistries;
-import zone.moddev.mc.poweradvantage.init.Fluids;
-import zone.moddev.mc.poweradvantage.machines.fluidmachines.StillTileEntity;
-import zone.moddev.mc.poweradvantage.util.FluidContainerHelper;
+import zone.moddev.mc.basepower.init.Fluids;
+import zone.moddev.mc.basepower.machines.fluidmachines.StillTileEntity;
+import zone.moddev.mc.basepower.util.FluidContainerHelper;
 import static zone.moddev.mc.advantageworks.ProgressionProbe.*;
 
 /** Non-table processing edges are verified with live bounded machines here. */
@@ -93,31 +93,31 @@ final class ProcessProgression {
                 if (id.startsWith("basemetals:") && id.endsWith("_crackhammer")
                         && stack(id).getItem().canHarvestBlock(((ItemBlock) input.getItem()).getBlock().getDefaultState())) return true;
             }
-            return (has(known, "steamadvantage:steam_crusher", "steamadvantage:steam_boiler_coal", "minecraft:water_bucket"))
-                    || has(known, "electricadvantage:electric_crusher", "electricadvantage:hydroelectric_generator", "minecraft:water_bucket");
+            return (has(known, "basesteam:steam_crusher", "basesteam:steam_boiler_coal", "minecraft:water_bucket"))
+                    || has(known, "baseelectric:electric_crusher", "baseelectric:hydroelectric_generator", "minecraft:water_bucket");
         }
         return true;
     }
 
     static boolean advance(WorldServer world, EntityPlayerMP player, Map<String, JsonObject> known, JsonObject fixture) {
         boolean changed = false;
-        for (String machine : new String[] {"steamadvantage:steam_crusher", "electricadvantage:electric_crusher"}) {
+        for (String machine : new String[] {"basesteam:steam_crusher", "baseelectric:electric_crusher"}) {
             if (known.containsKey(machine) && crusherWitnesses.add(machine)) {
                 for (String potato : new String[] {"minecraft:potato", "minecraft:poisonous_potato"})
                     crushPotato(world, fixture, machine, potato);
             }
         }
-        if (known.containsKey("electricadvantage:sulfur_ore") && !known.containsKey("electricadvantage:sulfur_powder")) {
+        if (known.containsKey("baseelectric:sulfur_ore") && !known.containsKey("baseelectric:sulfur_powder")) {
             BlockPos pos = new BlockPos(16392, 80, 16384);
-            fresh(world, fixture, pos, "electricadvantage:sulfur_ore");
+            fresh(world, fixture, pos, "baseelectric:sulfur_ore");
             NonNullList<ItemStack> drops = NonNullList.create();
             world.getBlockState(pos).getBlock().getDrops(world.getBlockState(pos), drops, world, pos, 0);
-            require(drops.size() == 1 && id(drops.get(0)).equals("electricadvantage:sulfur_powder")
+            require(drops.size() == 1 && id(drops.get(0)).equals("baseelectric:sulfur_powder")
                     && drops.get(0).getCount() >= 1 && drops.get(0).getCount() <= 4, "Sulfur ore drops changed");
-            changed |= acquire(known, player, drops.get(0), "mine_generated_sulfur_ore", Collections.singletonList("electricadvantage:sulfur_ore"));
+            changed |= acquire(known, player, drops.get(0), "mine_generated_sulfur_ore", Collections.singletonList("baseelectric:sulfur_ore"));
         }
         if (known.containsKey("minecraft:bucket")) {
-            for (String fluid : new String[] {"minecraft:water", "poweradvantage:crude_oil"}) {
+            for (String fluid : new String[] {"minecraft:water", "basepower:crude_oil"}) {
                 String bucket = fluid.equals("minecraft:water") ? "minecraft:water_bucket" : fluid + "_bucket";
                 if (known.containsKey(bucket)) continue;
                 BlockPos pos = new BlockPos(16390, 80, 16384);
@@ -132,9 +132,9 @@ final class ProcessProgression {
                 record("bucket_collect:" + fluid, 1000, 1);
             }
         }
-        if (!known.containsKey("poweradvantage:refined_oil_bucket") && has(known,
-                "poweradvantage:still", "poweradvantage:crude_oil_bucket", "minecraft:bucket", "minecraft:coal")) {
-            StillTileEntity still = (StillTileEntity) fresh(world, fixture, new BlockPos(16386, 80, 16384), "poweradvantage:still");
+        if (!known.containsKey("basepower:refined_oil_bucket") && has(known,
+                "basepower:still", "basepower:crude_oil_bucket", "minecraft:bucket", "minecraft:coal")) {
+            StillTileEntity still = (StillTileEntity) fresh(world, fixture, new BlockPos(16386, 80, 16384), "basepower:still");
             ((IInventory) still).setInventorySlotContents(0, stack("minecraft:coal"));
             still.powerUpdate();
             for (int batch = 0; batch < 2; batch++) {
@@ -147,18 +147,18 @@ final class ProcessProgression {
             player.setHeldItem(EnumHand.MAIN_HAND, stack("minecraft:bucket"));
             require(FluidContainerHelper.interact(player, EnumHand.MAIN_HAND, still, null), "Cannot collect refined oil from still");
             ItemStack output = player.getHeldItemMainhand().copy();
-            require(id(output).equals("poweradvantage:refined_oil_bucket") && still.getTank().getFluidAmount() == 0,
+            require(id(output).equals("basepower:refined_oil_bucket") && still.getTank().getFluidAmount() == 0,
                     "Refined-oil bucket changed identity or duplicated fluid");
             changed |= acquire(known, player, output, "live_distillation:2000mB_to_1000mB",
-                    Arrays.asList("poweradvantage:still", "poweradvantage:crude_oil_bucket", "minecraft:coal", "minecraft:bucket"));
+                    Arrays.asList("basepower:still", "basepower:crude_oil_bucket", "minecraft:coal", "minecraft:bucket"));
             record("live_distillation", 2000, 1000);
         }
-        if (!known.containsKey("electricadvantage:petrolplastic_ingot") && has(known,
-                "electricadvantage:plastic_refinery", "poweradvantage:refined_oil_bucket")
-                && (known.containsKey("electricadvantage:hydroelectric_generator")
-                    || known.containsKey("electricadvantage:photovoltaic_generator")
-                    || known.containsKey("electricadvantage:steam_powered_generator"))) {
-            TileEntity tile = fresh(world, fixture, new BlockPos(16388, 80, 16384), "electricadvantage:plastic_refinery");
+        if (!known.containsKey("baseelectric:petrolplastic_ingot") && has(known,
+                "baseelectric:plastic_refinery", "basepower:refined_oil_bucket")
+                && (known.containsKey("baseelectric:hydroelectric_generator")
+                    || known.containsKey("baseelectric:photovoltaic_generator")
+                    || known.containsKey("baseelectric:steam_powered_generator"))) {
+            TileEntity tile = fresh(world, fixture, new BlockPos(16388, 80, 16384), "baseelectric:plastic_refinery");
             IAdvantageFluidHandler fluids = (IAdvantageFluidHandler) tile;
             require(fluids.fill(null, new FluidStack(Fluids.refined_oil, 100), true) == 100, "Refinery rejected refined oil");
             TileEntitySimplePowerMachine machine = (TileEntitySimplePowerMachine) tile;
@@ -171,19 +171,19 @@ final class ProcessProgression {
             ItemStack output;
             try { output = (ItemStack) tile.getClass().getMethod("getOutputSlot", int.class).invoke(tile, 0); }
             catch (ReflectiveOperationException error) { throw new IllegalStateException(error); }
-            require(output != null && !output.isEmpty() && id(output).equals("electricadvantage:petrolplastic_ingot") && output.getCount() == 1,
+            require(output != null && !output.isEmpty() && id(output).equals("baseelectric:petrolplastic_ingot") && output.getCount() == 1,
                     "Refinery did not make exactly one plastic ingot");
             require(fluids.getTankInfo(null)[0].fluid == null || fluids.getTankInfo(null)[0].fluid.amount == 0, "Refinery did not consume 100mB");
             require(Math.abs(supplied - machine.getEnergy(electricity) - 1200) < 0.001F, "Refinery electricity consumption changed");
             changed |= acquire(known, player, output, "live_refinery:100mB_1200energy",
-                    Arrays.asList("electricadvantage:plastic_refinery", "poweradvantage:refined_oil_bucket", "electricadvantage:hydroelectric_generator"));
+                    Arrays.asList("baseelectric:plastic_refinery", "basepower:refined_oil_bucket", "baseelectric:hydroelectric_generator"));
             record("live_refinery", 100, 1);
         }
         return changed;
     }
 
     private static void crushPotato(WorldServer world, JsonObject fixture, String id, String potato) {
-        boolean steam = id.startsWith("steamadvantage:");
+        boolean steam = id.startsWith("basesteam:");
         TileEntitySimplePowerMachine machine = (TileEntitySimplePowerMachine) fresh(world, fixture,
                 new BlockPos(steam ? 16400 : 16402, 80, 16384), id);
         ItemStack input = stack(potato);
@@ -202,7 +202,7 @@ final class ProcessProgression {
         try { output = steam ? inventory.getStackInSlot(1)
                 : (ItemStack) machine.getClass().getMethod("getOutputSlot", int.class).invoke(machine, 0); }
         catch (ReflectiveOperationException error) { throw new IllegalStateException(error); }
-        require(output != null && !output.isEmpty() && id(output).equals("poweradvantage:starch") && output.getCount() == 1,
+        require(output != null && !output.isEmpty() && id(output).equals("basepower:starch") && output.getCount() == 1,
                 "Powered crusher did not produce one starch: " + id + "/" + potato);
         require(inventory.getStackInSlot(0).getCount() == 1, "Powered crusher did not consume exactly one potato");
         require(supplied > machine.getEnergy(power), "Powered crusher did not consume energy");

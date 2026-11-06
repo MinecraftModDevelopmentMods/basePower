@@ -13,7 +13,7 @@ import nbtlib
 
 from matrix import digest, write_json
 from native113 import RIG, LAUNCHER, output_path, pinned_profile, require_disjoint
-from native113_code import Server, code_files, verify_code, INVENTORY
+from native113_code import Server, verify_code, INVENTORY
 from native113_lifecycle import prepare, read_json, require_native_boot, verify_staged
 
 
@@ -23,7 +23,7 @@ REQUIRED = {
               "conveyor/blocked", "conveyor/item-entity", "conveyor/nbt-preserved", "filter/block", "filter/food", "filter/fuel", "filter/ore",
               "filter/plant", "filter/smelt", "filter/inventory-0", "filter/inventory-1", "filter/inventory-2",
               "filter/inventory-3", "filter/overflow-0", "filter/overflow-1", "filter/overflow-2", "filter/overflow-3",
-              "drain/minecraft_water", "drain/poweradvantage_crude_oil", "drain/poweradvantage_refined_oil",
+              "drain/minecraft_water", "drain/basepower_crude_oil", "drain/basepower_refined_oil",
               "drain/non-source", "tank/filter-true", "tank/filter-false", "tank/full", "fluid-switch/true",
               "fluid-switch/false", "discharge/true", "discharge/false", "conveyor/locked-source", "conveyor/locked-destination",
               "still/production", "still/no-fuel", "still/invalid", "still/full", "still/one-space", "still/redstone"},
@@ -142,14 +142,18 @@ def pin(args):
     if destination.exists(): raise FileExistsError(destination)
     destination.mkdir(parents=True)
     replacements = {
-        "poweradvantage": RIG.parent / "build/libs/PowerAdvantage-2.4.4.113021.jar",
-        "steamadvantage": RIG.parent.parent / "SteamAdvantage/SteamAdvantage/build/libs/SteamAdvantage-2.2.5.113021.jar",
-        "electricadvantage": RIG.parent.parent / "ElectricAdvantage/ElectricAdvantage/build/libs/ElectricAdvantage-2.2.5.113021.jar",
+        "poweradvantage": RIG.parent / "build/libs/basePower-2.4.5.113021.jar",
+        "steamadvantage": RIG.parent.parent / "SteamAdvantage/SteamAdvantage/build/libs/baseSteam-2.2.7.113021.jar",
+        "electricadvantage": RIG.parent.parent / "ElectricAdvantage/ElectricAdvantage/build/libs/baseElectric-2.2.7.113021.jar",
         "advantageworkstest": RIG / "build/gradle/libs/AdvantageWorksTestHarness-1.1.0.113021.jar",
     }
     if getattr(args, "original_production", False):
         replacements = {key: value for key, value in replacements.items() if key == "advantageworkstest"}
     target = copy.deepcopy(base["target113"])
+    seed = args.seed.resolve() if args.seed else Path(target["seed"])
+    verify_code(seed, target["serverCode"])
+    target["seed"] = str(seed)
+    from native113 import identity
     for jar in target["jars"]:
         source = replacements.get(jar["id"], Path(jar["path"]))
         checksum = digest(source)
@@ -161,9 +165,9 @@ def pin(args):
         if digest(path) != checksum: raise AssertionError("Archive copy differs")
         jar.update(path=str(path), originPath=str(source), sha256=checksum)
         if jar["id"] in replacements: jar["sourceRef"] = "LOCAL_OPERATING_CANDIDATE_" + args.label
+        jar["id"], jar["version"] = identity(path)
     target["qualificationStatus"] = "UNQUALIFIED_OPERATING_CANDIDATE"
     target["scope"] = args.label
-    target["serverCode"] = {"files": code_files(Path(target["seed"]))}
     path = destination / "inputs.json"
     write_json(path, {"target113": target, "baseManifest": str(args.base.resolve()), "baseSha256": digest(args.base)})
     pinned_profile(path, "target113")
@@ -246,6 +250,7 @@ def main():
     p = commands.add_parser("pin")
     p.add_argument("--base", type=Path, required=True); p.add_argument("--output", type=Path, required=True)
     p.add_argument("--label", required=True)
+    p.add_argument("--seed", type=Path, help="Replacement Forge installation with the same sealed code bytes")
     p.add_argument("--original-production", action="store_true", help="Keep the original three production jars; replace only the test harness")
     r = commands.add_parser("run")
     r.add_argument("--manifest", type=Path, required=True); r.add_argument("--output", type=Path, required=True)

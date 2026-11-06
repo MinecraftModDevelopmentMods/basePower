@@ -2,4 +2,6 @@ plugins {
     id('org.gradle.toolchains.foojay-resolver-convention') version '1.0.0'
 }
 
+// Buildship requires a project directly under the workspace to match its folder name.
+// The release artifact and mod ID are configured independently in the build.
 rootProject.name = 'PowerAdvantage'

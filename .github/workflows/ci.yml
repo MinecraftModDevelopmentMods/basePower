@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: poweradvantage-1.13-${{ github.workflow }}-${{ github.ref }}
+  group: basepower-1.13-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -30,12 +30,25 @@ jobs:
       - name: Use canonical LF dependency inputs
         # Base Metals predates archive text normalization; its LF artifact is separately pinned.
         run: git config --global core.autocrlf false
+      - name: Read Base Metals development pin
+        id: basemetals-pin
+        shell: bash
+        run: |
+          set -euo pipefail
+          ref=$(sed -n 's/^basemetals_source_commit=//p' gradle.properties)
+          [[ "$ref" =~ ^[a-f0-9]{40}$ ]]
+          echo "ref=$ref" >> "$GITHUB_OUTPUT"
       - name: Check out pinned Base Metals
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           repository: MinecraftModDevelopmentMods/BaseMetals
-          ref: 1376a20d7d5ba22d3abc77dc34b49a2c88943697
+          ref: ${{ steps.basemetals-pin.outputs.ref }}
           path: .ci-dependencies/BaseMetals
+      - name: Install Java 25 for Mavenizer
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: '25.0.3+9.0.LTS'
       - name: Install Java 8 toolchain
         uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
         with:
@@ -57,9 +70,12 @@ jobs:
           basemetals="$GITHUB_WORKSPACE/.ci-dependencies/BaseMetals"
           chmod +x "$orespawn/gradlew" "$basemetals/gradlew"
           (cd "$orespawn" && ./gradlew jar --no-daemon --stacktrace)
-          (cd "$basemetals" && ./gradlew jar --no-daemon --stacktrace)
+          mirror="$RUNNER_TEMP/orespawn-mirror"
+          (cd "$basemetals" && bash gradle/stage-orespawn-release.sh "$mirror" &&
+            ./gradlew jar "-PorespawnVerificationRepository=$mirror" --no-daemon --stacktrace)
+          bm_version=$(sed -n 's/^basemetals_version=//p' gradle.properties)
           osjar="$orespawn/build/libs-dev/OreSpawn-4.1.0.113021-deobf.jar"
-          bmjar="$basemetals/build/libs-dev/BaseMetals-3.0.1.113021-deobf.jar"
+          bmjar="$basemetals/build/libs-dev/BaseMetals-$bm_version-deobf.jar"
           test -f "$osjar" && test -f "$bmjar"
           echo "orespawn=$osjar" >> "$GITHUB_OUTPUT"
           echo "basemetals=$bmjar" >> "$GITHUB_OUTPUT"
@@ -73,20 +89,21 @@ jobs:
       - name: Upload audited release candidate
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: PowerAdvantage-1.13.2-${{ github.sha }}
+          name: basePower-1.13.2-${{ github.sha }}
           if-no-files-found: error
           retention-days: 30
           path: |
-            build/libs/PowerAdvantage-2.4.4.113021.jar
-            build/libs/PowerAdvantage-2.4.4.113021-sources.jar
-            build/libs/PowerAdvantage-2.4.4.113021-javadoc.jar
+            build/libs/basePower-2.4.5.113021.jar
+            build/libs/basePower-2.4.5.113021-sources.jar
+            build/libs/basePower-2.4.5.113021-javadoc.jar
+            build/libs-dev/basePower-2.4.5.113021-deobf.jar
             build/release/SHA256SUMS
             CHANGELOG.txt
       - name: Upload diagnostics on failure
         if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: PowerAdvantage-1.13.2-diagnostics-${{ github.sha }}
+          name: basePower-1.13.2-diagnostics-${{ github.sha }}
           if-no-files-found: ignore
           retention-days: 14
           path: |
