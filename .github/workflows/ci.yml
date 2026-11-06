@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: poweradvantage-1.15-${{ github.workflow }}-${{ github.ref }}
+  group: basepower-1.15-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -85,13 +85,14 @@ jobs:
       - name: Upload audited release candidate
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: PowerAdvantage-1.15.2-${{ github.sha }}
+          name: basePower-1.15.2-${{ github.sha }}
           if-no-files-found: error
           retention-days: 30
           path: |
-            build/libs/PowerAdvantage-2.4.6.115021.jar
-            build/libs/PowerAdvantage-2.4.6.115021-sources.jar
-            build/libs/PowerAdvantage-2.4.6.115021-javadoc.jar
+            build/libs/basePower-2.4.7.115021.jar
+            build/libs/basePower-2.4.7.115021-sources.jar
+            build/libs/basePower-2.4.7.115021-javadoc.jar
+            build/libs-dev/basePower-2.4.7.115021-deobf.jar
             build/release/SHA256SUMS
             CHANGELOG.txt
       - name: Upload diagnostics on failure

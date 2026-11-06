@@ -1,4 +1,10 @@
-Unreleased 1.15.2 test-coverage backport
+2.4.7.115021 - basePower for Minecraft 1.15.2
+
+- Continue Power Advantage under the basePower name on Forge 1.15.2.
+- Read old Power Advantage saves and keep existing basePower world IDs.
+- Keep the baseSteam and baseElectric equipment on the shared basePower tab.
+
+Earlier 1.15.2 fixes
 
 - Keep energy that a consumer cannot accept available to the rest of its network.
 - Check every accessible conveyor slot, respect stack limits and keep different item NBT separate.

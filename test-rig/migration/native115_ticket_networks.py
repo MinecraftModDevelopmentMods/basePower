@@ -136,12 +136,12 @@ class NativeTicketExtendedRun(NativeTicketNetworkRun, NativeExtendedRun):
                 self.inventory(f["from"], 1, "minecraft:apple", 13)
                 continue
             fluid, steam = f["id"] == "C-FLUID", f["id"] == "C-STEAM"
-            pipe = "poweradvantage:fluid_pipe" if fluid else "steamadvantage:steam_pipe" if steam else "electricadvantage:electric_conduit"
-            self.block(f["witnesses"][0], pipe if fluid else "poweradvantage:infinite_" + ("steam" if steam else "electricity"))
+            pipe = "basepower:fluid_pipe" if fluid else "basesteam:steam_pipe" if steam else "baseelectric:electric_conduit"
+            self.block(f["witnesses"][0], pipe if fluid else "basepower:infinite_" + ("steam" if steam else "electricity"))
             for pos in f["pipes"]:
                 self.block(pos, pipe)
-            self.block(f["witnesses"][4], "poweradvantage:fluid_metal_tank" if fluid else
-                       "steamadvantage:steam_furnace" if steam else "electricadvantage:electric_furnace")
+            self.block(f["witnesses"][4], "basepower:fluid_metal_tank" if fluid else
+                       "basesteam:steam_furnace" if steam else "baseelectric:electric_furnace")
             if not fluid:
                 if steam:
                     self.inventory(f["witnesses"][4], 0, "minecraft:coal", 64)

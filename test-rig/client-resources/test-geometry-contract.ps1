@@ -8,7 +8,7 @@ $relative = 'java/zone/moddev/mc/advantageworks/client'
 $geometry = Get-Content -LiteralPath (Join-Path $PSScriptRoot "$relative/ChildRendererGeometryProbe.java") -Raw
 $main = Get-Content -LiteralPath (Join-Path $PSScriptRoot "$relative/ClientResourceProbe.java") -Raw
 $runner = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'run.ps1') -Raw
-Assert-GeometryContract ($geometry -notmatch '(?m)^import zone\.moddev\.mc\.(?:steamadvantage|electricadvantage)\.') 'Child renderer probe must not add compile dependencies on the expansions.'
+Assert-GeometryContract ($geometry -notmatch '(?m)^import zone\.moddev\.mc\.(?:basesteam|baseelectric)\.') 'Child renderer probe must not add compile dependencies on the expansions.'
 Assert-GeometryContract ($geometry -notmatch 'new (?:DrillBitRenderer|LaserDrillRenderer|LaserTurretRenderer|HydroturbineRenderer)|renderGeometry\(|Unsafe|allocateInstance|new ClientWorld|loadWorld\(') 'Use dispatcher-owned production renderer instances without bypassing construction or loading a world.'
 foreach ($fragment in 'TileEntityRendererDispatcher.instance.getRenderer(tile)', 'minecraft.getRenderManager().renderers.get(type)',
         'renderer.render(tile, partial, matrices, buffers', 'buffer.begin(type.getDrawMode(), type.getVertexFormat())',

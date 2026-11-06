@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "xxx",
+    "x x",
+    "xxx"
+  ],
+  "key": {
+    "x": {
+      "tag": "forge:bars/steel"
+    }
+  },
+  "result": {
+    "item": "basepower:steel_frame"
+  },
+  "group": "basepower:steel_frame",
+  "conditions": [
+    {
+      "type": "basepower:tag_not_empty",
+      "tag": "forge:bars/steel"
+    }
+  ]
+}

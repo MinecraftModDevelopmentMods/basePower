@@ -45,10 +45,10 @@ import java.util.Optional;
 final class ChildRendererGeometryProbe {
     private static final float EPSILON = 0.0001F;
     private static final int LIGHT = 0xF000F0;
-    private static final String STEAM_RENDERER = "zone.moddev.mc.steamadvantage.graphics.DrillBitRenderer";
-    private static final String DRILL_RENDERER = "zone.moddev.mc.electricadvantage.graphics.LaserDrillRenderer";
-    private static final String TURRET_RENDERER = "zone.moddev.mc.electricadvantage.graphics.LaserTurretRenderer";
-    private static final String TURBINE_RENDERER = "zone.moddev.mc.electricadvantage.graphics.HydroturbineRenderer";
+    private static final String STEAM_RENDERER = "zone.moddev.mc.basesteam.graphics.DrillBitRenderer";
+    private static final String DRILL_RENDERER = "zone.moddev.mc.baseelectric.graphics.LaserDrillRenderer";
+    private static final String TURRET_RENDERER = "zone.moddev.mc.baseelectric.graphics.LaserTurretRenderer";
+    private static final String TURBINE_RENDERER = "zone.moddev.mc.baseelectric.graphics.HydroturbineRenderer";
 
     static void verify(Minecraft minecraft, JsonObject result) {
         JsonObject report = new JsonObject();
@@ -63,13 +63,13 @@ final class ChildRendererGeometryProbe {
             drill(minecraft, cases);
             turret(minecraft, cases);
             run(cases, "hydroturbine-registration", row -> {
-                EntityType<?> type = ForgeRegistries.ENTITIES.getValue(new ResourceLocation("electricadvantage:hydroturbine"));
+                EntityType<?> type = ForgeRegistries.ENTITIES.getValue(new ResourceLocation("baseelectric:hydroturbine"));
                 require(type != null, "Missing registered hydroturbine type");
                 EntityRenderer<?> renderer = minecraft.getRenderManager().renderers.get(type);
                 require(renderer != null && TURBINE_RENDERER.equals(renderer.getClass().getName()), "Missing production hydroturbine renderer");
                 row.addProperty("renderer", renderer.getClass().getName());
                 ResourceLocation texture = (ResourceLocation) valueOfType(renderer, ResourceLocation.class);
-                require(new ResourceLocation("electricadvantage:textures/entity/hydroturbine.png").equals(texture), "Wrong hydroturbine texture");
+                require(new ResourceLocation("baseelectric:textures/entity/hydroturbine.png").equals(texture), "Wrong hydroturbine texture");
                 texture(minecraft, texture, row);
                 row.addProperty("status", "MANUAL_GAP_WORLD_REQUIRED");
                 row.addProperty("gap", "HydroturbineEntity constructor reads World.rand; orientation/spin vertices require a fresh disposable client world. No entity was constructed, no render invoked, and no geometry pass is claimed.");
@@ -104,11 +104,11 @@ final class ChildRendererGeometryProbe {
         for (Direction facing : Direction.values()) {
             final List<List<float[]>> frames = new ArrayList<>();
             for (float partial : new float[]{0F, 0.5F}) run(cases, "steam-drillbit-" + facing + "-" + partial, row -> {
-                TileEntity tile = tile("steamadvantage:drillbit");
+                TileEntity tile = tile("basesteam:drillbit");
                 tile.getClass().getMethod("setDirection", Direction.class).invoke(tile, facing);
                 set(tile, "rotation", 0F);
                 List<float[]> vertices = render(minecraft, tile, STEAM_RENDERER, partial,
-                        "steamadvantage:textures/entity/drill_bit.png", row);
+                        "basesteam:textures/entity/drill_bit.png", row);
                 mesh(vertices, 24);
                 int axis = facing.getAxis() == Direction.Axis.X ? 0 : facing.getAxis() == Direction.Axis.Y ? 1 : 2;
                 for (float[] vertex : vertices) for (int i = 0; i < 3; i++) require(vertex[i] >= -EPSILON && vertex[i] <= 1 + EPSILON, "Drill bit escaped its block");
@@ -122,14 +122,14 @@ final class ChildRendererGeometryProbe {
 
     private static void drill(Minecraft minecraft, JsonArray cases) {
         for (Direction facing : Direction.values()) run(cases, "electric-drill-" + facing, row -> {
-            TileEntity tile = tile("electricadvantage:electric_drill");
+            TileEntity tile = tile("baseelectric:electric_drill");
             // These are the production tile's synchronized renderer inputs, not replacement methods.
             set(tile, "facingCache", facing);
             set(tile, "laserLength", 4);
             require(tile.getClass().getMethod("getFacing").invoke(tile) == facing, "Drill fixture facing was not consumed");
             require(((Number) tile.getClass().getMethod("getDrillLength").invoke(tile)).intValue() == 4, "Drill fixture length was not consumed");
             List<float[]> vertices = render(minecraft, tile, DRILL_RENDERER, 0.5F,
-                    "electricadvantage:textures/materials/laser_beam.png", row);
+                    "baseelectric:textures/materials/laser_beam.png", row);
             mesh(vertices, 16);
             beam(vertices, facing, new float[]{0.5F, 0.5F, 0.5F}, 4F);
             for (float[] vertex : vertices) require(close(vertex[3], 0) && close(vertex[4], 1), "Drill beam UV layout changed");
@@ -138,11 +138,11 @@ final class ChildRendererGeometryProbe {
 
     private static void turret(Minecraft minecraft, JsonArray cases) {
         run(cases, "turret-idle", row -> {
-            TileEntity tile = tile("electricadvantage:laser_turret");
+            TileEntity tile = tile("baseelectric:laser_turret");
             set(tile, "rotYaw", -90F);
             set(tile, "rotOldYaw", -90F);
             List<float[]> vertices = render(minecraft, tile, TURRET_RENDERER, 0.5F,
-                    "electricadvantage:textures/entity/laser_turret.png", row);
+                    "baseelectric:textures/entity/laser_turret.png", row);
             mesh(vertices, 24);
             require(close(min(vertices, 0), 0.25F) && close(max(vertices, 0), 0.75F)
                     && close(min(vertices, 1), 0.5F) && close(max(vertices, 1), 1F)
@@ -150,7 +150,7 @@ final class ChildRendererGeometryProbe {
             for (int i = 0; i < 4; i++) require(vertices.get(i)[4] >= 0.5F - EPSILON, "Idle turret uses the active optic UVs");
         });
         for (Direction facing : Direction.values()) run(cases, "turret-target-" + facing, row -> {
-            TileEntity tile = tile("electricadvantage:laser_turret");
+            TileEntity tile = tile("baseelectric:laser_turret");
             PoweredEntity machine = (PoweredEntity) tile;
             machine.setEnergy(2000F, machine.getTypes()[0]);
             float yaw = facing == Direction.EAST ? 0F : facing == Direction.SOUTH ? 90F : facing == Direction.WEST ? 180F : -90F;
@@ -165,7 +165,7 @@ final class ChildRendererGeometryProbe {
             require(Boolean.TRUE.equals(tile.getClass().getMethod("isActive").invoke(tile))
                     && Boolean.TRUE.equals(tile.getClass().getMethod("showLaserLine").invoke(tile)), "Turret fixture did not enable the production target branch");
             List<float[]> vertices = render(minecraft, tile, TURRET_RENDERER, 0.5F,
-                    "electricadvantage:textures/entity/laser_turret.png", row);
+                    "baseelectric:textures/entity/laser_turret.png", row);
             mesh(vertices, 40);
             beam(vertices.subList(24, 40), facing, new float[]{0.5F, 0.75F, 0.5F}, 4F);
             for (float[] vertex : vertices.subList(0, 24)) for (int i = 0; i < 3; i++)

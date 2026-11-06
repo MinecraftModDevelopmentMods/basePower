@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=east": {
+      "model": "basepower:block/infinite_electricity",
+      "y": 90
+    },
+    "facing=north": {
+      "model": "basepower:block/infinite_electricity"
+    },
+    "facing=south": {
+      "model": "basepower:block/infinite_electricity",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "basepower:block/infinite_electricity",
+      "y": 270
+    }
+  }
+}

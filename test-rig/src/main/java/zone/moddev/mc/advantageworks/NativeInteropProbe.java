@@ -32,10 +32,10 @@ import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fml.event.server.FMLServerStartingEvent;
 import net.minecraftforge.registries.ForgeRegistries;
-import zone.moddev.mc.poweradvantage.machines.conveyors.BlockConveyor;
-import zone.moddev.mc.poweradvantage.machines.conveyors.TileEntityConveyor;
-import zone.moddev.mc.poweradvantage.machines.fluidmachines.StorageTankTileEntity;
-import zone.moddev.mc.poweradvantage.util.InventoryLocks;
+import zone.moddev.mc.basepower.machines.conveyors.BlockConveyor;
+import zone.moddev.mc.basepower.machines.conveyors.TileEntityConveyor;
+import zone.moddev.mc.basepower.machines.fluidmachines.StorageTankTileEntity;
+import zone.moddev.mc.basepower.util.InventoryLocks;
 
 /** Capability and native loot witnesses, restricted to a marked disposable world. */
 final class NativeInteropProbe {
@@ -102,7 +102,7 @@ final class NativeInteropProbe {
             final String id = ids[index];
             final ConduitType type = new ConduitType(types[index]);
             final BlockPos pos = new BlockPos(1060 + index * 8, 8, 1024);
-            place(world, pos, block("poweradvantage:" + id).getDefaultState());
+            place(world, pos, block("basepower:" + id).getDefaultState());
             TileEntityRFConverter tile = (TileEntityRFConverter) world.getTileEntity(pos);
             check(checks, id + "/capability", () -> {
                 IEnergyStorage storage = tile.getCapability(CapabilityEnergy.ENERGY, Direction.NORTH)
@@ -147,7 +147,7 @@ final class NativeInteropProbe {
                 require(old.isPresent(), "Missing original capability");
                 world.setBlockState(pos, net.minecraft.block.Blocks.AIR.getDefaultState(), 3);
                 require(!old.isPresent(), "Removed converter still exposes its stale capability");
-                world.setBlockState(pos, block("poweradvantage:" + id).getDefaultState(), 3);
+                world.setBlockState(pos, block("basepower:" + id).getDefaultState(), 3);
                 LazyOptional<IEnergyStorage> replacement = world.getTileEntity(pos).getCapability(CapabilityEnergy.ENERGY, Direction.NORTH);
                 require(replacement.isPresent() && replacement != old, "Replacement did not expose a fresh capability");
             });
@@ -155,7 +155,7 @@ final class NativeInteropProbe {
     }
 
     private static void tank(ServerWorld world, JsonArray checks) {
-        Block block = block("poweradvantage:fluid_storage_tank");
+        Block block = block("basepower:fluid_storage_tank");
         place(world, TANK, block.getDefaultState());
         TileEntity tile = world.getTileEntity(TANK);
         check(checks, "fluid/simulation-conservation-and-identity", () -> {
@@ -194,7 +194,7 @@ final class NativeInteropProbe {
 
     private static void locks(ServerWorld world, JsonArray checks) {
         place(world, BELT.west(), net.minecraft.block.Blocks.CHEST.getDefaultState());
-        place(world, BELT, block("poweradvantage:item_conveyor").getDefaultState().with(BlockConveyor.FACING, Direction.EAST));
+        place(world, BELT, block("basepower:item_conveyor").getDefaultState().with(BlockConveyor.FACING, Direction.EAST));
         place(world, BELT.east(), net.minecraft.block.Blocks.CHEST.getDefaultState());
         IInventory input = (IInventory) world.getTileEntity(BELT.west());
         IInventory output = (IInventory) world.getTileEntity(BELT.east());

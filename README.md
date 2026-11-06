@@ -1,21 +1,15 @@
-# PowerAdvantage
+# basePower for Minecraft 1.15.2
 
-**Minecraft 1.15.2**
+basePower continues DrCyano's Power Advantage. It adds conveyors, fluid pipes,
+tanks and oil processing, and provides the shared network for baseSteam and
+baseElectric. All three mods use the **basePower** creative tab.
 
-Power Advantage 2.4.6.115021 targets Minecraft 1.15.2. See the
-[current test record](docs/1.15/TEST-COVERAGE-BACKPORT.md) for the exact jars,
-automated results and remaining limits. Visuals and recipe unlocks were
-accepted on 27 October 2026; machine behavior is covered by the recorded
-automated tests.
+Back up your world and config before upgrading, and try the upgrade on a copy
+first. Keep all three mods on the same Minecraft version and check that the
+rest of your modpack supports it too.
 
-Power Advantage provides shared power, fluids, item transport and compatibility APIs for Steam Advantage and Electric Advantage.
-
-**Back up the entire world before upgrading. Test only disposable copies.**
-The port retains existing registry names and legacy migration code. Upgrade tests
-use disposable original and maintained saves, including connected machines.
-Check every other mod's target-version support too.
-The accepted [1.14 results](docs/1.14/BROADER-QUALIFICATION.md) are historical
-evidence, not qualification of this port or a whole modpack.
+The [earlier 1.15 test record](docs/1.15/TEST-COVERAGE-BACKPORT.md) covers
+Power Advantage before the rename. It does not qualify the basePower jars.
 
 Recipe-book discovery now follows relevant ingredients. See the [all-Advantage material checklist and automated discovery tests](docs/1.13/RECIPE-DISCOVERY.md). To regenerate the checked-in unlock JSON after changing recipes, run `node tools/generate-recipe-unlocks.js`; `check` rejects missing or stale ingredient criteria.
 
@@ -66,7 +60,7 @@ Refresh the project in Eclipse, allow its Java build to finish, and launch the g
 
 Eclipse copies production resources from `build/resources/main`, not directly from `src/main/resources`. This prevents its builder from overwriting the expanded `mods.toml` with raw `${version}` placeholders. After updating this setup, use **Gradle > Refresh Gradle Project**, then **Project > Clean** before relaunching. After editing resources or version properties, run `processResources` or refresh the Gradle project before the Eclipse build. See the [metadata regression notes](docs/1.13/ECLIPSE-METADATA.md).
 
-To prepare a combined client, build the Steam/Electric `2.2.7.115021` deobf jars,
+To prepare a combined client, build the baseSteam and baseElectric `2.2.8.115021` deobf jars,
 run `gradlew.bat prepareCombinedEclipseLaunch`, refresh Eclipse, then launch
 `runClientAllAdvantage.launch`. Inputs must match
 `test-rig/profiles/native115/dev-core.json`; alternative layouts can pass
@@ -79,10 +73,10 @@ visual and interaction acceptance remains separate; see the current test record.
 
 ## Compatibility
 
-The implementation namespace remains `zone.moddev.mc.poweradvantage`, with the
-historical `cyano.poweradvantage.api` package retained. The port keeps registry,
-fluid, tile, NBT and provider identities. The current test record distinguishes
-machine preservation, actual operation and vanilla migration differences.
+The implementation is in `zone.moddev.mc.basepower`; the historical
+`cyano.poweradvantage.api` package remains available. The save upgrader maps
+Power Advantage IDs to basePower while retaining block states and machine NBT.
+Worlds already using basePower keep their existing IDs.
 
 The 1.15 changes use native activation results, non-solid block properties,
 texture-atlas access and client render-layer registration. The shared migration

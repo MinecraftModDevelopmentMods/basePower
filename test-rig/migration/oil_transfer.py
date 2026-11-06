@@ -11,7 +11,7 @@ from lifecycle import LifecycleRun, at, parse
 from matrix import POWER, RIG, digest, stage, write_json
 
 
-def fixtures():
+def fixtures(namespace="poweradvantage"):
     result = []
     for index, (oil, tank) in enumerate((
             (oil, tank) for oil in ("crude_oil", "refined_oil")
@@ -24,8 +24,8 @@ def fixtures():
         output = [x + 12, y - 3, z]
         result.append({"id": f"OIL-{oil}-{tank}", "min": [x, 72, 2048], "max": [x + 31, 88, 2079],
                        "source": source, "drain": drain, "pipes": pipes, "output": output,
-                       "fluid": "poweradvantage:" + oil, "bucket": "poweradvantage:" + oil + "_bucket",
-                       "tank": "poweradvantage:" + tank, "witnesses": [source, drain, *pipes, output]})
+                       "fluid": namespace + ":" + oil, "bucket": namespace + ":" + oil + "_bucket",
+                       "tank": namespace + ":" + tank, "witnesses": [source, drain, *pipes, output]})
     return result
 
 
@@ -33,14 +33,15 @@ def inspect(snapshot, definition, expected):
     """Exact oracle: filling some tank with some fluid is not sufficient."""
     rows = []
     for f in definition:
+        namespace = f["tank"].split(":", 1)[0]
         source = at(snapshot, f["id"], f["source"])
         drain = at(snapshot, f["id"], f["drain"])
         output = at(snapshot, f["id"], f["output"])
         require(source["block"] == "minecraft:air", f"Source not collected: {f['id']}")
-        require(drain["block"] == "poweradvantage:fluid_drain", f"Drain missing: {f['id']}")
+        require(drain["block"] == namespace + ":fluid_drain", f"Drain missing: {f['id']}")
         require(output["block"] == f["tank"], f"Container changed: {f['id']}")
         for pos in f["pipes"]:
-            require(at(snapshot, f["id"], pos)["block"] == "poweradvantage:fluid_pipe", f"Pipe missing: {f['id']}")
+            require(at(snapshot, f["id"], pos)["block"] == namespace + ":fluid_pipe", f"Pipe missing: {f['id']}")
         held = parse(drain).get("Tank", {}).get("Amount", 0)
         tank = parse(output).get("Tank", {})
         require(held == 0, f"Oil stuck in drain ({held} mB): {f['id']}")

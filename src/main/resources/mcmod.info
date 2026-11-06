@@ -1,11 +1,11 @@
 [
 {
-  "modid": "poweradvantage",
+  "modid": "basepower",
   "name": "Power Advantage",
   "description": "API for power DrCyano's power systems mods.",
   "version": "${version}",
   "mcversion": "${mcversion}",
-  "url": "https://github.com/MinecraftModDevelopmentMods/PowerAdvantage",
+  "url": "https://github.com/MinecraftModDevelopmentMods/basePower",
   "updateUrl": "",
   "authorList": ["DrCyano (aka Cyanobacterium)"],
   "credits": "The Forge and FML guys, for making the Forge modding API (you guys are awesome), engineers everywhere, and the mod author DrCyano (aka Cyanobacterium)",

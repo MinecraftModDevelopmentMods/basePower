@@ -15,13 +15,18 @@ import traceback
 
 import lifecycle
 from matrix import WORLD, compare, copy_fixture, digest, fingerprint, stage, write_json
-from native115 import (LAUNCHER, native_normalized, output_path, pinned_profile,
+from native115 import (LAUNCHER, base_identity, native_normalized, output_path, pinned_profile,
                        require_clean_log, require_disjoint)
 from native115_geometry import require_geometry
 
 
 def read_json(path):
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def native_fixtures(definition):
+    return [dict(fixture, block=base_identity(fixture["block"])) if "block" in fixture else fixture
+            for fixture in definition]
 
 
 def portable_hashes(values):
@@ -165,6 +170,9 @@ def unload_event_issues(before, after):
 
 
 class NativeLifecycleRun(lifecycle.LifecycleRun):
+    def block(self, pos, state):
+        super().block(pos, base_identity(state))
+
     """Native transport readiness only; inherited fixtures, operations and oracles."""
 
     def __init__(self, *args):
@@ -424,13 +432,13 @@ def run(args):
     source_before, history = verify_source(args)
     target = pinned_profile(args.target_manifest.resolve(), "target115")
     identities = {entry["id"] for entry in read_json(args.target_manifest)["target115"]["jars"]}
-    if not {"steamadvantage", "electricadvantage", "basemetals"}.issubset(identities):
+    if not {"basesteam", "baseelectric", "basemetals"}.issubset(identities):
         raise ValueError("Full lifecycle requires native Steam, Electric and Base Metals")
     for protected in (target[0], *target[2]):
         require_disjoint(output, protected)
     with socket.socket() as listener:
         listener.bind(("127.0.0.1", args.port))
-    definition = lifecycle.fixtures()
+    definition = native_fixtures(lifecycle.fixtures())
     helper_before = {path.name: digest(path) for path in (Path(lifecycle.__file__), Path(__file__))}
     output.mkdir(parents=True, exist_ok=False)
     report_path = output / "native115-lifecycle-results.json"

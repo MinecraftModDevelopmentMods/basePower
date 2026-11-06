@@ -1,6 +1,6 @@
 {
   "replace": false,
   "values": [
-    "poweradvantage:fluid_pipe"
+    "basepower:fluid_pipe"
   ]
 }

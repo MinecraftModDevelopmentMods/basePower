@@ -1,0 +1,30 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "xxx",
+    "xpx",
+    "xxx"
+  ],
+  "key": {
+    "x": {
+      "tag": "forge:ingots/steel"
+    },
+    "p": {
+      "tag": "forge:pipes"
+    }
+  },
+  "result": {
+    "item": "basepower:fluid_metal_tank"
+  },
+  "group": "basepower:fluid_metal_tank",
+  "conditions": [
+    {
+      "type": "basepower:tag_not_empty",
+      "tag": "forge:ingots/steel"
+    },
+    {
+      "type": "basepower:tag_not_empty",
+      "tag": "forge:pipes"
+    }
+  ]
+}
