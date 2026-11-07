@@ -14,8 +14,12 @@ import shutil
 import time
 import os
 
-from matrix import WORLD, compare, copy_fixture, digest, fingerprint, normalized, stage as historical_stage, write_json
+import nbtlib
+
+from matrix import (WORLD, compare, copy_fixture, differences, digest, fingerprint,
+                    normalized, parse_nbt, plain, stage as historical_stage, write_json)
 from native117_code import INVENTORY, Server, verify_code, verify_if_sealed
+from native117_identity import target_id
 
 
 RIG = Path(__file__).resolve().parents[1]
@@ -57,6 +61,53 @@ def native_normalized(value, enchantments=None):
     if isinstance(result, dict) and result.get("id") == "minecraft:chest":
         result.setdefault("Lock", "")
     return result
+
+
+def source_normalized(value, enchantments=None):
+    def remap_nbt(entry):
+        if isinstance(entry, list):
+            return [remap_nbt(row) for row in entry]
+        if not isinstance(entry, dict):
+            return entry
+        return {key: target_id(row) if key in ("id", "FluidName", "FluidID") else remap_nbt(row)
+                for key, row in entry.items()}
+
+    return remap_nbt(native_normalized(value, enchantments))
+
+
+def compare_upgraded(source, target):
+    before = json.loads(source.read_text(encoding="utf-8"))
+    after = json.loads(target.read_text(encoding="utf-8"))
+    if len(before) != len(after):
+        raise AssertionError("Witness count changed")
+
+    def enchantments(snapshot):
+        level = nbtlib.load(snapshot.parent / WORLD / "level.dat")
+        entries = level.get("FML", {}).get("Registries", {}).get("minecraft:enchantments", {}).get("ids", ())
+        return {int(entry["V"]): str(entry["K"]) for entry in entries}
+
+    old_ids, new_ids = enchantments(source), enchantments(target)
+    findings = []
+    counts = {"blocks": len(before), "tiles": 0, "items": 0}
+    for old, new in zip(before, after):
+        pos = f"{old['name']}@{old['x']},{old['y']},{old['z']}"
+        if any(old[field] != new[field] for field in ("name", "x", "y", "z")):
+            raise AssertionError("Witness moved or reordered at " + pos)
+        expected_id = target_id(old["actualName"])
+        if expected_id != new["actualName"]:
+            findings.append({"path": pos, "expected": expected_id, "actual": new["actualName"]})
+        findings.extend(differences(old["properties"], new["properties"], pos + ".state"))
+        if "nbt" in old:
+            counts["tiles"] += 1
+            old_nbt = source_normalized(plain(parse_nbt(old)), old_ids)
+            counts["items"] += sum(int(item.get("Count", 0)) for item in old_nbt.get("Items", ()))
+            if "nbt" not in new:
+                findings.append({"path": pos + ".tile", "expected": "tile", "actual": "<missing>"})
+            else:
+                findings.extend(differences(old_nbt, native_normalized(plain(parse_nbt(new)), new_ids), pos + ".nbt"))
+        elif "nbt" in new:
+            findings.append({"path": pos + ".tile", "expected": "<missing>", "actual": "tile"})
+    return {"status": "FAIL" if findings else "PASS", "witnesses": counts, "differences": findings}
 
 
 def require_clean_log(path):
@@ -143,7 +194,7 @@ def pin_target(profile_path, seed, output):
             if field in mod:
                 entry[field] = mod[field]
         jars.append(entry)
-    if not {"poweradvantage", "advantageworkstest", "orespawn"}.issubset({j["id"] for j in jars}):
+    if not {"basepower", "advantageworkstest", "orespawn"}.issubset({j["id"] for j in jars}):
         raise ValueError("Missing native Power, OreSpawn or harness input")
     write_json(output, {"target117": {
         "seed": str(seed), "launcher": LAUNCHER, "launcher_sha256": digest(seed / LAUNCHER),
@@ -173,7 +224,7 @@ def pinned_profile(manifest_path, key):
         if entry["launcher"] != LAUNCHER or digest(seed / LAUNCHER) != entry["launcher_sha256"].upper():
             raise AssertionError("Native117 server launcher changed")
         identities = [jar["id"] for jar in entry["jars"]]
-        if len(set(identities)) != len(identities) or not {"poweradvantage", "advantageworkstest", "orespawn"}.issubset(identities):
+        if len(set(identities)) != len(identities) or not {"basepower", "advantageworkstest", "orespawn"}.issubset(identities):
             raise ValueError("Destination must contain unique native Power, OreSpawn and harness inputs")
         if not (seed / "libraries").is_dir():
             raise FileNotFoundError("Destination server libraries are missing")
@@ -214,7 +265,7 @@ def run(args):
         for label in ("converted", "restarted"):
             start_snapshot(output, args.java8, launcher, label)
             require_clean_log(output / f"console-{label}.log")
-            results[label] = compare(snapshot, output / f"migration-{label}.json", native_normalized)
+            results[label] = compare_upgraded(snapshot, output / f"migration-{label}.json")
             saved[label] = capture_save(output, label)
         require_same_settings(saved["converted"], saved["restarted"])
         results["idempotence"] = compare(output / "migration-converted.json", output / "migration-restarted.json", native_normalized)

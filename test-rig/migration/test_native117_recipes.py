@@ -45,7 +45,7 @@ class NativeRecipeTests(unittest.TestCase):
         self.assertTrue(all("crushing" not in identity for identity in sources))
 
     def test_fixture_inventory_cannot_silently_shrink(self):
-        counts = dict(recipes.MOD_COUNTS, poweradvantage=34)
+        counts = dict(recipes.MOD_COUNTS, basepower=34)
         with self.assertRaises(AssertionError):
             recipes.recipe_fixture(self.packaged(counts))
 
@@ -71,9 +71,9 @@ class NativeRecipeTests(unittest.TestCase):
         self.assertEqual(4, sum("restore" in row[2] for row in recipes.UNLOCK_BOOTS))
 
     def unlock_report(self):
-        definition = {"recipes": [{"id": "poweradvantage:case"}]}
-        report = {"status": "PASS", "potatoCraftingCases": 59, "bookRecipes": [{"id": "poweradvantage:case"}],
-                  "cases": [{"id": "poweradvantage:case", "recipeActive": True, "status": "PASS"}],
+        definition = {"recipes": [{"id": "basepower:case"}]}
+        report = {"status": "PASS", "potatoCraftingCases": 59, "bookRecipes": [{"id": "basepower:case"}],
+                  "cases": [{"id": "basepower:case", "recipeActive": True, "status": "PASS"}],
                   "additionalMaterials": []}
         return definition, report
 
@@ -87,14 +87,14 @@ class NativeRecipeTests(unittest.TestCase):
 
     def test_unlock_cannot_replace_missing_case_with_duplicate(self):
         definition, report = self.unlock_report()
-        definition["recipes"].append({"id": "poweradvantage:other"})
+        definition["recipes"].append({"id": "basepower:other"})
         report["cases"] *= 2
         with self.assertRaises(AssertionError):
             recipes.validate_unlock(report, definition, "sweep")
 
     def test_human_materials_gaps_remain_failures(self):
         definition, report = self.unlock_report()
-        report["additionalMaterials"] = ["electricadvantage:control_circuit"]
+        report["additionalMaterials"] = ["baseelectric:control_circuit"]
         with self.assertRaises(AssertionError):
             recipes.validate_unlock(report, definition, "persist")
 
@@ -113,8 +113,8 @@ class NativeRecipeTests(unittest.TestCase):
 
     def test_progression_rejects_empty_evidence_and_ignored_configuration(self):
         report = {"status": "PASS", "mode": "NORMAL", "plasticEqualsRubber": True, "blocked": 0,
-                  "blockedRecipes": [], "targets": [{"id": "poweradvantage:case", "status": "PASS"}],
-                  "reachable": {"minecraft:iron_ingot": {}}, "executedRecipes": ["poweradvantage:case"],
+                  "blockedRecipes": [], "targets": [{"id": "basepower:case", "status": "PASS"}],
+                  "reachable": {"minecraft:iron_ingot": {}}, "executedRecipes": ["basepower:case"],
                   "processWitnesses": [{"route": "live_furnace"}], "lootDataPackOverrideVerified": True}
         with patch.object(recipes, "validate_tags"):
             recipes.validate_progression(report, "NORMAL", True)
@@ -126,15 +126,17 @@ class NativeRecipeTests(unittest.TestCase):
 
     def test_original_natural_basis_and_exclusions_are_not_expanded(self):
         from progression import fixture
+        from native117_identity import fixture_ids
         original = fixture()
         self.assertEqual(original, recipes.progression_fixture())
-        self.assertNotIn("electricadvantage:psu", original["exclusions"])
-        self.assertEqual(["electricadvantage:li_ore", "electricadvantage:sulfur_ore"],
-                         [item for item in original["naturalResources"] if item.startswith("electricadvantage:")])
+        mapped = fixture_ids(original)
+        self.assertNotIn("baseelectric:psu", mapped["exclusions"])
+        self.assertEqual(["baseelectric:li_ore", "baseelectric:sulfur_ore"],
+                         [item for item in mapped["naturalResources"] if item.startswith("baseelectric:")])
 
     def test_target_requires_all_five_mods_and_native_harness(self):
         manifest = self.root / "manifest.json"
-        manifest.write_text(json.dumps({"target117": {"jars": [{"id": "poweradvantage"}]}}))
+        manifest.write_text(json.dumps({"target117": {"jars": [{"id": "basepower"}]}}))
         with self.assertRaises(ValueError), patch.object(recipes, "pinned_profile") as resolve:
             recipes.native_target(manifest)
         resolve.assert_not_called()
@@ -166,7 +168,7 @@ class NativeRecipeTests(unittest.TestCase):
             recipes.verify_level(self.root, {"jars": []})
         level["fml"]["LoadingModList"][0]["ModVersion"] = "37.1.1"
         with patch.object(recipes.nbtlib, "load", return_value=level), self.assertRaises(AssertionError):
-            recipes.verify_level(self.root, {"jars": [{"id": "poweradvantage", "version": "2.4.6.117011"}]})
+            recipes.verify_level(self.root, {"jars": [{"id": "basepower", "version": "2.4.6.117011"}]})
 
     def test_staging_only_copies_binaries_and_replaces_legacy_generator(self):
         seed = self.root / "seed"
@@ -194,16 +196,16 @@ class NativeRecipeTests(unittest.TestCase):
 
     def test_mode_pruning_requires_exact_native_packet_difference(self):
         log = self.root / "console-tech.log"
-        event = "[Server thread/ERROR] [minecraft/ServerRecipeBook]: Tried to load unrecognized recipe: poweradvantage:normal_only removed now.\n"
+        event = "[Server thread/ERROR] [minecraft/ServerRecipeBook]: Tried to load unrecognized recipe: basepower:normal_only removed now.\n"
         log.write_text(event * 2)
-        result = recipes.audit_unlock_log(log, {"poweradvantage:normal_only", "poweradvantage:common"}, {"poweradvantage:common"})
-        self.assertEqual(["poweradvantage:normal_only"], result["observed_removed_ids"])
+        result = recipes.audit_unlock_log(log, {"basepower:normal_only", "basepower:common"}, {"basepower:common"})
+        self.assertEqual(["basepower:normal_only"], result["observed_removed_ids"])
         self.assertEqual(2, len(result["events"]))
         with self.assertRaises(AssertionError):
-            recipes.audit_unlock_log(log, {"poweradvantage:normal_only"}, {"poweradvantage:normal_only"})
+            recipes.audit_unlock_log(log, {"basepower:normal_only"}, {"basepower:normal_only"})
         log.write_text("")
         with self.assertRaises(AssertionError):
-            recipes.audit_unlock_log(log, {"poweradvantage:normal_only"}, set())
+            recipes.audit_unlock_log(log, {"basepower:normal_only"}, set())
 
     def test_mode_pruning_never_accepts_unrelated_errors_or_bad_recipe_ids(self):
         log = self.root / "console.log"
@@ -219,13 +221,13 @@ class NativeRecipeTests(unittest.TestCase):
 
     def test_debug_pruning_requires_the_same_exact_packet_difference(self):
         log = self.root / "debug-tech.log"
-        message = "[31Oct2026 01:00:00] [Server thread/ERROR] [net.minecraft.stats.ServerRecipeBook/]: Tried to load unrecognized recipe: poweradvantage:normal_only removed now."
+        message = "[31Oct2026 01:00:00] [Server thread/ERROR] [net.minecraft.stats.ServerRecipeBook/]: Tried to load unrecognized recipe: basepower:normal_only removed now."
         log.write_text(message)
-        self.assertEqual(["poweradvantage:normal_only"],
-                         recipes.audit_unlock_log(log, {"poweradvantage:normal_only"}, set())["observed_removed_ids"])
+        self.assertEqual(["basepower:normal_only"],
+                         recipes.audit_unlock_log(log, {"basepower:normal_only"}, set())["observed_removed_ids"])
         log.write_text(message.replace("/ERROR]", "/FATAL]"))
         with self.assertRaises(AssertionError):
-            recipes.audit_unlock_log(log, {"poweradvantage:normal_only"}, set())
+            recipes.audit_unlock_log(log, {"basepower:normal_only"}, set())
 
 
 WORLD_NAME = recipes.WORLD

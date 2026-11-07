@@ -5,8 +5,8 @@
   "startupTimeoutSeconds": 180,
   "stationRunSeconds": 5,
   "recipeMode": "NORMAL",
-  "sourceCommit": "5b9abe578b053d2ef59b1962cf9e04f6880c91b9",
-  "sourceVersion": "2.4.8.117011",
+  "sourceCommit": "308d42a89483d56d0fad4805cdb65dac483d9e31",
+  "sourceVersion": "2.4.9.117011",
   "forge": {
     "version": "1.17.1-37.1.1",
     "installerPath": "build/native117-artifacts/31F2319B1B9CA491AACCC020887240F8524A4FF2A8E0F8B795E17E889CBC043B/forge-1.17.1-37.1.1-installer.jar",
@@ -16,41 +16,41 @@
   "mods": [
     {
       "id": "advantageworkstest",
-      "version": "1.1.0.117011",
-      "file": "AdvantageWorksTestHarness-1.1.0.117011.jar",
-      "path": "build/native117-artifacts/CDFD54D66855CAF97AB8C20626F2046E6118FECE829FE41F9A1AB030AD816AC5/AdvantageWorksTestHarness-1.1.0.117011.jar",
-      "sha256": "CDFD54D66855CAF97AB8C20626F2046E6118FECE829FE41F9A1AB030AD816AC5",
-      "sourceRef": "5062435c9e4a1320ae556316494a5659d371ccd2",
+      "version": "1.1.1.117011",
+      "file": "AdvantageWorksTestHarness-1.1.1.117011.jar",
+      "path": "build/native117-artifacts/F7EBFD86550E7D595F508B6B696CEA7B52E83D011806C330F102C7245D224EAE/AdvantageWorksTestHarness-1.1.1.117011.jar",
+      "sha256": "F7EBFD86550E7D595F508B6B696CEA7B52E83D011806C330F102C7245D224EAE",
+      "sourceRef": "f2f6af74ab59aab7562d9af5936a1f17e2adb534",
       "workspaceProduced": true,
       "pinStatus": "PINNED_UNQUALIFIED"
     },
     {
-      "id": "poweradvantage",
-      "version": "2.4.8.117011",
-      "file": "PowerAdvantage-2.4.8.117011.jar",
-      "path": "build/native117-artifacts/336D9A11F5488EBD63F208554A039A53A398ABC58F632880B8420AF10F5AFBF0/PowerAdvantage-2.4.8.117011.jar",
-      "sha256": "336D9A11F5488EBD63F208554A039A53A398ABC58F632880B8420AF10F5AFBF0",
-      "sourceRef": "5b9abe578b053d2ef59b1962cf9e04f6880c91b9",
+      "id": "basepower",
+      "version": "2.4.9.117011",
+      "file": "basePower-2.4.9.117011.jar",
+      "path": "build/native117-artifacts/C55782CA1B0F3B8F7B358BE3150229F5AD92F8C8CE15E3989AAAD1B4F182886F/basePower-2.4.9.117011.jar",
+      "sha256": "C55782CA1B0F3B8F7B358BE3150229F5AD92F8C8CE15E3989AAAD1B4F182886F",
+      "sourceRef": "308d42a89483d56d0fad4805cdb65dac483d9e31",
       "workspaceProduced": true,
       "pinStatus": "PINNED_UNQUALIFIED"
     },
     {
-      "id": "steamadvantage",
-      "version": "2.2.9.117011",
-      "file": "SteamAdvantage-2.2.9.117011.jar",
-      "path": "build/native117-artifacts/BA3488817313101329AC6FE6D371514E8697FFFBD490B7E2C98B4CA705290569/SteamAdvantage-2.2.9.117011.jar",
-      "sha256": "BA3488817313101329AC6FE6D371514E8697FFFBD490B7E2C98B4CA705290569",
-      "sourceRef": "3348ebfd8f7ac7cfc04d50aab9f1cbfbc6ad7861",
+      "id": "basesteam",
+      "version": "2.2.10.117011",
+      "file": "baseSteam-2.2.10.117011.jar",
+      "path": "build/native117-artifacts/8A9207A89C0971501BB649FC47F0FF3CF6132FCE3EB2AE651CD8437406BA191B/baseSteam-2.2.10.117011.jar",
+      "sha256": "8A9207A89C0971501BB649FC47F0FF3CF6132FCE3EB2AE651CD8437406BA191B",
+      "sourceRef": "c8e3febcd11c6854d8073c9c053c7c162cdd6687",
       "workspaceProduced": true,
       "pinStatus": "PINNED_UNQUALIFIED"
     },
     {
-      "id": "electricadvantage",
-      "version": "2.2.9.117011",
-      "file": "ElectricAdvantage-2.2.9.117011.jar",
-      "path": "build/native117-artifacts/E1B4A7C65E09B6EE218F52328F0CD569A61B37E8646A46AC6D17EB3948D60EE4/ElectricAdvantage-2.2.9.117011.jar",
-      "sha256": "E1B4A7C65E09B6EE218F52328F0CD569A61B37E8646A46AC6D17EB3948D60EE4",
-      "sourceRef": "9e6be35d86ac77721a6ca52e9a3990664f04849f",
+      "id": "baseelectric",
+      "version": "2.2.10.117011",
+      "file": "baseElectric-2.2.10.117011.jar",
+      "path": "build/native117-artifacts/9788E9DA4DD7698D0D53FC66246ED0637FC6EB89A855B7CFCC4AFFC6EFF7559F/baseElectric-2.2.10.117011.jar",
+      "sha256": "9788E9DA4DD7698D0D53FC66246ED0637FC6EB89A855B7CFCC4AFFC6EFF7559F",
+      "sourceRef": "cf3d4b0e2d1591b2ae8e5d638002ca016e46eac4",
       "workspaceProduced": true,
       "pinStatus": "PINNED_UNQUALIFIED"
     },
@@ -88,7 +88,7 @@
     {
       "id": "desert-oil-enabled",
       "section": "fluid_deposits",
-      "entry": "poweradvantage:fluid_deposit/desert_crude_oil",
+      "entry": "basepower:fluid_deposit/desert_crude_oil",
       "present": true,
       "field": "enabled",
       "expectedBoolean": true
@@ -112,7 +112,7 @@
     {
       "id": "electric-sulfur-disabled",
       "section": "ores",
-      "entry": "electricadvantage:ore/sulfur",
+      "entry": "baseelectric:ore/sulfur",
       "present": true,
       "field": "enabled",
       "expectedBoolean": false
@@ -120,7 +120,7 @@
     {
       "id": "electric-lithium-fallback-enabled",
       "section": "ores",
-      "entry": "electricadvantage:ore/lithium",
+      "entry": "baseelectric:ore/lithium",
       "present": true,
       "field": "enabled",
       "expectedBoolean": true
@@ -129,7 +129,7 @@
   "profileMutations": [
     {
       "section": "ores",
-      "entry": "electricadvantage:ore/sulfur",
+      "entry": "baseelectric:ore/sulfur",
       "field": "enabled",
       "booleanValue": true
     }
@@ -138,7 +138,7 @@
     {
       "id": "electric-sulfur-user-enable-persists",
       "section": "ores",
-      "entry": "electricadvantage:ore/sulfur",
+      "entry": "baseelectric:ore/sulfur",
       "present": true,
       "field": "enabled",
       "expectedBoolean": true
@@ -162,13 +162,13 @@
   ],
   "worldgenExpectations": {
     "minimumCounts": {
-      "poweradvantage:crude_oil": 1,
       "mineralogy:crude_oil": 1,
       "mineralogy:sulfur_ore": 1,
-      "electricadvantage:li_ore": 1
+      "basepower:crude_oil": 1,
+      "baseelectric:li_ore": 1
     },
     "maximumCounts": {
-      "electricadvantage:sulfur_ore": 0
+      "baseelectric:sulfur_ore": 0
     },
     "zeroBiomeViolations": true
   },

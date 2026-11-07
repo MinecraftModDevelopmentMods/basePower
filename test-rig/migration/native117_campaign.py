@@ -324,7 +324,8 @@ def run(args):
                     code = native117.run(settings)
                 from native117_resource_audit import compare_snapshot_resources
                 budgets = {phase: compare_snapshot_resources(source / row["sourceSnapshot"],
-                            settings.output / ("migration-" + phase + ".json")) for phase in ("converted", "restarted")}
+                            settings.output / ("migration-" + phase + ".json"), legacy_source=True)
+                           for phase in ("converted", "restarted")}
                 write_json(settings.output / "exact-resource-comparison.json", budgets)
                 if any(result["status"] != "PASS" for result in budgets.values()): code = 1
             outcome.update(status="PASS" if code == 0 else "FAIL", runtime=str(settings.output))

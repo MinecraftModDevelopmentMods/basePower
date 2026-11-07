@@ -205,7 +205,7 @@ class NativeConnectedTest(unittest.TestCase):
         (seed / LAUNCHER).parent.mkdir(parents=True, exist_ok=True)
         (seed / LAUNCHER).write_bytes(b"unit-test-launcher-never-executed")
         jars = []
-        for identity in ("poweradvantage", "steamadvantage", "electricadvantage", "advantageworkstest", "orespawn"):
+        for identity in ("basepower", "basesteam", "baseelectric", "advantageworkstest", "orespawn"):
             jar = seed / (identity + ".jar")
             with zipfile.ZipFile(jar, "w") as archive:
                 archive.writestr("META-INF/mods.toml", f'[[mods]]\nmodId="{identity}"\nversion="1.0.0.117011"\n')

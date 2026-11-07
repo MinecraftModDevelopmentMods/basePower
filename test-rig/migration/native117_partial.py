@@ -211,12 +211,12 @@ def exercise_bridge(runner, progress):
     for f in runner.definition:
         runner.command("fill " + " ".join(map(str, f["min"] + f["max"])) + " minecraft:air replace")
         fluid, steam = f["id"] == "C-FLUID", f["id"] == "C-STEAM"
-        pipe = "poweradvantage:fluid_pipe" if fluid else "steamadvantage:steam_pipe" if steam else "electricadvantage:electric_conduit"
-        runner.block(f["witnesses"][0], pipe if fluid else "poweradvantage:infinite_" + ("steam" if steam else "electricity"))
+        pipe = "basepower:fluid_pipe" if fluid else "basesteam:steam_pipe" if steam else "baseelectric:electric_conduit"
+        runner.block(f["witnesses"][0], pipe if fluid else "basepower:infinite_" + ("steam" if steam else "electricity"))
         for pos in f["pipes"]:
             runner.block(pos, pipe)
-        runner.block(f["witnesses"][1], "poweradvantage:fluid_metal_tank" if fluid else
-                     "steamadvantage:steam_furnace" if steam else "electricadvantage:electric_furnace")
+        runner.block(f["witnesses"][1], "basepower:fluid_metal_tank" if fluid else
+                     "basesteam:steam_furnace" if steam else "baseelectric:electric_furnace")
         if steam:
             runner.inventory(f["witnesses"][1], 0, "minecraft:coal", 64)
     runner.probe("trace-loads", "trace-enabled")

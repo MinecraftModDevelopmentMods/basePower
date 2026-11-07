@@ -16,15 +16,16 @@ import endurance
 import semantic_machine_audit
 import native117_commands
 from audit_endurance import expected_inventory_acknowledgements
-from matrix import WORLD, compare, digest, fingerprint, write_json
-from native117 import native_normalized, output_path, pinned_profile, require_disjoint
+from matrix import WORLD, digest, fingerprint, write_json
+from native117 import compare_upgraded, output_path, pinned_profile, require_disjoint
+from native117_identity import command_ids, target_id
 from native117_lifecycle import (prepare, read_json, require_native_boot,
                                  verify_source, verify_staged)
 from native117_format import world_info as native_world_info, worldgen_settings
 from native117_code import Server
 
 
-NAMES = ("fresh117", "original110-chained113-native117")
+NAMES = ("fresh117", "retained-upgrade-native117")
 FRESH_FIXTURE_SEED = 5919679243107101036
 POI_POSITION = (-126, 5, 27)
 
@@ -96,16 +97,17 @@ def prove_fresh_fixture_before_build(rig, configuration):
 
 class NativeEnduranceRig(endurance.Rig):
     def command(self, command, response=None):
-        return super().command(native117_commands.native(command), response)
+        return super().command(native117_commands.native(command_ids(command)), response)
 
     def batch(self, label):
         measured = semantic_machine_audit.endurance_batch(
-            {station: self.documents[station] for station in ("S-04", "E-03", "W-04", "W-03")}, self.definitions)
+            {station: self.documents[station] for station in ("S-04", "E-03", "W-04", "W-03")},
+            self.definitions, identity=target_id)
         evidence = self.runtime / ("semantic-batch-" + label + ".json")
         with evidence.open("x", encoding="utf-8") as stream:
             json.dump(measured, stream, indent=2)
         endurance.require(measured["status"] == "PASS", "Independent batch measurements failed: " + str(measured))
-        return super().batch(label)
+        return super().batch(label, power="basepower")
 
     def boot(self, phase):
         from native117_code import verify_if_sealed
@@ -242,8 +244,8 @@ def run(args):
                 rig.server.snapshot("frozen-import")
                 rig.command("save-all flush")
                 rig.shutdown()
-                preserved = compare(args.source / "migration-restarted.json", runtime / "migration-frozen-import.json",
-                                    native_normalized)
+                preserved = compare_upgraded(args.source / "migration-restarted.json",
+                                             runtime / "migration-frozen-import.json")
                 write_json(runtime / "native117-import-comparison.json", preserved)
                 endurance.require(preserved["status"] == "PASS", "Copied source did not preserve frozen state")
                 require_native_boot(runtime / "console-frozen-import.log")

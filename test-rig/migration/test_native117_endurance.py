@@ -39,7 +39,7 @@ class NativeEnduranceTests(unittest.TestCase):
             with patch("semantic_machine_audit.endurance_batch", return_value={"status": "PASS", "failures": []}), \
                     patch.object(endurance.Rig, "batch", return_value={"retained": True}) as historical:
                 self.assertEqual({"retained": True}, rig.batch("cycle-001"))
-                historical.assert_called_once_with("cycle-001")
+            historical.assert_called_once_with("cycle-001", power="basepower")
 
     def test_restart_selects_first_tick_without_output_or_inventory_inspection(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -186,7 +186,7 @@ class FreshFixtureIsolationTests(unittest.TestCase):
         write_json(self.runtime / "native117-endurance-results.json", dict(
             status="PASS", duration_seconds=1800, interval_seconds=60,
             source_fixture_unchanged=True, helpers_unchanged=True,
-            profiles={"fresh117": {}, "original110-chained113-native117": {}}))
+            profiles={"fresh117": {}, "retained-upgrade-native117": {}}))
         with self.assertRaisesRegex(AssertionError, "Missing fresh isolation proof"):
             audit(self.runtime)
 

@@ -47,6 +47,9 @@ class HarvestIsolationTests(unittest.TestCase):
         source = (Path(__file__).resolve().parents[1] /
                   "src/main/java/zone/moddev/mc/advantageworks/NativeHarvestProbe.java").read_text()
         region = source.split("        String sulfur =", 1)[1].split("        JsonObject solar =", 1)[0]
+        self.assertIn("baseelectric:sulfur_ore", region)
+        self.assertNotIn("electricadvantage:", region)
+        region = region.replace("baseelectric:", "electricadvantage:").replace("basepower:", "poweradvantage:")
         self.assertEqual("3FF0AC4C13CA1B737679F67128CE2F41C5A0873E89258D456628BA8A309BAA9A",
                          hashlib.sha256(region.encode()).hexdigest().upper())
         self.assertIn("Actual drop quantity changed: ", source)

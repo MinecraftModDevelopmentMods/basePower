@@ -9,6 +9,7 @@ import traceback
 
 from matrix import WORLD, digest, fingerprint, write_json
 import native116
+from native116_lifecycle import verify_staged as verify_staged_116
 from native117 import output_path, pinned_profile, require_disjoint
 from native117_code import Server
 from native117_lifecycle import prepare, verify_staged
@@ -17,6 +18,25 @@ from native117_machine_operations import validate_operation, validate_restart
 
 def read(path):
     return json.loads(path.read_text(encoding="utf-8-sig"))
+
+
+def verify_source_profile(manifest, source):
+    entry = read(manifest)["target116"]
+    required = {"basepower", "basesteam", "baseelectric", "basemetals", "orespawn", "advantageworkstest"}
+    ids = [row["id"] for row in entry["jars"]]
+    if set(ids) != required or len(ids) != len(required):
+        raise ValueError("Expected the complete released-identity 1.16.5 profile")
+    seed, launcher, jars = pinned_profile(manifest, "target116")
+    if launcher != native116.LAUNCHER or digest(seed / launcher) != entry["launcher_sha256"].upper():
+        raise AssertionError("Source Forge 1.16.5 launcher changed")
+    native116.verify_code(seed, entry["serverCode"])
+    if read(seed / native116.INVENTORY) != entry["serverCode"]:
+        raise AssertionError("Source Forge 1.16.5 inventory receipt changed")
+    for row, jar in zip(entry["jars"], jars):
+        if not row["version"].endswith(".116051"):
+            raise ValueError("Expected a native 1.16.5 mod version")
+        native116.jar_identity(jar, row["id"], row["version"])
+    verify_staged_116(source, (seed, launcher, jars))
 
 
 def approved_source(source, report_sha256):
@@ -30,7 +50,7 @@ def approved_source(source, report_sha256):
         raise AssertionError("Import requires the complete accepted 132-case source, not a passing subset")
     manifest = Path(report["manifest"])
     if digest(manifest) != report["manifestSha256"]: raise AssertionError("Source mod manifest changed")
-    native116.pinned_profile(manifest, "target116")
+    verify_source_profile(manifest, source)
     fixture_path = source / "machine-operation-fixture.json"
     if digest(fixture_path) != report["fixtureSha256"]: raise AssertionError("Source fixture authority changed")
     fixture = read(fixture_path)

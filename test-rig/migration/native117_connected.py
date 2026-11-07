@@ -15,7 +15,7 @@ from unittest.mock import patch
 import connected
 from native117_code import CodeCustody, NativeLaunch, INVENTORY, verify_if_sealed
 from matrix import WORLD, compare, digest, fingerprint, write_json
-from native117 import (LAUNCHER, configure_creation, native_normalized, output_path, pinned_profile,
+from native117 import (LAUNCHER, compare_upgraded, configure_creation, native_normalized, output_path, pinned_profile,
                        require_clean_log, require_disjoint)
 from native117_save_io import capture_save, require_same_settings
 
@@ -171,7 +171,7 @@ def run(args):
     target = pinned_profile(args.target_manifest.resolve(), "target117")
     target_pins = read_json(args.target_manifest)["target117"]
     identities = {entry["id"] for entry in target_pins["jars"]}
-    if not {"steamadvantage", "electricadvantage"}.issubset(identities):
+    if not {"basesteam", "baseelectric"}.issubset(identities):
         raise ValueError("Connected qualification requires native Steam and Electric candidates")
     require_disjoint(output, target[0])
     for jar in target[2]:
@@ -206,9 +206,11 @@ def run(args):
                 require_document(loaded, definition, destination=True)
                 if loaded.get("requestedTicks") != 0 or loaded.get("advancedTicks") != 0:
                     raise AssertionError("Initial preservation requires a frozen zero-step snapshot")
-                result = compare(previous, runtime / f"migration-{loaded_label}.json", native_normalized)
+                result = compare_upgraded(previous, runtime / f"migration-{loaded_label}.json") if label == "converted" \
+                    else compare(previous, runtime / f"migration-{loaded_label}.json", native_normalized)
                 report["results"][label + "_preservation"] = result
-                resources = compare_snapshot_resources(previous, runtime / f"migration-{loaded_label}.json")
+                resources = compare_snapshot_resources(previous, runtime / f"migration-{loaded_label}.json",
+                                                       legacy_source=label == "converted")
                 report["results"][label + "_exact_resources"] = resources
                 write_json(report_path, report)
                 if result["status"] != "PASS" or resources["status"] != "PASS":

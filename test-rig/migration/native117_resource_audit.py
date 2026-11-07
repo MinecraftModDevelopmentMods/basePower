@@ -19,6 +19,7 @@ import nbtlib
 
 from matrix import WORLD, plain
 from native117 import native_normalized
+from native117_identity import fixture_ids, target_id
 from native117_legacy_snbt import parse_legacy_snbt
 
 
@@ -28,33 +29,33 @@ SLOT_LIMITS = {
     "minecraft:chest": 27, "minecraft:trapped_chest": 27, "minecraft:barrel": 27,
     "minecraft:hopper": 5, "minecraft:furnace": 3, "minecraft:blast_furnace": 3,
     "minecraft:smoker": 3, "minecraft:dispenser": 9, "minecraft:dropper": 9,
-    "electricadvantage:electric_furnace": 10, "electricadvantage:electric_crusher": 9,
-    "electricadvantage:electric_oven": 2, "electricadvantage:electric_fabricator": 15,
-    "electricadvantage:electric_battery_array": 8, "electricadvantage:electric_drill": 6,
-    "electricadvantage:growth_chamber": 9, "electricadvantage:growth_chamber_controller": 1,
-    "electricadvantage:plastic_refinery": 1, "electricadvantage:electric_pump": 0,
-    "electricadvantage:electric_still": 0, "electricadvantage:photovoltaic_generator": 0,
-    "electricadvantage:hydroelectric_generator": 0, "electricadvantage:steam_powered_generator": 0,
-    "electricadvantage:laser_turret": 0, "electricadvantage:laser_turret_evil": 0,
-    "steamadvantage:steam_furnace": 7, "steamadvantage:steam_crusher": 6,
-    "steamadvantage:steam_drill": 5, "steamadvantage:steam_boiler_coal": 1,
-    "poweradvantage:coal_fired_still": 1,
-    "poweradvantage:still": 1, "poweradvantage:fluid_discharge": 0, "poweradvantage:fluid_drain": 0,
-    "poweradvantage:fluid_metal_tank": 1, "poweradvantage:fluid_storage_tank": 0,
-    "poweradvantage:item_conveyor": 1, "poweradvantage:item_filter_inventory": 10,
-    "poweradvantage:item_filter_block": 1, "poweradvantage:item_filter_food": 1,
-    "poweradvantage:item_filter_fuel": 1, "poweradvantage:item_filter_ore": 1,
-    "poweradvantage:item_filter_overflow": 1, "poweradvantage:item_filter_plant": 1,
-    "poweradvantage:item_filter_smelt": 1, "steamadvantage:steam_boiler_electric": 0,
-    "steamadvantage:steam_boiler_geothermal": 0, "steamadvantage:steam_boiler_oil": 0,
-    "steamadvantage:steam_pump": 0, "steamadvantage:steam_still": 0, "steamadvantage:steam_tank": 0,
-    "steamadvantage:steam_elevator": 0,
+    "baseelectric:electric_furnace": 10, "baseelectric:electric_crusher": 9,
+    "baseelectric:electric_oven": 2, "baseelectric:electric_fabricator": 15,
+    "baseelectric:electric_battery_array": 8, "baseelectric:electric_drill": 6,
+    "baseelectric:growth_chamber": 9, "baseelectric:growth_chamber_controller": 1,
+    "baseelectric:plastic_refinery": 1, "baseelectric:electric_pump": 0,
+    "baseelectric:electric_still": 0, "baseelectric:photovoltaic_generator": 0,
+    "baseelectric:hydroelectric_generator": 0, "baseelectric:steam_powered_generator": 0,
+    "baseelectric:laser_turret": 0, "baseelectric:laser_turret_evil": 0,
+    "basesteam:steam_furnace": 7, "basesteam:steam_crusher": 6,
+    "basesteam:steam_drill": 5, "basesteam:steam_boiler_coal": 1,
+    "basepower:coal_fired_still": 1,
+    "basepower:still": 1, "basepower:fluid_discharge": 0, "basepower:fluid_drain": 0,
+    "basepower:fluid_metal_tank": 1, "basepower:fluid_storage_tank": 0,
+    "basepower:item_conveyor": 1, "basepower:item_filter_inventory": 10,
+    "basepower:item_filter_block": 1, "basepower:item_filter_food": 1,
+    "basepower:item_filter_fuel": 1, "basepower:item_filter_ore": 1,
+    "basepower:item_filter_overflow": 1, "basepower:item_filter_plant": 1,
+    "basepower:item_filter_smelt": 1, "basesteam:steam_boiler_electric": 0,
+    "basesteam:steam_boiler_geothermal": 0, "basesteam:steam_boiler_oil": 0,
+    "basesteam:steam_pump": 0, "basesteam:steam_still": 0, "basesteam:steam_tank": 0,
+    "basesteam:steam_elevator": 0,
 }
 BATTERIES = {
-    "electricadvantage:lead_acid_battery": 1000,
-    "electricadvantage:nickel_hydride_battery": 2000,
-    "electricadvantage:alkaline_battery": 4000,
-    "electricadvantage:lithium_battery": 8000,
+    "baseelectric:lead_acid_battery": 1000,
+    "baseelectric:nickel_hydride_battery": 2000,
+    "baseelectric:alkaline_battery": 4000,
+    "baseelectric:lithium_battery": 8000,
 }
 SCALARS = frozenset(("Electricity", "energy", "steam", "soil", "Temperature",
                      "BurnTime", "burnTime", "Fuel", "fuel", "FuelTime", "fuelTime"))
@@ -203,7 +204,7 @@ def _project(data, block, slot_limits):
     return result
 
 
-def canonical_resources(document, *, enchantments=None, slot_limits=None):
+def canonical_resources(document, *, enchantments=None, slot_limits=None, legacy_source=False):
     """Return per-position exact budgets; malformed evidence raises ValueError.
 
     No operation is permitted between the input snapshots. Zero optional reserves
@@ -223,19 +224,25 @@ def canonical_resources(document, *, enchantments=None, slot_limits=None):
         identity = row.get("actualName", row.get("block"))
         if not isinstance(identity, str) or not identity: raise ValueError("Missing observed block identity")
         block = native_normalized({"id": identity})["id"]
+        if legacy_source:
+            block = target_id(block)
         if block in limits and not ("nbtBase64" in row or "nbt" in row):
             raise ValueError("Missing NBT for known resource container " + str(pos))
         data = native_normalized(_nbt(row), enchantments)
+        if legacy_source:
+            data = fixture_ids(data)
         result[pos] = {"block": block, "resources": _project(data, block, limits)}
     return result
 
 
-def compare_resources(before, after, *, before_enchantments=None, after_enchantments=None, slot_limits=None):
+def compare_resources(before, after, *, before_enchantments=None, after_enchantments=None, slot_limits=None,
+                      legacy_source=False):
     """JSON-safe PASS/FAIL result. Does not mutate inputs or write any files."""
     frames, failures, differences = [], [], []
     for phase, document, enchantments in (("before", before, before_enchantments), ("after", after, after_enchantments)):
         try:
-            frames.append(canonical_resources(document, enchantments=enchantments, slot_limits=slot_limits))
+            frames.append(canonical_resources(document, enchantments=enchantments, slot_limits=slot_limits,
+                                              legacy_source=legacy_source and phase == "before"))
         except Exception as error:
             # Evidence/normalization errors must fail closed, not become an empty budget.
             frames.append(None)
@@ -257,21 +264,22 @@ def compare_resources(before, after, *, before_enchantments=None, after_enchantm
                 scope="Exact per-position resource equality across a frozen migration/restart boundary; not operation")
 
 
-def compare_snapshot_resources(before, after):
+def compare_snapshot_resources(before, after, *, legacy_source=False):
     def enchantments(snapshot):
         level = nbtlib.load(Path(snapshot).parent / WORLD / "level.dat")
         entries = level.get("FML", {}).get("Registries", {}).get("minecraft:enchantments", {}).get("ids", [])
         return {int(entry["V"]): str(entry["K"]) for entry in entries}
     return compare_resources(before, after, before_enchantments=enchantments(before),
-                             after_enchantments=enchantments(after))
+                             after_enchantments=enchantments(after), legacy_source=legacy_source)
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("before", type=Path)
     parser.add_argument("after", type=Path)
+    parser.add_argument("--legacy-source", action="store_true")
     args = parser.parse_args()
-    result = compare_resources(args.before, args.after)
+    result = compare_resources(args.before, args.after, legacy_source=args.legacy_source)
     print(json.dumps(result, indent=2, sort_keys=True))
     return int(result["status"] != "PASS")
 

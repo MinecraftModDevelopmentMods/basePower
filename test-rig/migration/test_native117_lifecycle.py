@@ -48,7 +48,7 @@ class NativeLifecycleTests(unittest.TestCase):
         java.write_bytes(b"not-launched")
         target = self.root / "target.json"
         write_json(target, {"target117": {"jars": [{"id": key} for key in
-                                                   ("steamadvantage", "electricadvantage", "basemetals")]}})
+                                                   ("basesteam", "baseelectric", "basemetals")]}})
         return argparse.Namespace(source=source, source_manifest=manifest, source_key="target113",
                                   source_hashes=hashes, target_manifest=target, java8=java,
                                   output=self.root / "output", port=25580)
@@ -190,7 +190,7 @@ class NativeReadinessTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory(dir=root)
         self.root = Path(self.temp.name)
         self.definition = [dict(id="drill", min=[0, 0, 0], max=[15, 100, 15],
-                                witnesses=[[1, 80, 1]], to=[1, 80, 1], block="steamadvantage:steam_drill")]
+                                witnesses=[[1, 80, 1]], to=[1, 80, 1], block="basesteam:steam_drill")]
 
     def tearDown(self):
         self.temp.cleanup()

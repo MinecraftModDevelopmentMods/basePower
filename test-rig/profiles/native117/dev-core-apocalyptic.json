@@ -7,37 +7,37 @@
   "shutdownTimeoutSeconds": 60,
   "stationRunSeconds": 5,
   "recipeMode": "APOCALYPTIC",
-  "sourceCommit": "5b9abe578b053d2ef59b1962cf9e04f6880c91b9",
-  "sourceVersion": "2.4.8.117011",
+  "sourceCommit": "308d42a89483d56d0fad4805cdb65dac483d9e31",
+  "sourceVersion": "2.4.9.117011",
   "lifecycleStations": [],
   "mods": [
     {
       "id": "advantageworkstest",
-      "version": "1.1.0.117011",
-      "file": "AdvantageWorksTestHarness-1.1.0.117011-deobf.jar",
-      "path": "build/native117-artifacts/A6C9AF6BB604FD9D299FD1967B4DDD217EFC8EE0ACA46016522A8554E72A709C/AdvantageWorksTestHarness-1.1.0.117011-deobf.jar",
-      "sha256": "A6C9AF6BB604FD9D299FD1967B4DDD217EFC8EE0ACA46016522A8554E72A709C",
-      "sourceRef": "5062435c9e4a1320ae556316494a5659d371ccd2",
+      "version": "1.1.1.117011",
+      "file": "AdvantageWorksTestHarness-1.1.1.117011-deobf.jar",
+      "path": "build/native117-artifacts/2BCDF517E5F5C41019194275511E7148186CFAA5C77CDB0930B08BB217F5143D/AdvantageWorksTestHarness-1.1.1.117011-deobf.jar",
+      "sha256": "2BCDF517E5F5C41019194275511E7148186CFAA5C77CDB0930B08BB217F5143D",
+      "sourceRef": "f2f6af74ab59aab7562d9af5936a1f17e2adb534",
       "workspaceProduced": true,
       "pinStatus": "PINNED_UNQUALIFIED"
     },
     {
-      "id": "steamadvantage",
-      "version": "2.2.9.117011",
-      "file": "SteamAdvantage-2.2.9.117011-deobf.jar",
-      "path": "build/native117-artifacts/D191239E95EEFA2F215F9D0FBC2C34939AF3321FBBE5282851416CF6A709F991/SteamAdvantage-2.2.9.117011-deobf.jar",
-      "sha256": "D191239E95EEFA2F215F9D0FBC2C34939AF3321FBBE5282851416CF6A709F991",
-      "sourceRef": "3348ebfd8f7ac7cfc04d50aab9f1cbfbc6ad7861",
+      "id": "basesteam",
+      "version": "2.2.10.117011",
+      "file": "baseSteam-2.2.10.117011-deobf.jar",
+      "path": "build/native117-artifacts/AC76E42ABA4B56F258BE0977A2A77777201D3C889F163C39BFBE1839897A427A/baseSteam-2.2.10.117011-deobf.jar",
+      "sha256": "AC76E42ABA4B56F258BE0977A2A77777201D3C889F163C39BFBE1839897A427A",
+      "sourceRef": "c8e3febcd11c6854d8073c9c053c7c162cdd6687",
       "workspaceProduced": true,
       "pinStatus": "PINNED_UNQUALIFIED"
     },
     {
-      "id": "electricadvantage",
-      "version": "2.2.9.117011",
-      "file": "ElectricAdvantage-2.2.9.117011-deobf.jar",
-      "path": "build/native117-artifacts/BEAA8CD23DBBC0C7E956B0304EAEE65251341908E69B60B2C9E4D24F08C31547/ElectricAdvantage-2.2.9.117011-deobf.jar",
-      "sha256": "BEAA8CD23DBBC0C7E956B0304EAEE65251341908E69B60B2C9E4D24F08C31547",
-      "sourceRef": "9e6be35d86ac77721a6ca52e9a3990664f04849f",
+      "id": "baseelectric",
+      "version": "2.2.10.117011",
+      "file": "baseElectric-2.2.10.117011-deobf.jar",
+      "path": "build/native117-artifacts/37F787FBC04E5E93C5F123916690C788266E76C5E20534F66D4ADCF1CC07B3E6/baseElectric-2.2.10.117011-deobf.jar",
+      "sha256": "37F787FBC04E5E93C5F123916690C788266E76C5E20534F66D4ADCF1CC07B3E6",
+      "sourceRef": "cf3d4b0e2d1591b2ae8e5d638002ca016e46eac4",
       "workspaceProduced": true,
       "pinStatus": "PINNED_UNQUALIFIED"
     }
@@ -54,5 +54,5 @@
   },
   "generatorSettings": "",
   "inputStatus": "ARTIFACTS_AND_SOURCES_PINNED_QUALIFICATION_PENDING",
-  "powerDeobfSha256": "799B59B06EB2AC3FC4682AA64BF42C3A2A2C1D89D7FFFE9C72745DEC7DFBE0D8"
+  "powerDeobfSha256": "312FA3012CB57C91F5F22079DA4778D481BA45EF7B8A0587D9993899E1B6D08E"
 }

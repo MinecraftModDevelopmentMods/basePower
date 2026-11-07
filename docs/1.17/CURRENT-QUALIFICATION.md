@@ -1,4 +1,7 @@
-# Minecraft 1.17.1 Test Record
+# Minecraft 1.17.1 Pre-Rename Test Record
+
+This record is for the earlier Advantage-named jars. See the
+[base* candidate record](BASE-CANDIDATE.md) for the current jars.
 
 This is a local candidate, not a published release. **Qualification is incomplete
 and it is not yet ready for manual acceptance.** A passing older jar, an isolated

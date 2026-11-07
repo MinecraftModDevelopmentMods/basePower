@@ -26,9 +26,9 @@ def snapshot(definition, amount, identity=0):
     for index, lane in enumerate(definition):
         cases[lane["id"]] = [
             dict(pos=lane["source"], block="minecraft:air"),
-            dict(pos=lane["drain"], block="poweradvantage:fluid_drain", tileIdentity=identity + index * 2 + 1,
+            dict(pos=lane["drain"], block="basepower:fluid_drain", tileIdentity=identity + index * 2 + 1,
                  nbt="{Tank:{Empty:1b}}"),
-            *[dict(pos=pos, block="poweradvantage:fluid_pipe") for pos in lane["pipes"]],
+            *[dict(pos=pos, block="basepower:fluid_pipe") for pos in lane["pipes"]],
             dict(pos=lane["output"], block=lane["tank"], tileIdentity=identity + index * 2 + 2,
                  nbt=('{Tank:{Amount:' + str(amount) + ',FluidName:"' + lane["fluid"] + '"}}')
                  if amount else "{Tank:{Empty:1b}}")]
@@ -77,7 +77,7 @@ class NativeOilTests(unittest.TestCase):
         (seed / "mods/unpinned.jar").write_bytes(b"never-copy-seed-mods")
         (seed / "server.properties").write_text("protected-seed-settings\n")
         jars = []
-        for mod in ("poweradvantage", "advantageworkstest", "orespawn"):
+        for mod in ("basepower", "advantageworkstest", "orespawn"):
             jar = self.root / (mod + "-1.0.0.117011.jar")
             with zipfile.ZipFile(jar, "w") as archive:
                 archive.writestr("META-INF/mods.toml", '[[mods]]\nmodId="' + mod + '"\nversion="1.0.0.117011"\n')
@@ -138,17 +138,17 @@ class NativeOilTests(unittest.TestCase):
     def report(self, args):
         return native.read_json(args.output / "native117-oil-results.json")
 
-    def test_power_definitions_are_exact_unchanged_copies(self):
+    def test_power_definitions_change_only_the_registry_namespace(self):
         original = oil_transfer.fixtures()
         lanes = native.fixtures(dict(jars=[]))
-        self.assertEqual(lanes, original)
+        self.assertEqual(lanes, oil_transfer.fixtures("basepower"))
         lanes[0]["source"][0] += 1
         self.assertEqual(oil_transfer.fixtures(), original)
 
     def test_optional_mineralogy_has_two_distinct_native_lanes_without_mutating_power(self):
         pins = dict(jars=[self.mineralogy_pin()])
         lanes = native.fixtures(pins)
-        self.assertEqual(lanes[:4], oil_transfer.fixtures())
+        self.assertEqual(lanes[:4], oil_transfer.fixtures("basepower"))
         self.assertEqual(len(lanes), 6)
         for lane, template in zip(lanes[4:], lanes[:2]):
             self.assertEqual(lane["fluid"], "mineralogy:crude_oil")
@@ -173,13 +173,13 @@ class NativeOilTests(unittest.TestCase):
                      lambda lanes: lanes[0]["source"].__setitem__(1, lanes[0]["max"][1]),
                      moved, lambda lanes: lanes.append(deepcopy(lanes[0]))]
         for mutate in mutations:
-            lanes = oil_transfer.fixtures()
+            lanes = oil_transfer.fixtures("basepower")
             mutate(lanes)
             with self.assertRaises(AssertionError):
                 native.require_bounds(lanes)
 
     def test_missing_extra_duplicate_and_moved_snapshot_witnesses_fail(self):
-        lanes = oil_transfer.fixtures()
+        lanes = oil_transfer.fixtures("basepower")
         for mutate in (lambda s: s["cases"].pop(lanes[0]["id"]),
                        lambda s: s["cases"].update(extra=[]),
                        lambda s: s["cases"][lanes[0]["id"]].pop(),
@@ -261,7 +261,7 @@ class NativeOilTests(unittest.TestCase):
         runner.boots = [native.BOOT_LABELS[0]]
         runner.server = SimpleNamespace(send=lambda command: None)
         for command in ("advlifecycle offer illicit", "data merge block 11272 80 2056 {}",
-                        "setblock 11272 81 2056 poweradvantage:crude_oil",
+                        "setblock 11272 81 2056 basepower:crude_oil",
                         "advworks reset all", "advlifecycle snapshot ok\nstop"):
             with self.subTest(command=command), self.assertRaises(AssertionError):
                 runner.command(command)
@@ -351,7 +351,7 @@ class NativeOilTests(unittest.TestCase):
         args, _, _ = self.profile()
         def transform(label, value):
             if label == "oil-empty":
-                next(iter(value["cases"].values()))[-1]["nbt"] = '{Tank:{Amount:1,FluidName:"poweradvantage:crude_oil"}}'
+                next(iter(value["cases"].values()))[-1]["nbt"] = '{Tank:{Amount:1,FluidName:"basepower:crude_oil"}}'
         with patch.object(native, "Server", self.server_factory(transform=transform)), patch.object(native.time, "sleep"):
             self.assertEqual(native.run(args), 1)
         self.assertIn("Fixture was not empty", self.report(args)["failure"])

@@ -22,7 +22,7 @@ class OperatingSourceApprovalTests(unittest.TestCase):
     def test_changed_source_report_is_rejected_before_any_profile_is_opened(self):
         checksum = self.write(dict(status='PASS'))
         self.write(dict(status='FAIL'))
-        with patch('native117_operating_import.native116.pinned_profile') as profile:
+        with patch('native117_operating_import.verify_source_profile') as profile:
             with self.assertRaisesRegex(AssertionError, 'report changed'):
                 approved_source(self.root, checksum)
             profile.assert_not_called()
@@ -34,7 +34,7 @@ class OperatingSourceApprovalTests(unittest.TestCase):
             dict(phases={'operation': dict(status='PASS', cases=132)}),
             dict(phases={phase: dict(status='PASS', cases=131) for phase in ('operation', 'restart')})]
         for change in changes:
-            with self.subTest(change=change), patch('native117_operating_import.native116.pinned_profile') as profile:
+            with self.subTest(change=change), patch('native117_operating_import.verify_source_profile') as profile:
                 checksum = self.write(dict(baseline, **change))
                 with self.assertRaisesRegex(AssertionError, 'complete accepted 132-case source'):
                     approved_source(self.root, checksum)

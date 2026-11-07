@@ -16,11 +16,12 @@ import traceback
 import lifecycle
 from native117_commands import native as native_command
 from native117_code import verify_if_sealed
-from matrix import WORLD, compare, copy_fixture, digest, fingerprint, stage, write_json
+from matrix import WORLD, copy_fixture, digest, fingerprint, stage, write_json
 from native117 import stage
-from native117 import (LAUNCHER, native_normalized, output_path, pinned_profile,
+from native117 import (LAUNCHER, compare_upgraded, output_path, pinned_profile,
                        require_clean_log, require_disjoint)
 from native117_geometry import require_geometry
+from native117_identity import command_ids, fixture_ids
 
 
 def read_json(path):
@@ -40,10 +41,10 @@ def verify_source(args):
     source = args.source.resolve()
     before = fingerprint(source)
     require_equal_hashes(fingerprint(source / WORLD), read_json(args.source_hashes),
-                         "Protected retained13 source world fingerprint mismatch")
+                         "Protected source world fingerprint mismatch")
     profile = pinned_profile(args.source_manifest.resolve(), args.source_key)
-    if not profile[1].startswith(("forge-1.13.2-25.0.223", "forge-1.14.4-28.2.26")):
-        raise ValueError("The retained source must use its archived native 1.13.2 or accepted 1.14.4 profile")
+    if not profile[1].startswith(("forge-1.13.2-25.0.223", "forge-1.14.4-28.2.26", "forge-1.16.5-36.2.34")):
+        raise ValueError("Use an archived 1.13.2, 1.14.4 or 1.16.5 source profile")
     expected = sorted((jar.name, digest(jar)) for jar in profile[2])
     staged = sorted((entry["file"], entry["sha256"].upper())
                     for entry in read_json(source / "input-jars.json"))
@@ -224,7 +225,7 @@ class NativeLifecycleRun(lifecycle.LifecycleRun):
         self._unload_context = None
 
     def command(self, command):
-        return super().command(native_command(command))
+        return super().command(native_command(command_ids(command)))
 
     def _raw_probe(self, operation, label):
         path = self.runtime / "advantage-works-results" / f"lifecycle-{label}.json"
@@ -472,8 +473,8 @@ def frozen_import(runner, source):
         time.sleep(2)
     finally:
         runner.close()
-    result = compare(source / "migration-restarted.json", runner.runtime / "migration-retained13-import.json",
-                     native_normalized)
+    result = compare_upgraded(source / "migration-restarted.json",
+                              runner.runtime / "migration-retained13-import.json")
     write_json(runner.runtime / "native117-import-comparison.json", result)
     if result["status"] != "PASS":
         raise AssertionError("Frozen retained13-to-native117 preservation failed")
@@ -489,13 +490,13 @@ def run(args):
     source_before, history = verify_source(args)
     target = pinned_profile(args.target_manifest.resolve(), "target117")
     identities = {entry["id"] for entry in read_json(args.target_manifest)["target117"]["jars"]}
-    if not {"steamadvantage", "electricadvantage", "basemetals"}.issubset(identities):
+    if not {"basesteam", "baseelectric", "basemetals"}.issubset(identities):
         raise ValueError("Full lifecycle requires native Steam, Electric and Base Metals")
     for protected in (target[0], *target[2]):
         require_disjoint(output, protected)
     with socket.socket() as listener:
         listener.bind(("127.0.0.1", args.port))
-    definition = lifecycle.fixtures()
+    definition = fixture_ids(lifecycle.fixtures())
     helper_before = {path.name: digest(path) for path in (Path(lifecycle.__file__), Path(__file__))}
     output.mkdir(parents=True, exist_ok=False)
     report_path = output / "native117-lifecycle-results.json"

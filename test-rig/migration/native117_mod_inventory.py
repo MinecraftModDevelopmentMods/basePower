@@ -14,8 +14,8 @@ import re
 import stat
 
 
-EXPECTED_IDS = frozenset(("advantageworkstest", "poweradvantage", "steamadvantage",
-                          "electricadvantage", "basemetals", "orespawn"))
+EXPECTED_IDS = frozenset(("advantageworkstest", "basepower", "basesteam",
+                          "baseelectric", "basemetals", "orespawn"))
 _REPARSE = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
 
 

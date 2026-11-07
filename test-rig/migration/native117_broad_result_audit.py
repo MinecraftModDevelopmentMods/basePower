@@ -137,8 +137,8 @@ def drill_snapshot(records, definitions, initial=False):
     import nbtlib
     result = {}
     for sid, block, track, capacity in (
-            ("S-05", "steamadvantage:steam_drill", "steamadvantage:steam_track", 50),
-            ("E-06", "electricadvantage:electric_drill", "electricadvantage:electric_track", 500)):
+            ("S-05", "basesteam:steam_drill", "basesteam:steam_track", 50),
+            ("E-06", "baseelectric:electric_drill", "baseelectric:electric_track", 500)):
         spec = definitions[sid]
         snapshot = records[sid]["snapshot"]
         rows = {tuple(row["pos"]): row for row in snapshot}
@@ -391,7 +391,7 @@ def audit(runtime, line, requested=PROFILES):
         pins = decode(manifest_data)["target" + line]
         require(sha(evidence.read(runtime / "runner-source.py")) == report["runnerSha256"], "Archived broad runner changed")
         jars = indexed(pins["jars"], "id", "target mod pins")
-        require(set(jars) == {"poweradvantage", "steamadvantage", "electricadvantage", "advantageworkstest", "basemetals", "orespawn"},
+        require(set(jars) == {"basepower", "basesteam", "baseelectric", "advantageworkstest", "basemetals", "orespawn"},
                 "Complete pinned current-profile inputs required")
         harness = Path(jars["advantageworkstest"]["path"])
         harness_bytes = evidence.read(harness)

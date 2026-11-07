@@ -113,14 +113,14 @@ class Native117StrictAuditTests(unittest.TestCase):
         self.rejected("expected mod identities changed")
 
     def test_native117_staged_metadata_must_match_the_pinned_identity(self):
-        pin = next(row for row in self.fixture.pins["jars"] if row["id"] == "poweradvantage")
+        pin = next(row for row in self.fixture.pins["jars"] if row["id"] == "basepower")
         staged = self.fixture.profile() / "mods" / (pin["id"] + ".jar")
         with zipfile.ZipFile(staged, "w") as archive:
             archive.writestr("META-INF/mods.toml", '[[mods]]\nmodId="notpower"\nversion="1.0.0.117011"\n')
         pin["sha256"] = audit.sha(staged.read_bytes())
         receipt = self.fixture.profile() / "input-jars.json"
         rows = fixtures.load(receipt)
-        next(row for row in rows if row["file"] == "poweradvantage.jar")["sha256"] = pin["sha256"]
+        next(row for row in rows if row["file"] == "basepower.jar")["sha256"] = pin["sha256"]
         fixtures.write(receipt, rows)
         self.repin()
         self.rejected("native117 staged mod identity")

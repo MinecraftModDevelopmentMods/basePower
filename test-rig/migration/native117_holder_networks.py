@@ -6,6 +6,7 @@ import shutil
 import extended_lifecycle as historical
 from matrix import digest
 import native117_extended
+from native117_identity import fixture_ids
 from native117_partial import campaign, common_parser, exercise_bridge, exercise_partial
 from native117_ticket_networks import NativeTicketExtendedRun, NativeTicketNetworkRun
 
@@ -52,7 +53,7 @@ def bridge_fixtures():
 
 
 def extended_fixtures():
-    return [f for f in historical.fixtures() if "route" in f] + linear_fixtures()
+    return [f for f in fixture_ids(historical.fixtures()) if "route" in f] + linear_fixtures()
 
 
 def main():

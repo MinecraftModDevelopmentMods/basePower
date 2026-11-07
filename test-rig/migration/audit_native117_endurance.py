@@ -57,7 +57,7 @@ def replay(root):
                 rig.snapshots[station] = endurance.parse_snapshot(document)
             # Suppress the oracle's ledger writer only; never change its checks.
             with patch.object(endurance, "write_json"):
-                actual = rig.batch(label)
+                actual = rig.batch(label, power="basepower")
             if actual != expected:
                 raise AssertionError(name + "/" + label + ": raw checkpoint verdict differs from ledger")
         result["profiles"][name]["raw_checkpoint_replays"] = len(ledger)
