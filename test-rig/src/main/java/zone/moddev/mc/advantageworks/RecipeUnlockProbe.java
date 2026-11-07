@@ -104,7 +104,7 @@ final class RecipeUnlockProbe {
         RecipeBookProbe.verify(server, world, label, result);
         for (JsonElement element : cases) {
             String id = element.getAsJsonObject().get("id").getAsString();
-            require(id.matches("(power|steam|electric)advantage:[a-z0-9_]+"), "Unsafe recipe ID");
+            require(id.matches("base(power|steam|electric):[a-z0-9_]+"), "Unsafe recipe ID: " + id);
             require(advancement(server, id) != null, "Missing loaded advancement: " + id);
         }
         if (operation.equals("sweep")) {

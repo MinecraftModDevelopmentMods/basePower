@@ -77,7 +77,7 @@ $inputReport.launch = Get-Record (Join-Path $project $LaunchProfile)
 $inputReport.probe = Get-Record $probe
 $probeMetadata = Read-JarMetadata $probe
 if ($probeMetadata -notmatch 'loaderVersion="\[37,38\)"' -or $probeMetadata -notmatch 'versionRange="\[1\.17\.1\]"' -or
-    $probeMetadata -notmatch 'versionRange="\[37\.1\.1\]"' -or $probeMetadata -notmatch 'versionRange="\[2\.4\.8\.117011\]"') { throw 'Rebuild the native 1.17 probe; do not substitute a legacy probe.' }
+    $probeMetadata -notmatch 'versionRange="\[37\.1\.1\]"' -or $probeMetadata -notmatch 'versionRange="\[2\.4\.9\.117011\]"') { throw 'Rebuild the native 1.17 probe; do not substitute a legacy probe.' }
 Copy-Item -LiteralPath (Join-Path $project $LaunchProfile) -Destination (Join-Path $runtime 'launch.xml')
 $environment = @{}
 foreach ($map in $launch.launchConfiguration.mapAttribute) {

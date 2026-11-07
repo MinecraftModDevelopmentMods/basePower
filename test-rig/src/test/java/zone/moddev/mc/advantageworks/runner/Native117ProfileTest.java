@@ -46,7 +46,7 @@ public class Native117ProfileTest {
                     String artifact = new File(path).getName();
                     assertEquals(mod.get("file").getAsString(), artifact);
                     assertTrue(artifact, artifact.contains("-" + mod.get("version").getAsString()));
-                    boolean owned = mod.get("id").getAsString().matches("(?:power|steam|electric)advantage|advantageworkstest");
+                    boolean owned = mod.get("id").getAsString().matches("base(?:power|steam|electric)|basemetals|advantageworkstest");
                     assertEquals("Public dependency bytes must remain distinct from local candidates", owned,
                             mod.get("workspaceProduced").getAsBoolean());
                     if (mod.get("id").getAsString().equals("advantageworkstest")) harness++;
