@@ -35,7 +35,7 @@ def read_json(path):
 def drill_cases(station):
     result = []
     for assertion in station["assertions"]:
-        if assertion.get("block") not in ("steamadvantage:steam_drill", "electricadvantage:electric_drill"):
+        if assertion.get("block") not in ("basesteam:steam_drill", "baseelectric:electric_drill"):
             continue
         direction = assertion.get("meta", DIRECTIONS.index(assertion.get("expectedText", "down")))
         origin = tuple(a + b for a, b in zip(station["origin"], assertion["pos"]))
@@ -75,7 +75,7 @@ def drill_state(station, document, *, initial=False):
         if initial and pos != case["origin"]:
             raise AssertionError(case["id"] + ": initial placement moved before activation")
         if initial:
-            track = "steamadvantage:steam_track" if station["id"] == "S-05" else "electricadvantage:electric_track"
+            track = "basesteam:steam_track" if station["id"] == "S-05" else "baseelectric:electric_track"
             if rows.get(case["rear"], {}).get("block") != track:
                 raise AssertionError(case["id"] + ": initial declared rear track is missing")
         if "facing=" + case["facing"] not in row["state"]:
@@ -100,7 +100,7 @@ def drill_state(station, document, *, initial=False):
                                   energyBits=[int(e) for e in energy], energy=value,
                                   moved=pos == case["rear"])
     actual_positions = {pos for pos, row in rows.items()
-                        if row["block"] in ("steamadvantage:steam_drill", "electricadvantage:electric_drill")}
+                        if row["block"] in ("basesteam:steam_drill", "baseelectric:electric_drill")}
     if actual_positions != expected_positions or set(stock) != {case["id"] for case in cases}:
         raise AssertionError("Extra/off-track drill or inventory witness in bay")
     return result
@@ -293,7 +293,7 @@ def main():
     output = output_path(args.output)
     profile = pinned_profile(args.target_manifest, "target116")
     target_pins = read_json(args.target_manifest)["target116"]["jars"]
-    required = {"poweradvantage", "steamadvantage", "electricadvantage", "advantageworkstest", "basemetals", "orespawn"}
+    required = {"basepower", "basesteam", "baseelectric", "advantageworkstest", "basemetals", "orespawn"}
     if {pin["id"] for pin in target_pins} != required:
         raise AssertionError("Supply the complete current-profile manifest; the runner derives its decoupled subset")
     for protected in (args.target_manifest, profile[0], *profile[2]):

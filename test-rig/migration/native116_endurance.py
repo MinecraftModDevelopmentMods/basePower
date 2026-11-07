@@ -16,7 +16,7 @@ import endurance
 import semantic_machine_audit
 from audit_endurance import expected_inventory_acknowledgements
 from matrix import WORLD, compare, digest, fingerprint, write_json
-from native116 import native_normalized, output_path, pinned_profile, require_disjoint
+from native116 import base_identity, native_normalized, output_path, pinned_profile, require_disjoint
 from native116_lifecycle import (prepare, read_json, require_native_boot,
                                  verify_source, verify_staged)
 from native116_format import world_info as native_world_info, worldgen_settings
@@ -95,12 +95,13 @@ def prove_fresh_fixture_before_build(rig, configuration):
 class NativeEnduranceRig(endurance.Rig):
     def batch(self, label):
         measured = semantic_machine_audit.endurance_batch(
-            {station: self.documents[station] for station in ("S-04", "E-03", "W-04", "W-03")}, self.definitions)
+            {station: self.documents[station] for station in ("S-04", "E-03", "W-04", "W-03")},
+            self.definitions, identity=base_identity)
         evidence = self.runtime / ("semantic-batch-" + label + ".json")
         with evidence.open("x", encoding="utf-8") as stream:
             json.dump(measured, stream, indent=2)
         endurance.require(measured["status"] == "PASS", "Independent batch measurements failed: " + str(measured))
-        return super().batch(label)
+        return super().batch(label, power="basepower")
 
     def boot(self, phase):
         from native116_code import verify_if_sealed
@@ -189,7 +190,7 @@ def run(args):
     output = output_path(args.output)
     for protected in (args.source, args.source_manifest, args.source_hashes, args.target_manifest):
         require_disjoint(output, protected)
-    source_before, history = verify_source(args)
+    source_before, history = verify_source(args, allow_native_rebrand=True)
     target = pinned_profile(args.target_manifest.resolve(), "target116")
     for protected in (target[0], *target[2]):
         require_disjoint(output, protected)
@@ -227,8 +228,6 @@ def run(args):
             runtime = output / name
             launcher = prepare(runtime, target, [], args.port + index, args.source if index else None)
             configuration = configure_new_fresh_fixture(runtime) if index == 0 else None
-            for marker in ("migration-operate.allow", "advantage-works.allow"):
-                (runtime / marker).touch()
             rig = NativeEnduranceRig(name, runtime, args.java8, launcher, definitions)
             rigs.append(rig)
             if index:
@@ -241,6 +240,8 @@ def run(args):
                 write_json(runtime / "native116-import-comparison.json", preserved)
                 endurance.require(preserved["status"] == "PASS", "Copied source did not preserve frozen state")
                 require_native_boot(runtime / "console-frozen-import.log")
+            for marker in ("migration-operate.allow", "advantage-works.allow"):
+                (runtime / marker).touch()
             rig.boot("endurance")
             if index == 0:
                 report["fresh_fixture_proof"] = prove_fresh_fixture_before_build(rig, configuration)

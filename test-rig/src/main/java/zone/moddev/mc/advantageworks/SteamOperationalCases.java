@@ -36,7 +36,7 @@ final class SteamOperationalCases {
     }
 
     private static void machine(MachineContext c, String id) {
-        c.block(X, Y, Z, "steamadvantage:" + id);
+        c.block(X, Y, Z, "basesteam:" + id);
     }
 
     private static void supply(MachineContext c, float amount) {
@@ -130,23 +130,23 @@ final class SteamOperationalCases {
 
         add(cases, "oil-production", "A finite 100 mB crude-oil charge converts 64 water to 80 steam at the historical 25-percent bonus.", 160,
                 c -> { machine(c, "steam_boiler_oil"); fill(c, "minecraft:water", 64);
-                    fill(c, "poweradvantage:crude_oil", 100); },
+                    fill(c, "basepower:crude_oil", 100); },
                 c -> { fluid(c, "getWaterTank", "minecraft:water", 0);
-                    fluid(c, "getFuelTank", "poweradvantage:crude_oil", 0);
+                    fluid(c, "getFuelTank", "basepower:crude_oil", 0);
                     c.require(steam(c) == 80, "64 debited water produces exactly 80 steam at the oil boiler's 1.25 ratio"); });
         add(cases, "oil-water-not-fuel", "Water is not liquid fuel and cannot burn itself.", 120,
                 c -> { machine(c, "steam_boiler_oil"); fill(c, "minecraft:water", 64); },
                 c -> { fluid(c, "getWaterTank", "minecraft:water", 64);
-                    fluid(c, "getFuelTank", "poweradvantage:crude_oil", 0);
+                    fluid(c, "getFuelTank", "basepower:crude_oil", 0);
                     c.require(steam(c) == 0, "Nonflammable water does not produce steam without fuel"); });
         add(cases, "oil-dry", "Liquid fuel is preserved when no water is available.", 120,
-                c -> { machine(c, "steam_boiler_oil"); fill(c, "poweradvantage:crude_oil", 100); },
-                c -> { fluid(c, "getFuelTank", "poweradvantage:crude_oil", 100);
+                c -> { machine(c, "steam_boiler_oil"); fill(c, "basepower:crude_oil", 100); },
+                c -> { fluid(c, "getFuelTank", "basepower:crude_oil", 100);
                     c.require(steam(c) == 0, "Dry oil boiler does not ignite"); });
         add(cases, "oil-small-charge", "A 1 mB fuel aliquot can boil a finite three-water charge without inventing water.", 100,
                 c -> { machine(c, "steam_boiler_oil"); fill(c, "minecraft:water", 3);
-                    fill(c, "poweradvantage:crude_oil", 1); },
-                c -> { fluid(c, "getFuelTank", "poweradvantage:crude_oil", 0);
+                    fill(c, "basepower:crude_oil", 1); },
+                c -> { fluid(c, "getFuelTank", "basepower:crude_oil", 0);
                     fluid(c, "getWaterTank", "minecraft:water", 0);
                     float value = steam(c); c.require(value >= 0 && value <= 3.75F,
                             "Three water cannot create more than 3.75 steam at the historical oil bonus (including idle loss)");
@@ -266,31 +266,31 @@ final class SteamOperationalCases {
 
     private static void still(List<MachineScenario> cases) {
         add(cases, "still-production", "Steam distills finite crude oil at the historical 2:1 ratio.", 180,
-                c -> { machine(c, "steam_still"); supply(c, 500); fill(c, "poweradvantage:crude_oil", 200); },
-                c -> { fluid(c, "getInputTank", "poweradvantage:crude_oil", 0);
-                    fluid(c, "getOutputTank", "poweradvantage:refined_oil", 100);
+                c -> { machine(c, "steam_still"); supply(c, 500); fill(c, "basepower:crude_oil", 200); },
+                c -> { fluid(c, "getInputTank", "basepower:crude_oil", 0);
+                    fluid(c, "getOutputTank", "basepower:refined_oil", 100);
                     c.require(remainingSteam(c) <= 500 - 50 * 1.5F, "50 two-application distillations debit 75 steam"); });
         add(cases, "still-no-power", "Valid crude oil remains untouched without steam.", 160,
-                c -> { machine(c, "steam_still"); fill(c, "poweradvantage:crude_oil", 200); },
-                c -> { fluid(c, "getInputTank", "poweradvantage:crude_oil", 200);
-                    fluid(c, "getOutputTank", "poweradvantage:refined_oil", 0); });
+                c -> { machine(c, "steam_still"); fill(c, "basepower:crude_oil", 200); },
+                c -> { fluid(c, "getInputTank", "basepower:crude_oil", 200);
+                    fluid(c, "getOutputTank", "basepower:refined_oil", 0); });
         add(cases, "still-full-output", "A full output cannot destroy crude oil or spend productive steam.", 160,
-                c -> { machine(c, "steam_still"); supply(c, 500); fill(c, "poweradvantage:crude_oil", 200);
-                    reserve(c, "TankOut", "poweradvantage:refined_oil", 1000); },
-                c -> { fluid(c, "getInputTank", "poweradvantage:crude_oil", 200);
-                    fluid(c, "getOutputTank", "poweradvantage:refined_oil", 1000);
+                c -> { machine(c, "steam_still"); supply(c, 500); fill(c, "basepower:crude_oil", 200);
+                    reserve(c, "TankOut", "basepower:refined_oil", 1000); },
+                c -> { fluid(c, "getInputTank", "basepower:crude_oil", 200);
+                    fluid(c, "getOutputTank", "basepower:refined_oil", 1000);
                     c.require(remainingSteam(c) >= 500 - 2 * 160 * 0.0625F, "Full still spends no productive steam"); });
         add(cases, "still-one-output-space", "The final single output space accepts one recipe, never discarding a second recipe.", 160,
-                c -> { machine(c, "steam_still"); supply(c, 500); fill(c, "poweradvantage:crude_oil", 200);
-                    reserve(c, "TankOut", "poweradvantage:refined_oil", 999); },
-                c -> { fluid(c, "getInputTank", "poweradvantage:crude_oil", 198);
-                    fluid(c, "getOutputTank", "poweradvantage:refined_oil", 1000);
+                c -> { machine(c, "steam_still"); supply(c, 500); fill(c, "basepower:crude_oil", 200);
+                    reserve(c, "TankOut", "basepower:refined_oil", 999); },
+                c -> { fluid(c, "getInputTank", "basepower:crude_oil", 198);
+                    fluid(c, "getOutputTank", "basepower:refined_oil", 1000);
                     c.require(remainingSteam(c) <= 498.5F, "The single accepted operation debits steam"); });
         add(cases, "still-incomplete-input", "An incomplete 2-mB recipe cannot turn one mB into product.", 160,
                 c -> { machine(c, "steam_still"); supply(c, 500);
-                    reserve(c, "TankIn", "poweradvantage:crude_oil", 1); },
-                c -> { fluid(c, "getInputTank", "poweradvantage:crude_oil", 1);
-                    fluid(c, "getOutputTank", "poweradvantage:refined_oil", 0); });
+                    reserve(c, "TankIn", "basepower:crude_oil", 1); },
+                c -> { fluid(c, "getInputTank", "basepower:crude_oil", 1);
+                    fluid(c, "getOutputTank", "basepower:refined_oil", 0); });
         add(cases, "still-invalid-fluid", "A real capability rejects water as still feedstock.", 120,
                 c -> { machine(c, "steam_still"); supply(c, 500);
                     IFluidHandler handler = c.tile(X, Y, Z).getCapability(
@@ -301,7 +301,7 @@ final class SteamOperationalCases {
                     c.record("capability/rejected-water", accepted);
                     c.require(accepted == 0, "Water is rejected by the still input capability"); },
                 c -> { fluid(c, "getInputTank", "minecraft:water", 0);
-                    fluid(c, "getOutputTank", "poweradvantage:refined_oil", 0); });
+                    fluid(c, "getOutputTank", "basepower:refined_oil", 0); });
     }
 
     private static void basin(MachineContext c) {
@@ -331,18 +331,18 @@ final class SteamOperationalCases {
     private static void pump(List<MachineScenario> cases) {
         add(cases, "pump-3x3-intake-lift", "The pump builds its lift, removes finite real sources and delivers matching fluid at elevation.", 320,
                 c -> { machine(c, "steam_pump"); basin(c); supply(c, 600);
-                    c.block(X + 1, Y, Z, "poweradvantage:fluid_storage_tank"); },
+                    c.block(X + 1, Y, Z, "basepower:fluid_storage_tank"); },
                 c -> { int removed = 9 - sources(c); int stored = c.fluidAmount(X + 1, Y, Z);
                     int internal = amount(c, "getTank");
                     c.require(removed > 0 && stored >= 1000, "Real intake removal delivers at least a bucket four blocks above the intake");
                     c.require(stored + internal == removed * 1000, "Every removed source is conserved between receiver and pump");
-                    for (int y = 1; y <= 3; y++) c.require(blockIs(c, X, y, Z, "steamadvantage:pump_pipe_steam"),
+                    for (int y = 1; y <= 3; y++) c.require(blockIs(c, X, y, Z, "basesteam:pump_pipe_steam"),
                             "Natural pump ticks build lift segment " + y);
                     c.require(remainingSteam(c) <= 600 - 3 * 5 - removed * (32 + 4),
                             "Finite steam debits pipe placement and four-block lifting for every removed bucket"); });
         add(cases, "pump-no-power", "A real 3x3 intake remains untouched without steam, including lift construction.", 180,
                 c -> { machine(c, "steam_pump"); basin(c);
-                    c.block(X + 1, Y, Z, "poweradvantage:fluid_storage_tank"); },
+                    c.block(X + 1, Y, Z, "basepower:fluid_storage_tank"); },
                 c -> { c.require(sources(c) == 9 && amount(c, "getTank") == 0 && c.fluidAmount(X + 1, Y, Z) == 0,
                         "No power means no source removal or fluid output");
                     c.require(blockIs(c, X, Y - 1, Z, "minecraft:air"), "No steam means no lift construction"); });
@@ -352,7 +352,7 @@ final class SteamOperationalCases {
                     c.require(blockIs(c, X, Y - 1, Z, "minecraft:air"), "Insufficient steam cannot place the first pipe"); });
         add(cases, "pump-full-output", "A full connected receiver cannot delete pump fluid or debit a new source.", 160,
                 c -> { machine(c, "steam_pump"); basin(c); supply(c, 600); fill(c, "minecraft:lava", 1000);
-                    c.block(X + 1, Y, Z, "poweradvantage:fluid_storage_tank");
+                    c.block(X + 1, Y, Z, "basepower:fluid_storage_tank");
                     c.tank(X + 1, Y, Z, "minecraft:lava", 4000); },
                 c -> { fluid(c, "getTank", "minecraft:lava", 1000);
                     c.require(c.fluidAmount(X + 1, Y, Z) == 4000 && sources(c) == 9,

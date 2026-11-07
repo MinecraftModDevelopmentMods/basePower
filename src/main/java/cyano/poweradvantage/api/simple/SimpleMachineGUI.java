@@ -1,9 +1,9 @@
 package cyano.poweradvantage.api.simple;
 
 
-import zone.moddev.mc.poweradvantage.PowerAdvantage;
-import zone.moddev.mc.poweradvantage.math.Integer2D;
-import zone.moddev.mc.poweradvantage.registry.ITileEntityGUI;
+import zone.moddev.mc.basepower.PowerAdvantage;
+import zone.moddev.mc.basepower.math.Integer2D;
+import zone.moddev.mc.basepower.registry.ITileEntityGUI;
 import net.minecraft.client.gui.screen.inventory.ContainerScreen;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
@@ -18,7 +18,7 @@ import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
-import zone.moddev.mc.poweradvantage.registry.MachineGUIRegistry;
+import zone.moddev.mc.basepower.registry.MachineGUIRegistry;
 
 import java.util.HashMap;
 import java.util.Map;

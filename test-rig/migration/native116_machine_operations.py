@@ -23,7 +23,7 @@ REQUIRED = {
               "conveyor/blocked", "conveyor/item-entity", "conveyor/nbt-preserved", "filter/block", "filter/food", "filter/fuel", "filter/ore",
               "filter/plant", "filter/smelt", "filter/inventory-0", "filter/inventory-1", "filter/inventory-2",
               "filter/inventory-3", "filter/overflow-0", "filter/overflow-1", "filter/overflow-2", "filter/overflow-3",
-              "drain/minecraft_water", "drain/poweradvantage_crude_oil", "drain/poweradvantage_refined_oil",
+              "drain/minecraft_water", "drain/basepower_crude_oil", "drain/basepower_refined_oil",
               "drain/non-source", "tank/filter-true", "tank/filter-false", "tank/full", "fluid-switch/true",
               "fluid-switch/false", "discharge/true", "discharge/false", "conveyor/locked-source", "conveyor/locked-destination",
               "still/production", "still/no-fuel", "still/invalid", "still/full", "still/one-space", "still/redstone"},
@@ -137,20 +137,33 @@ def validate_restart(fixture, inspected):
 
 
 def pin(args):
-    base = read_json(args.base)
+    base_manifest = args.base.resolve()
+    base = read_json(base_manifest)
+    seed, _, _ = pinned_profile(base_manifest, "target116")
     destination = args.output.resolve()
+    require_disjoint(destination, seed)
+    require_disjoint(destination, base_manifest)
     if destination.exists(): raise FileExistsError(destination)
     destination.mkdir(parents=True)
     replacements = {
-        "poweradvantage": RIG.parent / "build/libs/PowerAdvantage-2.4.7.116051.jar",
-        "steamadvantage": RIG.parent.parent / "SteamAdvantage/SteamAdvantage/build/libs/SteamAdvantage-2.2.8.116051.jar",
-        "electricadvantage": RIG.parent.parent / "ElectricAdvantage/ElectricAdvantage/build/libs/ElectricAdvantage-2.2.8.116051.jar",
+        "basepower": RIG.parent / "build/libs/basePower-2.4.8.116051.jar",
+        "basesteam": RIG.parent.parent / "SteamAdvantage/SteamAdvantage/build/libs/baseSteam-2.2.9.116051.jar",
+        "baseelectric": RIG.parent.parent / "ElectricAdvantage/ElectricAdvantage/build/libs/baseElectric-2.2.9.116051.jar",
         "advantageworkstest": RIG / "build/gradle/libs/AdvantageWorksTestHarness-1.1.0.116051.jar",
     }
     target = copy.deepcopy(base["target116"])
+    target["seed"] = str(seed)
+    renamed = {"poweradvantage": ("basepower", "2.4.8.116051"),
+               "steamadvantage": ("basesteam", "2.2.9.116051"),
+               "electricadvantage": ("baseelectric", "2.2.9.116051")}
     for jar in target["jars"]:
-        source = replacements.get(jar["id"], Path(jar["path"]))
+        if jar["id"] in renamed:
+            jar["id"], jar["version"] = renamed[jar["id"]]
+        source = replacements.get(jar["id"], (base_manifest.parent / jar["path"]).resolve())
+        require_disjoint(destination, source)
         checksum = digest(source)
+        if jar["id"] not in replacements and checksum != jar["sha256"].upper():
+            raise AssertionError(f"Retained dependency jar has changed: {source}")
         folder = destination / "artifacts" / checksum
         folder.mkdir(parents=True, exist_ok=True)
         path = folder / source.name

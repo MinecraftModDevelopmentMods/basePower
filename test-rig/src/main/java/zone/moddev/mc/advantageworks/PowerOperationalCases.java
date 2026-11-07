@@ -15,7 +15,7 @@ final class PowerOperationalCases {
                 "power/conveyor/locked-" + (sourceLocked ? "source" : "destination"),
                 "Automation must not bypass a vanilla chest lock, at either end of the belt", 160,
                 c -> {
-                    conveyor(c, "poweradvantage:item_conveyor"); c.put(4, 2, 5, 0, "minecraft:dirt", 16);
+                    conveyor(c, "basepower:item_conveyor"); c.put(4, 2, 5, 0, "minecraft:dirt", 16);
                     net.minecraft.nbt.CompoundNBT lock = new net.minecraft.nbt.CompoundNBT(); lock.putString("Lock", "Works key");
                     c.seed(sourceLocked ? 4 : 6, 2, 5, lock);
                 }, c -> {
@@ -28,7 +28,7 @@ final class PowerOperationalCases {
                     "A finite 16 dirt reaches the chest in the declared direction, without loss or extra items", 200,
                     c -> {
                         BlockPos offset = BlockPos.ZERO.relative(direction);
-                        c.block(8, 6, 8, "poweradvantage:item_conveyor"); c.facing(8, 6, 8, direction.getName());
+                        c.block(8, 6, 8, "basepower:item_conveyor"); c.facing(8, 6, 8, direction.getName());
                         c.block(8 - offset.getX(), 6 - offset.getY(), 8 - offset.getZ(), "minecraft:chest");
                         c.block(8 + offset.getX(), 6 + offset.getY(), 8 + offset.getZ(), "minecraft:chest");
                         c.put(8 - offset.getX(), 6 - offset.getY(), 8 - offset.getZ(), 0, "minecraft:dirt", 16);
@@ -40,14 +40,14 @@ final class PowerOperationalCases {
                     }));
         }
         cases.add(new MachineScenario("power/conveyor/blocked", "Full output retains every dirt item in source or belt", 200,
-                c -> { conveyor(c, "poweradvantage:item_conveyor"); c.put(4, 2, 5, 0, "minecraft:dirt", 16); full(c, 6, 2, 5); },
+                c -> { conveyor(c, "basepower:item_conveyor"); c.put(4, 2, 5, 0, "minecraft:dirt", 16); full(c, 6, 2, 5); },
                 c -> {
                     c.require(c.count(4, 2, 5, "minecraft:dirt") + c.count(5, 2, 5, "minecraft:dirt") == 16, "blocked conveyor retains all inputs");
                     c.require(c.count(6, 2, 5, "minecraft:cobblestone") == 1728, "full output contents unchanged");
                 }));
         cases.add(new MachineScenario("power/conveyor/item-entity", "Dropped dirt is collected and delivered without a duplicate entity", 200,
                 c -> {
-                    c.block(5, 2, 5, "poweradvantage:item_conveyor"); c.facing(5, 2, 5, "east");
+                    c.block(5, 2, 5, "basepower:item_conveyor"); c.facing(5, 2, 5, "east");
                     c.block(6, 2, 5, "minecraft:chest"); c.block(4, 1, 5, "minecraft:stone");
                     c.block(3, 2, 5, "minecraft:stone"); c.block(4, 2, 4, "minecraft:stone"); c.block(4, 2, 6, "minecraft:stone");
                     BlockPos p = c.at(4, 2, 5);
@@ -60,7 +60,7 @@ final class PowerOperationalCases {
                 }));
         cases.add(new MachineScenario("power/conveyor/nbt-preserved", "Distinct custom item data must not merge into or overwrite another stack", 200,
                 c -> {
-                    conveyor(c, "poweradvantage:item_conveyor");
+                    conveyor(c, "basepower:item_conveyor");
                     c.put(4, 2, 5, 0, "minecraft:dirt", 3); c.put(4, 2, 5, 1, "minecraft:dirt", 3);
                     c.inventory(4, 2, 5).getItem(0).getOrCreateTag().putString("Witness", "A");
                     c.inventory(4, 2, 5).getItem(1).getOrCreateTag().putString("Witness", "B");
@@ -87,14 +87,14 @@ final class PowerOperationalCases {
         };
         for (String[] filter : filters) cases.add(new MachineScenario("power/filter/" + filter[0],
                 "Eight matching items go down; eight nonmatching items go forward; bounded inputs exhaust", 300,
-                c -> { filter(c, "poweradvantage:item_filter_" + filter[0]); c.put(4, 2, 5, 0, filter[1], 8); c.put(4, 2, 5, 1, filter[2], 8); },
+                c -> { filter(c, "basepower:item_filter_" + filter[0]); c.put(4, 2, 5, 0, filter[1], 8); c.put(4, 2, 5, 1, filter[2], 8); },
                 c -> filterOutcome(c, filter[1], filter[2], true)));
         for (int ghosts = 0; ghosts <= 3; ghosts++) {
             final int slots = ghosts;
             cases.add(new MachineScenario("power/filter/inventory-" + slots,
                     "Zero references pass all; one or several references sort matching dirt, retaining reference slots", 300,
                     c -> {
-                        filter(c, "poweradvantage:item_filter_inventory");
+                        filter(c, "basepower:item_filter_inventory");
                         c.put(4, 2, 5, 0, "minecraft:dirt", 8); c.put(4, 2, 5, 1, "minecraft:apple", 8);
                         if (slots > 0) c.put(5, 2, 5, 1, "minecraft:dirt", 1);
                         if (slots > 1) { c.put(5, 2, 5, 2, "minecraft:cobblestone", 1); c.put(5, 2, 5, 3, "minecraft:coal", 1); }
@@ -108,7 +108,7 @@ final class PowerOperationalCases {
             cases.add(new MachineScenario("power/filter/overflow-" + flags,
                     "Use lower output first, overflow forward when lower is full, retain input when both are full", 300,
                     c -> {
-                        filter(c, "poweradvantage:item_filter_overflow"); c.put(4, 2, 5, 0, "minecraft:dirt", 16);
+                        filter(c, "basepower:item_filter_overflow"); c.put(4, 2, 5, 0, "minecraft:dirt", 16);
                         if (lowerFull) full(c, 5, 1, 5); if (forwardFull) full(c, 6, 2, 5);
                     }, c -> {
                         int lower = c.count(5, 1, 5, "minecraft:dirt"), forward = c.count(6, 2, 5, "minecraft:dirt");
@@ -117,10 +117,10 @@ final class PowerOperationalCases {
                         c.require(c.count(4, 2, 5, "minecraft:dirt") + c.count(5, 2, 5, "minecraft:dirt") + lower + forward == 16, "overflow conservation even with both outputs blocked");
                     }));
         }
-        for (String fluid : new String[]{"minecraft:water", "poweradvantage:crude_oil", "poweradvantage:refined_oil"}) {
+        for (String fluid : new String[]{"minecraft:water", "basepower:crude_oil", "basepower:refined_oil"}) {
             cases.add(new MachineScenario("power/drain/" + fluid.replace(':', '_'),
                     "Exactly one native fluid source travels through drain and pipe to storage with registry identity intact", 80,
-                    c -> { drain(c, fluid, "poweradvantage:fluid_storage_tank", false); },
+                    c -> { drain(c, fluid, "basepower:fluid_storage_tank", false); },
                     c -> {
                         c.require(c.world.isEmptyBlock(c.at(5, 2, 5)), "native source collected");
                         c.require(c.fluidAmount(7, 1, 5) == 1000 && c.fluidAmount(5, 1, 5) == 0, "exact source volume delivered");
@@ -129,24 +129,24 @@ final class PowerOperationalCases {
         }
         cases.add(new MachineScenario("power/drain/non-source", "Flowing water without a source cannot create a bucket", 80,
                 c -> {
-                    drain(c, "minecraft:water", "poweradvantage:fluid_storage_tank", false);
+                    drain(c, "minecraft:water", "basepower:fluid_storage_tank", false);
                     c.world.setBlock(c.at(5, 2, 5), net.minecraft.block.Blocks.WATER.defaultBlockState()
                             .setValue(net.minecraft.block.FlowingFluidBlock.LEVEL, 7), 3);
                 }, c -> c.require(c.fluidAmount(5, 1, 5) + c.fluidAmount(7, 1, 5) == 0, "no source means no collected millibuckets")));
         for (boolean matching : new boolean[]{true, false}) cases.add(new MachineScenario("power/tank/filter-" + matching,
                 "A bucket reference admits matching water or rejects it without losing the source volume", 80,
-                c -> { drain(c, "minecraft:water", "poweradvantage:fluid_metal_tank", false); c.put(7, 1, 5, 0, matching ? "minecraft:water_bucket" : "minecraft:lava_bucket", 1); },
+                c -> { drain(c, "minecraft:water", "basepower:fluid_metal_tank", false); c.put(7, 1, 5, 0, matching ? "minecraft:water_bucket" : "minecraft:lava_bucket", 1); },
                 c -> {
                     c.require(c.fluidAmount(7, 1, 5) == (matching ? 1000 : 0), "bucket filter controls actual network acceptance");
                     c.require(c.fluidAmount(7, 1, 5) + c.fluidAmount(5, 1, 5) == 1000, "rejected water is retained rather than deleted");
                 }));
         cases.add(new MachineScenario("power/tank/full", "Full metal storage never overfills or deletes the extra source bucket", 80,
-                c -> { drain(c, "minecraft:water", "poweradvantage:fluid_metal_tank", false); c.tank(7, 1, 5, "minecraft:water", 10000); },
+                c -> { drain(c, "minecraft:water", "basepower:fluid_metal_tank", false); c.tank(7, 1, 5, "minecraft:water", 10000); },
                 c -> c.require(c.fluidAmount(7, 1, 5) == 10000 && c.fluidAmount(5, 1, 5) == 1000, "full output applies backpressure and conserves 11000 mB")));
         for (boolean signal : new boolean[]{true, false}) cases.add(new MachineScenario("power/fluid-switch/" + signal,
                 "Redstone isolates the fluid path; removing it permits transfer without replacing machinery", 100,
                 c -> {
-                    drain(c, "minecraft:water", "poweradvantage:fluid_storage_tank", true);
+                    drain(c, "minecraft:water", "basepower:fluid_storage_tank", true);
                     if (signal) c.block(6, 2, 5, "minecraft:redstone_block");
                 }, c -> {
                     c.require(c.fluidAmount(7, 1, 5) == (signal ? 0 : 1000), "redstone controls fluid delivery");
@@ -155,7 +155,7 @@ final class PowerOperationalCases {
         for (boolean blocked : new boolean[]{true, false}) cases.add(new MachineScenario("power/discharge/" + blocked,
                 "A discharge places one bucket into air, but must never replace solid bedrock", 80,
                 c -> {
-                    c.block(5, 2, 5, "poweradvantage:fluid_discharge");
+                    c.block(5, 2, 5, "basepower:fluid_discharge");
                     for (Direction direction : Direction.values()) if (direction != Direction.UP) {
                         BlockPos p = BlockPos.ZERO.relative(direction);
                         c.block(5 + p.getX(), 1 + p.getY(), 5 + p.getZ(), "minecraft:bedrock");
@@ -176,18 +176,18 @@ final class PowerOperationalCases {
             cases.add(new MachineScenario("power/still/" + mode,
                     "Finite crude oil produces refined oil at 2:1; fuel, valid input, capacity and redstone govern useful work", 620,
                     c -> {
-                        c.block(8, 4, 8, "poweradvantage:still");
-                        zone.moddev.mc.poweradvantage.machines.fluidmachines.StillTileEntity still =
-                                (zone.moddev.mc.poweradvantage.machines.fluidmachines.StillTileEntity)c.tile(8, 4, 8);
+                        c.block(8, 4, 8, "basepower:still");
+                        zone.moddev.mc.basepower.machines.fluidmachines.StillTileEntity still =
+                                (zone.moddev.mc.basepower.machines.fluidmachines.StillTileEntity)c.tile(8, 4, 8);
                         still.getInputTank().setFluid(new cyano.poweradvantage.api.fluid.FluidStack(
                                 mode.equals("invalid") ? net.minecraft.fluid.Fluids.WATER
-                                        : net.minecraftforge.registries.ForgeRegistries.FLUIDS.getValue(new net.minecraft.util.ResourceLocation("poweradvantage:crude_oil")), 1000));
+                                        : net.minecraftforge.registries.ForgeRegistries.FLUIDS.getValue(new net.minecraft.util.ResourceLocation("basepower:crude_oil")), 1000));
                         if (!mode.equals("no-fuel")) c.put(8, 4, 8, 0, "minecraft:coal", 1);
-                        if (output > 0) c.tank(8, 4, 8, "poweradvantage:refined_oil", output);
+                        if (output > 0) c.tank(8, 4, 8, "basepower:refined_oil", output);
                         if (mode.equals("redstone")) c.block(9, 4, 8, "minecraft:redstone_block");
                     }, c -> {
-                        zone.moddev.mc.poweradvantage.machines.fluidmachines.StillTileEntity still =
-                                (zone.moddev.mc.poweradvantage.machines.fluidmachines.StillTileEntity)c.tile(8, 4, 8);
+                        zone.moddev.mc.basepower.machines.fluidmachines.StillTileEntity still =
+                                (zone.moddev.mc.basepower.machines.fluidmachines.StillTileEntity)c.tile(8, 4, 8);
                         c.require(still.getInputTank().getFluidAmount() == 1000 - product * 2, "exact raw input debit");
                         c.require(c.fluidAmount(8, 4, 8) == output + product, "exact bounded distillation product");
                         if (product == 0 && !mode.equals("no-fuel"))
@@ -209,12 +209,12 @@ final class PowerOperationalCases {
         c.require(c.count(4, 2, 5, matching) + c.count(4, 2, 5, other) == 0 && c.inventory(5, 2, 5).getItem(0).isEmpty(), "finite source and filter buffer exhausted");
     }
     private static void drain(MachineContext c, String fluid, String tank, boolean switched) {
-        c.block(5, 1, 5, "poweradvantage:fluid_drain");
+        c.block(5, 1, 5, "basepower:fluid_drain");
         for (Direction d : new Direction[]{Direction.NORTH, Direction.SOUTH, Direction.WEST, Direction.EAST}) {
             BlockPos p = BlockPos.ZERO.relative(d); c.block(5 + p.getX(), 2, 5 + p.getZ(), "minecraft:bedrock");
         }
         c.block(5, 2, 5, fluid);
-        c.block(6, 1, 5, switched ? "poweradvantage:fluid_switch" : "poweradvantage:fluid_pipe");
+        c.block(6, 1, 5, switched ? "basepower:fluid_switch" : "basepower:fluid_pipe");
         c.block(7, 1, 5, tank);
     }
 }

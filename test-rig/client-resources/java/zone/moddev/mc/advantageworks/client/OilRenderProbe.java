@@ -22,8 +22,8 @@ import net.minecraft.world.LightType;
 import net.minecraft.world.level.ColorResolver;
 import net.minecraft.world.lighting.WorldLightManager;
 import net.minecraft.tileentity.TileEntity;
-import zone.moddev.mc.poweradvantage.init.Fluids;
-import zone.moddev.mc.poweradvantage.init.Items;
+import zone.moddev.mc.basepower.init.Fluids;
+import zone.moddev.mc.basepower.init.Items;
 
 import java.nio.ByteBuffer;
 import java.util.HashMap;
@@ -60,10 +60,10 @@ final class OilRenderProbe {
         JsonArray cases = new JsonArray();
         result.add("fluid_rendering", cases);
         boolean valid = true;
-        valid &= check(minecraft, Fluids.crude_oil.defaultFluidState(), "poweradvantage:blocks/crude_oil_still", false, cases);
-        valid &= check(minecraft, Fluids.flowing_crude_oil.getFlowing(5, false), "poweradvantage:blocks/crude_oil_flow", true, cases);
-        valid &= check(minecraft, Fluids.refined_oil.defaultFluidState(), "poweradvantage:blocks/refined_oil_still", false, cases);
-        valid &= check(minecraft, Fluids.flowing_refined_oil.getFlowing(5, false), "poweradvantage:blocks/refined_oil_flow", true, cases);
+        valid &= check(minecraft, Fluids.crude_oil.defaultFluidState(), "basepower:blocks/crude_oil_still", false, cases);
+        valid &= check(minecraft, Fluids.flowing_crude_oil.getFlowing(5, false), "basepower:blocks/crude_oil_flow", true, cases);
+        valid &= check(minecraft, Fluids.refined_oil.defaultFluidState(), "basepower:blocks/refined_oil_still", false, cases);
+        valid &= check(minecraft, Fluids.flowing_refined_oil.getFlowing(5, false), "basepower:blocks/refined_oil_flow", true, cases);
         valid &= check(minecraft, net.minecraft.fluid.Fluids.WATER.defaultFluidState(), "minecraft:block/water_still", false, cases);
         valid &= check(minecraft, net.minecraft.fluid.Fluids.LAVA.defaultFluidState(), "minecraft:block/lava_still", false, cases);
         if (!valid) throw new IllegalStateException("Native fluid renderer used the wrong sprite or tint: " + cases);

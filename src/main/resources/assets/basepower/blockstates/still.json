@@ -1,0 +1,34 @@
+{
+  "variants": {
+    "active=false,facing=east": {
+      "model": "basepower:block/still_off",
+      "y": 90
+    },
+    "active=false,facing=north": {
+      "model": "basepower:block/still_off"
+    },
+    "active=false,facing=south": {
+      "model": "basepower:block/still_off",
+      "y": 180
+    },
+    "active=false,facing=west": {
+      "model": "basepower:block/still_off",
+      "y": 270
+    },
+    "active=true,facing=east": {
+      "model": "basepower:block/still_on",
+      "y": 90
+    },
+    "active=true,facing=north": {
+      "model": "basepower:block/still_on"
+    },
+    "active=true,facing=south": {
+      "model": "basepower:block/still_on",
+      "y": 180
+    },
+    "active=true,facing=west": {
+      "model": "basepower:block/still_on",
+      "y": 270
+    }
+  }
+}

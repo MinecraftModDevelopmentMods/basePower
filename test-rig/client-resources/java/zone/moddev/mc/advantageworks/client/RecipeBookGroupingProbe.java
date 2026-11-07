@@ -130,12 +130,12 @@ final class RecipeBookGroupingProbe {
 
     private static void render(Minecraft minecraft, ClientRecipeBook book) throws Exception {
         List<RecipeList> shown = new ArrayList<>();
-        Set<String> selected = new HashSet<>(java.util.Arrays.asList("electricadvantage:blank_circuit_board",
-                "electricadvantage:integrated_circuit", "electricadvantage:control_circuit", "electricadvantage:psu", "poweradvantage:item_conveyor"));
+        Set<String> selected = new HashSet<>(java.util.Arrays.asList("baseelectric:blank_circuit_board",
+                "baseelectric:integrated_circuit", "baseelectric:control_circuit", "baseelectric:psu", "basepower:item_conveyor"));
         for (RecipeList cell : book.getCollections()) {
             IRecipe<?> recipe = cell.getRecipes().get(0);
             String id = recipe.getResultItem().getItem().getRegistryName().toString();
-            if (selected.contains(id) || id.startsWith("poweradvantage:item_filter_")) shown.add(cell);
+            if (selected.contains(id) || id.startsWith("basepower:item_filter_")) shown.add(cell);
         }
         shown.sort(java.util.Comparator.comparing(cell -> cell.getRecipes().get(0).getResultItem().getItem().getRegistryName().toString()));
         require(shown.size() == 13, "The thirteen reported circuit/conveyor cells must be separate");

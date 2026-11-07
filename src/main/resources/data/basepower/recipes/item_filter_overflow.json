@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "x",
+    "z"
+  ],
+  "key": {
+    "x": {
+      "item": "basepower:item_conveyor"
+    },
+    "z": {
+      "item": "minecraft:oak_pressure_plate"
+    }
+  },
+  "result": {
+    "item": "basepower:item_filter_overflow"
+  },
+  "group": "basepower:item_filter_overflow"
+}

@@ -273,7 +273,7 @@ def campaign(args, name, definition, exercise, runner_type=NativeExtendedRun):
         require_disjoint(output, protected)
     if not args.java8.is_file():
         raise FileNotFoundError(args.java8)
-    source_before, history = verify_source(args)
+    source_before, history = verify_source(args, allow_native_rebrand=True)
     target = pinned_profile(args.target_manifest.resolve(), "target116")
     for protected in (target[0], *target[2]):
         require_disjoint(output, protected)

@@ -7,7 +7,7 @@ var MethodInsnNode = Java.type('org.objectweb.asm.tree.MethodInsnNode');
 var VarInsnNode = Java.type('org.objectweb.asm.tree.VarInsnNode');
 
 // Only the pre-datafix migration needs bytecode integration on Forge 1.16.
-var hook = 'zone/moddev/mc/poweradvantage/migration/LegacyWorldDataHook';
+var hook = 'zone/moddev/mc/basepower/migration/LegacyWorldDataHook';
 
 function patchPlayerDataFix(classNode) {
     var descriptor = '(Lcom/mojang/datafixers/DataFixer;' +
@@ -32,7 +32,7 @@ function patchPlayerDataFix(classNode) {
         throw new Error('Power Advantage requires exactly one native player datafix call in ' + classNode.name);
     }
     matchedMethod.instructions.set(matchedCall, new MethodInsnNode(Opcodes.INVOKESTATIC,
-            'zone/moddev/mc/poweradvantage/migration/LegacyPlayerDataFixes', 'update', descriptor, false));
+            'zone/moddev/mc/basepower/migration/LegacyPlayerDataFixes', 'update', descriptor, false));
     return classNode;
 }
 

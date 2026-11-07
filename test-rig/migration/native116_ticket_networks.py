@@ -9,6 +9,7 @@ import extended_lifecycle as historical
 from matrix import digest, write_json
 from native116 import RIG, jar_identity, output_path, pinned_profile, require_disjoint
 import native116_extended
+from native116_lifecycle import native_fixtures
 from native116_partial import (NativeExtendedRun, NativePartialRun, campaign,
                                common_parser, exercise_bridge, exercise_partial,
                                selected_chunks)
@@ -53,7 +54,7 @@ def bridge_fixtures():
 
 
 def extended_fixtures():
-    return [f for f in historical.fixtures() if "route" in f] + linear_fixtures()
+    return native_fixtures(f for f in historical.fixtures() if "route" in f) + linear_fixtures()
 
 
 def archive_harness(base_manifest, harness, output):

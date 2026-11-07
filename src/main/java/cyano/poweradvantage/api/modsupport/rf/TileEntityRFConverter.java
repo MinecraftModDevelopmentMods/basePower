@@ -12,7 +12,7 @@ import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.energy.CapabilityEnergy;
 import net.minecraftforge.energy.IEnergyStorage;
-import zone.moddev.mc.poweradvantage.PowerAdvantage;
+import zone.moddev.mc.basepower.PowerAdvantage;
 
 /** Forge Energy bridge retained behind the historical RF-labelled block IDs. */
 public class TileEntityRFConverter extends TileEntityConverter implements IEnergyStorage {

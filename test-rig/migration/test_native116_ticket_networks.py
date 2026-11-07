@@ -12,8 +12,15 @@ from native116_ticket_networks import (NativeTicketNetworkRun, bridge_fixtures, 
 
 
 class NativeTicketFixtureTests(unittest.TestCase):
-    def test_historical_drill_fixtures_are_identical(self):
-        self.assertEqual([f for f in extended_lifecycle.fixtures() if "route" in f], extended_fixtures()[:18])
+    def test_historical_drill_fixtures_change_only_registry_namespace(self):
+        aliases = {"steamadvantage": "basesteam", "electricadvantage": "baseelectric"}
+        expected = []
+        for fixture in extended_lifecycle.fixtures():
+            if "route" in fixture:
+                namespace, name = fixture["block"].split(":", 1)
+                expected.append(dict(fixture, block=aliases[namespace] + ":" + name))
+        self.assertEqual(18, len(expected))
+        self.assertEqual(expected, extended_fixtures()[:18])
 
     def test_all_native_bounds_and_paths_are_contained_and_do_not_overlap(self):
         for definition in (linear_fixtures(), bridge_fixtures(), extended_fixtures()):

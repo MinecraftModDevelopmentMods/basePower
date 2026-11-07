@@ -1,0 +1,4 @@
+{
+    "parent": "basepower:block/fluid_pipe_ns",
+    "ambientocclusion": false
+}

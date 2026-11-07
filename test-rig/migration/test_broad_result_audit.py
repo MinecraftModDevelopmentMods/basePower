@@ -11,6 +11,7 @@ from contextlib import redirect_stdout
 import zipfile
 
 import broad_result_audit as audit
+from historical_station_fixture import historical_station_bytes
 
 
 LINE = Path(__file__).resolve().parents[3].name.removeprefix("PA")
@@ -32,8 +33,7 @@ class BroadResultAuditTests(unittest.TestCase):
         self.root = Path(self.directory.name)
         self.runtime = self.root / "broad"
         self.runtime.mkdir()
-        source = Path(__file__).resolve().parents[1] / "src/main/resources" / audit.RESOURCE
-        definition = source.read_bytes()
+        definition = historical_station_bytes()
         self.stations = json.loads(definition)["stations"]
         self.definitions = {s["id"]: s for s in self.stations}
         jars = []

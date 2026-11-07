@@ -21,6 +21,13 @@ RIG = Path(__file__).resolve().parents[1]
 LEGACY_POWER = RIG.parents[2] / "PA113/PowerAdvantage"
 LAUNCHER = "forge-1.16.5-36.2.34.jar"
 TEST_FLAT = "advantageworkstest:test_flat"
+BASE_NAMESPACES = {"poweradvantage": "basepower", "steamadvantage": "basesteam",
+                   "electricadvantage": "baseelectric"}
+
+
+def base_identity(value):
+    namespace, separator, path = value.partition(":")
+    return BASE_NAMESPACES.get(namespace, namespace) + separator + path if separator else value
 
 
 def stage(runtime, target):
@@ -133,7 +140,7 @@ def pin_target(profile_path, seed, output):
             if field in mod:
                 entry[field] = mod[field]
         jars.append(entry)
-    if not {"poweradvantage", "advantageworkstest", "orespawn"}.issubset({j["id"] for j in jars}):
+    if not {"basepower", "advantageworkstest", "orespawn"}.issubset({j["id"] for j in jars}):
         raise ValueError("Missing native Power, OreSpawn or harness input")
     write_json(output, {"target116": {
         "seed": str(seed), "launcher": LAUNCHER, "launcher_sha256": digest(seed / LAUNCHER),
@@ -163,7 +170,9 @@ def pinned_profile(manifest_path, key):
         if entry["launcher"] != LAUNCHER or digest(seed / LAUNCHER) != entry["launcher_sha256"].upper():
             raise AssertionError("Native116 server launcher changed")
         identities = [jar["id"] for jar in entry["jars"]]
-        if len(set(identities)) != len(identities) or not {"poweradvantage", "advantageworkstest", "orespawn"}.issubset(identities):
+        power = set(identities) & {"poweradvantage", "basepower"}
+        if (len(set(identities)) != len(identities) or len(power) != 1
+                or not {"advantageworkstest", "orespawn"}.issubset(identities)):
             raise ValueError("Destination must contain unique native Power, OreSpawn and harness inputs")
         if not (seed / "libraries").is_dir():
             raise FileNotFoundError("Destination server libraries are missing")

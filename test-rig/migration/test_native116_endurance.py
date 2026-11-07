@@ -39,7 +39,7 @@ class NativeEnduranceTests(unittest.TestCase):
             with patch("semantic_machine_audit.endurance_batch", return_value={"status": "PASS", "failures": []}), \
                     patch.object(endurance.Rig, "batch", return_value={"retained": True}) as historical:
                 self.assertEqual({"retained": True}, rig.batch("cycle-001"))
-                historical.assert_called_once_with("cycle-001")
+        historical.assert_called_once_with("cycle-001", power="basepower")
 
     def test_restart_selects_first_tick_without_output_or_inventory_inspection(self):
         with tempfile.TemporaryDirectory() as directory:

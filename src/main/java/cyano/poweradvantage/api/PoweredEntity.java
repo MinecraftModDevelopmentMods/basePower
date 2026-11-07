@@ -1,6 +1,6 @@
 package cyano.poweradvantage.api;
 
-import zone.moddev.mc.poweradvantage.conduitnetwork.ConduitRegistry;
+import zone.moddev.mc.basepower.conduitnetwork.ConduitRegistry;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.nbt.CompoundNBT;
@@ -29,8 +29,8 @@ public abstract class PoweredEntity extends TileEntity implements ITickableTileE
 
 	private final int powerUpdateInterval = 8;
 	private int conduitRefreshDelay = 2;
-    private final zone.moddev.mc.poweradvantage.util.MachineCapabilities machineCapabilities =
-            new zone.moddev.mc.poweradvantage.util.MachineCapabilities(this);
+    private final zone.moddev.mc.basepower.util.MachineCapabilities machineCapabilities =
+            new zone.moddev.mc.basepower.util.MachineCapabilities(this);
 
     @Override
     public <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(

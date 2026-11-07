@@ -43,11 +43,11 @@ final class SteamOperationalSupplementalCases {
                     "A finite source fills a normal consumer before backup storage. Disabling backup discharge "
                     + "prevents later relay masking the original allocation; a full-consumer control proves backup connectivity.",
                     80, c -> {
-                        c.block(8, 4, 8, "steamadvantage:steam_boiler_coal");
-                        c.block(9, 4, 8, "steamadvantage:steam_furnace");
-                        c.block(7, 4, 8, "steamadvantage:steam_pipe");
-                        c.block(6, 4, 8, "steamadvantage:steam_pipe");
-                        c.block(5, 4, 8, "steamadvantage:steam_tank");
+                        c.block(8, 4, 8, "basesteam:steam_boiler_coal");
+                        c.block(9, 4, 8, "basesteam:steam_furnace");
+                        c.block(7, 4, 8, "basesteam:steam_pipe");
+                        c.block(6, 4, 8, "basesteam:steam_pipe");
+                        c.block(5, 4, 8, "basesteam:steam_tank");
                         c.block(4, 4, 8, "minecraft:redstone_block");
                         c.power(8, 4, 8, "steam", 40);
                         if (consumerFull) c.power(9, 4, 8, "steam", 200);
@@ -94,7 +94,7 @@ final class SteamOperationalSupplementalCases {
                 + "only when enchanted. This measures impulse/packet delivery, not a manually ticked fake player's travel.",
                 40, c -> {
                     prepareShot(c, shot, "recoil-" + level, false);
-                    if (level > 0) enchant(c, shot.weapon, "steamadvantage:recoil", level);
+                    if (level > 0) enchant(c, shot.weapon, "basesteam:recoil", level);
                     fire(c, shot);
                 }, c -> {
                     verifyShot(c, shot, false, false);
@@ -116,7 +116,7 @@ final class SteamOperationalSupplementalCases {
                 + "Finite targets and the level-one blast remain inside the bay; no TNT or flammable terrain is seeded.",
                 40, c -> {
                     prepareShot(c, shot, "explosive-" + level, true);
-                    if (level > 0) enchant(c, shot.weapon, "steamadvantage:high_explosive", level);
+                    if (level > 0) enchant(c, shot.weapon, "basesteam:high_explosive", level);
                     fire(c, shot);
                     shot.immediateCollateralFire = shot.collateral.getRemainingFireTicks();
                     shot.immediateCollateralHealth = shot.collateral.getHealth();
@@ -169,12 +169,12 @@ final class SteamOperationalSupplementalCases {
         shot.player.gameMode.setGameModeForPlayer(GameType.SURVIVAL);
         shot.player.moveTo(muzzle.getX() + 0.5, muzzle.getY(), muzzle.getZ() + 0.5, 0, 0);
         shot.player.setDeltaMovement(Vector3d.ZERO);
-        shot.weapon = new ItemStack(item(c, "steamadvantage:musket"));
+        shot.weapon = new ItemStack(item(c, "basesteam:musket"));
         shot.player.setItemInHand(Hand.MAIN_HAND, shot.weapon);
-        shot.player.inventory.setItem(1, new ItemStack(item(c, "steamadvantage:blackpowder_cartridge"), 2));
-        enchant(c, shot.weapon, "steamadvantage:rapid_reload", 1);
+        shot.player.inventory.setItem(1, new ItemStack(item(c, "basesteam:blackpowder_cartridge"), 2));
+        enchant(c, shot.weapon, "basesteam:rapid_reload", 1);
         try {
-            shot.configuredDamage = Class.forName("zone.moddev.mc.steamadvantage.SteamAdvantage", false,
+            shot.configuredDamage = Class.forName("zone.moddev.mc.basesteam.SteamAdvantage", false,
                     SteamOperationalSupplementalCases.class.getClassLoader()).getDeclaredField("MUSKET_DAMAGE").getFloat(null);
         } catch (ReflectiveOperationException error) {
             throw new IllegalStateException("Musket configuration contract is unavailable", error);

@@ -12,7 +12,9 @@ import native114_broad as broad
 
 class BroadOracleTests(unittest.TestCase):
     def setUp(self):
-        definition = broad.read_json(broad.RIG / "src/main/resources/assets/advantageworkstest/works/works-1.13.2.json")
+        import json
+        from historical_station_fixture import historical_station_bytes
+        definition = json.loads(historical_station_bytes())
         self.stations = [s for s in definition["stations"] if s["id"] in broad.DRILL_BAYS]
 
     def snapshot(self, station, moved=False):

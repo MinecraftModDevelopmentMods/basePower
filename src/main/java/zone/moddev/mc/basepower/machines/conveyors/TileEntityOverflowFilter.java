@@ -1,0 +1,40 @@
+package zone.moddev.mc.basepower.machines.conveyors;
+
+import zone.moddev.mc.basepower.util.InventoryWrapper;
+import net.minecraft.inventory.IInventory;
+import net.minecraft.item.ItemStack;
+import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.Direction;
+import zone.moddev.mc.basepower.init.Entities;
+
+public class TileEntityOverflowFilter extends TileEntityConveyorFilter {
+	public TileEntityOverflowFilter() { super(Entities.FILTER_OVERFLOW, 1); }
+
+	@Override
+	public boolean matchesFilter(ItemStack item) {
+		if (item == null || item.getItem() == null) return false;
+		boolean canDrop = canInsert(item, Direction.DOWN);
+		boolean canPass = canInsert(item, this.getFacing());
+		if (canPass) {
+			return canDrop;
+		} else {
+			return true;
+		}
+	}
+
+	private boolean canInsert(ItemStack item, Direction f) {
+		TileEntity target = getLevel().getBlockEntity(getBlockPos().relative(f));
+		if (target instanceof IInventory) {
+			return canInsertItemInto(item, InventoryWrapper.wrap((IInventory) target), f.getOpposite());
+		} else {
+			return false;
+		}
+	}
+
+	@Override
+	protected boolean isValidItemFor(ItemStack item, TileEntity target, Direction side) {
+		// do all of the logic in the matchesFilter method
+		return true;
+	}
+
+}

@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:block/block",
+  "textures": {
+    "particle": "basepower:blocks/refined_oil_still"
+  }
+}

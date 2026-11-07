@@ -44,7 +44,7 @@ class NativeRecipeTests(unittest.TestCase):
         self.assertTrue(all("crushing" not in identity for identity in sources))
 
     def test_fixture_inventory_cannot_silently_shrink(self):
-        counts = dict(recipes.MOD_COUNTS, poweradvantage=34)
+        counts = dict(recipes.MOD_COUNTS, basepower=34)
         with self.assertRaises(AssertionError):
             recipes.recipe_fixture(self.packaged(counts))
 
@@ -115,7 +115,18 @@ class NativeRecipeTests(unittest.TestCase):
     def test_original_natural_basis_and_exclusions_are_not_expanded(self):
         from progression import fixture
         original = fixture()
-        self.assertEqual(original, recipes.progression_fixture())
+        converted = recipes.progression_fixture()
+        self.assertEqual({key: value for key, value in original.items() if key not in ("naturalResources", "exclusions")},
+                         {key: value for key, value in converted.items() if key not in ("naturalResources", "exclusions")})
+        def expected(item):
+            for old, new in (("poweradvantage:", "basepower:"), ("steamadvantage:", "basesteam:"),
+                             ("electricadvantage:", "baseelectric:")):
+                if item.startswith(old):
+                    return new + item[len(old):]
+            return item
+        self.assertEqual([expected(item) for item in original["naturalResources"]], converted["naturalResources"])
+        self.assertEqual({expected(item): reason for item, reason in original["exclusions"].items()},
+                         converted["exclusions"])
         self.assertNotIn("electricadvantage:psu", original["exclusions"])
         self.assertEqual(["electricadvantage:li_ore", "electricadvantage:sulfur_ore"],
                          [item for item in original["naturalResources"] if item.startswith("electricadvantage:")])
