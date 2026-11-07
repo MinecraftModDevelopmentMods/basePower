@@ -218,6 +218,14 @@ class ResourceAuditTest(unittest.TestCase):
         modern = [witness(snbt='{Items:[{Slot:0b,id:"basesteam:musket",Count:1b,tag:{Damage:5}}]}')]
         self.check(damaged, modern, "PASS")
 
+    def test_migration_does_not_rewrite_player_supplied_item_names(self):
+        def named_musket(identity, name):
+            return [witness(snbt='{Items:[{Slot:0b,id:"%s",Count:1b,tag:{display:{Name:"%s"}}}]}'
+                            % (identity, name))]
+        old = named_musket("steamadvantage:musket", "steamadvantage:musket")
+        self.check(old, named_musket("basesteam:musket", "steamadvantage:musket"), "PASS", legacy_source=True)
+        self.check(old, named_musket("basesteam:musket", "basesteam:musket"), "FAIL", legacy_source=True)
+
     def test_enchantments_use_explicit_world_registry_maps(self):
         old = [witness(snbt='{Items:[{Slot:0b,id:"basesteam:musket",Count:1b,tag:{ench:[{id:11s,lvl:2s}]}}]}')]
         new = [witness(snbt='{Items:[{Slot:0b,id:"basesteam:musket",Count:1b,tag:{Enchantments:[{id:"basesteam:spreadshot",lvl:2s}]}}]}')]

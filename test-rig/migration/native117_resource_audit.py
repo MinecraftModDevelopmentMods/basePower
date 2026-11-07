@@ -18,8 +18,8 @@ import struct
 import nbtlib
 
 from matrix import WORLD, plain
-from native117 import native_normalized
-from native117_identity import fixture_ids, target_id
+from native117 import native_normalized, source_normalized
+from native117_identity import target_id
 from native117_legacy_snbt import parse_legacy_snbt
 
 
@@ -228,9 +228,8 @@ def canonical_resources(document, *, enchantments=None, slot_limits=None, legacy
             block = target_id(block)
         if block in limits and not ("nbtBase64" in row or "nbt" in row):
             raise ValueError("Missing NBT for known resource container " + str(pos))
-        data = native_normalized(_nbt(row), enchantments)
-        if legacy_source:
-            data = fixture_ids(data)
+        normalize = source_normalized if legacy_source else native_normalized
+        data = normalize(_nbt(row), enchantments)
         result[pos] = {"block": block, "resources": _project(data, block, limits)}
     return result
 

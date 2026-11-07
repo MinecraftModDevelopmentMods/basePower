@@ -40,6 +40,8 @@ and reload scenarios, including settings mismatches. OreSpawn is the public
 - Mining and drops, Forge capabilities, native tank reload, both energy
   converter directions, and all six crude/refined oil lanes including Mineralogy.
 - Partial networks with the supply, machine or bridge genuinely unloaded.
+- Worldgen and restart checks for the standalone, Mineralogy and legacy OreSpawn
+  profiles, including preservation of user changes to generation rules.
 
 ## Still Open
 
