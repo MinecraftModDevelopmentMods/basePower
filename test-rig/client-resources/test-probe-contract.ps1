@@ -167,7 +167,7 @@ function Translate-NativeNames([string]$Source) {
     }
     foreach ($pair in $classes.GetEnumerator()) { $Source = [regex]::Replace($Source, "\b$($pair.Key)\b", $pair.Value) }
     $pairs = [ordered]@{
-        '1.16.5'='1.17.1'; '36.2.34'='37.1.1'; '2.4.7.116051'='2.4.8.117011'; '2.2.8.116051'='2.2.9.117011'
+        '1.16.5'='1.17.1'; '36.2.34'='37.1.1'; '2.4.7.116051'='2.4.9.117011'; '2.2.8.116051'='2.2.10.117011'
         '.getParticleTexture('='.getParticleIcon('; 'RenderSystem.color4f('='RenderSystem.setShaderColor('
         'new RenderTarget('='new com.mojang.blaze3d.pipeline.TextureTarget('
         'PoseStack.Entry'='PoseStack.Pose'; 'ForgeRegistries.TILE_ENTITIES'='ForgeRegistries.BLOCK_ENTITIES'
@@ -184,7 +184,7 @@ function Expected-NativeProbe([string]$Name, [string]$Source) {
             $source = Adapt-Exact $source 'getModel(stack, null, null)' 'getModel(stack, null, null, 0)' 'native item-model seed'
         }
         TankVisualProbe {
-            $source = Adapt-Exact $source 'new MetalTankTileEntity()' 'new MetalTankTileEntity(BlockPos.ZERO, zone.moddev.mc.poweradvantage.init.Blocks.metal_storage_tank.defaultBlockState())' 'native tank factories' 2
+            $source = Adapt-Exact $source 'new MetalTankTileEntity()' 'new MetalTankTileEntity(BlockPos.ZERO, zone.moddev.mc.basepower.init.Blocks.metal_storage_tank.defaultBlockState())' 'native tank factories' 2
             $source = Adapt-Exact $source 'new BlockGetter() {' 'new BlockGetter() { @Override public int getHeight() { return 256; } @Override public int getMinBuildHeight() { return 0; }' 'native tank height'
             $source = Adapt-Exact $source 'world, BlockPos.ZERO, Direction.UP);' 'world, BlockPos.ZERO, Direction.UP, BlockPos.ZERO.above());' 'native adjacent culling position'
             $source = Adapt-Exact $source 'RenderSystem.matrixMode(GL_PROJECTION); RenderSystem.pushMatrix(); RenderSystem.loadIdentity(); RenderSystem.ortho(0.0D, width, height, 0.0D, -1.0D, 1.0D); RenderSystem.matrixMode(GL_MODELVIEW); RenderSystem.pushMatrix(); RenderSystem.loadIdentity(); RenderSystem.disableLighting();' 'NativeGuiProjection projection = new NativeGuiProjection(width, height, -1, 1, 0);' 'tank shader projection'
@@ -277,7 +277,7 @@ Assert-Contract (($acceptedLabels.Replace("`r`n", "`n")) -ceq ([IO.File]::ReadAl
 $pack = Get-Content -LiteralPath (Join-Path $TargetRoot 'resources/pack.mcmeta') -Raw | ConvertFrom-Json
 Assert-Contract ($pack.pack.pack_format -eq 7) 'Native 1.17 probe resource pack must use format 7.'
 $metadata = Get-Content -LiteralPath (Join-Path $TargetRoot 'resources/META-INF/mods.toml') -Raw
-foreach ($pin in 'loaderVersion="[37,38)"','versionRange="[1.17.1]"','versionRange="[37.1.1]"','versionRange="[2.4.8.117011]"') {
+foreach ($pin in 'loaderVersion="[37,38)"','versionRange="[1.17.1]"','versionRange="[37.1.1]"','versionRange="[2.4.9.117011]"') {
     Assert-Contract ($metadata.Contains($pin)) "Missing native probe metadata pin: $pin"
 }
 $runner = Get-Content -LiteralPath (Join-Path $TargetRoot 'run.ps1') -Raw

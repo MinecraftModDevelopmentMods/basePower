@@ -81,7 +81,7 @@ public class SteamOperationalSourceContractTest {
                     } else if (instruction instanceof LdcInsnNode) {
                         Object value = ((LdcInsnNode) instruction).cst;
                         if ("MUSKET_DAMAGE".equals(value)) damageField = true;
-                        if ("zone.moddev.mc.steamadvantage.SteamAdvantage".equals(value)) serverConfig = true;
+                        if ("zone.moddev.mc.basesteam.SteamAdvantage".equals(value)) serverConfig = true;
                     }
                 }
             }

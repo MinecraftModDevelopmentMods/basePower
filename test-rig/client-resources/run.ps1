@@ -32,7 +32,7 @@ function Assert-NativeMetadata([string]$Metadata, [string]$Id) {
     if ($header -notmatch ('(?m)^modId\s*=\s*"' + [regex]::Escape($Id) + '"[ \t]*(?:#[^\r\n]*)?\r?$') -or
         $header -notmatch '(?m)^version\s*=\s*"[^"\r\n]*\.117011"[ \t]*(?:#[^\r\n]*)?\r?$' -or
         $Metadata -notmatch '(?m)^loaderVersion\s*=\s*"\[37,') { throw "Not a native Forge 37 candidate: $Id" }
-    $expected = @{ poweradvantage = '2.4.8.117011'; steamadvantage = '2.2.9.117011'; electricadvantage = '2.2.9.117011' }
+    $expected = @{ basepower = '2.4.9.117011'; basesteam = '2.2.10.117011'; baseelectric = '2.2.10.117011' }
     if ($expected.ContainsKey($Id) -and $header -notmatch ('(?m)^version\s*=\s*"' + [regex]::Escape($expected[$Id]) + '"[ \t]*(?:#[^\r\n]*)?\r?$')) {
         throw "Unexpected native candidate version for $Id; expected $($expected[$Id])"
     }
@@ -86,7 +86,7 @@ foreach ($map in $launch.launchConfiguration.mapAttribute) {
     }
 }
 Assert-NativeLaunch $environment $attributes
-$modOutput = Join-Path $runtime 'poweradvantage'
+$modOutput = Join-Path $runtime 'basepower'
 New-Item -ItemType Directory -Path $modOutput,(Join-Path $runtime 'mods') -Force | Out-Null
 if ($OutputSource -eq 'Eclipse') {
     Copy-Item -Path (Join-Path $project 'bin/main/*') -Destination $modOutput -Recurse
@@ -103,14 +103,14 @@ if (-not (Test-Path -LiteralPath $metadataPath) -or (Get-Content -LiteralPath $m
         Set-Content -LiteralPath (Join-Path $runtime 'client-resources.json') -Encoding utf8
     throw $failure
 }
-Assert-NativeMetadata (Get-Content -LiteralPath $metadataPath -Raw) 'poweradvantage'
+Assert-NativeMetadata (Get-Content -LiteralPath $metadataPath -Raw) 'basepower'
 $outputFiles = @(Get-ChildItem -LiteralPath $modOutput -Recurse -File | Sort-Object FullName | ForEach-Object { Get-Record $_.FullName })
 if (@($outputFiles | Where-Object { $_.path -like '*.class' }).Count -eq 0) { throw 'Selected output has no compiled production classes.' }
 $outputFiles | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath (Join-Path $runtime 'production-files.json') -Encoding utf8
 $inputReport.production_files = Get-Record (Join-Path $runtime 'production-files.json')
-if (-not $PowerCandidate) { $PowerCandidate = Join-Path $project 'build/libs-dev/PowerAdvantage-2.4.8.117011-deobf.jar' }
+if (-not $PowerCandidate) { $PowerCandidate = Join-Path $project 'build/libs-dev/basePower-2.4.9.117011-deobf.jar' }
 $PowerCandidate = (Resolve-Path -LiteralPath $PowerCandidate).Path
-Assert-NativeMetadata (Read-JarMetadata $PowerCandidate) 'poweradvantage'
+Assert-NativeMetadata (Read-JarMetadata $PowerCandidate) 'basepower'
 $inputReport.power_candidate = Get-Record $PowerCandidate
 $inputReport.candidate_note = 'Jar provenance only; runtime uses the separately hashed selected production classes/resources.'
 Copy-Item -LiteralPath $probe -Destination (Join-Path $runtime 'mods/advantageclientresources.jar')
@@ -150,7 +150,7 @@ foreach ($archive in $archives) {
     $record = Get-Record $archive
     $metadata = if ([IO.Path]::GetExtension($archive) -eq '.jar') { Read-JarMetadata $archive }
     $modHeader = if ($metadata) { [regex]::Match($metadata, '(?ms)^\[\[mods\]\]\s*(.*?)(?=^\[|\z)').Groups[1].Value }
-    if ($modHeader -match '(?m)^modId\s*=\s*"(?:steamadvantage|electricadvantage|basemetals|orespawn)"') {
+    if ($modHeader -match '(?m)^modId\s*=\s*"(?:basesteam|baseelectric|basemetals|orespawn)"') {
         # Never read mutable sibling build outputs while the client is running.
         $snapshotDirectory = Join-Path $runtime 'runtime-archives'
         New-Item -ItemType Directory -Path $snapshotDirectory -Force | Out-Null
@@ -161,10 +161,10 @@ foreach ($archive in $archives) {
         $snapshotRecord.origin_path = $record.path
         $record = $snapshotRecord
     }
-    foreach ($id in 'poweradvantage','steamadvantage','electricadvantage','basemetals','orespawn') {
+    foreach ($id in 'basepower','basesteam','baseelectric','basemetals','orespawn') {
         if ($modHeader -match ('(?m)^modId\s*=\s*"' + $id + '"[ \t]*(?:#[^\r\n]*)?\r?$')) {
             Assert-NativeMetadata $metadata $id
-            if ($id -eq 'poweradvantage' -or $runtimeCandidates.ContainsKey($id)) { throw "Duplicate runtime candidate: $id" }
+            if ($id -eq 'basepower' -or $runtimeCandidates.ContainsKey($id)) { throw "Duplicate runtime candidate: $id" }
             $runtimeCandidates[$id] = $record
         }
     }
@@ -175,13 +175,13 @@ $archives = $launchArchives
 $inputReport.archives = $archiveRecords
 $inputReport.runtime_candidates = $runtimeCandidates
 if (-not ($archives -match 'forge-1\.17\.1-37\.1\.1\.jar$')) { throw 'Missing actual native mapped Forge runtime.' }
-if ($RequireExtensions -and (-not $runtimeCandidates.ContainsKey('steamadvantage') -or -not $runtimeCandidates.ContainsKey('electricadvantage'))) { throw 'Combined launch must explicitly contain both native expansion candidates.' }
+if ($RequireExtensions -and (-not $runtimeCandidates.ContainsKey('basesteam') -or -not $runtimeCandidates.ContainsKey('baseelectric'))) { throw 'Combined launch must explicitly contain both native expansion candidates.' }
 $arguments = @([regex]::Matches($attributes['org.eclipse.jdt.launching.PROGRAM_ARGUMENTS'], '"[^"]*"|\S+') | ForEach-Object { $_.Value.Trim('"') })
 $vmArguments = @([regex]::Matches($attributes['org.eclipse.jdt.launching.VM_ARGUMENTS'], '"[^"]*"|\S+') | ForEach-Object { $_.Value.Trim('"') })
 if ($RequireExtensions) { $vmArguments += '-Dadvantageworks.requireExtensions=true' }
 if ($ChildRendererGeometry) { $vmArguments += '-Dadvantageworks.childRendererGeometry=true' }
 if ($MachineGuiLayouts) { $vmArguments += '-Dadvantageworks.machineGuiLayouts=true' }
-$environment.MOD_CLASSES = "poweradvantage%%$modOutput;poweradvantage%%$modOutput"
+$environment.MOD_CLASSES = "basepower%%$modOutput;basepower%%$modOutput"
 $inputReport.environment = $environment
 $inputReport.program_arguments = $arguments
 $inputReport.vm_arguments = $vmArguments
@@ -229,7 +229,7 @@ foreach ($record in $archiveRecords) {
     if ((Get-FileHash -LiteralPath $record.path).Hash -ne $record.sha256) { throw "Dependency changed during the run: $($record.path)" }
 }
 $log = Get-Content -LiteralPath (Join-Path $runtime 'logs/latest.log') -Raw
-$namespaces = if ($RequireExtensions) { '(?:poweradvantage|steamadvantage|electricadvantage)' } else { 'poweradvantage' }
+$namespaces = if ($RequireExtensions) { '(?:basepower|basesteam|baseelectric)' } else { 'basepower' }
 if ($log -match "Unable to load model:.*${namespaces}:|Exception loading blockstate definition:.*${namespaces}:|\[FML\.TEXTURE_ERRORS/\]") {
     throw "Client logged a model or texture error; inspect $runtime/logs/latest.log"
 }

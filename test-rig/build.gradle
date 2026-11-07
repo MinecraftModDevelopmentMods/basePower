@@ -66,7 +66,7 @@ repositories {
 }
 
 def powerCompileJar = file(project.findProperty('powerAdvantageDeobfJar')
-        ?: '../build/libs-dev/PowerAdvantage-2.4.8.117011-deobf.jar')
+        ?: '../build/libs-dev/basePower-2.4.9.117011-deobf.jar')
 
 dependencies {
     implementation minecraft.dependency(
@@ -107,7 +107,7 @@ tasks.register('verifyWorksCompileInputPin') {
         if (actual != project.poweradvantage_deobf_sha256) {
             throw new GradleException("Native117 Power compile input changed: ${actual}; obtain a new parent pin")
         }
-        if (project.poweradvantage_source_commit != '5b9abe578b053d2ef59b1962cf9e04f6880c91b9') {
+        if (project.poweradvantage_source_commit != '308d42a89483d56d0fad4805cdb65dac483d9e31') {
             throw new GradleException('Native117 Power source pin changed; obtain a new parent candidate')
         }
     }
@@ -228,7 +228,7 @@ tasks.register('verifyHarnessIsolation') {
     description = 'Confirms the PowerAdvantage release contains no test-harness content.'
     doLast {
         File powerJar = file(project.findProperty('powerAdvantageReleaseJar')
-                ?: '../build/libs/PowerAdvantage-2.4.8.117011.jar')
+                ?: '../build/libs/basePower-2.4.9.117011.jar')
         if (!powerJar.isFile()) {
             throw new GradleException("Build PowerAdvantage first: ${powerJar}")
         }

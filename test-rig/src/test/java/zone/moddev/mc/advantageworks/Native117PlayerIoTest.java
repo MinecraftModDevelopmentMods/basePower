@@ -140,9 +140,9 @@ public class Native117PlayerIoTest {
 
     private static CompoundTag book(int count) throws Exception {
         CompoundTag stack = TagParser.parseTag("{id:\"minecraft:enchanted_book\",Count:1b,tag:{StoredEnchantments:["
-                + "{id:\"minecraft:efficiency\",lvl:3s},{id:\"steamadvantage:high_explosive\",lvl:1s},"
-                + "{id:\"steamadvantage:powderless\",lvl:1s},{id:\"steamadvantage:rapid_reload\",lvl:1s},"
-                + "{id:\"steamadvantage:recoil\",lvl:1s}]}}");
+                + "{id:\"minecraft:efficiency\",lvl:3s},{id:\"basesteam:high_explosive\",lvl:1s},"
+                + "{id:\"basesteam:powderless\",lvl:1s},{id:\"basesteam:rapid_reload\",lvl:1s},"
+                + "{id:\"basesteam:recoil\",lvl:1s}]}}");
         stack.putByte("Count", (byte) count);
         return stack;
     }

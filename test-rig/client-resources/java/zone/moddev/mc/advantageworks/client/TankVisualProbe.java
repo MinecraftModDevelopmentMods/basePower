@@ -15,14 +15,14 @@ import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.BlockGetter;
-import zone.moddev.mc.poweradvantage.gui.FilteredFluidTankGUI;
+import zone.moddev.mc.basepower.gui.FilteredFluidTankGUI;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
-import zone.moddev.mc.poweradvantage.registry.MachineGUIRegistry;
-import zone.moddev.mc.poweradvantage.init.Blocks;
-import zone.moddev.mc.poweradvantage.machines.fluidmachines.MetalTankTileEntity;
+import zone.moddev.mc.basepower.registry.MachineGUIRegistry;
+import zone.moddev.mc.basepower.init.Blocks;
+import zone.moddev.mc.basepower.machines.fluidmachines.MetalTankTileEntity;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -43,7 +43,7 @@ final class TankVisualProbe {
         result.addProperty("portable_tank_floor_visible", portableFloor);
 
         MetalTankTileEntity serverTank = new MetalTankTileEntity(BlockPos.ZERO,
-                zone.moddev.mc.poweradvantage.init.Blocks.metal_storage_tank.defaultBlockState());
+                zone.moddev.mc.basepower.init.Blocks.metal_storage_tank.defaultBlockState());
         IFluidHandler handler = serverTank.getCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, Direction.UP)
                 .orElseThrow(() -> new IllegalStateException("Metal tank has no native Forge fluid capability"));
         require(handler.fill(new FluidStack(net.minecraft.world.level.material.Fluids.WATER, 10000), FluidAction.SIMULATE) == 10000
@@ -51,7 +51,7 @@ final class TankVisualProbe {
         require(handler.fill(new FluidStack(net.minecraft.world.level.material.Fluids.WATER, 10000), FluidAction.EXECUTE) == 10000,
                 "Native capability did not fill the tank");
         MetalTankTileEntity clientTank = new MetalTankTileEntity(BlockPos.ZERO,
-                zone.moddev.mc.poweradvantage.init.Blocks.metal_storage_tank.defaultBlockState());
+                zone.moddev.mc.basepower.init.Blocks.metal_storage_tank.defaultBlockState());
         clientTank.onDataPacket(null, serverTank.getUpdatePacket());
         result.addProperty("synced_tank_amount", clientTank.getTank().getFluidAmount());
         require(clientTank.getTank().getFluidAmount() == 10000, "Filled tank packet lost water");
@@ -82,7 +82,7 @@ final class TankVisualProbe {
     }
 
     private static int renderWater(Minecraft minecraft, MetalTankTileEntity tile) {
-        FilteredFluidTankGUI definition = new FilteredFluidTankGUI(new ResourceLocation("poweradvantage", "textures/gui/container/fluid_metal_tank_gui.png"));
+        FilteredFluidTankGUI definition = new FilteredFluidTankGUI(new ResourceLocation("basepower", "textures/gui/container/fluid_metal_tank_gui.png"));
         final int width = 128, height = 96;
         Inventory inventory = new Inventory(null);
         SimpleMachineGUI.Container container = definition.createMenu(1, inventory, tile);

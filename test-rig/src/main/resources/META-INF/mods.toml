@@ -10,9 +10,9 @@ authors="Minecraft Mod Development"
 description='''Server-side commissioning harness for the Advantage family. Not for distribution.'''
 
 [[dependencies.advantageworkstest]]
-modId="poweradvantage"
+modId="basepower"
 mandatory=true
-versionRange="[2.4.8.117011,)"
+versionRange="[2.4.9.117011,)"
 ordering="AFTER"
 side="SERVER"
 
