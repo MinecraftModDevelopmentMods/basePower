@@ -6,7 +6,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.BlockGetter;
-import zone.moddev.mc.poweradvantage.PowerAdvantage;
+import zone.moddev.mc.basepower.PowerAdvantage;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -18,7 +18,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * considered "external" power systems because their power implementation is not controlled by Power 
  * Advantage. </p>
  * <p>For example, you can add Power Advantage compatibility to an existing mod like this:</p><pre>
-	if(Loader.isModLoaded("poweradvantage")){
+	if(Loader.isModLoaded("basepower")){
 		LightWeightPowerRegistry.registerLightWeightPowerAcceptor(Blocks.myMachine, 
 				new ILightWeightPowerAcceptor(){
 

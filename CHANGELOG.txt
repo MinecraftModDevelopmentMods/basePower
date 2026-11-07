@@ -1,3 +1,9 @@
+basePower 2.4.9.117011 (Minecraft 1.17.1)
+
+- Bring basePower to Minecraft 1.17.1 with one shared tab for the three mods.
+- Keep existing base* machines and map legacy Advantage blocks, items, fluids and saved state.
+- Fix Eclipse refreshes when ForgeGradle reuses an existing launch.
+
 Power Advantage 2.4.8.117011 (Minecraft 1.17.1)
 
 - Move to Forge 37.1.1 and Java 16, keeping the existing block, item, fluid and saved-state names.

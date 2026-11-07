@@ -1,12 +1,13 @@
-# PowerAdvantage
+# basePower
 
-**Minecraft 1.17.1, version 2.4.8.117011. Source port candidate.**
+**Minecraft 1.17.1, version 2.4.9.117011. Local test candidate.**
 
 See the [1.17 port record](docs/1.17/PORT-STATUS.md) for this candidate's
 validation status. The retained 1.16 and earlier reports are historical evidence,
 not passes for 1.17. Manual testing follows the current automated qualification.
 
-Power Advantage provides shared power, fluids, item transport and compatibility APIs for Steam Advantage and Electric Advantage.
+basePower continues DrCyano's Power Advantage. It provides shared power,
+fluids and item transport for baseSteam and baseElectric.
 
 **Back up the entire world before upgrading. Test only disposable copies.**
 The port retains existing registry names and legacy migration code. Upgrade tests
@@ -28,10 +29,9 @@ needs Java 25. CI pins these JDKs and Java 8 for the legacy renamer. Pass the in
 `-Porg.gradle.java.installations.paths=<java8>,<java16>,<java17>,<java25>` and disable
 automatic discovery and downloads for a reproducibility check.
 
-Build the pinned Base Metals `3.1.0.117011` and OreSpawn `4.1.0.117011` deobf jars first.
-The exact Base Metals source is
-`dacfaa3af2e3310d5cb6b081da79f09260ae103d`. CI builds that dependency first;
-the checksums and complete source pins are in `gradle.properties`.
+Build the pinned Base Metals `3.1.1.117011` and OreSpawn `4.1.0.117011` deobf jars first.
+The Base Metals startup fix is local while we test this port. The source pins
+and checksums are in `gradle.properties`.
 
 Then run from the repository root:
 
@@ -42,7 +42,7 @@ gradlew.bat clean check build javadoc verifyReleaseDependencies verifyReleaseArt
 The default dependency jars are:
 
 ```text
-D:\BaseMetals\BaseMetals 117\BaseMetals\build\libs-dev\BaseMetals-3.1.0.117011-deobf.jar
+D:\BaseMetals\BaseMetals 117\BaseMetals\build\libs-dev\BaseMetals-3.1.1.117011-deobf.jar
 D:\MinecraftMineralogy\OS117\OreSpawn\build\libs-dev\OreSpawn-4.1.0.117011-deobf.jar
 ```
 
@@ -65,7 +65,7 @@ Refresh the project in Eclipse, allow its Java build to finish, and launch the g
 
 Eclipse copies production resources from `build/resources/main`, not directly from `src/main/resources`. This prevents its builder from overwriting the expanded `mods.toml` with raw `${version}` placeholders. After updating this setup, use **Gradle > Refresh Gradle Project**, then **Project > Clean** before relaunching. After editing resources or version properties, run `processResources` or refresh the Gradle project before the Eclipse build. See the [metadata regression notes](docs/1.13/ECLIPSE-METADATA.md).
 
-To prepare a combined client, build the Steam/Electric `2.2.9.117011` deobf jars,
+To prepare a combined client, build the baseSteam and baseElectric `2.2.10.117011` deobf jars,
 run `gradlew.bat prepareCombinedEclipseLaunch`, refresh Eclipse, then launch
 `runClientAllAdvantage.launch`. Inputs must match
 `test-rig/profiles/native117/dev-core.json`; alternative layouts can pass
@@ -89,10 +89,11 @@ inventory on Java 16 without replacing the built mod jars.
 
 ## Compatibility
 
-The implementation namespace remains `zone.moddev.mc.poweradvantage`, with the
-historical `cyano.poweradvantage.api` package retained. The port keeps registry,
-fluid, tile, NBT and provider identities. The current test record distinguishes
-machine preservation, actual operation and vanilla migration differences.
+The implementation namespace is `zone.moddev.mc.basepower`. The historical
+`cyano.poweradvantage.api` package remains available. The port keeps basePower's
+registry names and saved machine data and maps the older Power Advantage names.
+The test record distinguishes state preservation, real operation and changes
+made by Minecraft itself.
 
 The upgrade path prepares stored items before vanilla flattening and converts
 entities individually, so a mod entity cannot prevent a nearby pet's UUID and

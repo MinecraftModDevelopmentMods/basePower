@@ -1,6 +1,6 @@
 package cyano.poweradvantage.api;
 
-import zone.moddev.mc.poweradvantage.conduitnetwork.ConduitRegistry;
+import zone.moddev.mc.basepower.conduitnetwork.ConduitRegistry;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.nbt.CompoundTag;
@@ -28,8 +28,8 @@ public abstract class PoweredEntity extends BlockEntity implements IPowerMachine
 
 	private final int powerUpdateInterval = 8;
 	private int conduitRefreshDelay = 2;
-    private final zone.moddev.mc.poweradvantage.util.MachineCapabilities machineCapabilities =
-            new zone.moddev.mc.poweradvantage.util.MachineCapabilities(this);
+    private final zone.moddev.mc.basepower.util.MachineCapabilities machineCapabilities =
+            new zone.moddev.mc.basepower.util.MachineCapabilities(this);
 
     @Override
     public <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(

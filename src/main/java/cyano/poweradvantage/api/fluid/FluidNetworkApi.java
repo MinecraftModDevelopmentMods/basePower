@@ -9,8 +9,8 @@ import cyano.poweradvantage.api.PowerRequest;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
-import zone.moddev.mc.poweradvantage.conduitnetwork.ConduitRegistry;
-import zone.moddev.mc.poweradvantage.init.Fluids;
+import zone.moddev.mc.basepower.conduitnetwork.ConduitRegistry;
+import zone.moddev.mc.basepower.init.Fluids;
 
 /**
  * Stable entry point for offering fluid from another mod to a PowerAdvantage

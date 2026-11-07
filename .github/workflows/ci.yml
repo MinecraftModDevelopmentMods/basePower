@@ -1,4 +1,4 @@
-name: Power Advantage 1.17 CI
+name: basePower 1.17 CI
 
 on:
   push:
@@ -34,7 +34,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           repository: MinecraftModDevelopmentMods/BaseMetals
-          ref: dacfaa3af2e3310d5cb6b081da79f09260ae103d
+          ref: 0deeeeecdbbc1fbcdecf910c59477de8efe164d7
           path: .ci-dependencies/BaseMetals
       - name: Install pinned Java 25 Mavenizer runtime
         uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
@@ -76,7 +76,7 @@ jobs:
           (cd "$orespawn" && ./gradlew $MMD_GRADLE_TOOLCHAINS jar --no-daemon --stacktrace)
           (cd "$basemetals" && ./gradlew $MMD_GRADLE_TOOLCHAINS jar --no-daemon --stacktrace)
           osjar="$orespawn/build/libs-dev/OreSpawn-4.1.0.117011-deobf.jar"
-          bmjar="$basemetals/build/libs-dev/BaseMetals-3.1.0.117011-deobf.jar"
+          bmjar="$basemetals/build/libs-dev/BaseMetals-3.1.1.117011-deobf.jar"
           test -f "$osjar" && test -f "$bmjar"
           echo "orespawn=$osjar" >> "$GITHUB_OUTPUT"
           echo "basemetals=$bmjar" >> "$GITHUB_OUTPUT"
@@ -94,9 +94,9 @@ jobs:
           if-no-files-found: error
           retention-days: 30
           path: |
-            build/libs/PowerAdvantage-2.4.8.117011.jar
-            build/libs/PowerAdvantage-2.4.8.117011-sources.jar
-            build/libs/PowerAdvantage-2.4.8.117011-javadoc.jar
+            build/libs/basePower-2.4.9.117011.jar
+            build/libs/basePower-2.4.9.117011-sources.jar
+            build/libs/basePower-2.4.9.117011-javadoc.jar
             build/release/SHA256SUMS
             CHANGELOG.txt
       - name: Upload diagnostics on failure

@@ -18,9 +18,9 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.BlockGetter;
-import zone.moddev.mc.poweradvantage.registry.MachineGUIRegistry;
+import zone.moddev.mc.basepower.registry.MachineGUIRegistry;
 import cyano.poweradvantage.api.fluid.IAdvantageFluidHandler;
-import zone.moddev.mc.poweradvantage.util.FluidContainerHelper;
+import zone.moddev.mc.basepower.util.FluidContainerHelper;
 
 /**
  * <p>
@@ -62,8 +62,8 @@ public abstract class GUIBlock extends net.minecraft.world.level.block.BaseEntit
             if (tile.isRemoved() || tile.getType() != type || tile.getLevel() != world) return;
             if (tile instanceof PoweredEntity) {
                 ((PoweredEntity) tile).tick();
-            } else if (tile instanceof zone.moddev.mc.poweradvantage.machines.conveyors.TileEntityConveyor) {
-                ((zone.moddev.mc.poweradvantage.machines.conveyors.TileEntityConveyor) tile).tick();
+            } else if (tile instanceof zone.moddev.mc.basepower.machines.conveyors.TileEntityConveyor) {
+                ((zone.moddev.mc.basepower.machines.conveyors.TileEntityConveyor) tile).tick();
             }
         };
     }

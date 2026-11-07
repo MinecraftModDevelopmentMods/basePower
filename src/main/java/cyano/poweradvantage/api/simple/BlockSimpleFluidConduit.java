@@ -3,7 +3,7 @@ package cyano.poweradvantage.api.simple;
 import cyano.poweradvantage.api.ConduitType;
 import cyano.poweradvantage.api.PowerConnectorContext;
 import cyano.poweradvantage.api.fluid.FluidConduitBlock;
-import zone.moddev.mc.poweradvantage.util.PowerHelper;
+import zone.moddev.mc.basepower.util.PowerHelper;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.material.Material;
 import net.minecraft.world.level.block.state.BlockState;
