@@ -3,6 +3,7 @@ basePower 2.4.8.116051 (Minecraft 1.16.5)
 - Bring the basePower name and shared base* creative tab to Minecraft 1.16.5.
 - Carry forward existing base* world data and map legacy Advantage blocks, items and fluids when upgrading older saves.
 - Keep legacy OreSpawn settings when migrating a config, without overwriting an existing profile.
+- Fix Eclipse refreshes when ForgeGradle reuses an existing client or server launch.
 
 Power Advantage 2.4.7.116051 (Minecraft 1.16.5)
 

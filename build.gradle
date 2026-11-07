@@ -839,10 +839,10 @@ tasks.register('isolateEclipseProductionRuns') {
                     "key=\"MC_VERSION\" value=\"${project.minecraft_version}\"")
             if (launch.name in ['runClient.launch', 'runServer.launch', 'runData.launch']) {
                 // Eclipse compiles into bin/main, not Gradle's merged run output.
-                def launchXml = new groovy.xml.XmlSlurper().parseText(contents)
+                def launchXml = new groovy.xml.XmlParser().parseText(contents)
                 def modClasses = launchXml.mapAttribute.find {
-                    it.@key.text() == 'org.eclipse.debug.core.environmentVariables'
-                }.mapEntry.findAll { it.@key.text() == 'MOD_CLASSES' }
+                    it.@key == 'org.eclipse.debug.core.environmentVariables'
+                }.mapEntry.findAll { it.@key == 'MOD_CLASSES' }
                 if (modClasses.size() != 1) {
                     throw new GradleException("${launch.name} must define one MOD_CLASSES entry")
                 }
@@ -879,26 +879,32 @@ tasks.register('isolateEclipseProductionRuns') {
             }.findAll { File runtimeFile ->
                 !mainOutputs.contains(runtimeFile)
             }
-            List<String> launchLines = contents.readLines()
-            int buildshipContainerLine = launchLines.findIndexOf {
-                it.contains('org.eclipse.buildship.core.gradleclasspathcontainer')
+            def parser = new groovy.xml.XmlParser()
+            def launchXml = parser.parseText(contents)
+            def classpath = launchXml.listAttribute.find { it.@key == 'org.eclipse.jdt.launching.CLASSPATH' }
+            if (classpath == null) {
+                throw new GradleException("${name} is missing its explicit classpath")
             }
-            if (buildshipContainerLine < 0) {
-                throw new GradleException("${name} is missing the Buildship classpath container")
+            // A refresh can reuse an already isolated launch. Replace its old runtime
+            // archives too, but keep ForgeGradle's separate Slime Launcher entry.
+            def previousRuntime = classpath.listEntry.findAll { entry ->
+                def runtime = parser.parseText(entry.@value)
+                String archive = runtime.@externalArchive
+                runtime.@containerPath == 'org.eclipse.buildship.core.gradleclasspathcontainer'
+                        || (archive && !file(archive).name.startsWith('slime-launcher-'))
             }
-            List<String> runtimeEntries = productionRuntime.collect { File runtimeFile ->
-                String escapedPath = runtimeFile.canonicalPath
-                        .replace('&', '&amp;amp;')
-                        .replace('<', '&amp;lt;')
-                        .replace('>', '&amp;gt;')
-                ('    <listEntry value="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; '
-                        + 'standalone=&quot;no&quot;?&gt;&lt;runtimeClasspathEntry externalArchive=&quot;'
-                        + escapedPath
-                        + '&quot; type=&quot;2&quot; path=&quot;5&quot; /&gt;"/>')
+            if (previousRuntime.isEmpty()) {
+                throw new GradleException("${name} is missing its production runtime entries")
             }
-            launchLines.remove(buildshipContainerLine)
-            launchLines.addAll(buildshipContainerLine, runtimeEntries)
-            contents = launchLines.join('\n') + '\n'
+            int runtimeIndex = classpath.children().indexOf(previousRuntime.first())
+            previousRuntime.each { classpath.remove(it) }
+            def runtimeEntries = productionRuntime.collect { File runtimeFile ->
+                def archive = new Node(null, 'runtimeClasspathEntry',
+                        [externalArchive: runtimeFile.path, type: '2', path: '5'])
+                new Node(null, 'listEntry', [value: groovy.xml.XmlUtil.serialize(archive)])
+            }
+            classpath.children().addAll(runtimeIndex, runtimeEntries)
+            contents = groovy.xml.XmlUtil.serialize(launchXml)
 
             ['--cache', '--metadata', '--to-srg', '--to-obf'].each { option ->
                 String prefix = option + ' '

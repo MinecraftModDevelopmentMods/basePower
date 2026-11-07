@@ -2,7 +2,8 @@
 
 Use basePower `2.4.8.116051`, baseSteam `2.2.9.116051` and baseElectric
 `2.2.9.116051` together. The machines and parts share the **basePower**
-creative tab. The Forge target is `36.2.34`. These are local test builds.
+creative tab. Use Forge `36.2.34`, Base Metals `3.1.1.116051` and
+OreSpawn `4.1.0.116051`. The results below are from the release candidates.
 
 ## Upgrading a world
 

@@ -1,11 +1,11 @@
 # basePower
 
-**Minecraft 1.16.5, version 2.4.8.116051. Local test candidate.**
+**Minecraft 1.16.5, version 2.4.8.116051.**
 
-See the [base* 1.16.5 test record](docs/1.16/BASE-RELEASE-CANDIDATE.md)
-for the current jars, upgrade checks and manual walkthrough. The earlier
-[1.16 port record](docs/1.16/PORT-STATUS.md) covers the Advantage-named
-builds and does not qualify the current jars.
+Use Forge 36.2.34, Base Metals 3.1.1.116051 and OreSpawn 4.1.0.116051.
+baseSteam and baseElectric 2.2.9.116051 use this version of basePower.
+The [1.16.5 test record](docs/1.16/BASE-RELEASE-CANDIDATE.md) explains what
+we checked before release and how to run the combined client in Eclipse.
 
 The [test-suite review](docs/1.16/TEST-SUITE-AUDIT.md) separates operating checks
 from saved-state and presence checks. It records the remaining machine coverage
