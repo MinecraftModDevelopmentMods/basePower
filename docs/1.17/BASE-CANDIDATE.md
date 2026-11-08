@@ -46,14 +46,17 @@ and reload scenarios, including settings mismatches. OreSpawn is the public
 - Mining and drops, Forge capabilities, native tank reload, both energy
   converter directions, and all six crude/refined oil lanes including Mineralogy.
 - Partial networks with the supply, machine or bridge genuinely unloaded.
+  Extended drill runs covered four moves per drill, blocked output across a
+  restart, then resumed work and redstone controls in fresh and upgraded worlds.
 - Worldgen and restart checks for the standalone, Mineralogy and legacy OreSpawn
   profiles, including preservation of user changes to generation rules.
 
 ## Still Open
 
-The full historical harness is not green. Some preservation checks still
-require the pre-rename fixture and script bytes at paths now used by the active
-base* tests. Their historical checksums were not updated to pass. The broader
+The full Python harness ran 2,176 tests with 120 failures and 44 errors. The 12
+failures specific to the native 1.17.1 tests are preservation checks that still
+require pre-rename fixture and script bytes at paths now used by the active base*
+tests. Their historical checksums were not updated to pass. The broader
 actor/dimension and remaining transformer-order routes need a current run before calling
 the complete upgrade matrix qualified. The manual walkthrough is separate,
 including live turbine orientation, sounds and player controls.
