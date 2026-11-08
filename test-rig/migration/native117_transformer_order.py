@@ -87,27 +87,33 @@ def event_dump(runtime, event, phase, label, command):
         raise AssertionError("Event hooks differ from actual bytecode dump")
 
 
-def hook_owner(hook):
+def hook_owner(hook, power_mod="poweradvantage"):
     for mod, owner in OWNERS.items():
+        if mod == "pa":
+            owner = "zone/moddev/mc/" + power_mod + "/migration/LegacyWorldDataHook"
         if hook["owner"] == owner:
             return mod
     raise AssertionError("Unexpected hook owner")
 
 
-def own_hooks(event, phase, mod, name):
-    return [hook for hook in event[phase] if hook_owner(hook) == mod and hook["name"] == name]
+def own_hooks(event, phase, mod, name, power_mod):
+    return [hook for hook in event[phase] if hook_owner(hook, power_mod) == mod and hook["name"] == name]
 
 
-def require_injection(event, mod, name, method_descriptor, call_descriptor, multiple=False):
-    before = own_hooks(event, "before", mod, name)
-    after = own_hooks(event, "after", mod, name)
+def require_injection(event, mod, name, method_descriptor, call_descriptor, multiple=False, *,
+                      power_mod="poweradvantage"):
+    before = own_hooks(event, "before", mod, name, power_mod)
+    after = own_hooks(event, "after", mod, name, power_mod)
     if before or not after or (not multiple and len(after) != 1):
         raise AssertionError("Missing or duplicate injection: " + mod + "/" + name)
     if any(not hook["method"].endswith(method_descriptor) or hook["descriptor"] != call_descriptor for hook in after):
         raise AssertionError("Wrong native hook descriptor or target method: " + name)
 
 
-def native_order_evidence(runtime, mode, label=None):
+def native_order_evidence(runtime, mode, label=None, *, power_mod="poweradvantage"):
+    if power_mod not in ("poweradvantage", "basepower"):
+        raise ValueError("Unsupported Power mod identity")
+    inject = lambda *args, **kwargs: require_injection(*args, power_mod=power_mod, **kwargs)
     runtime = Path(runtime)
     suffix = "-" + label if label else ""
     events = [json.loads(line) for line in (runtime / ("transformer-order-events" + suffix + ".jsonl")).read_text().splitlines()]
@@ -134,7 +140,7 @@ def native_order_evidence(runtime, mode, label=None):
         if event.get("event") != "application" or event.get("transformer") not in selected:
             raise AssertionError("Unexpected transformer application event")
         name = event["transformer"]
-        owner = "basemetals" if name.startswith("basemetals_") else "poweradvantage"
+        owner = "basemetals" if name.startswith("basemetals_") else power_mod
         if event.get("labels") != [owner, name] or event.get("delegate") != "net.minecraftforge.coremod.transformer.CoreModClassTransformer":
             raise AssertionError("Application is not a labelled real CoreMods class transformer")
         for phase in ("before", "after"):
@@ -153,22 +159,22 @@ def native_order_evidence(runtime, mode, label=None):
         for event in applications:
             mod = "bm" if event["transformer"].startswith("basemetals_") else "pa"
             if suffix == "world_info":
-                require_injection(event, mod, "prepareLegacyWorld", WORLD_METHOD, "(Ljava/io/File;)V")
+                inject(event, mod, "prepareLegacyWorld", WORLD_METHOD, "(Ljava/io/File;)V")
             elif suffix == "chunk_status":
-                require_injection(event, mod, "prepareLegacyChunk", CHUNK_METHOD, "(" + NBT + ")V")
-                require_injection(event, mod, "finalizeLegacyChunk", CHUNK_METHOD, ENTITY_METHOD, multiple=True)
+                inject(event, mod, "prepareLegacyChunk", CHUNK_METHOD, "(" + NBT + ")V")
+                inject(event, mod, "finalizeLegacyChunk", CHUNK_METHOD, ENTITY_METHOD, multiple=True)
                 if mod == "pa":
-                    require_injection(event, mod, "prepareLegacyEntities", CHUNK_METHOD, "(" + NBT + ")V")
-                    require_injection(event, mod, "copyChunkForMigration", "(Lnet/minecraft/world/level/ChunkPos;)" + NBT, ENTITY_METHOD, multiple=True)
+                    inject(event, mod, "prepareLegacyEntities", CHUNK_METHOD, "(" + NBT + ")V")
+                    inject(event, mod, "copyChunkForMigration", "(Lnet/minecraft/world/level/ChunkPos;)" + NBT, ENTITY_METHOD, multiple=True)
             else:
                 call = "(Lnet/minecraft/server/level/WorldGenRegion;Lnet/minecraft/core/BlockPos;)Z" if mod == "bm" else GUARD_METHODS["bm"]
-                require_injection(event, mod, "shouldBlockWorldgenWrite", GUARD_METHODS[mod], call)
+                inject(event, mod, "shouldBlockWorldgenWrite", GUARD_METHODS[mod], call)
         execution = {}
         for method in methods:
             grouped = defaultdict(list)
             for hook in applications[-1]["after"]:
                 if hook["name"] == method:
-                    grouped[hook["method"]].append(hook_owner(hook))
+                    grouped[hook["method"]].append(hook_owner(hook, power_mod))
             mods = ["bm" if name.startswith("basemetals_") else "pa" for name in expected]
             if suffix != "worldgen_guard":
                 pair = mods if method == "finalizeLegacyChunk" else list(reversed(mods))
@@ -190,11 +196,11 @@ def native_order_evidence(runtime, mode, label=None):
     entities = groups[ENTITY_CLASS]
     if len(entities) != 1 or entities[0]["transformer"] != ENTITY_NAME:
         raise AssertionError("Missing or duplicated Power-only entity-storage observation")
-    require_injection(entities[0], "pa", "prepareEntityChunkForMigration", ENTITY_METHOD, ENTITY_METHOD)
-    require_injection(entities[0], "pa", "finalizeLegacyChunk", ENTITY_METHOD, ENTITY_METHOD, multiple=True)
+    inject(entities[0], "pa", "prepareEntityChunkForMigration", ENTITY_METHOD, ENTITY_METHOD)
+    inject(entities[0], "pa", "finalizeLegacyChunk", ENTITY_METHOD, ENTITY_METHOD, multiple=True)
     if entities[0]["after"][0]["name"] != "prepareEntityChunkForMigration":
         raise AssertionError("Separate entity preparation must precede finalization")
-    if any(hook_owner(hook) != "pa" for hook in entities[0]["after"]):
+    if any(hook_owner(hook, power_mod) != "pa" for hook in entities[0]["after"]):
         raise AssertionError("Invented Base Metals entity-storage partner")
     proof["separate_entity_storage"] = {"application_order": [ENTITY_NAME], "paired": False,
         "hooks": entities[0]["after"], "bytecode_sha256": entities[0]["afterSha256"]}

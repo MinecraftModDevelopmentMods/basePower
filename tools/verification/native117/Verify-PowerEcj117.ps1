@@ -81,10 +81,10 @@ $report = [ordered]@{ status = 'RUNNING'; project = $ProjectRoot; evidence = $Ev
     scope = 'Pinned Power 1.17.1 candidate; fresh ECJ main/test/helper outputs and worldless Java 16 JUnit; no Gradle or Minecraft launch'
     compiler = $null; toolchains = $null; libraries = @(); sources = @(); gradleInventory = @()
     compilations = [ordered]@{}; junit = $null; negativeControl = $null; junitControls = @(); capabilityBootstrap = $null
-    productionSourceCommit = '5b9abe578b053d2ef59b1962cf9e04f6880c91b9'; protectedBefore = @(); protectedAfter = @() }
+    productionSourceCommit = 'a6fc3050b0e92e89abf49bf18bbbfeb87fb3a1eb'; protectedBefore = @(); protectedAfter = @() }
 try {
     $properties = ConvertFrom-StringData -StringData (Get-Content -LiteralPath (Join-Path $ProjectRoot 'gradle.properties') -Raw)
-    if ($properties.mod_id -ne 'poweradvantage' -or $properties.mod_version -ne '2.4.8.117011' -or
+    if ($properties.mod_id -ne 'basepower' -or $properties.mod_version -ne '2.4.9.117011' -or
         $properties.minecraft_version -ne '1.17.1' -or $properties.forge_version -ne '37.1.1' -or $properties.java_version -ne '16') {
         throw 'This verifier requires the pinned Power 1.17.1 candidate'
     }
@@ -128,7 +128,7 @@ try {
     foreach ($entry in @($classpath.classpath.classpathentry | Where-Object { $_.kind -eq 'lib' })) {
         $file = if ([IO.Path]::IsPathRooted([string]$entry.path)) { [IO.Path]::GetFullPath([string]$entry.path) }
             else { [IO.Path]::GetFullPath((Join-Path $ProjectRoot ([string]$entry.path))) }
-        if ([IO.Path]::GetFileName($file) -like 'PowerAdvantage*.jar') { throw 'Power output jar cannot satisfy its own ECJ compilation' }
+        if ([IO.Path]::GetFileName($file) -match '^(?:basePower|PowerAdvantage).*\.jar$') { throw 'Power output jar cannot satisfy its own ECJ compilation' }
         $scopeNode = $entry.SelectSingleNode('attributes/attribute[@name="gradle_used_by_scope"]/@value')
         $scope = if ($scopeNode) { $scopeNode.Value } else { '' }
         $pin = Get-Pin $file

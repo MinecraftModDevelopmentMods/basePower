@@ -19,10 +19,10 @@ jar has a required SHA-256 pin.
 
 ## What it proves
 
-- Production, test and Forge test-bootstrap sources match Power commit
-  `5b9abe578b053d2ef59b1962cf9e04f6880c91b9`.
+- Production, test and Forge test-bootstrap sources match basePower commit
+  `a6fc3050b0e92e89abf49bf18bbbfeb87fb3a1eb`.
 - Libraries come from the actual `.classpath`, with the declared main/test
-  scopes and the published Base Metals and OreSpawn hashes checked.
+  scopes and the exact local Base Metals and released OreSpawn hashes checked.
 - ECJ runs on Java 17 against the Java 16 module image. Forbidden and discouraged
   references remain errors; a restricted-JDK negative control must fail.
 - Main, test, reporter and capability-bootstrap classes are freshly compiled

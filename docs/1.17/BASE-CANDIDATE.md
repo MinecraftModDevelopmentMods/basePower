@@ -20,8 +20,11 @@ and reload scenarios, including settings mismatches. OreSpawn is the public
 
 ## What Passed
 
-- The three reproducible release builds, dependency and archive audits, and
-  Eclipse production classpaths. The combined client launch is `runClientAllAdvantage.launch`.
+- The three reproducible release builds, including clean caches and checkout
+  paths containing spaces. Dependency, archive and Eclipse classpath audits
+  passed. The combined client launch is `runClientAllAdvantage.launch`.
+- Independent Eclipse compiler checks. basePower passed all 201 tests against
+  freshly compiled Java 16 output with access restrictions still enabled.
 - All 21 walkable works stations with and without Base Metals, before and after
   a full restart, including an independent audit of the assertions.
 - 132 finite machine jobs and their cold-restart checks. A second campaign
@@ -31,6 +34,9 @@ and reload scenarios, including settings mismatches. OreSpawn is the public
   smelting. The chained base* 1.16.5 fixture retained all 14 state witnesses.
   The original 1.10.2 and legacy 1.12.2 player books kept their enchantments
   and player UUIDs in the saved files after both boots.
+- Both live Base Metals/basePower transformer orders on the original 1.10.2
+  fixture. Bytecode inspection confirmed both hooks ran in the requested order;
+  both resulting saves agreed after restart.
 - Both 30-minute load runs (fresh and upgraded), the full server restart, and
   processing after restart. The independent audit checked raw checkpoints,
   inventory acknowledgements and unchanged inputs.
@@ -47,8 +53,8 @@ and reload scenarios, including settings mismatches. OreSpawn is the public
 
 The full historical harness is not green. Some preservation checks still
 require the pre-rename fixture and script bytes at paths now used by the active
-base* tests. Their historical checksums were not updated to pass. The remaining
-actor/dimension and transformer-order routes need a current run before calling
+base* tests. Their historical checksums were not updated to pass. The broader
+actor/dimension and remaining transformer-order routes need a current run before calling
 the complete upgrade matrix qualified. The manual walkthrough is separate,
 including live turbine orientation, sounds and player controls.
 
