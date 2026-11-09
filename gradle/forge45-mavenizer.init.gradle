@@ -1,9 +1,0 @@
-// Apply the same tool to the pinned Base Metals checkout without altering its sources.
-gradle.beforeProject { Project p ->
-    if (p == p.rootProject) {
-        def script = p.providers.gradleProperty('forge45MavenizerScript').get()
-        p.pluginManager.withPlugin('net.minecraftforge.gradle') {
-            p.apply(from: p.file(script))
-        }
-    }
-}
