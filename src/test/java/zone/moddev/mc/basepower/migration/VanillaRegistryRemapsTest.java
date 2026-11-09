@@ -1,6 +1,11 @@
 package zone.moddev.mc.basepower.migration;
 
+import com.mojang.serialization.Dynamic;
+import com.mojang.serialization.JsonOps;
+import net.minecraft.SharedConstants;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.datafix.DataFixers;
+import net.minecraft.util.datafix.fixes.References;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -34,6 +39,30 @@ public class VanillaRegistryRemapsTest {
 
     @Test public void retainsTheFormerNetherBiome() {
         expect("worldgen/biome", "nether", "nether_wastes");
+    }
+
+    @Test public void onlyRetiresBiomeIndexesHandledByTheNativeDataFixer() {
+        ResourceLocation biomes = id("worldgen/biome");
+        assertEquals(id("desert"), VanillaRegistryRemaps.vanillaBiomeFixTarget(biomes, id("desert_hills")));
+        assertEquals(id("desert"), VanillaRegistryRemaps.vanillaBiomeFixTarget(biomes, id("desert_lakes")));
+        assertEquals(id("warm_ocean"), VanillaRegistryRemaps.vanillaBiomeFixTarget(biomes, id("deep_warm_ocean")));
+        assertNull(VanillaRegistryRemaps.vanillaBiomeFixTarget(biomes, id("plains")));
+        assertNull(VanillaRegistryRemaps.vanillaBiomeFixTarget(biomes, id("unknown_biome")));
+        assertNull(VanillaRegistryRemaps.vanillaBiomeFixTarget(biomes, new ResourceLocation("example:desert_hills")));
+        assertNull(VanillaRegistryRemaps.vanillaBiomeFixTarget(id("block"), id("desert_hills")));
+    }
+
+    @Test public void vanillaDataFixerActuallyConvertsTheMergedBiomeNames() {
+        SharedConstants.tryDetectVersion();
+        assertBiomeFix("desert_hills", "desert");
+        assertBiomeFix("desert_lakes", "desert");
+        assertBiomeFix("deep_warm_ocean", "warm_ocean");
+    }
+
+    private static void assertBiomeFix(String from, String to) {
+        var input = new Dynamic<>(JsonOps.INSTANCE, JsonOps.INSTANCE.createString(id(from).toString()));
+        var fixed = DataFixers.getDataFixer().update(References.BIOME, input, 2730, 2975);
+        assertEquals(id(to).toString(), fixed.asString().result().orElseThrow());
     }
 
     @Test public void leavesOtherModsAndUnrecognizedVanillaEntriesAlone() {
