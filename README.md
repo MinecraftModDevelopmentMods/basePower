@@ -31,6 +31,10 @@ automatic discovery and downloads for a reproducibility check.
 
 Build the pinned Base Metals `3.1.2.119041` and OreSpawn `4.1.0.119041` deobf jars first.
 The source pins and checksums are in `gradle.properties`.
+Forge 45 also needs the Mavenizer compatibility jar in the pinned OreSpawn
+checkout's `ci-fixtures/tools/` directory. It fixes decompiled Forge sources
+on a clean build and uses Java 25. It is not part of the mod or game runtime.
+Set `-Pforge45MavenizerJar=<path>` when that checkout is in another location.
 The pinned Base Metals build includes a local, unpublished save hook that
 lets both mods preserve old items and machines before Minecraft converts
 the chunk. Base Metals remains optional to Forge, but a Base Metals build

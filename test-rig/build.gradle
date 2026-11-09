@@ -6,6 +6,9 @@ plugins {
     id 'net.minecraftforge.gradle' version '7.0.34'
 }
 
+ext.forge45MavenizerDefault = '../../../../MinecraftMineralogy/OS119/OreSpawn/ci-fixtures/tools/minecraft-mavenizer-0.5.21-orespawn-compat.jar'
+apply from: '../gradle/forge45-mavenizer.gradle'
+
 // Saves, pinned inputs and evidence are siblings, never Gradle cleanup targets.
 layout.buildDirectory = layout.projectDirectory.dir('build/gradle')
 tasks.named('clean', Delete) {

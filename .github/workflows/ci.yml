@@ -67,20 +67,26 @@ jobs:
           set -euo pipefail
           orespawn="$GITHUB_WORKSPACE/.ci-dependencies/OreSpawn"
           basemetals="$GITHUB_WORKSPACE/.ci-dependencies/BaseMetals"
+          mavenizer="$orespawn/ci-fixtures/tools/minecraft-mavenizer-0.5.21-orespawn-compat.jar"
           chmod +x "$orespawn/gradlew" "$basemetals/gradlew"
           (cd "$orespawn" && ./gradlew $MMD_GRADLE_TOOLCHAINS jar --no-daemon --stacktrace)
-          (cd "$basemetals" && ./gradlew $MMD_GRADLE_TOOLCHAINS jar --no-daemon --stacktrace)
+          (cd "$basemetals" && ./gradlew $MMD_GRADLE_TOOLCHAINS jar --no-daemon --stacktrace \
+            -I "$GITHUB_WORKSPACE/gradle/forge45-mavenizer.init.gradle" \
+            "-Pforge45MavenizerScript=$GITHUB_WORKSPACE/gradle/forge45-mavenizer.gradle" \
+            "-Pforge45MavenizerJar=$mavenizer")
           osjar="$orespawn/build/libs-dev/OreSpawn-4.1.0.119041-deobf.jar"
           bmjar="$basemetals/build/libs-dev/BaseMetals-3.1.2.119041-deobf.jar"
           test -f "$osjar" && test -f "$bmjar"
           echo "orespawn=$osjar" >> "$GITHUB_OUTPUT"
           echo "basemetals=$bmjar" >> "$GITHUB_OUTPUT"
+          echo "mavenizer=$mavenizer" >> "$GITHUB_OUTPUT"
       - name: Build and audit release artifacts
         run: >-
           ./gradlew $MMD_GRADLE_TOOLCHAINS clean check build javadoc verifyReleaseDependencies verifyReleaseArtifacts
           writeReleaseChecksums verifyEclipseProductionClasspath
           -PbaseMetalsDeobfJar=${{ steps.dependencies.outputs.basemetals }}
           -PoreSpawnDeobfJar=${{ steps.dependencies.outputs.orespawn }}
+          -Pforge45MavenizerJar=${{ steps.dependencies.outputs.mavenizer }}
           --no-daemon --stacktrace
       - name: Upload audited release candidate
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
