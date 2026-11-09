@@ -28,8 +28,11 @@ needs Java 25. CI pins these JDKs and Java 8 for the legacy renamer. Pass the in
 `-Porg.gradle.java.installations.paths=<java8>,<java17>,<java25>` and disable
 automatic discovery and downloads for a reproducibility check.
 
-Build the pinned Base Metals `3.1.1.118021` and OreSpawn `4.1.0.118021` deobf jars first.
+Build the pinned Base Metals `3.1.2.118021` and OreSpawn `4.1.0.118021` deobf jars first.
 The source pins and checksums are in `gradle.properties`.
+The Base Metals pin is a local candidate with the shared legacy migration hook.
+It has not been published. Base Metals remains optional to Forge, but when it
+is installed this port requires the hook so it can preserve Advantage data.
 
 Then run from the repository root:
 
@@ -40,7 +43,7 @@ gradlew.bat clean check build javadoc verifyReleaseDependencies verifyReleaseArt
 The default dependency jars are:
 
 ```text
-D:\BaseMetals\BaseMetals 118\BaseMetals\build\libs-dev\BaseMetals-3.1.1.118021-deobf.jar
+D:\BaseMetals\BaseMetals 118\BaseMetals\build\libs-dev\BaseMetals-3.1.2.118021-deobf.jar
 D:\MinecraftMineralogy\OS118\OreSpawn\build\libs-dev\OreSpawn-4.1.0.118021-deobf.jar
 ```
 

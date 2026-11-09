@@ -16,6 +16,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.DistExecutor;
 
+import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
@@ -34,6 +35,7 @@ import zone.moddev.mc.basepower.registry.MachineGUIRegistry;
 import zone.moddev.mc.basepower.recipe.RecipeConditions;
 import zone.moddev.mc.basepower.recipe.RecipeDiscovery;
 import zone.moddev.mc.basepower.migration.AdvantageLegacyMigrations;
+import zone.moddev.mc.basepower.migration.BaseMetalsLegacyMigration;
 
 /** Forge entry point for basePower. */
 @Mod(PowerAdvantage.MODID)
@@ -140,6 +142,9 @@ public final class PowerAdvantage {
         GUI.init();
         // CraftingHelper's shared condition map is not safe during parallel loading.
         event.enqueueWork(RecipeConditions::register);
+        if (ModList.get().isLoaded("basemetals")) {
+            event.enqueueWork(() -> BaseMetalsLegacyMigration.register());
+        }
         // Forge's shared hook list is not safe to mutate during parallel mod construction.
         PowerAdvantageConfig.apply();
         ModSupport.configureForgeEnergyConversions();

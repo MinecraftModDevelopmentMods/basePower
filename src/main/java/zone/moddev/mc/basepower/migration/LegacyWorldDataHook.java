@@ -158,6 +158,17 @@ public final class LegacyWorldDataHook {
     public static synchronized void prepareLegacyChunk(CompoundTag root) {
         if (root == null) return;
         migrateLegacyNbt(root);
+        rememberLegacyChunk(root);
+    }
+
+    static synchronized boolean prepareExternalPayload(CompoundTag payload, boolean player) {
+        CompoundTag before = player ? payload.copy() : null;
+        int changed = migrateLegacyNbt(payload);
+        if (player) LegacyEntityDataFixes.preparePlayerAttributes(payload);
+        return changed > 0 || (player && !before.equals(payload));
+    }
+
+    static synchronized void rememberLegacyChunk(CompoundTag root) {
         if (!root.contains("Level", Tag.TAG_COMPOUND)) return;
         CompoundTag level = root.getCompound("Level");
         remapFlattenedPalette(level);

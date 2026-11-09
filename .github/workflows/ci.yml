@@ -34,7 +34,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           repository: MinecraftModDevelopmentMods/BaseMetals
-          ref: 5261c13744bbec2c2d394ba90bdce4ff92cc465a
+          ref: 3488ed58403722ac3ff203cff7680dfc16e0fd3f
           path: .ci-dependencies/BaseMetals
       - name: Install pinned Java 25 Mavenizer runtime
         uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
@@ -71,7 +71,7 @@ jobs:
           (cd "$orespawn" && ./gradlew $MMD_GRADLE_TOOLCHAINS jar --no-daemon --stacktrace)
           (cd "$basemetals" && ./gradlew $MMD_GRADLE_TOOLCHAINS jar --no-daemon --stacktrace)
           osjar="$orespawn/build/libs-dev/OreSpawn-4.1.0.118021-deobf.jar"
-          bmjar="$basemetals/build/libs-dev/BaseMetals-3.1.1.118021-deobf.jar"
+          bmjar="$basemetals/build/libs-dev/BaseMetals-3.1.2.118021-deobf.jar"
           test -f "$osjar" && test -f "$bmjar"
           echo "orespawn=$osjar" >> "$GITHUB_OUTPUT"
           echo "basemetals=$bmjar" >> "$GITHUB_OUTPUT"

@@ -14,7 +14,7 @@ description='''API and shared machines for pressure, electricity, quantum power,
 [[dependencies.basepower]]
 modId="basemetals"
 mandatory=false
-versionRange="[3.1.1.118021,4.0.0)"
+versionRange="[3.1.2.118021,4.0.0)"
 ordering="AFTER"
 side="BOTH"
 
