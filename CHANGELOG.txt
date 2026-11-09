@@ -4,6 +4,7 @@ basePower 2.4.11.119041 (Minecraft 1.19.4 local candidate)
 - Use the Forge creative tab, fluid types and capabilities. The three mods still share one tab.
 - Load the existing machine and oil textures into the new Minecraft texture atlas.
 - Adapt the world upgrade hooks to the new save reader and retain the old block, item and machine mappings.
+- Keep saved painting variants and recognise the two unused villager points of interest that Minecraft removes when upgrading a 1.18.2 world.
 
 basePower 2.4.10.118021 (Minecraft 1.18.2)
 

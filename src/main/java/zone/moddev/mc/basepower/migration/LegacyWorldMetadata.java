@@ -32,7 +32,15 @@ public final class LegacyWorldMetadata {
     }
 
     static void remap(CompoundTag root, Predicate<String> loaded) {
-        ListTag mods = root.getCompound("fml").getList("LoadingModList", Tag.TAG_COMPOUND);
+        CompoundTag forge = root.getCompound("fml");
+        CompoundTag registries = forge.getCompound("Registries");
+        if (registries.contains("minecraft:motive", Tag.TAG_COMPOUND)
+                && !registries.contains("minecraft:painting_variant")) {
+            // The registry was renamed; keep its saved IDs, including modded entries.
+            registries.put("minecraft:painting_variant", registries.getCompound("minecraft:motive"));
+            registries.remove("minecraft:motive");
+        }
+        ListTag mods = forge.getList("LoadingModList", Tag.TAG_COMPOUND);
         Set<String> recordedMods = new HashSet<>();
         for (int i = 0; i < mods.size(); ++i) recordedMods.add(mods.getCompound(i).getString("ModId"));
         for (int i = 0; i < mods.size(); ++i) {

@@ -35,6 +35,7 @@ public final class VanillaRegistryRemaps {
         MinecraftForge.EVENT_BUS.addListener(EventPriority.HIGHEST, VanillaRegistryRemaps::sounds);
         MinecraftForge.EVENT_BUS.addListener(EventPriority.HIGHEST, VanillaRegistryRemaps::biomes);
         MinecraftForge.EVENT_BUS.addListener(EventPriority.HIGHEST, VanillaRegistryRemaps::memories);
+        MinecraftForge.EVENT_BUS.addListener(EventPriority.HIGHEST, VanillaRegistryRemaps::pointsOfInterest);
         MinecraftForge.EVENT_BUS.addListener(EventPriority.HIGHEST, VanillaRegistryRemaps::blockEntities);
         MinecraftForge.EVENT_BUS.addListener(EventPriority.HIGHEST, VanillaRegistryRemaps::fluids);
         MinecraftForge.EVENT_BUS.addListener(EventPriority.HIGHEST, VanillaRegistryRemaps::enchantments);
@@ -58,6 +59,7 @@ public final class VanillaRegistryRemaps {
     private static void sounds(MissingMappingsEvent event) { remap(event, ForgeRegistries.SOUND_EVENTS); }
     private static void biomes(MissingMappingsEvent event) { remap(event, ForgeRegistries.BIOMES); }
     private static void memories(MissingMappingsEvent event) { remap(event, ForgeRegistries.MEMORY_MODULE_TYPES); }
+    private static void pointsOfInterest(MissingMappingsEvent event) { remap(event, ForgeRegistries.POI_TYPES); }
 
     private static void blockEntities(MissingMappingsEvent event) {
         remapAdvantage(event, ForgeRegistries.BLOCK_ENTITY_TYPES,
@@ -97,6 +99,13 @@ public final class VanillaRegistryRemaps {
                 PowerAdvantage.LOGGER.info("Retired non-serialized vanilla AI registry index {}", mapping.getKey());
                 continue;
             }
+            if (retiredVanillaPoi(active.getRegistryName(), mapping.getKey())) {
+                // Vanilla's "Remove unpopulated villager PoI types" fixer handles
+                // saved POI sections. Forge still sees the obsolete numeric indexes.
+                mapping.ignore();
+                PowerAdvantage.LOGGER.info("Retired unused vanilla point of interest index {}", mapping.getKey());
+                continue;
+            }
             ResourceLocation updatedBiome = vanillaBiomeFixTarget(active.getRegistryName(), mapping.getKey());
             if (updatedBiome != null && active.containsKey(updatedBiome)) {
                 // Vanilla fixes biome names in chunks and world settings. Several
@@ -122,6 +131,12 @@ public final class VanillaRegistryRemaps {
         return registry.equals(new ResourceLocation("minecraft:memory_module_type"))
                 && old.getNamespace().equals("minecraft")
                 && (old.getPath().equals("golem_last_seen_time") || old.getPath().equals("opened_doors"));
+    }
+
+    static boolean retiredVanillaPoi(ResourceLocation registry, ResourceLocation old) {
+        return registry.equals(new ResourceLocation("minecraft:point_of_interest_type"))
+                && old.getNamespace().equals("minecraft")
+                && (old.getPath().equals("nitwit") || old.getPath().equals("unemployed"));
     }
 
     static ResourceLocation vanillaBiomeFixTarget(ResourceLocation registry, ResourceLocation old) {

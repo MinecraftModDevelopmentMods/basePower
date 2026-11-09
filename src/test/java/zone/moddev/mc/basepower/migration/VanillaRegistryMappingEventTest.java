@@ -77,6 +77,18 @@ public class VanillaRegistryMappingEventTest {
                 new ResourceLocation("minecraft:opened_doors")));
     }
 
+    @Test public void retiresOnlyTheTwoPointsOfInterestRemovedByVanilla() {
+        IForgeRegistry<Entry> active = registry(null, false, "minecraft:point_of_interest_type");
+        for (String id : new String[] {"minecraft:nitwit", "minecraft:unemployed", "minecraft:home", "othermod:nitwit"}) {
+            var mapping = new MissingMappingsEvent.Mapping<>(active, active, new ResourceLocation(id), 42);
+            VanillaRegistryRemaps.remap(event(active, mapping), active);
+            boolean retired = id.equals("minecraft:nitwit") || id.equals("minecraft:unemployed");
+            assertEquals(id, retired ? MissingMappingsEvent.Action.IGNORE : MissingMappingsEvent.Action.DEFAULT,
+                    property(mapping, "action"));
+            assertNull(property(mapping, "target"));
+        }
+    }
+
     private static MissingMappingsEvent event(IForgeRegistry<Entry> staging, MissingMappingsEvent.Mapping<Entry> mapping) {
         return new MissingMappingsEvent(staging.getRegistryKey(), staging, Collections.singletonList(mapping));
     }
