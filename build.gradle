@@ -948,12 +948,34 @@ tasks.register('isolateEclipseProductionRuns') {
     }
 }
 
+def verifyJavaPackageLayout = tasks.register('verifyJavaPackageLayout') {
+    group = 'verification'
+    description = 'Checks that Java packages match their paths for Eclipse source lookup.'
+    doLast {
+        sourceSets.each { sourceSet ->
+            sourceSet.java.srcDirs.each { root ->
+                fileTree(root).matching { include '**/*.java' }.files.sort().each { source ->
+                    def declaration = source.getText('UTF-8') =~ /(?m)^\s*package\s+([\w.$]+)\s*;/
+                    String declared = declaration.find() ? declaration.group(1) : ''
+                    String expected = root.toPath().relativize(source.parentFile.toPath())
+                            .toString().replace(File.separator, '.')
+                    if (declared != expected) {
+                        throw new GradleException("${relativePath(source)} declares package '${declared}', "
+                                + "but the ${sourceSet.name} source root expects '${expected}'")
+                    }
+                }
+            }
+        }
+    }
+}
+
 tasks.register('verifyEclipseProductionClasspath') {
     group = 'verification'
     description = 'Verifies the generated Eclipse project and production launches.'
     dependsOn tasks.named('eclipse')
     dependsOn tasks.named('verifyDevelopmentRuntimeArchives')
     dependsOn tasks.named('isolateEclipseProductionRuns')
+    dependsOn verifyJavaPackageLayout
     doLast {
         File preferencesFile = file('.settings/org.eclipse.buildship.core.prefs')
         Properties preferences = new Properties()
@@ -1182,6 +1204,7 @@ tasks.register('verifyRecipeTagGuards') {
 }
 
 tasks.named('check') {
+    dependsOn verifyJavaPackageLayout
     dependsOn tasks.named('verifyReleaseConfiguration')
     dependsOn tasks.named('verifyDevelopmentRuntimeArchives')
     dependsOn tasks.named('verifyModelAssets')

@@ -1,13 +1,13 @@
 # Minecraft 1.19.4 Port
 
-This is a local candidate, not a release. Back up a world before upgrading and
-use a disposable copy for tests. Earlier versions' results do not qualify this
-build.
+This records the Minecraft 1.19.4 qualification. Back up a world before
+upgrading and use a disposable copy for tests. Earlier versions' results do
+not qualify this build.
 
 The port targets Forge 45.4.0, official 1.19.4 mappings and Java 17. It uses
 Forge's creative tab and fluid types and keeps existing registry names, tank
-formats and recipe modes. The Base Metals pin includes the local shared
-migration hook. Do not substitute the public Base Metals jar for that pin.
+formats and recipe modes. When Base Metals is installed, use 3.1.2 for the
+shared migration hook. Do not substitute an older build during an upgrade.
 
 The release audit checks package contents, mappings, dependency hashes, Java
 bytecode and Eclipse launch classpaths. The separate graphical probe loads
@@ -22,11 +22,10 @@ See [the 1.19 Works rig](../../test-rig/NATIVE119.md) and
 [the client probe](../../test-rig/client-resources/README.md) for commands.
 Keep local logs and provisional jars out of release artifacts and commits.
 
-## Ready for manual testing
+## What was tested
 
-The local test set is basePower `2.4.11.119041`, baseSteam
-`2.2.12.119041`, and baseElectric `2.2.12.119041`. Use the exact jars in
-the 1.19 Works profiles; they have not been published.
+The test set is basePower `2.4.11.119041`, baseSteam `2.2.12.119041`, and
+baseElectric `2.2.12.119041`. The Works profiles record the exact test inputs.
 
 - The Works rig ran all 21 stations with and without Base Metals. It also
   checked harvest drops, oil and fluid transfer, partial network unloading,

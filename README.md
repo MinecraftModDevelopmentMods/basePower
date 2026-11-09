@@ -1,6 +1,6 @@
 # basePower
 
-**Minecraft 1.19.4, version 2.4.11.119041. Local test candidate.**
+**Minecraft 1.19.4, version 2.4.11.119041.**
 
 See the [1.19 port record](docs/1.19/PORT-STATUS.md) for the current checks.
 Results from earlier versions do not qualify this build.
@@ -35,10 +35,9 @@ Forge 45 also needs the Mavenizer compatibility jar in the pinned OreSpawn
 checkout's `ci-fixtures/tools/` directory. It fixes decompiled Forge sources
 on a clean build and uses Java 25. It is not part of the mod or game runtime.
 Set `-Pforge45MavenizerJar=<path>` when that checkout is in another location.
-The pinned Base Metals build includes a local, unpublished save hook that
-lets both mods preserve old items and machines before Minecraft converts
-the chunk. Base Metals remains optional to Forge, but a Base Metals build
-without that hook is not a safe substitute for the tested upgrade path.
+Use Base Metals 3.1.2 if it is installed when upgrading a world. It lets
+both mods preserve old items and machines before Minecraft converts the
+chunk. An older Base Metals jar is not a substitute for this upgrade path.
 
 Then run from the repository root:
 
@@ -80,9 +79,9 @@ run `gradlew.bat prepareCombinedEclipseLaunch`, refresh Eclipse, then launch
 The ordinary `runClient.launch` remains Power-only. Both use the `run` directory;
 preparing a launch does not copy, open or qualify a save.
 
-`check` and Eclipse preparation also run `verifyDevelopmentRuntimeArchives`,
-which reads every development runtime jar entry and checks its size and CRC.
-This catches damaged cached dependencies before the next test launch.
+`check` and the Eclipse audit verify that Java files are in the directories
+matching their packages. They also read every development runtime jar entry
+and check its size and CRC to catch damaged cached dependencies.
 
 Keep Eclipse's access-restriction checks enabled and use Java 17 for its project
 JRE and Minecraft launches. Check visuals, menus and recipe discovery against the
