@@ -99,6 +99,17 @@ class Native117DestinationTest(unittest.TestCase):
                 with self.assertRaises(AssertionError):
                     require_clean_log(log)
 
+    def test_renamed_advantage_pack_warnings_fail_even_after_successful_startup(self):
+        log = self.root / "legacy-pack.log"
+        for mod in ("poweradvantage", "steamadvantage", "electricadvantage"):
+            with self.subTest(mod=mod):
+                log.write_text(f"[main/WARN] [minecraft/MinecraftServer]: Missing data pack mod:{mod}\n"
+                               "[Server thread/INFO] Done\n")
+                with self.assertRaisesRegex(AssertionError, "Missing data pack mod:" + mod):
+                    require_clean_log(log)
+        log.write_text("[main/WARN] [minecraft/MinecraftServer]: Missing data pack mod:poweradvantage_extra\n")
+        require_clean_log(log)
+
     def test_new_stage_uses_harness_preset_not_vanilla_flat_json(self):
         seed = self.root / "seed"
         (seed / "libraries").mkdir(parents=True)

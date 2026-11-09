@@ -9,8 +9,8 @@ import unittest
 import tempfile
 import zipfile
 
-from matrix import digest
-from native117 import RIG
+from historical_test_inputs import (ACTIVE_ADAPTERS, ADVANTAGE117, BASE117_ADAPTERS,
+                                    RIG, git_blob, oracle_bytes)
 from native117_geometry import (ENGINE_SOURCES, FORGE_VERSION, MCP_VERSION, MINECRAFT_VERSION,
                                 SOURCE_ARCHIVE_SHA256, SOURCE_SHA256, require_geometry,
                                 verify_engine_sources)
@@ -207,7 +207,36 @@ class PortContracts(unittest.TestCase):
                 with self.subTest(path=name):
                     revision = ledger['documentationRevisions'].get(name)
                     expected = revision['nativeSha256'] if revision else record['auditedNativeSha256']
-                    self.assertEqual(digest(RIG / name), expected)
+                    active = (RIG / name).read_bytes().replace(b"\r\n", b"\n")
+                    if name not in {
+                        "client-resources/resources/META-INF/mods.toml", "client-resources/run.ps1",
+                        "client-resources/test-geometry-contract.ps1", "client-resources/test-launcher.ps1",
+                        "client-resources/test-probe-contract.ps1",
+                    }:
+                        self.assertEqual(hashlib.sha256((RIG / name).read_bytes()).hexdigest().upper(), expected)
+                        continue
+                    original = git_blob(ADVANTAGE117, name).replace(b"\r\n", b"\n")
+                    # The original Windows review hashed three text files with CRLF.
+                    self.assertIn(expected, {hashlib.sha256(data).hexdigest().upper()
+                                            for data in (original, original.replace(b"\n", b"\r\n"))})
+                    for old, new in ((b"poweradvantage", b"basepower"), (b"steamadvantage", b"basesteam"),
+                                     (b"electricadvantage", b"baseelectric"), (b"PowerAdvantage-", b"basePower-"),
+                                     (b"2.4.8.117011", b"2.4.9.117011"), (b"2.2.9.117011", b"2.2.10.117011"),
+                                     (rb"2\.4\.8\.117011", rb"2\.4\.9\.117011")):
+                        original = original.replace(old, new)
+                    if name == "client-resources/test-probe-contract.ps1":
+                        # This guard now applies the rebrand after constructing
+                        # the 1.16 oracle, while keeping cyano API bindings literal.
+                        self.assertEqual("72CD0A5BE3B9446655BB2DDA5FC74A11DBBBF3EF60B899E8834CA09F75D4382E",
+                                         hashlib.sha256(active).hexdigest().upper())
+                    else:
+                        self.assertEqual(original, active)
+
+    def test_active_port_adapters_are_separately_guarded(self):
+        for name in sorted(ACTIVE_ADAPTERS):
+            with self.subTest(path=name):
+                self.assertEqual(git_blob(BASE117_ADAPTERS, name).replace(b"\r\n", b"\n"),
+                                 (RIG / name).read_bytes().replace(b"\r\n", b"\n"))
 
     def test_ledger_cannot_refingerprint_or_exempt_historical_oracles(self):
         ledger = json.loads((RIG / "migration/native117-historical-inputs.json").read_text())
@@ -277,10 +306,11 @@ class PortContracts(unittest.TestCase):
 
         for relative, checksum in ledger["hashes"].items():
             with self.subTest(path=relative):
-                self.assertEqual(digest(RIG / relative), checksum)
+                data = oracle_bytes(ledger["sourceCommit"], relative)
+                self.assertEqual(hashlib.sha256(data).hexdigest().upper(), checksum)
                 if relative in records:
                     self.assertEqual(records[relative]["historicalSha256"], historical["hashes"][relative])
-                    verify((RIG / relative).read_bytes(), checksum, records[relative])
+                    verify(data, checksum, records[relative])
 
         # Updating only a byte hash must not bless a lower threshold or unrelated oracle edit.
         source = (RIG / "migration/extended_lifecycle.py").read_bytes()

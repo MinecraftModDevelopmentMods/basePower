@@ -5,11 +5,28 @@ from unittest.mock import Mock, patch
 import json
 
 import dimensions
-from native117_actors import baseline, expected_state, native_dimension_state, release
+from native117_actors import await_natural_ticks, baseline, expected_state, native_dimension_state, release
 from native117_audit_actors import inherited_sources, persistence_controls, replay
 
 
 class NativeActorOracleTest(unittest.TestCase):
+    def test_actor_duration_waits_for_eighty_real_ticks_without_stepping_the_world(self):
+        server = Mock()
+        with patch("native117_actors.time.sleep"), patch("native117_actors.raw", side_effect=[
+            {"gameTime": 100}, {"gameTime": 100}, {"gameTime": 179}, {"gameTime": 180},
+        ]):
+            await_natural_ticks(server, Path("unused"), "dimensions", "release")
+        self.assertEqual(["advdimensions snapshot release-clock-" + str(i) for i in range(3)],
+                         [call.args[0] for call in server.send.call_args_list])
+
+    def test_actor_clock_regression_is_not_retried(self):
+        server = Mock()
+        with patch("native117_actors.time.sleep"), patch("native117_actors.raw", side_effect=[
+            {"gameTime": 100}, {"gameTime": 99},
+        ]), self.assertRaisesRegex(AssertionError, "clock moved backwards"):
+            await_natural_ticks(server, Path("unused"), "actors", "release")
+        self.assertEqual(1, server.send.call_count)
+
     def test_frozen_comparison_retains_positions_and_nested_items(self):
         old = {"file": {"Inventory": [{"Count": 17, "tag": {"nested": {"keep": 3}}}]},
                "entities": {"cart": {"Pos": [1, 2, 3], "Items": [{"Count": 4}]}}}

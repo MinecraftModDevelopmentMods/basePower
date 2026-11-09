@@ -236,12 +236,15 @@ BlockEntity tile = type.create(net.minecraft.core.BlockPos.ZERO, state);
     }
     $source
 }
+function With-BaseIdentity([string]$Source) {
+    [regex]::Replace($Source, '(?<!cyano\.)poweradvantage', 'basepower').Replace('steamadvantage', 'basesteam').Replace('electricadvantage', 'baseelectric')
+}
 foreach ($name in $referenceHashes.Keys) {
     $source = Read-Baseline "$relative/$name.java" $referenceHashes[$name]
     $target = Get-Content -LiteralPath (Join-Path $TargetRoot "$relative/$name.java") -Raw
     $actualImports = @([regex]::Matches($target, '(?m)^import ([^;\r\n]+);') | ForEach-Object { $_.Groups[1].Value }) -join "`n"
-    Assert-Contract ((Expected-NativeImports $source) -ceq $actualImports) "$name import bindings changed beyond explicit native class moves."
-    $expected = Expected-NativeProbe $name $source
+    Assert-Contract ((With-BaseIdentity (Expected-NativeImports $source)) -ceq $actualImports) "$name import bindings changed beyond explicit native class moves."
+    $expected = With-BaseIdentity (Expected-NativeProbe $name $source)
     $actual = Canonical-Source $target
     # Complete bodies include inputs, captures, case loops, operands and thresholds.
     if ($expected -cne $actual) {
@@ -273,7 +276,7 @@ $projectionImports = @([regex]::Matches($projectionSource, '(?m)^import ([^;\r\n
 Assert-Contract ($projectionImports -ceq "com.mojang.blaze3d.systems.RenderSystem`ncom.mojang.blaze3d.vertex.PoseStack`ncom.mojang.math.Matrix4f") 'Native projection imports must resolve to the real shader and matrix APIs.'
 $labels = 'resources/gui-label-expectations.json'
 $acceptedLabels = Read-Baseline $labels 'EC0B66B926053E90C216D856B5F33C19D5B7E92DBC4C9E2E25812B401AEBAC0E'
-Assert-Contract (($acceptedLabels.Replace("`r`n", "`n")) -ceq ([IO.File]::ReadAllText((Join-Path $TargetRoot $labels)).Replace("`r`n", "`n"))) 'Independent human-facing caption expectations changed.'
+Assert-Contract ((With-BaseIdentity $acceptedLabels.Replace("`r`n", "`n")) -ceq ([IO.File]::ReadAllText((Join-Path $TargetRoot $labels)).Replace("`r`n", "`n"))) 'Independent human-facing caption expectations changed.'
 $pack = Get-Content -LiteralPath (Join-Path $TargetRoot 'resources/pack.mcmeta') -Raw | ConvertFrom-Json
 Assert-Contract ($pack.pack.pack_format -eq 7) 'Native 1.17 probe resource pack must use format 7.'
 $metadata = Get-Content -LiteralPath (Join-Path $TargetRoot 'resources/META-INF/mods.toml') -Raw

@@ -15,7 +15,8 @@ import nbtlib
 import steam_control_audit as audit
 
 
-LINE = Path(__file__).resolve().parents[3].name[2:]
+# The native 1.17 tests replay these controls against their own adapter.
+LINE = "116"
 
 
 def snapshot(position, block, data=None):
@@ -47,6 +48,7 @@ def data(item, count, slot, reserve=0, work=None, furnace=None):
 
 def fixture():
     base = audit.native(LINE)
+    steam = "basesteam" if LINE == "117" else "steamadvantage"
     ids = sorted({district + "/" + name for district, names in base.REQUIRED.items() for name in names} | audit.IDS)
     catalog = {"group": "all", "cases": []}
     if LINE in ("110", "112"):
@@ -63,7 +65,7 @@ def fixture():
         if case_id == audit.COMPARATOR:
             before, after = [], []
             for i, stock in enumerate((0, 1, 32, 64)):
-                tile = snapshot(at(3 + 6 * i), "steamadvantage:steam_crusher",
+                tile = snapshot(at(3 + 6 * i), steam + ":steam_crusher",
                                 data("minecraft:stone", stock, 0, work=0))
                 before.append(tile); after.append(deepcopy(tile))
                 row["count/" + str(3 + 6 * i) + "/4/8/minecraft:stone"] = stock
@@ -72,14 +74,14 @@ def fixture():
             crusher = case_id in audit.CRUSHERS
             signal, initial = audit.CRUSHERS[case_id] if crusher else (audit.FURNACES[case_id], 40)
             if crusher:
-                block, item, slot = "steamadvantage:steam_crusher", "minecraft:stone", 0
+                block, item, slot = steam + ":steam_crusher", "minecraft:stone", 0
                 work = 105 if signal or initial == 0 else 107
                 reserve = 0 if initial == 0 else 39.9375 if signal else 38.4375
                 before_data = data(item, 1, slot, initial, work=106)
                 after_data = data(item, 1, slot, reserve, work=work)
                 row["firstLoaded.progress"] = work
             else:
-                block, item, slot = "steamadvantage:steam_furnace", "minecraft:sand", 1
+                block, item, slot = steam + ":steam_furnace", "minecraft:sand", 1
                 heat = 989.5 if signal else 1027.0
                 work = audit.f32(.25 + audit.f32(audit.f32(3.5e-6) * heat))
                 reserve = 40 if signal else 39.5

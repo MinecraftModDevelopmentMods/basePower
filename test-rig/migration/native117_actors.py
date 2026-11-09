@@ -15,7 +15,7 @@ from matrix import WORLD, copy_fixture, digest, fingerprint, write_json
 from native117_code import Server
 from native117 import output_path, pinned_profile, require_clean_log, require_disjoint
 from native117 import boot
-from native117_actor_io import capture_actors, capture_dimensions
+from native117_actor_io import capture_actors, capture_dimensions, source_identities
 from native117_dimension_assessment import assess, load_native_proof, summarize_checks
 import native117_dimension_assessment
 from native117_stopped_entities import audit_stopped
@@ -34,7 +34,7 @@ def baseline(source, kind):
     if label is None:
         raise FileNotFoundError(f"No retained {kind} serializer checkpoint in {source}")
     capture = capture_dimensions if kind == "dimensions" else capture_actors
-    return capture(source, label), label
+    return source_identities(capture(source, label)), label
 
 
 def expected_state(value, kind, survival=False, adapter=True):
@@ -113,6 +113,28 @@ def raw(runtime, kind, label):
     return json.loads((runtime / (("dimensions-" if kind == "dimensions" else "actors-") + label + ".json")).read_text())
 
 
+def await_natural_ticks(server, runtime, kind, released):
+    """Wait for four seconds of game time, not four seconds of host time."""
+    root, complete = ("advdimensions", "ADVDIMENSIONS") if kind == "dimensions" else ("advactors", "ADVACTORS")
+    first = raw(runtime, kind, released)["gameTime"]
+    previous = first
+    deadline = time.monotonic() + 120
+    for index in range(120):
+        if time.monotonic() >= deadline:
+            break
+        time.sleep(1)
+        label = f"{released}-clock-{index}"
+        server.send(f"{root} snapshot {label}")
+        server.wait(f"{complete} COMPLETE {label}", max(1, deadline - time.monotonic()))
+        current = raw(runtime, kind, label)["gameTime"]
+        if type(current) is not int or current < previous:
+            raise AssertionError("Actor world clock moved backwards or is invalid")
+        if current - first >= 80:
+            return
+        previous = current
+    raise TimeoutError(f"Actor world did not advance 80 natural ticks after {released}")
+
+
 def ready_entities(server, runtime, kind, label):
     definition = json.loads((runtime / (
         'dimension-fixture.json' if kind == 'dimensions' else 'actor-fixture.json')).read_text())
@@ -175,7 +197,7 @@ def run_route(source, runtime, target, args):
             checks['readiness-conversion'] = ready_entities(server, runtime, args.kind, 'conversion')
             if args.kind == "dimensions":
                 release(server, runtime, args.kind, "conversion-release")
-                time.sleep(4)
+                await_natural_ticks(server, runtime, args.kind, "conversion-release")
             converted = command(server, runtime, args.kind, "snapshot", "converted")
             live = args.kind == "dimensions"
             checks["conversion"] = compare("conversion", expected_state(expected, args.kind, survival=live, adapter=False), converted, live, False)
@@ -195,14 +217,14 @@ def run_route(source, runtime, target, args):
             checks['readiness-restart'] = ready_entities(server, runtime, args.kind, 'restart')
             if args.kind == "dimensions":
                 release(server, runtime, args.kind, "restart-load-release")
-                time.sleep(4)
+                await_natural_ticks(server, runtime, args.kind, "restart-load-release")
             restarted = command(server, runtime, args.kind, "read", "restarted")
             checks["restart"] = compare("restart", expected_state(expected, args.kind, survival=live), restarted, live)
             if not live:
                 checks["restart-frozen"] = actors.freeze_result(raw(runtime, args.kind, "restarted"))
             checks["idempotence"] = compare("idempotence", expected_state(adapter, args.kind, survival=live), restarted, live)
             release(server, runtime, args.kind, "released")
-            time.sleep(4)
+            await_natural_ticks(server, runtime, args.kind, "released")
             operated = command(server, runtime, args.kind, "read", "runtime")
             checks["runtime"] = compare("runtime", expected_state(expected, args.kind, survival=True), operated, True)
             checks["runtime-ticks"] = tick(raw(runtime, args.kind, "released"), raw(runtime, args.kind, "runtime"))
@@ -214,7 +236,7 @@ def run_route(source, runtime, target, args):
         try:
             checks['readiness-runtime-restart'] = ready_entities(server, runtime, args.kind, 'runtime-restart')
             release(server, runtime, args.kind, "restart-released")
-            time.sleep(4)
+            await_natural_ticks(server, runtime, args.kind, "restart-released")
             operated_again = command(server, runtime, args.kind, "read", "runtime-restart")
             checks["runtime-restart"] = compare("runtime-restart", expected_state(expected, args.kind, survival=True), operated_again, True)
             checks["restart-ticks"] = tick(raw(runtime, args.kind, "restart-released"), raw(runtime, args.kind, "runtime-restart"))

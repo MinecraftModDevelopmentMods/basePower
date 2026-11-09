@@ -4,8 +4,9 @@ import copy
 from pathlib import Path
 import struct
 import unittest
+from unittest.mock import Mock, patch
 
-from native117_redstone_reload import definitions, validate_readiness, validate_reload, validate_seed
+from native117_redstone_reload import definitions, prepare_seed_terrain, validate_readiness, validate_reload, validate_seed
 
 
 def row(case, progress, held=False, energy=None, targeted=True):
@@ -80,6 +81,16 @@ def readiness(phase, release_time):
 
 
 class RedstoneReloadOracleTests(unittest.TestCase):
+    def test_seed_preflight_only_tickets_terrain_for_all_nine_witnesses(self):
+        server = Mock()
+        runtime = Path("unused")
+        with patch("native117_redstone_reload.await_ready", return_value={"status": "PASS"}) as ready:
+            self.assertEqual(9, len(prepare_seed_terrain(server, runtime)))
+        self.assertEqual(9, server.send.call_count)
+        self.assertTrue(all(row.args[0].startswith("forceload add ") for row in server.send.call_args_list))
+        self.assertEqual("forceload add 60525 59999 60527 60001", server.send.call_args.args[0])
+        ready.assert_called_with(server, runtime, (3782, 3749, 3782, 3750), "redstone-seed-unheld")
+
     def assert_rejected(self, change):
         fixture, report = documents()
         change(fixture, report)

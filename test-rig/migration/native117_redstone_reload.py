@@ -21,6 +21,7 @@ from matrix import WORLD, digest, fingerprint, write_json
 from native117 import output_path, pinned_profile, require_disjoint
 from native117_code import Server
 from native117_lifecycle import prepare, read_json, require_native_boot, verify_staged
+from native117_readiness import await_ready
 
 
 OBSERVATION_TICKS = 16
@@ -267,6 +268,19 @@ def pin(args):
     return 0
 
 
+def prepare_seed_terrain(server, runtime):
+    # Load empty terrain only. The Java probe still owns all placement and
+    # checks that the real block-entity tickers are ready before releasing them.
+    areas = []
+    for row in definitions():
+        x, _, z = row["pos"]
+        low_x, low_z, high_x, high_z = x - 1, z - 1, x + 1, z + 1
+        server.send(f"forceload add {low_x} {low_z} {high_x} {high_z}")
+        chunks = tuple(value // 16 for value in (low_x, low_z, high_x, high_z))
+        areas.append(("redstone-seed-" + row["id"], chunks))
+    return [await_ready(server, runtime, chunks, label) for label, chunks in areas]
+
+
 def run(args):
     output = output_path(args.output)
     manifest = args.manifest.resolve()
@@ -279,8 +293,11 @@ def run(args):
     launcher = prepare(output, target, [], args.port)
     (output / "advantage-redstone-reload.allow").touch()
     (output / "migration-operate.allow").touch()
+    (output / "advantage-works.allow").touch()
     helpers = [Path(__file__), Path(__file__).with_name("test_native117_redstone_reload.py")]
-    helpers += [Path(__file__).with_name(name) for name in ("native117.py", "native117_code.py", "native117_lifecycle.py", "lifecycle.py", "matrix.py")]
+    helpers += [Path(__file__).with_name(name) for name in (
+        "native117.py", "native117_code.py", "native117_lifecycle.py", "native117_readiness.py",
+        "lifecycle.py", "matrix.py")]
     java_root = Path(__file__).parents[1] / "src/main/java/zone/moddev/mc/advantageworks"
     helpers += [java_root / "RedstoneReloadProbe.java", java_root / "AdvantageWorksMod.java"]
     hashes = {str(path): digest(path) for path in helpers}
@@ -298,6 +315,7 @@ def run(args):
         server = Server(output, args.java8, launcher, "redstone-seed")
         for command in ("gamerule doMobSpawning false", "gamerule randomTickSpeed 0", "gamerule doWeatherCycle false", "weather clear"):
             server.send(command)
+        report["seedTerrainReadiness"] = prepare_seed_terrain(server, output)
         server.send("advredstonereload seed seed")
         server.wait("ADVREDSTONE COMPLETE seed", 180)
         failure = output / "advantage-works-results/redstone-reload-failure-seed.json"

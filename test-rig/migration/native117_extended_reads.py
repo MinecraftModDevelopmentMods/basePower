@@ -6,6 +6,7 @@ import time
 
 import extended_lifecycle as historical
 from matrix import digest
+from native117_identity import fixture_ids
 from native117_partial import campaign, common_parser
 
 
@@ -44,4 +45,4 @@ def exercise(runner, progress):
 
 if __name__ == "__main__":
     args = common_parser(__doc__).parse_args()
-    raise SystemExit(campaign(args, "extended-reads", historical.fixtures(), exercise))
+    raise SystemExit(campaign(args, "extended-reads", fixture_ids(historical.fixtures()), exercise))

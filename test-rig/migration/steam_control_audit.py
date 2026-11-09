@@ -155,7 +155,7 @@ def progress(data):
     return int(value)
 
 
-def control_case(row, saved, declaration, base, line):
+def control_case(row, saved, declaration, base, line, namespace="steamadvantage"):
     index = saved.get("index")
     require(type(index) is int and index >= 0, "Missing station index")
     require(type(row.get("startTick")) is int and type(row.get("finishTick")) is int
@@ -185,15 +185,15 @@ def control_case(row, saved, declaration, base, line):
                 "Tile hold must remove ticking, retain the same tile and leave NBT unchanged")
         observed = measured.get(at(*point))
         require(observed is not None and "nbt" in observed
-                and observed["block"] == ("steamadvantage:steam_furnace" if row["id"] in FURNACES
-                                          else "steamadvantage:steam_crusher"),
+                and observed["block"] == namespace + (":steam_furnace" if row["id"] in FURNACES
+                                                       else ":steam_crusher"),
                 "Held tile is not the measured native machine")
         actual.add(point)
     require(actual == expected, "Incomplete measured tile hold coverage")
     return at
 
 
-def audit_documents(catalog, operation, fixture, cold, line):
+def audit_documents(catalog, operation, fixture, cold, line, namespace="steamadvantage"):
     report = {"status": "FAIL", "line": line, "scope": "Six Steam first-tick/control cases plus full declared operation/cold checks",
               "cases": {}, "failures": []}
     try:
@@ -214,7 +214,7 @@ def audit_documents(catalog, operation, fixture, cold, line):
         require(report["cold"]["status"] == "PASS", "Base exact cold-restart audit failed")
         for case_id in sorted(IDS):
             row = observed[case_id]
-            at = control_case(row, saved[case_id], declared[case_id], base, line)
+            at = control_case(row, saved[case_id], declared[case_id], base, line, namespace)
             require(positions(saved[case_id]["positions"], base, line)
                     == positions(restarted[case_id]["positions"], base, line),
                     "Control typed NBT changed across cold restart")
@@ -228,7 +228,7 @@ def audit_documents(catalog, operation, fixture, cold, line):
                 for stage in ("before", "after"):
                     require(set(positions(row[stage], base, line)) == expected_positions, "Wrong comparator layout")
                     for i, count in enumerate(counts):
-                        data = tile(row[stage], at(3 + 6 * i), "steamadvantage:steam_crusher", line)
+                        data = tile(row[stage], at(3 + 6 * i), namespace + ":steam_crusher", line)
                         inventory(data, 0, "minecraft:stone", count)
                         require(energy(data) == 0 and progress(data) == 0, "Comparator witness must remain unpowered")
                 for i, count in enumerate(counts):
@@ -245,7 +245,7 @@ def audit_documents(catalog, operation, fixture, cold, line):
                     require(set(snapshot) == expected_positions, "Wrong controlled-machine layout")
                     if signal:
                         require(snapshot[at(7)]["block"] == "minecraft:redstone_block", "Missing actual redstone source")
-                block = "steamadvantage:steam_crusher" if is_crusher else "steamadvantage:steam_furnace"
+                block = namespace + (":steam_crusher" if is_crusher else ":steam_furnace")
                 before = tile(row["before"], at(8), block, line)
                 after = tile(row["after"], at(8), block, line)
                 item = "minecraft:stone" if is_crusher else "minecraft:sand"

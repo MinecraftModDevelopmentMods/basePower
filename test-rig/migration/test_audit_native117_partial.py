@@ -6,11 +6,21 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from audit_native117_partial import geometry_evidence, snapshot
+from audit_native117_partial import geometry_evidence, require_fixture_definition, snapshot
 
 
 GEOMETRY = dict(fullLevel=33, entityTickingLevel=31, maxDistance=11,
                 lastHolderLevel=44, holderRadius=13, observedForcedLevels=[31])
+
+
+class NativeFixtureAuditTests(unittest.TestCase):
+    def test_only_expected_legacy_registry_ids_are_translated(self):
+        expected = [{"block": "steamadvantage:steam_drill", "pos": (1, 2, 3)}]
+        require_fixture_definition([{"block": "basesteam:steam_drill", "pos": [1, 2, 3]}], expected)
+        for observed in ([{"block": "steamadvantage:steam_drill", "pos": [1, 2, 3]}],
+                         [{"block": "basesteam:steam_drill", "pos": [1, 2, 4]}]):
+            with self.subTest(observed=observed), self.assertRaisesRegex(AssertionError, "registry IDs differ"):
+                require_fixture_definition(observed, expected)
 
 
 class NativeGeometryAuditTests(unittest.TestCase):

@@ -218,12 +218,14 @@ class NativeRunnerAssessmentIntegrationTest(unittest.TestCase):
                  patch.object(native117_actors, "audit_stopped", return_value=dict(status='PASS',
                      snapshotSha256='A' * 64, matchedEntities=5, auditedDimensions=1)), \
                  patch.object(native117_actors, "require_clean_log"), \
-                 patch.object(native117_actors.time, "sleep"), \
+                 patch.object(native117_actors, "await_natural_ticks") as wait_ticks, \
                  patch.object(native117_actors.actors, "backup_state", return_value={}), \
                  patch.object(native117_actors.dimensions, "tick_result", return_value={"status": "PASS"}), \
                  patch.object(assessment, "load_native_proof", return_value=PROOF):
                 checks = native117_actors.run_route(source, runtime, None, args)
             self.assertEqual(3, server.call_count)
+            self.assertEqual(["conversion-release", "restart-load-release", "released", "restart-released"],
+                             [call.args[-1] for call in wait_ticks.call_args_list])
             self.assertEqual("FAIL", checks["conversion"]["status"])
             sidecar = json.loads((runtime / "native117-platform-assessment.json").read_text())
             self.assertEqual("PASS_WITH_NATIVE_DIFFERENCE", sidecar["assessment"]["status"])

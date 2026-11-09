@@ -14,6 +14,11 @@ from matrix import write_json
 class FirstCallbackTests(unittest.TestCase):
     definition = [{"id": "drill", "to": [1, 80, 1]}]
 
+    def runner(self, folder):
+        runner = native.NativeLifecycleRun(Path(folder), None, None, self.definition)
+        runner._round_trip_ready = Mock(return_value=["fixture-chunks-ready"])
+        return runner
+
     def document(self, nbt='{progress:12s,targetX:2,targetY:80,targetZ:1,TargetState:{Name:"minecraft:stone"}}'):
         row = dict(pos=[1, 80, 1], loaded=True, tileIdentity=42, nbt=nbt)
         flags = {name: True for name in native.ROUND_TRIP_FLAGS}
@@ -81,7 +86,7 @@ class FirstCallbackTests(unittest.TestCase):
 
     def test_probe_issues_one_operation_and_never_resamples_a_failed_first_machine_result(self):
         with tempfile.TemporaryDirectory() as folder:
-            runner = native.NativeLifecycleRun(Path(folder), None, None, self.definition)
+            runner = self.runner(folder)
             doc = self.document()
             def probe(operation, label):
                 write_json(Path(folder) / "advantage-works-results" / ("lifecycle-" + label + ".json"), doc)
@@ -89,12 +94,13 @@ class FirstCallbackTests(unittest.TestCase):
             runner._raw_probe = Mock(side_effect=probe)
             runner._wait_ready = Mock(side_effect=AssertionError("Clock-based resampling forbidden"))
             self.assertIs(runner.probe("changed-target-read", "changed"), doc)
+            runner._round_trip_ready.assert_called_once_with("changed")
             runner._raw_probe.assert_called_once_with("changed-target-read", "changed")
             runner._wait_ready.assert_not_called()
 
     def test_failed_first_legacy_callback_blocks_changed_mutation_and_is_not_observer_repaired(self):
         with tempfile.TemporaryDirectory() as folder:
-            runner = native.NativeLifecycleRun(Path(folder), None, None, self.definition)
+            runner = self.runner(folder)
             doc = self.document('{progress:227s,targetX:2,targetY:80,targetZ:1}')
             doc["roundTrip"].update(operation="legacy-read", label="save-read-legacy")
             runner._raw_probe = Mock(side_effect=[doc, doc, self.document("{progress:0s}")])
@@ -139,7 +145,7 @@ class FirstCallbackTests(unittest.TestCase):
         for nbt in ('{progress:0s,TargetState:{Name:"minecraft:stone"}}',
                     '{progress:12s,targetX:99,targetY:80,targetZ:1,TargetState:{Name:"minecraft:stone"}}'):
             with tempfile.TemporaryDirectory() as folder:
-                runner = native.NativeLifecycleRun(Path(folder), None, None, self.definition)
+                runner = self.runner(folder)
                 doc = self.document()
                 doc["roundTrip"].update(operation="legacy-read", label="legacy")
                 doc["roundTrip"]["callbacks"]["drill"]["after"]["nbt"] = nbt

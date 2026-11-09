@@ -124,6 +124,7 @@ def runtime_error_lines(text):
         line = re.sub(r"\x1b\[[0-9;]*m", "", original)
         if ("/ERROR]" in line or "/FATAL]" in line
                 or re.search(r"\b(?:[\w$]+\.)*[\w$]+(?:Exception|Error)\b", line)
+                or re.search(r"Missing data pack mod:(?:poweradvantage|steamadvantage|electricadvantage)(?:\s|$)", line)
                 or any(marker in line for marker in (
                     "Exception in thread", "Caused by:", "Failed to reload data packs",
                     "Encountered an unexpected exception"))):

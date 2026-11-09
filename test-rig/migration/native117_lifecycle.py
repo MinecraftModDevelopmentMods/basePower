@@ -22,6 +22,7 @@ from native117 import (LAUNCHER, compare_upgraded, output_path, pinned_profile,
                        require_clean_log, require_disjoint)
 from native117_geometry import require_geometry
 from native117_identity import command_ids, fixture_ids
+from native117_readiness import await_ready
 
 
 def read_json(path):
@@ -238,6 +239,15 @@ class NativeLifecycleRun(lifecycle.LifecycleRun):
     def _record(self):
         write_json(self.runtime / "native117-readiness.json", self.observations)
 
+    def _round_trip_ready(self, label):
+        areas = dict.fromkeys(tuple(fixture[key][axis] >> 4
+                                    for key in ("min", "max") for axis in (0, 2))
+                              for fixture in self.definition)
+        # FULL terrain may be loaded while its entity sections are still pending.
+        # Observe only; the Java probe still owns the first eligible START/END.
+        return [await_ready(self.server, self.runtime, bounds, f"{label}-chunks-{index}")["label"]
+                for index, bounds in enumerate(areas)]
+
     def _wait_ready(self, label, initial, reload_before=None):
         started = time.monotonic()
         record = dict(label=label, status="PENDING", min_real_ticks=DEFERRED_TICKS,
@@ -362,6 +372,7 @@ class NativeLifecycleRun(lifecycle.LifecycleRun):
         record = dict(label=label, operation=operation, phase=ROUND_TRIP_PROTOCOL, status="PENDING")
         self.observations.append(record)
         try:
+            record["chunk_readiness"] = self._round_trip_ready(label)
             selected = self._raw_probe(operation, label)
             require_round_trip(selected, self.definition, operation, label)
             record.update(selected_label=label, canonical_label=label, round_trip=selected["roundTrip"], status="PASS")
@@ -497,7 +508,8 @@ def run(args):
     with socket.socket() as listener:
         listener.bind(("127.0.0.1", args.port))
     definition = fixture_ids(lifecycle.fixtures())
-    helper_before = {path.name: digest(path) for path in (Path(lifecycle.__file__), Path(__file__))}
+    helpers = (Path(lifecycle.__file__), Path(__file__), Path(__file__).with_name("native117_readiness.py"))
+    helper_before = {path.name: digest(path) for path in helpers}
     output.mkdir(parents=True, exist_ok=False)
     report_path = output / "native117-lifecycle-results.json"
     report = dict(status="RUNNING", started_at_utc=datetime.now(timezone.utc).isoformat(),
@@ -511,7 +523,7 @@ def run(args):
                   targetManifestSha256=digest(args.target_manifest), targetProfile=read_json(args.target_manifest)["target117"],
                   helperSha256=helper_before, port=args.port, profiles={})
     report["load_stack_tracing"] = getattr(args, "trace_loads", False)
-    for path in (Path(lifecycle.__file__), Path(__file__)):
+    for path in helpers:
         archive = output / "protocol-sources" / path.name
         archive.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(path, archive)
@@ -578,7 +590,7 @@ def run(args):
         report["sourceWorldAfter"] = fingerprint(args.source.resolve() / WORLD)
         if after != source_before:
             report.update(status="FAIL", source_error="Protected retained13 source changed")
-        helper_after = {path.name: digest(path) for path in (Path(lifecycle.__file__), Path(__file__))}
+        helper_after = {path.name: digest(path) for path in helpers}
         report["helpers_unchanged"] = helper_after == helper_before
         if helper_after != helper_before:
             report.update(status="FAIL", helper_error="Lifecycle code changed during execution")

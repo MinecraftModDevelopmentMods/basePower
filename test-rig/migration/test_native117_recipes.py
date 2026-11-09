@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, call, patch
 import zipfile
 
 import native117_recipes as recipes
@@ -15,6 +15,19 @@ class NativeRecipeTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
+
+    def test_progression_waits_for_reload_and_native_entity_readiness(self):
+        server = Mock()
+        bounds = {"min": [16384, 78, 16384], "max": [16415, 88, 16415]}
+        with patch.object(recipes, "await_ready", side_effect=AssertionError("entities not ready")) as ready:
+            with self.assertRaisesRegex(AssertionError, "entities not ready"):
+                recipes.prepare_progression(server, self.root, bounds, "normal-initial-reload", True)
+        self.assertEqual([
+            call.send("reload"), call.wait("Reloading!", 60), call.wait(" advancements", 120),
+            call.send("forceload add 16384 16384 16415 16415"),
+        ], server.mock_calls)
+        ready.assert_called_once_with(server, self.root, (1024, 1024, 1025, 1025),
+                                      "progression-normal-initial-reload")
 
     def packaged(self, counts=None, bad_predicate=False, legacy_predicate=False):
         jars = []

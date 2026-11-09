@@ -15,14 +15,20 @@ def native(line):
     return native117_machine_operations
 
 
-audit_documents = bind(historical.audit_documents, native=native)
+_audit_documents = bind(historical.audit_documents, native=native)
+
+
+def audit_documents(catalog, operation, fixture, cold, line):
+    return _audit_documents(catalog, operation, fixture, cold, line, namespace="basesteam")
+
+
 _audit = bind(historical.audit, native=native, audit_documents=audit_documents)
 
 
 def audit(runtime, line='117'):
     result = _audit(runtime, line)
     result['adapterSha256'] = hashlib.sha256(Path(__file__).read_bytes()).hexdigest().upper()
-    result['adapterScope'] = 'Native validator selection only; historical Steam comparison code unchanged'
+    result['adapterScope'] = 'Native validator and expected basesteam identity; no observed ID translation'
     return result
 
 

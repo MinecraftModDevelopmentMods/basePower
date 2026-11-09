@@ -1,4 +1,4 @@
-"""Native 1.16 recipe exports and progression on new hash-pinned disposable servers.
+"""Native 1.17 recipe exports and progression on new hash-pinned disposable servers.
 
 Historical campaign modules supply assertion data only. No legacy profile, seed,
 world, artifact fallback or historical result is used as native runtime evidence.
@@ -20,6 +20,7 @@ from native117_code import Server
 from native117 import TEST_FLAT, stage
 from native117 import RIG, output_path, pinned_profile, require_clean_log, require_disjoint, runtime_error_lines
 from native117_identity import fixture_ids
+from native117_readiness import await_ready
 from progression import fixture as progression_fixture, validate_tags
 from recipe_unlocks import MATERIALS
 
@@ -109,6 +110,8 @@ def stage_native(runtime, target, port, campaign):
     (runtime / "server.properties").write_text("".join(f"{key}={value}\n" for key, value in props.items()), encoding="utf-8")
     marker = "advantage-recipes.allow" if campaign == "unlock" else "advantage-progression.allow"
     (runtime / marker).touch()
+    if campaign == "progression":
+        (runtime / "advantage-works.allow").touch()
     if digest(runtime / launcher) != digest(target[0] / launcher):
         raise AssertionError("Staged launcher differs from native input")
     for jar in target[2]:
@@ -243,10 +246,24 @@ def unlock_campaign(root, target, entry, java, port, definition, report):
                                 "files": [{"file": path.name, "sha256": digest(path)} for path in artifacts]}
 
 
+def prepare_progression(server, runtime, bounds, label, reload):
+    if reload:
+        server.send("reload")
+        server.wait("Reloading!", 60)
+        server.wait(" advancements", 120)
+    low, high = bounds["min"], bounds["max"]
+    server.send(f"forceload add {low[0]} {low[2]} {high[0]} {high[2]}")
+    chunks = (low[0] // 16, low[2] // 16, high[0] // 16, high[2] // 16)
+    readiness = "progression-" + label
+    await_ready(server, runtime, chunks, readiness)
+    return runtime / "advantage-works-results" / f"native-readiness-{readiness}.json"
+
+
 def progression_campaign(root, target, entry, java, port, report):
     runtime = root / "progression"
     launcher = stage_native(runtime, target, port, "progression")
-    write_json(runtime / "progression-fixture.json", fixture_ids(progression_fixture()))
+    definition = fixture_ids(progression_fixture())
+    write_json(runtime / "progression-fixture.json", definition)
     pack = runtime / WORLD / "datapacks/progression-override"
     write_json(pack / "pack.mcmeta", {"pack": {"pack_format": 7, "description": "Disposable loot-override witness"}})
     write_json(pack / "data/minecraft/loot_tables/chests/simple_dungeon.json", {
@@ -265,9 +282,8 @@ def progression_campaign(root, target, entry, java, port, report):
                                "report": f"progression-{name}.json", "status": "RUNNING"}
                         report["progression_cases"].append(row)
                         write_json(root / "native117-recipes-results.json", report)
-                        if reload:
-                            server.send("reload")
-                            server.wait("Reloading!", 60)
+                        readiness = prepare_progression(server, runtime, definition["machineBounds"], name, reload)
+                        row["readiness"] = {"file": str(readiness.relative_to(runtime)), "sha256": digest(readiness)}
                         server.send(f"advprogression {name}")
                         server.wait(f"ADVPROGRESSION COMPLETE {name}", 240)
                         result = read_json(runtime / row["report"])

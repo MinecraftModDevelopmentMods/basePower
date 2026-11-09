@@ -212,7 +212,24 @@ class NativeReadinessTests(unittest.TestCase):
             return value
 
         runner._raw_probe = Mock(side_effect=probe)
+        runner._round_trip_ready = Mock(return_value=["fixture-chunks-ready"])
         return runner
+
+    def test_readiness_failure_does_not_run_the_save_read_mutation(self):
+        runner = self.runner([])
+        runner._round_trip_ready.side_effect = TimeoutError("entity sections not ticking")
+        with self.assertRaisesRegex(TimeoutError, "entity sections not ticking"):
+            runner.probe("legacy-read", "first")
+        runner._raw_probe.assert_not_called()
+        self.assertEqual("FAIL", runner.observations[-1]["status"])
+
+    def test_round_trip_readiness_watches_exact_fixture_chunks(self):
+        runner = native.NativeLifecycleRun(self.root, None, None, self.definition)
+        runner.server = Mock()
+        with patch.object(native, "await_ready", return_value={"label": "first-chunks-0"}) as ready:
+            self.assertEqual(["first-chunks-0"], runner._round_trip_ready("first"))
+        ready.assert_called_once_with(runner.server, self.root, (0, 0, 0, 0), "first-chunks-0")
+        runner.server.send.assert_not_called()
 
     def test_readiness_does_not_inspect_machine_nbt_block_or_progress(self):
         first, ready = self.snapshot(), self.snapshot(101, nbt="not even parsed")

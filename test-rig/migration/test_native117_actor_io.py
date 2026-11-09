@@ -3,11 +3,34 @@ import unittest
 
 import actors
 import dimensions
-from native117_actor_io import capture_actors, capture_dimensions, semantic
+from native117_actor_io import capture_actors, capture_dimensions, semantic, source_identities
 from native117_format import actor_nbt
 
 
 class Native117ActorFormatTests(unittest.TestCase):
+    def test_only_source_registry_fields_are_rebranded(self):
+        old = {"file": {"Inventory": [{"id": "steamadvantage:musket", "Count": 1,
+            "tag": {"Enchantments": [{"id": "steamadvantage:recoil", "lvl": 1}],
+                    "MigrationWitness": "steamadvantage:musket",
+                    "Custom": {"id": "poweradvantage:starch"}}}]},
+            "entities": {"turbine": {"id": "electricadvantage:hydroturbine"}},
+            "generator": {"name": "electricadvantage:hydroelectric_generator",
+                          "tile": {"id": "electricadvantage:hydroelectric_generator"}}}
+        expected = source_identities(old)
+        self.assertEqual("basesteam:musket", expected["file"]["Inventory"][0]["id"])
+        self.assertEqual("baseelectric:hydroturbine", expected["entities"]["turbine"]["id"])
+        self.assertEqual("baseelectric:hydroelectric_generator", expected["generator"]["tile"]["id"])
+        tag = expected["file"]["Inventory"][0]["tag"]
+        self.assertEqual("basesteam:recoil", tag["Enchantments"][0]["id"])
+        self.assertEqual("steamadvantage:musket", tag["MigrationWitness"])
+        self.assertEqual("poweradvantage:starch", tag["Custom"]["id"])
+        self.assertEqual("steamadvantage:musket", old["file"]["Inventory"][0]["id"])
+        self.assertEqual("PASS", dimensions.verdict(expected, copy.deepcopy(expected))["status"])
+        self.assertEqual("FAIL", dimensions.verdict(expected, old)["status"])
+        changed = copy.deepcopy(expected)
+        changed["file"]["Inventory"][0]["tag"]["MigrationWitness"] = "basesteam:musket"
+        self.assertEqual("FAIL", dimensions.verdict(expected, changed)["status"])
+
     def test_capture_algorithms_are_identical_without_mutating_historical_globals(self):
         self.assertIs(capture_actors.__code__, actors.capture.__code__)
         self.assertIs(capture_dimensions.__code__, dimensions.capture.__code__)

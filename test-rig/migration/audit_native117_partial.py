@@ -13,8 +13,9 @@ from lifecycle import (LifecycleRun, at, changed_target_results, contents, count
 from matrix import digest, fingerprint, write_json
 from native117 import pinned_profile
 from native117_geometry import require_geometry
+from native117_identity import fixture_ids
 from native117_lifecycle import (load_event_issues, require_native_boot,
-                                 unload_event_issues, verify_staged)
+                                 require_round_trip, unload_event_issues, verify_staged)
 
 
 def snapshot(runtime, label):
@@ -36,6 +37,11 @@ def geometry_evidence(runtime):
         raise AssertionError("No observed live native forced ticket")
     return dict(snapshots=len(paths), forced_ticket_snapshots=forced,
                 geometry=geometry)
+
+
+def require_fixture_definition(observed, expected):
+    if observed != json.loads(json.dumps(fixture_ids(expected))):
+        raise AssertionError("Native fixture geometry or registry IDs differ")
 
 
 def lifecycle_results(runtime, definition):
@@ -74,14 +80,18 @@ def lifecycle_results(runtime, definition):
         if (contents(old) != contents(new) or old["block"] != new["block"]
                 or "facing=" + fixture["facing"] not in new["state"]):
             raise AssertionError("Moved drill changed across process restart")
+    legacy_read = require_round_trip(snapshot(runtime, "save-read-legacy"), definition,
+                                     "legacy-read", "save-read-legacy")
+    changed_read = require_round_trip(snapshot(runtime, "save-read-changed"), definition,
+                                      "changed-target-read", "save-read-changed")
     computed.update(mining=reader.mining_results(snapshot(runtime, "restart-resumed")),
         mining_after_chunk_reload=reader.mining_results(snapshot(runtime, "mining-retained")),
         mid_block_progress=dict(
             chunk_reload=progress_results(definition, snapshot(runtime, "midblock-before-chunk"), snapshot(runtime, "midblock-after-chunk")),
             full_restart=progress_results(definition, snapshot(runtime, "midblock-before-restart"), snapshot(runtime, "midblock-after-restart"))),
         save_read_guards=dict(
-            legacy_read=progress_results(definition, snapshot(runtime, "save-read-before"), snapshot(runtime, "save-read-legacy")),
-            changed_target_read=changed_target_results(definition, snapshot(runtime, "save-read-legacy"), snapshot(runtime, "save-read-changed"))))
+            legacy_read=progress_results(definition, snapshot(runtime, "save-read-before"), legacy_read),
+            changed_target_read=changed_target_results(definition, legacy_read, changed_read)))
     groups = [computed["move_cases"], computed["mining"], computed["mining_after_chunk_reload"],
               *computed["mid_block_progress"].values(), *computed["save_read_guards"].values()]
     if any(len(group) != 12 for group in groups):
@@ -180,8 +190,7 @@ def audit(root):
     if campaign.startswith("holder-"):
         from native117_holder_networks import bridge_fixtures, extended_fixtures, linear_fixtures
         expected = {"partial": linear_fixtures, "bridge": bridge_fixtures, "extended": extended_fixtures}[kind]()
-    if definition != json.loads(json.dumps(expected)):
-        raise AssertionError("Historical fixture geometry differs")
+    require_fixture_definition(definition, expected)
     result = dict(evidence_audit="PASS", qualification="PASS", campaign=campaign, profiles={})
     for name, summary in report["profiles"].items():
         runtime = root / name
@@ -237,16 +246,22 @@ def audit(root):
                                                       "blocked_after_restart", "resumed_output", "redstone")}
             elif kind == "extended-reads":
                 reader = LifecycleRun(None, None, None, definition)
+                legacy_read = require_round_trip(snapshot(runtime, "save-read-legacy"), definition,
+                                                 "legacy-read", "save-read-legacy")
+                changed_read = require_round_trip(snapshot(runtime, "save-read-changed"), definition,
+                                                  "changed-target-read", "save-read-changed")
                 computed = dict(moves=historical.movement_results(definition, snapshot(runtime, "step-4-complete")),
                     mining=reader.mining_results(snapshot(runtime, "reads-mining-complete")),
                     mid_block_progress=dict(
                         chunk_reload=progress_results(definition, snapshot(runtime, "midblock-before-chunk"), snapshot(runtime, "midblock-after-chunk")),
                         full_restart=progress_results(definition, snapshot(runtime, "midblock-before-restart"), snapshot(runtime, "midblock-after-restart"))),
                     saved_read_guards=dict(
-                        legacy_read=progress_results(definition, snapshot(runtime, "save-read-before"), snapshot(runtime, "save-read-legacy")),
-                        changed_target_read=changed_target_results(definition, snapshot(runtime, "save-read-legacy"), snapshot(runtime, "save-read-changed"))))
+                        legacy_read=progress_results(definition, snapshot(runtime, "save-read-before"), legacy_read),
+                        changed_target_read=changed_target_results(definition, legacy_read, changed_read)))
                 groups = [computed["moves"], computed["mining"], *computed["mid_block_progress"].values(),
                           *computed["saved_read_guards"].values()]
+                if any(len(group) != 18 for group in groups):
+                    raise AssertionError("Incomplete eighteen-route extended drill group")
                 qualification = "PASS" if all(c["status"] == "PASS" for group in groups for c in group.values()) else "FAIL"
                 for f in definition:
                     if "route" in f and contents(at(snapshot(runtime, "save-read-before"), f["id"], f["to"])) != contents(

@@ -53,6 +53,11 @@ class NativeOilTests(unittest.TestCase):
         root.mkdir(parents=True, exist_ok=True)
         self.temp = tempfile.TemporaryDirectory(dir=root)
         self.root = Path(self.temp.name)
+        # The protocol double never starts Java; a real TCP port belongs to
+        # the independent live campaign and must not affect these checks.
+        listener = patch.object(native, "socket")
+        self.listener = listener.start().socket.return_value.__enter__.return_value
+        self.addCleanup(listener.stop)
 
     def tearDown(self):
         self.temp.cleanup()
@@ -93,6 +98,14 @@ class NativeOilTests(unittest.TestCase):
         args = SimpleNamespace(target_manifest=manifest, output=self.root / "native117-oil-unit",
                                java8=java, port=25576, seconds=2)
         return args, (seed, LAUNCHER, [Path(jar["path"]) for jar in jars]), pins
+
+    def test_occupied_port_rejects_before_staging(self):
+        args, _, _ = self.profile()
+        self.listener.bind.side_effect = OSError("port in use")
+        with self.assertRaisesRegex(OSError, "port in use"):
+            native.run(args)
+        self.listener.bind.assert_called_once_with(("127.0.0.1", args.port))
+        self.assertFalse(args.output.exists())
 
     def server_factory(self, mutate=None, transform=None, failure=None, shutdown=False):
         owner = self
