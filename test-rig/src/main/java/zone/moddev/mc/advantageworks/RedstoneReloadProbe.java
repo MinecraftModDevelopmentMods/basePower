@@ -112,9 +112,9 @@ final class RedstoneReloadProbe {
 
     private boolean paused() { return phase != Phase.SEEDING && phase != Phase.OPERATING; }
 
-    private void tick(TickEvent.WorldTickEvent event) {
-        if (!(event.world instanceof ServerLevel) || event.world.dimension() != Level.OVERWORLD) return;
-        ServerLevel current = (ServerLevel) event.world;
+    private void tick(TickEvent.LevelTickEvent event) {
+        if (!(event.level instanceof ServerLevel) || event.level.dimension() != Level.OVERWORLD) return;
+        ServerLevel current = (ServerLevel) event.level;
         if (event.phase == TickEvent.Phase.START) {
             tickStart = current.getGameTime();
             if (paused()) {
@@ -218,7 +218,7 @@ final class RedstoneReloadProbe {
         force(witness);
         for (int dx = -1; dx <= 1; dx++) for (int dy = -1; dy <= 1; dy++) for (int dz = -1; dz <= 1; dz++)
             world.setBlock(witness.pos.offset(dx, dy, dz), Blocks.AIR.defaultBlockState(), 2);
-        Block block = Registry.BLOCK.get(new ResourceLocation("baseelectric:electric_drill"));
+        Block block = net.minecraft.core.registries.BuiltInRegistries.BLOCK.get(new ResourceLocation("baseelectric:electric_drill"));
         if (block == Blocks.AIR) throw new IllegalStateException("Electric drill registry absent");
         world.setBlock(witness.pos, block.defaultBlockState().setValue(BlockStateProperties.FACING, Direction.NORTH), 2);
         for (int dx = -1; dx <= 1; dx++) for (int dy = -1; dy <= 1; dy++)
@@ -280,11 +280,11 @@ final class RedstoneReloadProbe {
             row.put("pos", coordinates(witness.pos));
             row.put("held", witness.held);
             row.put("offset", witness.offset);
-            row.put("block", state.getBlock().getRegistryName().toString());
+            row.put("block", net.minecraftforge.registries.ForgeRegistries.BLOCKS.getKey(state.getBlock()).toString());
             row.put("state", state.toString());
             row.put("active", active(state));
             row.put("signal", world.hasNeighborSignal(witness.pos));
-            row.put("holdBlock", world.getBlockState(witness.pos.above()).getBlock().getRegistryName().toString());
+            row.put("holdBlock", net.minecraftforge.registries.ForgeRegistries.BLOCKS.getKey(world.getBlockState(witness.pos.above()).getBlock()).toString());
             row.put("energy", ((PoweredEntity) tile).getEnergy(new ConduitType("electricity")));
             row.put("progress", (int) nbt.getShort("progress"));
             row.put("nbt", nbt.toString());

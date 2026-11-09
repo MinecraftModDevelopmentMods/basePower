@@ -20,7 +20,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.world.WorldEvent;
+import net.minecraftforge.event.level.LevelEvent;
 import net.minecraftforge.event.RegisterCommandsEvent;
 
 /** Read-only state witnesses in explicitly marked disposable migration worlds. */
@@ -37,14 +37,14 @@ final class MigrationProbe {
         MinecraftForge.EVENT_BUS.addListener(probe::starting);
     }
 
-    private void load(WorldEvent.Load event) {
-        if (event.getWorld() instanceof Level) freeze((Level) event.getWorld());
+    private void load(LevelEvent.Load event) {
+        if (event.getLevel() instanceof Level) freeze((Level) event.getLevel());
     }
-    private void tick(TickEvent.WorldTickEvent event) {
-        if (event.phase == TickEvent.Phase.START) freeze(event.world);
+    private void tick(TickEvent.LevelTickEvent event) {
+        if (event.phase == TickEvent.Phase.START) freeze(event.level);
     }
-    private void chunkLoaded(net.minecraftforge.event.world.ChunkEvent.Load event) {
-        if (event.getWorld() instanceof Level) freeze((Level) event.getWorld());
+    private void chunkLoaded(net.minecraftforge.event.level.ChunkEvent.Load event) {
+        if (event.getLevel() instanceof Level) freeze((Level) event.getLevel());
     }
     private void freeze(Level world) {
         if (!world.isClientSide && !new File("migration-operate.allow").isFile()) NativeBlockEntityTicks.drain(world);
@@ -75,7 +75,7 @@ final class MigrationProbe {
             JsonObject entry = JSON.fromJson(JSON.toJson(element), JsonObject.class);
             BlockPos pos = new BlockPos(entry.get("x").getAsInt(), entry.get("y").getAsInt(), entry.get("z").getAsInt());
             BlockState state = world.getBlockState(pos);
-            entry.addProperty("actualName", state.getBlock().getRegistryName().toString());
+            entry.addProperty("actualName", net.minecraftforge.registries.ForgeRegistries.BLOCKS.getKey(state.getBlock()).toString());
             JsonObject properties = new JsonObject();
             for (Property<?> property : state.getProperties()) {
                 properties.addProperty(property.getName(), state.getValue(property).toString().toLowerCase(Locale.ROOT));

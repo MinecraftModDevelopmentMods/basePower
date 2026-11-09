@@ -136,7 +136,7 @@ final class NativeHarvestProbe {
                     JsonObject actual = new JsonObject();
                     actual.addProperty("entityId", entity.getId());
                     actual.addProperty("uuid", entity.getUUID().toString());
-                    actual.addProperty("item", entity.getItem().getItem().getRegistryName().toString());
+                    actual.addProperty("item", net.minecraftforge.registries.ForgeRegistries.ITEMS.getKey(entity.getItem().getItem()).toString());
                     actual.addProperty("count", entity.getItem().getCount());
                     actual.addProperty("removed", entity.isRemoved());
                     actualDrops.add(actual);
@@ -145,7 +145,7 @@ final class NativeHarvestProbe {
                 int count = 0;
                 for (ItemEntity entity : drops) {
                     ItemStack stack = entity.getItem();
-                    require(stack.getItem().getRegistryName().toString().equals(dropId), "Wrong actual drop: " + stack);
+                    require(net.minecraftforge.registries.ForgeRegistries.ITEMS.getKey(stack.getItem()).toString().equals(dropId), "Wrong actual drop: " + stack);
                     count += stack.getCount();
                 }
                 require(count >= minimum && count <= maximum, "Actual drop quantity changed: " + count);
@@ -218,7 +218,7 @@ final class NativeHarvestProbe {
         harvestDrops(world, new AABB(POS).inflate(2)).forEach(ItemEntity::discard);
         JsonObject report = new JsonObject();
         report.addProperty("label", label);
-        report.addProperty("minecraft", "1.18.2");
+        report.addProperty("minecraft", "1.19.4");
         report.addProperty("worldTime", world.getGameTime());
         report.addProperty("fixtureIsolation", "native117-live-drops-v1");
         report.addProperty("status", java.util.stream.StreamSupport.stream(rows.spliterator(), false)

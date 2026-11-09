@@ -1,4 +1,4 @@
-"""Run recipe discovery and survival progression against the 1.18.2 player jars."""
+"""Run recipe discovery and survival progression against the 1.19.4 player jars."""
 
 import argparse
 from pathlib import Path
@@ -6,25 +6,25 @@ from pathlib import Path
 from matrix import digest, fingerprint, write_json
 from native117 import output_path, require_disjoint
 from native117_recipes import MOD_COUNTS, RecipePruning, progression_campaign, recipe_fixture, unlock_campaign
-import native118
+import native119
 
 
-class RecipeServer(RecipePruning, native118.Server):
+class RecipeServer(RecipePruning, native119.Server):
     @staticmethod
     def errors(text):
-        return native118.log_findings(text)[0]
+        return native119.log_findings(text)[0]
 
 
 class Engine:
-    version = (native118.MINECRAFT, native118.FORGE)
+    version = (native119.MINECRAFT, native119.FORGE)
     pack_format = 9
-    server = native118.Server
+    server = native119.Server
     recipe_server = RecipeServer
-    result_name = "native118-recipes-results.json"
+    result_name = "native119-recipes-results.json"
 
     @staticmethod
     def stage(runtime, target, port, campaign):
-        launcher = native118.stage(runtime, target, port)
+        launcher = native119.stage(runtime, target, port)
         (runtime / ("advantage-recipes.allow" if campaign == "unlock" else "advantage-progression.allow")).touch()
         if campaign == "progression":
             (runtime / "advantage-works.allow").touch()
@@ -40,14 +40,14 @@ def main():
     parser.add_argument("--port", type=int, default=25650)
     parser.add_argument("--campaign", choices=("all", "unlock", "progression"), default="all")
     args = parser.parse_args()
-    target = native118.read_target(args.profile, args.seed, args.inventory, args.inventory_sha256)
+    target = native119.read_target(args.profile, args.seed, args.inventory, args.inventory_sha256)
     root = output_path(args.output)
     for path in (args.profile, args.seed, args.inventory, *(item["path"] for item in target[2].values())):
         require_disjoint(root, path)
     definition, sources = recipe_fixture([item["path"] for item in target[2].values()])
     entry = {"jars": [{**item, "path": str(item["path"])} for item in target[2].values()]}
     before = fingerprint(target[0])
-    report = dict(status="RUNNING", minecraft=native118.MINECRAFT, forge=native118.FORGE, campaign=args.campaign,
+    report = dict(status="RUNNING", minecraft=native119.MINECRAFT, forge=native119.FORGE, campaign=args.campaign,
                   profileSha256=digest(args.profile), inventorySha256=digest(args.inventory),
                   javaSha256=digest(args.java17), target_jars=entry["jars"], recipe_inventory=MOD_COUNTS,
                   unlock_boots=[], progression_cases=[])
@@ -56,11 +56,11 @@ def main():
         if args.campaign in ("all", "unlock"):
             unlock_campaign(root, target, entry, args.java17, args.port, definition, report, engine=Engine)
             if len(report["unlock_boots"]) != 5:
-                raise AssertionError("Incomplete 1.18.2 unlock campaign")
+                raise AssertionError("Incomplete 1.19.4 unlock campaign")
         if args.campaign in ("all", "progression"):
             progression_campaign(root, target, entry, args.java17, args.port, report, engine=Engine)
             if len(report["progression_cases"]) != 18:
-                raise AssertionError("Incomplete 1.18.2 progression campaign")
+                raise AssertionError("Incomplete 1.19.4 progression campaign")
         report["status"] = "PASS"
     except BaseException as failure:
         report.update(status="FAIL", error=repr(failure))

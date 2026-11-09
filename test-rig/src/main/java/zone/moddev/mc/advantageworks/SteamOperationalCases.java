@@ -8,7 +8,6 @@ import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.registries.ForgeRegistries;
 
@@ -64,7 +63,7 @@ final class SteamOperationalCases {
         Fluid fluid = ForgeRegistries.FLUIDS.getValue(new ResourceLocation(id));
         c.require(fluid != null, "Registered input fluid " + id);
         IFluidHandler handler = c.tile(X, Y, Z).getCapability(
-                CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, Direction.UP)
+                net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER, Direction.UP)
                 .orElseThrow(() -> new IllegalStateException("Missing Steam input fluid capability"));
         int accepted = handler.fill(new net.minecraftforge.fluids.FluidStack(fluid, amount),
                 IFluidHandler.FluidAction.EXECUTE);
@@ -91,7 +90,7 @@ final class SteamOperationalCases {
 
     private static void slot(MachineContext c, int index, String item, int count) {
         ItemStack stack = c.inventory(X, Y, Z).getItem(index);
-        String actual = stack.isEmpty() ? "empty" : String.valueOf(stack.getItem().getRegistryName());
+        String actual = stack.isEmpty() ? "empty" : String.valueOf(net.minecraftforge.registries.ForgeRegistries.ITEMS.getKey(stack.getItem()));
         c.record("slot/" + index, actual + ":" + stack.getCount());
         c.require(count == 0 ? stack.isEmpty()
                 : actual.equals(item) && stack.getCount() == count,
@@ -294,7 +293,7 @@ final class SteamOperationalCases {
         add(cases, "still-invalid-fluid", "A real capability rejects water as still feedstock.", 120,
                 c -> { machine(c, "steam_still"); supply(c, 500);
                     IFluidHandler handler = c.tile(X, Y, Z).getCapability(
-                            CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, Direction.UP)
+                            net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER, Direction.UP)
                             .orElseThrow(() -> new IllegalStateException("Missing still fluid capability"));
                     int accepted = handler.fill(new net.minecraftforge.fluids.FluidStack(net.minecraft.world.level.material.Fluids.WATER, 100),
                             IFluidHandler.FluidAction.EXECUTE);
@@ -323,7 +322,7 @@ final class SteamOperationalCases {
     }
 
     private static boolean blockIs(MachineContext c, int x, int y, int z, String id) {
-        String actual = String.valueOf(c.world.getBlockState(c.at(x, y, z)).getBlock().getRegistryName());
+        String actual = String.valueOf(net.minecraftforge.registries.ForgeRegistries.BLOCKS.getKey(c.world.getBlockState(c.at(x, y, z)).getBlock()));
         c.record("block/" + x + "/" + y + "/" + z, actual);
         return actual.equals(id);
     }

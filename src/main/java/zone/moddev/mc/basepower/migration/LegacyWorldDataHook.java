@@ -204,6 +204,11 @@ public final class LegacyWorldDataHook {
         return root == null ? null : root.copy();
     }
 
+    public static java.util.concurrent.CompletableFuture<java.util.Optional<CompoundTag>> copyChunkReadForMigration(
+            java.util.concurrent.CompletableFuture<java.util.Optional<CompoundTag>> read) {
+        return read.thenApply(chunk -> chunk.map(LegacyWorldDataHook::copyChunkForMigration));
+    }
+
     /** Native 1.17 stores entities separately; never mutate an I/O worker's cached data. */
     public static CompoundTag prepareEntityChunkForMigration(CompoundTag source) {
         if (source == null || !source.contains("Position", 11)

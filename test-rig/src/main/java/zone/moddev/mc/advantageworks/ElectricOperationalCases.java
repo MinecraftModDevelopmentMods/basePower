@@ -19,7 +19,6 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.GameRules;
 import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.common.util.FakePlayer;
@@ -231,7 +230,7 @@ public final class ElectricOperationalCases {
                     for (Direction face : Direction.values()) {
                         FluidStack simulated = fluids(c, 8, face).drain(24, IFluidHandler.FluidAction.SIMULATE);
                         equal(c, "face." + face + ".drainable", simulated.getAmount(), 24);
-                        c.require(new ResourceLocation("basepower:refined_oil").equals(simulated.getFluid().getRegistryName()), "Face offers the real refined product " + face);
+                        c.require(new ResourceLocation("basepower:refined_oil").equals(net.minecraftforge.registries.ForgeRegistries.FLUIDS.getKey(simulated.getFluid())), "Face offers the real refined product " + face);
                         equal(c, "face." + face + ".drainSimulationUnchanged", tankAmount(c, 8, 1), 24);
                     }
                 }));
@@ -408,7 +407,7 @@ public final class ElectricOperationalCases {
                     int turbines = 0;
                     for (Entity actor : c.world.getEntitiesOfClass(Entity.class,
                             new AABB(c.at(0, 0, 0), c.at(31, 31, 31)))) {
-                        if (!new ResourceLocation(EA + "hydroturbine").equals(actor.getType().getRegistryName())) continue;
+                        if (!new ResourceLocation(EA + "hydroturbine").equals(net.minecraftforge.registries.ForgeRegistries.ENTITY_TYPES.getKey(actor.getType()))) continue;
                         turbines++;
                         c.record("hydro.motion/" + actor.getUUID(), actor.getDeltaMovement().toString());
                         c.require(actor.getDeltaMovement().lengthSqr() == 0,
@@ -726,7 +725,7 @@ public final class ElectricOperationalCases {
     }
 
     private static int stackCount(ItemStack stack, String id) {
-        return stack == null || stack.isEmpty() || !new ResourceLocation(id).equals(stack.getItem().getRegistryName()) ? 0 : stack.getCount();
+        return stack == null || stack.isEmpty() || !new ResourceLocation(id).equals(net.minecraftforge.registries.ForgeRegistries.ITEMS.getKey(stack.getItem())) ? 0 : stack.getCount();
     }
 
     private static IFluidHandler fluids(MachineContext c, int x) {
@@ -734,7 +733,7 @@ public final class ElectricOperationalCases {
     }
 
     private static IFluidHandler fluids(MachineContext c, int x, Direction face) {
-        return c.tile(x, Y, Z).getCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, face)
+        return c.tile(x, Y, Z).getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER, face)
                 .orElseThrow(() -> new IllegalStateException("Missing real fluid capability at " + x));
     }
 
@@ -762,8 +761,8 @@ public final class ElectricOperationalCases {
 
     private static void fluidIs(MachineContext c, int x, int tank, String id) {
         FluidStack fluid = fluids(c, x).getFluidInTank(tank);
-        c.record("fluid." + x + "." + tank, String.valueOf(fluid.getFluid().getRegistryName()));
-        c.require(new ResourceLocation(id).equals(fluid.getFluid().getRegistryName()), "Tank contains " + id);
+        c.record("fluid." + x + "." + tank, String.valueOf(net.minecraftforge.registries.ForgeRegistries.FLUIDS.getKey(fluid.getFluid())));
+        c.require(new ResourceLocation(id).equals(net.minecraftforge.registries.ForgeRegistries.FLUIDS.getKey(fluid.getFluid())), "Tank contains " + id);
     }
 
     private static void rejectFluid(MachineContext c, int x, String id, int amount) {

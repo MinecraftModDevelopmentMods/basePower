@@ -14,7 +14,9 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.effect.MobEffectInstance;
-import net.minecraftforge.event.RegistryEvent;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraftforge.registries.RegisterEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import zone.moddev.mc.basepower.PowerAdvantage;
@@ -75,7 +77,6 @@ public final class Blocks {
 
     public static synchronized void init() {
         if (initialized) return;
-        ItemGroups.init();
         Fluids.init();
 
         fluid_drain = (GUIBlock) add(new FluidDrainBlock(), "fluid_drain");
@@ -122,30 +123,29 @@ public final class Blocks {
     }
 
     public static Block add(Block block, String id) {
-        block.setRegistryName(PowerAdvantage.MODID, id);
         ALL_BLOCKS.put(id, block);
         return block;
     }
 
     @SubscribeEvent
-    public static void registerBlocks(RegistryEvent.Register<Block> event) {
+    public static void registerBlocks(RegisterEvent event) {
+        if (!ForgeRegistries.Keys.BLOCKS.equals(event.getRegistryKey())) return;
         init();
-        event.getRegistry().registerAll(ALL_BLOCKS.values().toArray(new Block[0]));
+        event.register(ForgeRegistries.Keys.BLOCKS, helper -> ALL_BLOCKS.forEach((id, block) ->
+                helper.register(new ResourceLocation(PowerAdvantage.MODID, id), block)));
     }
 
     @SubscribeEvent
-    public static void registerBlockItems(RegistryEvent.Register<Item> event) {
+    public static void registerBlockItems(RegisterEvent event) {
+        if (!ForgeRegistries.Keys.ITEMS.equals(event.getRegistryKey())) return;
         init();
-        for (Map.Entry<String, Block> entry : ALL_BLOCKS.entrySet()) {
-            Item.Properties properties = new Item.Properties();
-            if (!"fluid_pipe_terminal".equals(entry.getKey())
-                    && !(entry.getValue() instanceof LiquidBlock)) {
-                properties.tab(ItemGroups.tab_powerAdvantage);
+        event.register(ForgeRegistries.Keys.ITEMS, helper -> ALL_BLOCKS.forEach((id, block) -> {
+            BlockItem item = new BlockItem(block, new Item.Properties());
+            if (!"fluid_pipe_terminal".equals(id) && !(block instanceof LiquidBlock)) {
+                ItemGroups.show(item);
             }
-            BlockItem item = new BlockItem(entry.getValue(), properties);
-            item.setRegistryName(PowerAdvantage.MODID, entry.getKey());
-            event.getRegistry().register(item);
-        }
+            helper.register(new ResourceLocation(PowerAdvantage.MODID, id), item);
+        }));
     }
 
     public static Map<String, Block> getModBlockRegistry() {

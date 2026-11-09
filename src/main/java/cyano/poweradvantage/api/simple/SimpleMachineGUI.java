@@ -17,7 +17,6 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TextComponent;
 import zone.moddev.mc.basepower.registry.MachineGUIRegistry;
 
 import java.util.HashMap;
@@ -253,7 +252,7 @@ guiContainer.blit(x+79, y+35, 0, 0, arrowLength, 17); // x, y, textureOffsetX, t
 
         public net.minecraft.client.Minecraft getMinecraft() { return minecraft; }
 		public GUIContainer(Inventory playerItems, net.minecraft.world.Container entity) {
-            this(new Container(playerItems, entity), playerItems, new TextComponent("Machine"));
+            this(new Container(playerItems, entity), playerItems, Component.literal("Machine"));
         }
 
         public GUIContainer(Container container, Inventory playerItems, Component title) {
@@ -303,7 +302,7 @@ guiContainer.blit(x+79, y+35, 0, 0, arrowLength, 17); // x, y, textureOffsetX, t
 			this.blit(x, y + PLAYER_PANEL_TOP, 0, 132, playerInventoryWidth, playerInventoryHeight);
 			com.mojang.blaze3d.systems.RenderSystem.setShaderTexture(0, guiDisplayImage);
 			this.blit(x, y + MACHINE_TOP, 0, 0, guiWidth, MACHINE_HEIGHT);
-			drawGUIDecorations(entity, this, x, y + MACHINE_TOP, this.getBlitOffset());
+			drawGUIDecorations(entity, this, x, y + MACHINE_TOP, getZLevel());
 			RenderSystem.disableBlend();
 		}
 
@@ -318,7 +317,7 @@ guiContainer.blit(x+79, y+35, 0, 0, arrowLength, 17); // x, y, textureOffsetX, t
 		 * @return screen depth coordinate
 		 */
 		public float getZLevel(){
-			return this.getBlitOffset();
+			return 0.0F;
 		}
 		/**
 		 * Gets the width of the GUI

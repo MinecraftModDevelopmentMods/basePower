@@ -1,18 +1,18 @@
 # basePower
 
-**Minecraft 1.18.2, version 2.4.10.118021.**
+**Minecraft 1.19.4, version 2.4.11.119041.**
 
-See the [1.18 port record](docs/1.18/PORT-STATUS.md) for the current checks.
+See the [1.19 port record](docs/1.19/PORT-STATUS.md) for the current checks.
 Results from earlier versions do not qualify this build.
 
 basePower continues DrCyano's Power Advantage. It provides shared power,
 fluids and item transport for baseSteam and baseElectric.
 
 **Back up the entire world before upgrading. Test only disposable copies.**
-The port keeps existing registry names and machine data. I tested disposable
-copies of original Advantage and released base* saves, including connected
-machines, and checked them again after closing and restarting Minecraft.
-Check that the other mods in your world support 1.18.2 before you upgrade.
+The port keeps existing registry names and machine data. The upgrade checks
+use disposable copies of original Advantage and released base* saves, including
+connected machines, and check them again after a full restart. Check that the
+other mods in your world support 1.19.4 before you upgrade.
 The accepted [1.14 results](docs/1.14/BROADER-QUALIFICATION.md) are historical
 evidence, not qualification of this port or a whole modpack.
 
@@ -20,22 +20,24 @@ Recipe-book discovery now follows relevant ingredients. See the [all-Advantage m
 
 The [manufacturing progression audit](docs/1.13/MANUFACTURING-PROGRESSION.md) traces survival parts from raw resources, including configured material aliases, processing, loot-only parts and automated restart checks.
 
-## Building Minecraft 1.18.2
+## Building Minecraft 1.19.4
 
-The build uses Forge 40.3.0, official `1.18.2` mappings,
-MCP `20220404.173914`, ForgeGradle 7.0.34 and Gradle 9.6.1.
+The build uses Forge 45.4.0, official `1.19.4` mappings,
+MCP `20230314.122934`, ForgeGradle 7.0.34 and Gradle 9.6.1.
 Use Java 17 for Gradle, compilation and Minecraft. Mavenizer also
 needs Java 25. CI pins these JDKs and Java 8 for the legacy renamer. Pass the installed homes using
 `-Porg.gradle.java.installations.paths=<java8>,<java17>,<java25>` and disable
 automatic discovery and downloads for a reproducibility check.
 
-Build the pinned Base Metals `3.1.2.118021` and OreSpawn `4.1.0.118021` deobf jars first.
+Build the pinned Base Metals `3.1.2.119041` and OreSpawn `4.1.0.119041` deobf jars first.
 The source pins and checksums are in `gradle.properties`.
-Check out the pinned dependency sources with `core.autocrlf=false` so the
-Base Metals development jar matches CI.
-Use Base Metals 3.1.2 for upgrades with Base Metals installed. Its shared
-save hook lets both mods preserve old items and machines before Minecraft
-converts the chunk. Older Base Metals builds do not have that hook.
+Forge 45 also needs the Mavenizer compatibility jar in the pinned OreSpawn
+checkout's `ci-fixtures/tools/` directory. It fixes decompiled Forge sources
+on a clean build and uses Java 25. It is not part of the mod or game runtime.
+Set `-Pforge45MavenizerJar=<path>` when that checkout is in another location.
+Use Base Metals 3.1.2 if it is installed when upgrading a world. It lets
+both mods preserve old items and machines before Minecraft converts the
+chunk. An older Base Metals jar is not a substitute for this upgrade path.
 
 Then run from the repository root:
 
@@ -46,8 +48,8 @@ gradlew.bat clean check build javadoc verifyReleaseDependencies verifyReleaseArt
 The default dependency jars are:
 
 ```text
-D:\BaseMetals\BaseMetals 118\BaseMetals\build\libs-dev\BaseMetals-3.1.2.118021-deobf.jar
-D:\MinecraftMineralogy\OS118\OreSpawn\build\libs-dev\OreSpawn-4.1.0.118021-deobf.jar
+D:\BaseMetals\BaseMetals 119\BaseMetals\build\libs-dev\BaseMetals-3.1.2.119041-deobf.jar
+D:\MinecraftMineralogy\OS119\OreSpawn\build\libs-dev\OreSpawn-4.1.0.119041-deobf.jar
 ```
 
 Other layouts can pass `-PbaseMetalsDeobfJar=<path>` and `-PoreSpawnDeobfJar=<path>`.
@@ -69,17 +71,17 @@ Refresh the project in Eclipse, allow its Java build to finish, and launch the g
 
 Eclipse copies production resources from `build/resources/main`, not directly from `src/main/resources`. This prevents its builder from overwriting the expanded `mods.toml` with raw `${version}` placeholders. After updating this setup, use **Gradle > Refresh Gradle Project**, then **Project > Clean** before relaunching. After editing resources or version properties, run `processResources` or refresh the Gradle project before the Eclipse build. See the [metadata regression notes](docs/1.13/ECLIPSE-METADATA.md).
 
-To prepare a combined client, build the baseSteam and baseElectric `2.2.11.118021` deobf jars,
+To prepare a combined client, build the baseSteam and baseElectric `2.2.12.119041` deobf jars,
 run `gradlew.bat prepareCombinedEclipseLaunch`, refresh Eclipse, then launch
 `runClientAllAdvantage.launch`. Inputs must match
-`test-rig/profiles/native118/dev-core.json`; alternative layouts can pass
+`test-rig/profiles/native119/dev-core.json`; alternative layouts can pass
 `-PsteamAdvantageDeobfJar=<path>` and `-PelectricAdvantageDeobfJar=<path>`.
 The ordinary `runClient.launch` remains Power-only. Both use the `run` directory;
 preparing a launch does not copy, open or qualify a save.
 
-`check` and Eclipse preparation also run `verifyDevelopmentRuntimeArchives`,
-which reads every development runtime jar entry and checks its size and CRC.
-This catches damaged cached dependencies before the next test launch.
+`check` and the Eclipse audit verify that Java files are in the directories
+matching their packages. They also read every development runtime jar entry
+and check its size and CRC to catch damaged cached dependencies.
 
 Keep Eclipse's access-restriction checks enabled and use Java 17 for its project
 JRE and Minecraft launches. Check visuals, menus and recipe discovery against the
@@ -107,6 +109,6 @@ data-pack tags. The shared pre-flattening migration hook remains necessary;
 its presence is not proof that an upgrade is safe.
 
 The [legacy migration guide](docs/1.13/MIGRATION.md) describes the earlier protocols.
-The [1.18 status](docs/1.18/PORT-STATUS.md) tracks this port's qualification.
+The [1.19 status](docs/1.19/PORT-STATUS.md) tracks this port's qualification.
 
 The historical 1.10 handbook remains on the [1.10.2 branch](https://github.com/MinecraftModDevelopmentMods/PowerAdvantage/blob/master-1.10.2/docs/1.10/README.md).

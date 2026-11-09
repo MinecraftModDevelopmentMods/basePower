@@ -231,7 +231,7 @@ final class MachineContext {
             JsonObject row = new JsonObject();
             row.addProperty("x", pos.getX()); row.addProperty("y", pos.getY()); row.addProperty("z", pos.getZ());
             BlockState state = world.getBlockState(pos);
-            row.addProperty("block", state.getBlock().getRegistryName().toString());
+            row.addProperty("block", net.minecraftforge.registries.ForgeRegistries.BLOCKS.getKey(state.getBlock()).toString());
             row.addProperty("state", state.toString());
             BlockEntity tile = world.getBlockEntity(pos);
             if (tile != null) row.addProperty("nbt", tile.saveWithFullMetadata().toString());

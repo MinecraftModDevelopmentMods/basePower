@@ -292,7 +292,7 @@ public class BlockPos4D {
 		CompoundTag data = (CompoundTag) tag;
 		int[] pos = data.getIntArray("Pos");
 		if (pos.length != 3) throw new IllegalArgumentException("Invalid position");
-		return new BlockPos4D(ResourceKey.create(Registry.DIMENSION_REGISTRY,
+		return new BlockPos4D(ResourceKey.create(net.minecraft.core.registries.Registries.DIMENSION,
 				new ResourceLocation(data.getString("Dimension"))), pos[0], pos[1], pos[2]);
 	}
 

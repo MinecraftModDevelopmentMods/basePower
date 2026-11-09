@@ -34,7 +34,6 @@ import net.minecraft.world.Container;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.core.BlockPos;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraftforge.registries.ForgeRegistries;
 import zone.moddev.mc.basepower.registry.MachineGUIRegistry;
 
@@ -78,10 +77,10 @@ final class MachineGuiLayoutProbe {
             ForgeRegistries.BLOCKS.forEach(block -> {
                 if (block instanceof GUIBlock && ((GUIBlock) block).getGuiID() > 0) blocks.add(block);
             });
-            blocks.sort(Comparator.comparing(block -> block.getRegistryName().toString()));
+            blocks.sort(Comparator.comparing(block -> ForgeRegistries.BLOCKS.getKey(block).toString()));
             for (Block block : blocks) {
                 JsonObject row = new JsonObject();
-                String id = block.getRegistryName().toString();
+                String id = ForgeRegistries.BLOCKS.getKey(block).toString();
                 row.addProperty("block", id);
                 screens.add(row);
                 try {
@@ -90,8 +89,8 @@ final class MachineGuiLayoutProbe {
                     Field textureField = SimpleMachineGUI.class.getDeclaredField("guiDisplayImage");
                     textureField.setAccessible(true);
                     net.minecraft.resources.ResourceLocation texture = (net.minecraft.resources.ResourceLocation) textureField.get(definition);
-                    try (net.minecraft.server.packs.resources.Resource resource = minecraft.getResourceManager().getResource(texture)) {
-                        BufferedImage artwork = ImageIO.read(resource.getInputStream());
+                    try (var resource = minecraft.getResourceManager().open(texture)) {
+                        BufferedImage artwork = ImageIO.read(resource);
                         // The GUI UVs use a logical 256-square atlas; Electric supplies 2x artwork.
                         require(artwork != null && artwork.getWidth() >= 256 && artwork.getWidth() % 256 == 0
                                 && artwork.getWidth() == artwork.getHeight(),
@@ -107,6 +106,7 @@ final class MachineGuiLayoutProbe {
                     Field clientSide = net.minecraft.world.level.Level.class.getDeclaredField("isClientSide");
                     clientSide.setAccessible(true);
                     clientSide.setBoolean(world, true);
+                    player.level = world;
                     tile.setLevel(world);
                     SimpleMachineGUI.Container menu = ((SimpleMachineGUI) definition).createMenu(1, inventory, (Container) tile);
                     require(expectations.getAsJsonObject("machines").has(id), "No human-facing label expectation for " + id);
@@ -335,7 +335,7 @@ final class MachineGuiLayoutProbe {
             Inventory inventory) throws Exception {
         String name = String.join(" / ", java.util.Collections.nCopies(16, "John's oil reserve"));
         RecordingScreen screen = new RecordingScreen(definition, menu, inventory,
-                new net.minecraft.network.chat.TextComponent(name), name, "Inventory");
+                net.minecraft.network.chat.Component.literal(name), name, "Inventory");
         screen.init(minecraft, 320, 240);
         BufferedImage actual = render(minecraft, screen, VIEWPORTS[0], false);
         BufferedImage hidden = render(minecraft, screen, VIEWPORTS[0], true);
@@ -379,6 +379,9 @@ final class MachineGuiLayoutProbe {
             throw new AssertionError("Allocate the read-only GUI fixture without a world constructor");
         }
         @Override public net.minecraft.world.level.block.state.BlockState getBlockState(BlockPos pos) { return state; }
+        @Override public net.minecraft.world.flag.FeatureFlagSet enabledFeatures() {
+            return net.minecraft.world.flag.FeatureFlags.DEFAULT_FLAGS;
+        }
     }
 
     private static final class RecordingScreen extends SimpleMachineGUI.GUIContainer {

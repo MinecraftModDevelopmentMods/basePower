@@ -23,11 +23,12 @@ import net.minecraft.server.Bootstrap;
 import net.minecraft.world.level.Level;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraftforge.common.ForgeMod;
-import net.minecraftforge.event.RegistryEvent;
-import net.minecraftforge.registries.DeferredRegister;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraftforge.registries.IForgeRegistry;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import zone.moddev.mc.advantageworks.unit.ForgeUnitRegistries;
 
 public class LegacyForgeAttributeRegistryTest {
     private static final String[][] ALIASES = {
@@ -39,12 +40,20 @@ public class LegacyForgeAttributeRegistryTest {
 
     @BeforeClass public static void bootstrap() throws Exception {
         Bootstrap.bootStrap();
-        if (ForgeMod.SWIM_SPEED.isPresent()) return;
-        Field field = ForgeMod.class.getDeclaredField("ATTRIBUTES"); field.setAccessible(true);
-        Method register = DeferredRegister.class.getDeclaredMethod("addEntries", RegistryEvent.Register.class);
-        register.setAccessible(true);
-        register.invoke(field.get(null), new RegistryEvent.Register<>(ForgeRegistries.ATTRIBUTES.getRegistryName(), ForgeRegistries.ATTRIBUTES));
+        registerForgeAttributes();
     }
+
+    static void registerForgeAttributes() throws ReflectiveOperationException {
+        ForgeUnitRegistries.registerVanillaFluidTypes();
+        if (ForgeMod.SWIM_SPEED.isPresent()) return;
+        ForgeUnitRegistries.registerForgeEntries("ATTRIBUTES", ForgeRegistries.Keys.ATTRIBUTES, ForgeRegistries.ATTRIBUTES);
+        Method alias = ForgeMod.class.getDeclaredMethod("addAlias", IForgeRegistry.class,
+                ResourceLocation.class, ResourceLocation.class);
+        alias.setAccessible(true);
+        alias.invoke(null, ForgeRegistries.ATTRIBUTES,
+                new ResourceLocation("forge:reach_distance"), new ResourceLocation("forge:block_reach"));
+    }
+
 
     @Test public void retainsEveryForgeAliasAndForeignPayloadBeforeNativeDfu() {
         for (String[] alias : ALIASES) {
@@ -70,7 +79,7 @@ public class LegacyForgeAttributeRegistryTest {
             CompoundTag source = entity(ALIASES[index][0], values[index]); source.putString("id", "minecraft:wolf");
             CompoundTag raw = (CompoundTag) DataFixers.getDataFixer().update(References.ENTITY,
                     new Dynamic<>(NbtOps.INSTANCE, source.copy()), 1343,
-                    SharedConstants.getCurrentVersion().getWorldVersion()).getValue();
+                    SharedConstants.getCurrentVersion().getDataVersion().getVersion()).getValue();
             Wolf negative = new Wolf(EntityType.WOLF, world); negative.load(raw);
             AttributeInstance old = negative.getAttribute(ForgeRegistries.ATTRIBUTES.getValue(
                     new net.minecraft.resources.ResourceLocation(ALIASES[index][1])));
@@ -149,7 +158,7 @@ public class LegacyForgeAttributeRegistryTest {
     @Test public void modernChunksAndSimilarUnknownNamesRemainUntouched() {
         for (String[] alias : ALIASES) {
             CompoundTag root = chunk(entity(alias[0], 7D));
-            root.putInt("DataVersion", SharedConstants.getCurrentVersion().getWorldVersion());
+            root.putInt("DataVersion", SharedConstants.getCurrentVersion().getDataVersion().getVersion());
             CompoundTag before = root.copy(); LegacyEntityDataFixes.prepare(root); assertEquals(before, root);
             root = chunk(entity(alias[0] + ".private", 7D)); before = root.copy();
             LegacyEntityDataFixes.prepare(root); LegacyEntityDataFixes.finish(root); assertEquals(before, root);

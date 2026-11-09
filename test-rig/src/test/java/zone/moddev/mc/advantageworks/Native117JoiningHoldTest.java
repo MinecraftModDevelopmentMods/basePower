@@ -9,7 +9,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.vehicle.Boat;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.event.entity.EntityJoinWorldEvent;
+import net.minecraftforge.event.entity.EntityJoinLevelEvent;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -24,9 +24,9 @@ public class Native117JoiningHoldTest {
         boat.tickCount = 17;
         UUID identity = boat.getUUID();
         MachineOperationalProbe probe = new MachineOperationalProbe();
-        Method joining = MachineOperationalProbe.class.getDeclaredMethod("entityJoining", EntityJoinWorldEvent.class);
+        Method joining = MachineOperationalProbe.class.getDeclaredMethod("entityJoining", EntityJoinLevelEvent.class);
         joining.setAccessible(true);
-        joining.invoke(probe, new EntityJoinWorldEvent(boat, world));
+        joining.invoke(probe, new EntityJoinLevelEvent(boat, world));
         assertFalse(boat.canUpdate());
         // Repeated START enumeration must not replace the pre-join state.
         Field field = MachineOperationalProbe.class.getDeclaredField("heldEntities"); field.setAccessible(true);
@@ -46,9 +46,9 @@ public class Native117JoiningHoldTest {
         MachineOperationalProbe probe = new MachineOperationalProbe();
         Field paused = MachineOperationalProbe.class.getDeclaredField("paused"); paused.setAccessible(true);
         paused.setBoolean(probe, false);
-        Method joining = MachineOperationalProbe.class.getDeclaredMethod("entityJoining", EntityJoinWorldEvent.class);
+        Method joining = MachineOperationalProbe.class.getDeclaredMethod("entityJoining", EntityJoinLevelEvent.class);
         joining.setAccessible(true);
-        joining.invoke(probe, new EntityJoinWorldEvent(boat, world));
+        joining.invoke(probe, new EntityJoinLevelEvent(boat, world));
         assertTrue(boat.canUpdate());
     }
 

@@ -4,7 +4,6 @@ import com.mojang.datafixers.DataFixer;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.NbtUtils;
 import net.minecraft.SharedConstants;
 import net.minecraft.util.datafix.DataFixTypes;
 
@@ -12,18 +11,22 @@ import net.minecraft.util.datafix.DataFixTypes;
 public final class LegacyPlayerDataFixes {
     private LegacyPlayerDataFixes() {}
 
+    public static CompoundTag updateNativePlayer(DataFixTypes type, DataFixer fixer, CompoundTag source, int version) {
+        return update(fixer, type, source, version);
+    }
+
     public static CompoundTag update(DataFixer fixer, DataFixTypes type, CompoundTag source, int version) {
         if (type != DataFixTypes.PLAYER) throw new IllegalArgumentException("Expected native PLAYER type");
         CompoundTag result = source.copy();
-        int current = SharedConstants.getCurrentVersion().getWorldVersion();
+        int current = SharedConstants.getCurrentVersion().getDataVersion().getVersion();
         if (version >= current) return result;
         LegacyEntityDataFixes.preparePlayerAttributes(result);
         if (version < 704) {
             // Re-read the native namespaced container schema before later choice fixes.
-            result = NbtUtils.update(fixer, type, result, version, 704);
+            result = type.update(fixer, result, version, 704);
             version = 704;
         }
-        result = NbtUtils.update(fixer, type, result, version, current);
+        result = type.update(fixer, result, version, current);
         preserveNames(source, result);
         return result;
     }

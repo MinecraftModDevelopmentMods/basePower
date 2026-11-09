@@ -15,12 +15,13 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.extensions.IForgeMenuType;
-import net.minecraftforge.event.RegistryEvent;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraftforge.registries.RegisterEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.network.NetworkHooks;
@@ -51,10 +52,10 @@ public final class MachineGUIRegistry {
     public void removeGUI(int id) { DEFINITIONS.remove(id); }
 
     @SubscribeEvent
-    public static void registerTypes(RegistryEvent.Register<MenuType<?>> event) {
+    public static void registerTypes(RegisterEvent event) {
+        if (!ForgeRegistries.Keys.MENU_TYPES.equals(event.getRegistryKey())) return;
         TYPE = IForgeMenuType.create(MachineGUIRegistry::createClientContainer);
-        TYPE.setRegistryName(PowerAdvantage.MODID, "machine");
-        event.getRegistry().register(TYPE);
+        event.register(ForgeRegistries.Keys.MENU_TYPES, new ResourceLocation(PowerAdvantage.MODID, "machine"), () -> TYPE);
     }
 
     private static SimpleMachineGUI.Container createClientContainer(
@@ -88,7 +89,7 @@ public final class MachineGUIRegistry {
         BlockEntity tile = world.getBlockEntity(pos);
         if (world.isClientSide || player.level != world || !(tile instanceof Container)) return;
         SimpleMachineGUI gui = definition(id);
-        NetworkHooks.openGui(player, new MenuProvider() {
+        NetworkHooks.openScreen(player, new MenuProvider() {
             @Override public AbstractContainerMenu createMenu(int windowId, Inventory inventory, Player owner) {
                 return gui.createMenu(windowId, inventory, (Container) tile);
             }
@@ -103,7 +104,7 @@ public final class MachineGUIRegistry {
             Component customName = ((net.minecraft.world.Nameable) tile).getCustomName();
             if (customName != null) return customName;
         }
-        return new TranslatableComponent(block.getDescriptionId());
+        return Component.translatable(block.getDescriptionId());
     }
 
     public Object getServerGuiElement(int id, Player player, Level world, int x, int y, int z) {

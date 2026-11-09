@@ -64,7 +64,7 @@ final class Native117StoppedEntitiesSnapshotV2 {
         JsonObject result = new JsonObject();
         result.addProperty("format", 2);
         result.addProperty("minecraftVersion", SharedConstants.getCurrentVersion().getName());
-        result.addProperty("dataVersion", SharedConstants.getCurrentVersion().getWorldVersion());
+        result.addProperty("dataVersion", SharedConstants.getCurrentVersion().getDataVersion().getVersion());
         result.addProperty("worldName", server.getWorldData().getLevelName());
         result.addProperty("worldDirectory", server.getWorldPath(LevelResource.ROOT).toAbsolutePath().normalize().toString());
         result.addProperty("bootId", boot);

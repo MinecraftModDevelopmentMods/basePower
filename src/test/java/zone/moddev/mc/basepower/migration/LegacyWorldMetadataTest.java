@@ -1,6 +1,7 @@
 package zone.moddev.mc.basepower.migration;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 import java.util.Set;
 
@@ -12,6 +13,25 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class LegacyWorldMetadataTest {
+    @Test public void movesTheOldPaintingRegistryWithoutLosingItsEntries() {
+        CompoundTag root = new CompoundTag(), forge = new CompoundTag(), registries = new CompoundTag();
+        CompoundTag snapshot = new CompoundTag(), entry = new CompoundTag();
+        ListTag ids = new ListTag();
+        entry.putString("K", "example:custom_painting");
+        entry.putInt("V", 42);
+        ids.add(entry);
+        snapshot.put("ids", ids);
+        registries.put("minecraft:motive", snapshot);
+        forge.put("Registries", registries);
+        root.put("fml", forge);
+        LegacyWorldMetadata.remap(root, id -> false);
+        assertFalse(registries.contains("minecraft:motive"));
+        assertEquals(snapshot, registries.getCompound("minecraft:painting_variant"));
+        CompoundTag once = root.copy();
+        LegacyWorldMetadata.remap(root, id -> false);
+        assertEquals(once, root);
+    }
+
     @BeforeClass public static void registerAliases() {
         AdvantageLegacyMigrations.registerPowerAdvantage();
         LegacyMigrationApi.registerNamespaceAlias("test_old_expansion", "test_new_expansion");

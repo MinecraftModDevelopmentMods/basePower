@@ -43,7 +43,7 @@ public class LegacyTransformerOrderTest {
             if (target[1].equals("legacy_chunk_status")) {
                 assertEquals(1, calls(node, "basepower", "finalizeLegacyChunk"));
                 assertEquals(1, calls(node, "basemetals", "finalizeLegacyChunk"));
-                assertEquals(1, calls(node, "basepower", "copyChunkForMigration"));
+                assertEquals(1, calls(node, "basepower", "copyChunkReadForMigration"));
                 assertEquals(1, calls(node, "basepower", "prepareLegacyEntities"));
                 assertEntityPreparationOrder(node);
             }

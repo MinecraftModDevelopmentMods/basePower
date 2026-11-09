@@ -65,10 +65,14 @@ public class FluidTankGUI extends SimpleMachineGUI {
 	) {
 		if (fs == null || fs.getFluid() == null || width <= 0 || height <= 0) return;
 		// The atlas supplies the current animation frame; water's sprite is grayscale.
+		var fluidStack = zone.moddev.mc.basepower.util.ForgeFluidAdapter.toForge(fs);
+		var rendering = net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions.of(fs.getFluid());
+		var stillTexture = rendering.getStillTexture(fluidStack);
+		if (stillTexture == null) return;
 		TextureAtlasSprite sprite = guiContainer.getMinecraft().getTextureAtlas(TextureAtlas.LOCATION_BLOCKS)
-				.apply(fs.getFluid().getAttributes().getStillTexture());
+				.apply(stillTexture);
 		com.mojang.blaze3d.systems.RenderSystem.setShaderTexture(0, TextureAtlas.LOCATION_BLOCKS);
-		int color = fs.getFluid().getAttributes().getColor(zone.moddev.mc.basepower.util.ForgeFluidAdapter.toForge(fs));
+		int color = rendering.getTintColor(fluidStack);
 		if (fs.getFluid().isSame(net.minecraft.world.level.material.Fluids.WATER)) {
 			color = guiContainer.getMinecraft().level != null && guiContainer.getMinecraft().player != null
 					? BiomeColors.getAverageWaterColor(guiContainer.getMinecraft().level, guiContainer.getMinecraft().player.blockPosition()) : 0x3F76E4;

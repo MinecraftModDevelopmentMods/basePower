@@ -15,6 +15,8 @@ plugins {
     id 'net.minecraftforge.gradle' version '7.0.34'
 }
 
+apply from: 'gradle/forge45-mavenizer.gradle'
+
 group = project.mod_group
 version = project.mod_version
 base.archivesName = 'basePower'
@@ -132,7 +134,7 @@ sourceSets.main.resources {
 def forgeRunModClassesDirectory = layout.buildDirectory.dir('forge-run-mod-classes/main')
 def prepareForgeRunModClasses = tasks.register('prepareForgeRunModClasses', Sync) {
     group = 'ide'
-    description = 'Merges classes and processed resources for Forge 1.18 launches.'
+    description = 'Merges classes and processed resources for Forge 1.19.4 launches.'
     dependsOn tasks.named('classes')
     from sourceSets.main.output
     into forgeRunModClassesDirectory
@@ -167,10 +169,10 @@ repositories {
 // The default paths mirror the local MMD checkout layout without tying the
 // build to a drive letter. CI and other layouts can override either path.
 def baseMetalsDeobfJar = file(providers.gradleProperty('baseMetalsDeobfJar')
-        .getOrElse('../../../BaseMetals/BaseMetals 118/BaseMetals/build/libs-dev/'
+        .getOrElse('../../../BaseMetals/BaseMetals 119/BaseMetals/build/libs-dev/'
                 + "BaseMetals-${project.basemetals_version}-deobf.jar"))
 def oreSpawnDeobfJar = file(providers.gradleProperty('oreSpawnDeobfJar')
-        .getOrElse('../../../MinecraftMineralogy/OS118/OreSpawn/build/libs-dev/'
+        .getOrElse('../../../MinecraftMineralogy/OS119/OreSpawn/build/libs-dev/'
                 + "OreSpawn-${project.orespawn_version}-deobf.jar"))
 
 dependencies {
@@ -181,6 +183,8 @@ dependencies {
     runtimeOnly files(baseMetalsDeobfJar, oreSpawnDeobfJar)
     testImplementation 'junit:junit:4.13.2'
 }
+
+sourceSets.test.java.srcDir 'test-rig/unit-support'
 
 def compileUnitBootstrap = tasks.register('compileUnitBootstrap', JavaCompile) {
     source fileTree('test-rig/unit-bootstrap')
@@ -334,17 +338,17 @@ tasks.register('verifyReleaseConfiguration') {
     description = 'Validates release identity, target metadata, and optional integration policy.'
     doLast {
         def pack = new JsonSlurper().parse(file('src/main/resources/pack.mcmeta')).pack
-        if (pack.pack_format != 9 || pack['forge:resource_pack_format'] != 8 || pack['forge:data_pack_format'] != 9) {
-            throw new GradleException('Minecraft 1.18.2 requires resource pack format 8 and data pack format 9')
+        if (pack.pack_format != 12 || pack['forge:resource_pack_format'] != 13 || pack['forge:data_pack_format'] != 12) {
+            throw new GradleException('Minecraft 1.19.4 requires resource pack format 13 and data pack format 12')
         }
-        if (project.mod_version != '2.4.10.118021') {
+        if (project.mod_version != '2.4.11.119041') {
             throw new GradleException("Unexpected PowerAdvantage release version: ${project.mod_version}")
         }
-        if (project.minecraft_version != '1.18.2'
-                || project.forge_version != '40.3.0'
+        if (project.minecraft_version != '1.19.4'
+                || project.forge_version != '45.4.0'
                 || project.mapping_channel != 'official'
-                || project.mapping_version != '1.18.2'
-                || project.mcp_version != '20220404.173914') {
+                || project.mapping_version != '1.19.4'
+                || project.mcp_version != '20230314.122934') {
             throw new GradleException('Unexpected Minecraft, Forge, or mappings target')
         }
         if (project.loader_name != 'forge' || project.loader_code != '1'
@@ -361,19 +365,19 @@ tasks.register('verifyReleaseConfiguration') {
         }
         if (project.cf_requirements != 'base-metals,mmd-orespawn'
                 || project.cf_optionals != 'additional-loot-tables'
-                || project.cf_versions != '1.18.2') {
+                || project.cf_versions != '1.19.4') {
             throw new GradleException('Unexpected CurseForge dependency or game-version metadata')
         }
-        if (project.basemetals_version != '3.1.2.118021'
-                || project.orespawn_version != '4.1.0.118021'
-                || project.basemetals_source_commit != '3488ed58403722ac3ff203cff7680dfc16e0fd3f'
-                || project.orespawn_source_commit != 'd31f52f296739f34a0c13f554abf3e1ac071ae25') {
+        if (project.basemetals_version != '3.1.2.119041'
+                || project.orespawn_version != '4.1.0.119041'
+                || project.basemetals_source_commit != 'a9fdd6842f2a2e1e2e5b9a0abf9178d5675df044'
+                || project.orespawn_source_commit != '444d86ef48db2bf54422901b067c51d5832197fc') {
             throw new GradleException('Unexpected Base Metals or OreSpawn dependency identity')
         }
         String mainSource = file(
                 'src/main/java/zone/moddev/mc/basepower/PowerAdvantage.java').getText('UTF-8')
         if (!mainSource.contains('MODID = "basepower"')
-                || !mainSource.contains('VERSION = "2.4.10.118021"')
+                || !mainSource.contains('VERSION = "2.4.11.119041"')
                 || !mainSource.contains('@Mod(PowerAdvantage.MODID)')) {
             throw new GradleException('PowerAdvantage source identity changed')
         }
@@ -944,12 +948,34 @@ tasks.register('isolateEclipseProductionRuns') {
     }
 }
 
+def verifyJavaPackageLayout = tasks.register('verifyJavaPackageLayout') {
+    group = 'verification'
+    description = 'Checks that Java packages match their paths for Eclipse source lookup.'
+    doLast {
+        sourceSets.each { sourceSet ->
+            sourceSet.java.srcDirs.each { root ->
+                fileTree(root).matching { include '**/*.java' }.files.sort().each { source ->
+                    def declaration = source.getText('UTF-8') =~ /(?m)^\s*package\s+([\w.$]+)\s*;/
+                    String declared = declaration.find() ? declaration.group(1) : ''
+                    String expected = root.toPath().relativize(source.parentFile.toPath())
+                            .toString().replace(File.separator, '.')
+                    if (declared != expected) {
+                        throw new GradleException("${relativePath(source)} declares package '${declared}', "
+                                + "but the ${sourceSet.name} source root expects '${expected}'")
+                    }
+                }
+            }
+        }
+    }
+}
+
 tasks.register('verifyEclipseProductionClasspath') {
     group = 'verification'
     description = 'Verifies the generated Eclipse project and production launches.'
     dependsOn tasks.named('eclipse')
     dependsOn tasks.named('verifyDevelopmentRuntimeArchives')
     dependsOn tasks.named('isolateEclipseProductionRuns')
+    dependsOn verifyJavaPackageLayout
     doLast {
         File preferencesFile = file('.settings/org.eclipse.buildship.core.prefs')
         Properties preferences = new Properties()
@@ -1064,6 +1090,7 @@ tasks.register('verifyModelAssets') {
                 zip.entries().each { entry -> vanillaAssets.add(entry.name) }
             }
         }
+        def atlas = new JsonSlurper().parse(new File(resourceRoot, 'assets/minecraft/atlases/blocks.json'))
         def verifyReference = { String reference, String assetType, String sourcePath ->
             if (reference.startsWith('#')) return
             int separator = reference.indexOf(':')
@@ -1083,6 +1110,10 @@ tasks.register('verifyModelAssets') {
                     "assets/${namespace}/${assetType}/${path}.json")
             if (assetType == 'textures') {
                 target = new File(resourceRoot, "assets/${namespace}/textures/${path}.png")
+                if (!atlas.sources.any { it.type == 'directory' && it.prefix == it.source + '/'
+                        && path.startsWith(it.prefix as String) }) {
+                    throw new GradleException("${sourcePath} references texture ${reference} outside the block atlas")
+                }
             }
             if (!target.isFile()) {
                 throw new GradleException(
@@ -1173,6 +1204,7 @@ tasks.register('verifyRecipeTagGuards') {
 }
 
 tasks.named('check') {
+    dependsOn verifyJavaPackageLayout
     dependsOn tasks.named('verifyReleaseConfiguration')
     dependsOn tasks.named('verifyDevelopmentRuntimeArchives')
     dependsOn tasks.named('verifyModelAssets')
@@ -1202,9 +1234,9 @@ tasks.register('clientResourceProbeJar', Jar) {
 // these deobf jars are runtime inputs, never release contents or compile dependencies.
 def advantageExtensionJars = [
         basesteam: file(providers.gradleProperty('steamAdvantageDeobfJar').getOrElse(
-                '../SteamAdvantage/SteamAdvantage/build/libs-dev/baseSteam-2.2.11.118021-deobf.jar')),
+                '../SteamAdvantage/SteamAdvantage/build/libs-dev/baseSteam-2.2.12.119041-deobf.jar')),
         baseelectric: file(providers.gradleProperty('electricAdvantageDeobfJar').getOrElse(
-                '../ElectricAdvantage/ElectricAdvantage/build/libs-dev/baseElectric-2.2.11.118021-deobf.jar'))
+                '../ElectricAdvantage/ElectricAdvantage/build/libs-dev/baseElectric-2.2.12.119041-deobf.jar'))
 ]
 
 tasks.register('prepareCombinedEclipseLaunch') {
@@ -1214,7 +1246,7 @@ tasks.register('prepareCombinedEclipseLaunch') {
     dependsOn tasks.named('deobfJar')
     doLast {
         File inputProfile = file(providers.gradleProperty('advantageDevelopmentProfile').getOrElse(
-                'test-rig/profiles/native118/dev-core.json'))
+                'test-rig/profiles/native119/dev-core.json'))
         def profile = new JsonSlurper().parse(inputProfile)
         if (profile.powerDeobfSha256) {
             File powerJar = tasks.named('jar', Jar).get().archiveFile.get().asFile

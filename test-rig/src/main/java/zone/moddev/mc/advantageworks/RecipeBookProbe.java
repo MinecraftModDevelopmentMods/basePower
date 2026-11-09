@@ -28,14 +28,14 @@ final class RecipeBookProbe {
             String namespace = recipe.getId().getNamespace();
             if (!(namespace.equals("basepower") || namespace.equals("basesteam") || namespace.equals("baseelectric"))) continue;
             if (recipe.getType() != RecipeType.CRAFTING && recipe.getType() != RecipeType.SMELTING) continue;
-            String output = id(recipe.getResultItem());
+            String output = id(recipe.getResultItem(world.registryAccess()));
             require(output.equals(recipe.getGroup()), "Mixed-output recipe group: " + recipe.getId() + " -> " + recipe.getGroup());
             JsonObject entry = new JsonObject();
             entry.addProperty("id", recipe.getId().toString());
             entry.addProperty("group", recipe.getGroup());
-            entry.addProperty("type", net.minecraft.core.Registry.RECIPE_TYPE.getKey(recipe.getType()).toString());
+            entry.addProperty("type", net.minecraft.core.registries.BuiltInRegistries.RECIPE_TYPE.getKey(recipe.getType()).toString());
             entry.addProperty("output", output);
-            entry.addProperty("count", recipe.getResultItem().getCount());
+            entry.addProperty("count", recipe.getResultItem(world.registryAccess()).getCount());
             entries.add(entry);
             recipes.add(recipe);
         }
@@ -59,7 +59,7 @@ final class RecipeBookProbe {
                 require(starch.matches(grid, world), "Potato recipe rejected slot/stack " + slot + "/" + count);
                 Recipe<?> selected = world.getRecipeManager().getRecipeFor(RecipeType.CRAFTING, grid, world).orElse(null);
                 require(selected != null && selected.getId().equals(starch.getId()), "Conflicting native potato crafting recipe");
-                ItemStack result = starch.assemble(grid);
+                ItemStack result = starch.assemble(grid, world.registryAccess());
                 require(id(result).equals("basepower:starch") && result.getCount() == 1, "Starch output changed");
                 require(grid.getItem(slot).getCount() == count, "Result preview mutated input");
                 ItemStack consumed = grid.removeItem(slot, 1);
@@ -87,6 +87,9 @@ final class RecipeBookProbe {
     private static CraftingContainer grid(int width) {
         return new CraftingContainer(new AbstractContainerMenu(null, 0) {
             @Override public boolean stillValid(net.minecraft.world.entity.player.Player player) { return true; }
+            @Override public ItemStack quickMoveStack(net.minecraft.world.entity.player.Player player, int slot) {
+                return ItemStack.EMPTY;
+            }
         }, width, width);
     }
 }

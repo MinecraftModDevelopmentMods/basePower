@@ -1,16 +1,19 @@
 package zone.moddev.mc.basepower.recipe;
 
+import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
+import java.util.List;
+import java.util.Set;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
-import net.minecraft.tags.Tag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.PackType;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import zone.moddev.mc.basepower.resources.NativeTestTags;
 import static org.junit.Assert.*;
 
 public class MaterialTagsTest {
@@ -18,42 +21,32 @@ public class MaterialTagsTest {
 
     @Test public void addsNativeAliasesWithoutReplacingUserEntries() throws Exception {
         MaterialPolicyPack pack = new MaterialPolicyPack(true, true);
-        Tag<Item> rubber = resolve(pack, "rubber", "[\"minecraft:stick\",\"basepower:bioplastic_ingot\"]");
-        assertTrue(rubber.getValues().contains(Items.STICK));
-        assertTrue(rubber.getValues().contains(Items.APPLE));
-        assertEquals(2, rubber.getValues().size());
-        assertTrue(resolve(pack, "ingots/rubber", "[]").getValues().contains(Items.APPLE));
-        Tag<Item> solder = resolve(pack, "solder", "[\"minecraft:redstone\"]");
-        assertTrue(solder.getValues().contains(Items.IRON_INGOT));
-        assertTrue(solder.getValues().contains(Items.GOLD_INGOT));
-        assertTrue(solder.getValues().contains(Items.REDSTONE));
-        assertEquals(3, solder.getValues().size());
+        assertEquals(Set.of(Items.STICK, Items.APPLE),
+                resolve(pack, "rubber", "[\"minecraft:stick\",\"basepower:bioplastic_ingot\"]"));
+        assertTrue(resolve(pack, "ingots/rubber", "[]").contains(Items.APPLE));
+        assertEquals(Set.of(Items.IRON_INGOT, Items.GOLD_INGOT, Items.REDSTONE),
+                resolve(pack, "solder", "[\"minecraft:redstone\"]"));
     }
 
     @Test public void disabledOptionsDoNotAddAliases() throws Exception {
         MaterialPolicyPack pack = new MaterialPolicyPack(false, false);
-        Tag<Item> rubber = resolve(pack, "rubber", "[\"minecraft:stick\"]");
-        assertTrue(rubber.getValues().contains(Items.STICK));
-        assertFalse(rubber.getValues().contains(Items.APPLE));
-        assertTrue(resolve(pack, "solder", "[]").getValues().isEmpty());
+        assertEquals(Set.of(Items.STICK), resolve(pack, "rubber", "[\"minecraft:stick\"]"));
+        assertTrue(resolve(pack, "solder", "[]").isEmpty());
     }
 
-    private static Tag<Item> resolve(MaterialPolicyPack pack, String path, String userEntries) throws Exception {
+    private static Set<Item> resolve(MaterialPolicyPack pack, String path, String userEntries) throws Exception {
         var resource = new ResourceLocation("forge", "tags/items/" + path + ".json");
-        var parser = new JsonParser();
-        var builder = Tag.Builder.tag();
-        try (var reader = new InputStreamReader(pack.getResource(PackType.SERVER_DATA, resource),
+        JsonObject policy;
+        try (var reader = new InputStreamReader(pack.getResource(PackType.SERVER_DATA, resource).get(),
                 StandardCharsets.UTF_8)) {
-            var json = parser.parse(reader).getAsJsonObject();
-            assertFalse(json.get("replace").getAsBoolean());
-            builder.addFromJson(json, pack.getName());
+            policy = JsonParser.parseReader(reader).getAsJsonObject();
         }
-        builder.addFromJson(parser.parse("{\"values\":" + userEntries + "}").getAsJsonObject(), "user");
+        assertFalse(policy.get("replace").getAsBoolean());
         Map<String, Item> items = Map.of("minecraft:stick", Items.STICK, "minecraft:redstone", Items.REDSTONE,
                 "basepower:bioplastic_ingot", Items.APPLE);
-        Map<String, Tag<Item>> tags = Map.of(
-                "forge:ingots/lead", new Tag<>(java.util.List.of(Items.IRON_INGOT)),
-                "forge:ingots/tin", new Tag<>(java.util.List.of(Items.GOLD_INGOT)));
-        return builder.<Item>build(id -> tags.get(id.toString()), id -> items.get(id.toString())).right().get();
+        Map<String, List<Item>> tags = Map.of(
+                "forge:ingots/lead", List.of(Items.IRON_INGOT), "forge:ingots/tin", List.of(Items.GOLD_INGOT));
+        return NativeTestTags.resolve(id -> items.get(id.toString()), id -> tags.get(id.toString()),
+                policy, JsonParser.parseString("{\"values\":" + userEntries + "}"));
     }
 }

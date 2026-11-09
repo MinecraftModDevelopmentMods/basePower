@@ -18,7 +18,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.core.Direction;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
-import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.BlockAndTintGetter;
@@ -47,7 +48,7 @@ final class OilRenderProbe {
                 net.minecraft.world.level.material.Fluids.FLOWING_WATER.builtInRegistryHolder()));
         synthetic.put(FluidTags.LAVA, List.of(net.minecraft.world.level.material.Fluids.LAVA.builtInRegistryHolder(),
                 net.minecraft.world.level.material.Fluids.FLOWING_LAVA.builtInRegistryHolder()));
-        Registry.FLUID.bindTags(synthetic);
+        BuiltInRegistries.FLUID.bindTags(synthetic);
         try {
         requireBucket(Items.crude_oil_bucket, Fluids.crude_oil);
         requireBucket(Items.refined_oil_bucket, Fluids.refined_oil);
@@ -64,15 +65,15 @@ final class OilRenderProbe {
         valid &= check(minecraft, net.minecraft.world.level.material.Fluids.LAVA.defaultFluidState(), "minecraft:block/lava_still", false, cases);
         if (!valid) throw new IllegalStateException("Native fluid renderer used the wrong sprite or tint: " + cases);
         } finally {
-            Registry.FLUID.resetTags();
-            Registry.FLUID.bindTags(previous);
+            BuiltInRegistries.FLUID.resetTags();
+            BuiltInRegistries.FLUID.bindTags(previous);
             require(fluidTags().equals(previous), "Synthetic fluid tag membership was not restored");
         }
     }
 
     private static Map<TagKey<Fluid>, List<Holder<Fluid>>> fluidTags() {
         Map<TagKey<Fluid>, List<Holder<Fluid>>> tags = new HashMap<>();
-        Registry.FLUID.getTags().forEach(tag -> {
+        BuiltInRegistries.FLUID.getTags().forEach(tag -> {
             List<Holder<Fluid>> values = tag.getSecond().stream().toList();
             if (!values.isEmpty()) tags.put(tag.getFirst(), values);
         });
@@ -81,10 +82,10 @@ final class OilRenderProbe {
 
     private static void requireBucket(net.minecraft.world.item.Item bucket, Fluid expected) {
         net.minecraftforge.fluids.FluidStack contents = net.minecraftforge.fluids.FluidUtil.getFluidContained(new ItemStack(bucket))
-                .orElseThrow(() -> new IllegalStateException("Bucket has no native fluid capability: " + bucket.getRegistryName()));
+                .orElseThrow(() -> new IllegalStateException("Bucket has no native fluid capability: " + ForgeRegistries.ITEMS.getKey(bucket)));
         if (!(bucket instanceof BucketItem) || ((BucketItem) bucket).getFluid() != expected
                 || expected.getBucket() != bucket || contents.getFluid() != expected || contents.getAmount() != 1000) {
-            throw new IllegalStateException("Wrong bucket fluid: " + bucket.getRegistryName());
+            throw new IllegalStateException("Wrong bucket fluid: " + ForgeRegistries.ITEMS.getKey(bucket));
         }
     }
 
@@ -100,37 +101,36 @@ final class OilRenderProbe {
             @Override public int getBrightness(LightLayer type, BlockPos pos) { return 15; }
             @Override public LevelLightEngine getLightEngine() { throw new UnsupportedOperationException("Synthetic light is supplied by getLightFor"); }
             @Override public int getBlockTint(BlockPos pos, ColorResolver resolver) {
-                return resolver.getColor(net.minecraft.data.BuiltinRegistries.BIOME.get(
-                        net.minecraft.world.level.biome.Biomes.PLAINS), pos.getX(), pos.getZ());
+                return 0x3F76E4; // Vanilla plains water tint for this read-only witness.
             }
         };
         BufferBuilder buffer = new BufferBuilder(4096);
         buffer.begin(com.mojang.blaze3d.vertex.VertexFormat.Mode.QUADS, DefaultVertexFormat.BLOCK);
-        boolean rendered = minecraft.getBlockRenderer().renderLiquid(
+        minecraft.getBlockRenderer().renderLiquid(
                 BlockPos.ZERO, world, buffer, world.getBlockState(BlockPos.ZERO), state);
-        buffer.end();
-        com.mojang.datafixers.util.Pair<BufferBuilder.DrawState, ByteBuffer> built = buffer.popNextBuffer();
-        int vertices = built.getFirst().vertexCount();
+        BufferBuilder.RenderedBuffer built = buffer.end();
+        int vertices = built.drawState().vertexCount();
         TextureAtlasSprite sprite = minecraft.getTextureAtlas(TextureAtlas.LOCATION_BLOCKS).apply(new ResourceLocation(texture));
-        require(rendered && vertices >= 4, "Native fluid renderer emitted no top face for " + state);
-        ByteBuffer data = built.getSecond();
+        require(vertices >= 4, "Native fluid renderer emitted no top face for " + state);
+        ByteBuffer data = built.vertexBuffer();
         int uvOffset = elementOffset(VertexFormatElement.Usage.UV, 0);
         float u = data.getFloat(uvOffset);
         float v = data.getFloat(uvOffset + 4);
         int colorOffset = elementOffset(VertexFormatElement.Usage.COLOR, 0);
         int rgb = (data.get(colorOffset) & 255) << 16 | (data.get(colorOffset + 1) & 255) << 8 | data.get(colorOffset + 2) & 255;
-        boolean correctSprite = !"missingno".equals(sprite.getName().getPath())
+        boolean correctSprite = !"missingno".equals(sprite.contents().name().getPath())
                 && u >= sprite.getU0() && u <= sprite.getU1() && v >= sprite.getV0() && v <= sprite.getV1();
         boolean correctTint = !(state.getType() instanceof Fluids.PowerFluid) || rgb == 0xFFFFFF;
         JsonObject entry = new JsonObject();
-        entry.addProperty("fluid", state.getType().getRegistryName().toString());
-        entry.addProperty("block", state.createLegacyBlock().getBlock().getRegistryName().toString());
+        entry.addProperty("fluid", ForgeRegistries.FLUIDS.getKey(state.getType()).toString());
+        entry.addProperty("block", ForgeRegistries.BLOCKS.getKey(state.createLegacyBlock().getBlock()).toString());
         entry.addProperty("expected_sprite", texture);
         entry.addProperty("correct_sprite", correctSprite);
         entry.addProperty("vertex_rgb", String.format("%06X", rgb));
         entry.addProperty("vertices", vertices);
         cases.add(entry);
-        return rendered && vertices > 0 && correctSprite && correctTint;
+        built.release();
+        return correctSprite && correctTint;
     }
 
     private static int elementOffset(VertexFormatElement.Usage usage, int index) {

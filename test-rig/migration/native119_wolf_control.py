@@ -7,7 +7,7 @@ import socket
 import nbtlib
 from matrix import WORLD, digest, plain, write_json
 from native117 import output_path, require_disjoint
-import native118
+import native119
 
 
 CASES = (("tame8", 8, True, 20), ("tame20", 20, True, 20), ("wild8", 8, False, 8))
@@ -42,15 +42,15 @@ def main():
     output = output_path(args.output)
     for path in (args.profile, args.seed, args.inventory):
         require_disjoint(output, path)
-    seed, inventory, _ = native118.read_target(args.profile, args.seed, args.inventory, args.inventory_sha256)
+    seed, inventory, _ = native119.read_target(args.profile, args.seed, args.inventory, args.inventory_sha256)
     with socket.socket() as port:
         port.bind(("127.0.0.1", args.port))
-    launcher = native118.stage(output, (seed, inventory, {}), args.port, normal=True)
-    report = dict(status="RUNNING", scope="FRESH_FORGE_40_NO_MOD_JARS", nativeDataVersion=2975,
+    launcher = native119.stage(output, (seed, inventory, {}), args.port, normal=True)
+    report = dict(status="RUNNING", scope="FRESH_FORGE_45_NO_MOD_JARS", nativeDataVersion=3337,
                   inventorySha256=digest(args.inventory), boots={})
     try:
         for phase in ("summon", "restarted"):
-            server = native118.Server(output, args.java17, launcher, phase)
+            server = native119.Server(output, args.java17, launcher, phase)
             try:
                 server.send("forceload add 0 0")
                 server.send("say WOLF-CONTROL-CHUNK-TICKET")
@@ -73,15 +73,15 @@ def main():
             finally:
                 server.close()
             report["boots"][phase] = observed
-        if int(nbtlib.load(output / WORLD / "level.dat")["Data"]["DataVersion"]) != 2975:
-            raise AssertionError("The control world is not native 1.18.2")
+        if int(nbtlib.load(output / WORLD / "level.dat")["Data"]["DataVersion"]) != 3337:
+            raise AssertionError("The control world is not native 1.19.4")
         report["status"] = "PASS"
     except BaseException as error:
         report.update(status="FAIL", error=repr(error))
         raise
     finally:
-        write_json(output / "native118-wolf-control.json", report)
-    print("PASS: Forge 40 without any mods reproduced the native tame-wolf heal")
+        write_json(output / "native119-wolf-control.json", report)
+    print("PASS: Forge 45 without any mods reproduced the native tame-wolf heal")
 
 
 if __name__ == "__main__":

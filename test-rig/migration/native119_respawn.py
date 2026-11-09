@@ -1,4 +1,4 @@
-"""Run the retained twelve-case native death and respawn oracle on Forge 40."""
+"""Run the retained twelve-case native death and respawn oracle on Forge 45."""
 
 import argparse
 from pathlib import Path
@@ -6,7 +6,7 @@ from pathlib import Path
 from matrix import digest
 from native117 import output_path, require_disjoint
 from native117_respawn import read_json, run
-import native118
+import native119
 
 
 def main():
@@ -27,10 +27,10 @@ def main():
     source = Path(record["path"]).resolve(strict=True)
     if source.name != args.route or digest(source / "dimension-fixture.json") != record["baseFixtureSha256"]:
         raise AssertionError("Respawn fixture identity or definition differs from prior receipt")
-    target = native118.read_target(args.profile, args.seed, args.inventory, args.inventory_sha256)
+    target = native119.read_target(args.profile, args.seed, args.inventory, args.inventory_sha256)
     args.fixtures, args.routes, args.target_manifest = source.parent, [source.name], args.profile
-    return run(args, target=target, stage=native118.stage, server_type=native118.Server,
-               check_log=native118.require_native_boot, approved_sources={source.name: record["fingerprint"]})
+    return run(args, target=target, stage=native119.stage, server_type=native119.Server,
+               check_log=native119.require_native_boot, approved_sources={source.name: record["fingerprint"]})
 
 
 if __name__ == "__main__":

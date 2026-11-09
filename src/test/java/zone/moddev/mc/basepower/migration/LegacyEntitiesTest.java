@@ -63,7 +63,7 @@ public class LegacyEntitiesTest {
         CompoundTag wolf = entity("minecraft:wolf");
         wolf.putString("OwnerUUID", "a614e658-6270-33c3-9297-7ce80908964f");
         wolf.put("CustomData", entity("Wolf"));
-        CompoundTag root = chunk(wolf, SharedConstants.getCurrentVersion().getWorldVersion());
+        CompoundTag root = chunk(wolf, SharedConstants.getCurrentVersion().getDataVersion().getVersion());
         LegacyWorldDataHook.prepareLegacyChunk(root);
         LegacyWorldDataHook.prepareLegacyChunk(root);
         assertEquals(wolf, root.getCompound("Level").getList("Entities", 10).getCompound(0));
@@ -164,16 +164,16 @@ public class LegacyEntitiesTest {
             assertEquals(owner, actual.getUUID("Owner"));
             assertEquals(8F, actual.getFloat("Health"), 0F);
             assertTrue(actual.getBoolean("Sitting"));
-            converted.putInt("DataVersion", SharedConstants.getCurrentVersion().getWorldVersion());
-            assertEquals(converted, convert(converted.copy(), SharedConstants.getCurrentVersion().getWorldVersion()));
+            converted.putInt("DataVersion", SharedConstants.getCurrentVersion().getDataVersion().getVersion());
+            assertEquals(converted, convert(converted.copy(), SharedConstants.getCurrentVersion().getDataVersion().getVersion()));
         }
     }
 
     private static CompoundTag convert(CompoundTag root, int version) {
         LegacyWorldDataHook.prepareLegacyChunk(root);
         LegacyWorldDataHook.prepareLegacyEntities(root);
-        CompoundTag fixed = NbtUtils.update(DataFixers.getDataFixer(), DataFixTypes.CHUNK,
-                root, version, SharedConstants.getCurrentVersion().getWorldVersion());
+        CompoundTag fixed = DataFixTypes.CHUNK.update(DataFixers.getDataFixer(),
+                root, version, SharedConstants.getCurrentVersion().getDataVersion().getVersion());
         return LegacyWorldDataHook.finalizeLegacyChunk(fixed);
     }
 
@@ -210,8 +210,8 @@ public class LegacyEntitiesTest {
             LegacyWorldDataHook.prepareLegacyChunk(root);
             if (!baseFirst) basePrepare.invoke(null, root);
             LegacyWorldDataHook.prepareLegacyEntities(root);
-            root = NbtUtils.update(DataFixers.getDataFixer(), DataFixTypes.CHUNK,
-                    root, 1343, SharedConstants.getCurrentVersion().getWorldVersion());
+            root = DataFixTypes.CHUNK.update(DataFixers.getDataFixer(),
+                    root, 1343, SharedConstants.getCurrentVersion().getDataVersion().getVersion());
             root = LegacyWorldDataHook.finalizeLegacyChunk(root);
             CompoundTag actual = root.getList("entities", 10).getCompound(0)
                     .getList("Items", 10).getCompound(0);
@@ -246,7 +246,7 @@ public class LegacyEntitiesTest {
     }
 
     @Test public void detachesPendingChunkNbtIncludingNestedMapsAndArrays() {
-        CompoundTag pending = chunk(entity("example:vehicle"), SharedConstants.getCurrentVersion().getWorldVersion());
+        CompoundTag pending = chunk(entity("example:vehicle"), SharedConstants.getCurrentVersion().getDataVersion().getVersion());
         pending.getCompound("Level").putIntArray("Biomes", new int[] {1, 2, 3});
         CompoundTag before = pending.copy();
         CompoundTag read = LegacyWorldDataHook.copyChunkForMigration(pending);

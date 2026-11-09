@@ -36,14 +36,13 @@ public final class RecipeConditions {
 
         @Override public ResourceLocation getID() { return id; }
 
-        @Override public boolean test() { return test(IContext.EMPTY); }
 
         @Override public boolean test(IContext context) {
             switch (id.getPath()) {
                 case "recipe_mode": return PowerAdvantage.recipeMode == RecipeMode.valueOf(value.toUpperCase(Locale.ROOT));
                 case "not_recipe_mode": return PowerAdvantage.recipeMode != RecipeMode.valueOf(value.toUpperCase(Locale.ROOT));
-                case "tag_empty": return context.getTag(ItemTags.create(new ResourceLocation(value))).getValues().isEmpty();
-                case "tag_not_empty": return !context.getTag(ItemTags.create(new ResourceLocation(value))).getValues().isEmpty();
+                case "tag_empty": return context.getTag(ItemTags.create(new ResourceLocation(value))).isEmpty();
+                case "tag_not_empty": return !context.getTag(ItemTags.create(new ResourceLocation(value))).isEmpty();
                 default: throw new IllegalStateException("Unknown Advantage condition " + id);
             }
         }

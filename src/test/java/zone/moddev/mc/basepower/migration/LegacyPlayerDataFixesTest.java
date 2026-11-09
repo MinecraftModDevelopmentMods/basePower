@@ -122,7 +122,7 @@ public class LegacyPlayerDataFixesTest {
     }
 
     @Test public void usesThePassedFixerAndNativePlayerTypeWithAnExplicit704Boundary() {
-        int current = SharedConstants.getCurrentVersion().getWorldVersion();
+        int current = SharedConstants.getCurrentVersion().getDataVersion().getVersion();
         for (int source : new int[] {-1, 512, 703, 704, 1343, 2230}) {
             RecordingFixer fixer = new RecordingFixer(root -> {});
             LegacyPlayerDataFixes.update(fixer, DataFixTypes.PLAYER, player("Inventory", stack("minecraft:stone", 0)), source);
@@ -133,7 +133,7 @@ public class LegacyPlayerDataFixesTest {
     }
 
     @Test public void currentOrNewerDataIsCopiedWithoutOldVersionDfu() {
-        for (int version : new int[] {SharedConstants.getCurrentVersion().getWorldVersion(), Integer.MAX_VALUE}) {
+        for (int version : new int[] {SharedConstants.getCurrentVersion().getDataVersion().getVersion(), Integer.MAX_VALUE}) {
             CompoundTag source = player("Inventory", stack("minecraft:diamond_pickaxe", 17));
             RecordingFixer fixer = new RecordingFixer(root -> fail("Current data must not be reinterpreted"));
             CompoundTag result = LegacyPlayerDataFixes.update(fixer, DataFixTypes.PLAYER, source, version);

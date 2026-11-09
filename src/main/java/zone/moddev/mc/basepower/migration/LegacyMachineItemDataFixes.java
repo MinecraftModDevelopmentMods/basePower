@@ -22,7 +22,7 @@ final class LegacyMachineItemDataFixes {
 
     static void prepare(CompoundTag root) {
         int version = root.contains("DataVersion", 99) ? root.getInt("DataVersion") : -1;
-        int current = SharedConstants.getCurrentVersion().getWorldVersion();
+        int current = SharedConstants.getCurrentVersion().getDataVersion().getVersion();
         if (version >= current || root.getBoolean(PREPARED) || !root.contains("Level", 10)) return;
         ListTag tiles = root.getCompound("Level").getList("TileEntities", 10);
         for (int index = 0; index < tiles.size(); index++) {

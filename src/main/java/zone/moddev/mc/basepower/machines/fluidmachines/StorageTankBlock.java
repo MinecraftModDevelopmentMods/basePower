@@ -20,8 +20,6 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Registry;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TextComponent;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import zone.moddev.mc.basepower.init.Fluids;
@@ -71,11 +69,11 @@ public class StorageTankBlock extends BlockSimpleFluidMachine {
             List<Component> tooltip, TooltipFlag flag) {
         CompoundTag tag = stack.getTag();
         if (tag == null || !tag.contains("FluidID", 8) || !tag.contains("Volume", 99)) {
-            tooltip.add(new TranslatableComponent("tooltip.basepower.empty"));
+            tooltip.add(Component.translatable("tooltip.basepower.empty"));
             return;
         }
         float buckets = tag.getInt("Volume") / (float) FluidTank.BUCKET_VOLUME;
-        tooltip.add(new TextComponent(buckets + " buckets of " + tag.getString("FluidID")));
+        tooltip.add(Component.literal(buckets + " buckets of " + tag.getString("FluidID")));
     }
 
     /** Retained for callers from the 1.12 implementation. */

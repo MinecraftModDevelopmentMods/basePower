@@ -10,7 +10,9 @@ import net.minecraft.client.resources.language.I18n;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.core.Direction;
-import net.minecraft.core.NonNullList;
+import net.minecraft.core.RegistryAccess;
+import net.minecraft.world.flag.FeatureFlags;
+import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.common.Mod;
@@ -26,7 +28,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
+import net.minecraft.util.RandomSource;
 
 /** Runs after native resource baking, without opening or generating a world. */
 @Mod(ClientResourceProbe.MODID)
@@ -45,8 +47,8 @@ public final class ClientResourceProbe {
         try {
             result.addProperty("minecraft", net.minecraftforge.versions.mcp.MCPVersion.getMCVersion());
             result.addProperty("forge", net.minecraftforge.versions.forge.ForgeVersion.getVersion());
-            require("1.18.2".equals(result.get("minecraft").getAsString())
-                    && "40.3.0".equals(result.get("forge").getAsString()), "Wrong native client target");
+            require("1.19.4".equals(result.get("minecraft").getAsString())
+                    && "45.4.0".equals(result.get("forge").getAsString()), "Wrong native client target");
             require(minecraft.level == null && minecraft.player == null && !minecraft.hasSingleplayerServer(),
                     "Resource probe must not open a world or connect to a server");
             verifyNetworkBootstrap(result);
@@ -65,27 +67,32 @@ public final class ClientResourceProbe {
             result.add("mod_versions", versions);
             require(versions.has("basepower") && zone.moddev.mc.basepower.PowerAdvantage.VERSION
                     .equals(versions.get("basepower").getAsString()), "Power metadata does not match the compiled version");
-            require("2.4.10.118021".equals(versions.get("basepower").getAsString()), "Wrong native Power candidate");
+            require("2.4.11.119041".equals(versions.get("basepower").getAsString()), "Wrong native Power candidate");
             for (String id : new String[]{"basesteam", "baseelectric"}) {
-                if (versions.has(id)) require("2.2.11.118021".equals(versions.get(id).getAsString()), "Wrong native expansion candidate: " + id);
+                if (versions.has(id)) require("2.2.12.119041".equals(versions.get(id).getAsString()), "Wrong native expansion candidate: " + id);
             }
             require(minecraft.getModelManager().getMissingModel() != null, "Timed out before model baking");
             require(minecraft.getOverlay() == null, "Timed out before native resource loading completed");
             int items = 0;
             int states = 0;
+            var expectedCreative = new java.util.HashSet<ResourceLocation>();
+            var hidden = java.util.Set.of("basepower:fluid_pipe_terminal", "basepower:crude_oil", "basepower:refined_oil",
+                    "basesteam:pump_pipe_steam", "basesteam:drillbit",
+                    "baseelectric:pump_pipe_electric", "baseelectric:laser_turret_evil");
             BakedModel missing = minecraft.getModelManager().getMissingModel();
             for (Item item : ForgeRegistries.ITEMS) {
-                ResourceLocation id = item.getRegistryName();
+                ResourceLocation id = ForgeRegistries.ITEMS.getKey(item);
                 if (id == null || !included(id.getNamespace())) continue;
                 ItemStack stack = new ItemStack(item);
                 String key = item.getDescriptionId(stack);
                 require(!I18n.get(key).equals(key), "Untranslated item: " + id + " -> " + key);
                 BakedModel model = minecraft.getItemRenderer().getModel(stack, null, null, 0);
                 verifyModel(model, missing, null, id.toString(), true);
+                if (!hidden.contains(id.toString())) expectedCreative.add(id);
                 items++;
             }
             for (Block block : ForgeRegistries.BLOCKS) {
-                ResourceLocation id = block.getRegistryName();
+                ResourceLocation id = ForgeRegistries.BLOCKS.getKey(block);
                 if (id == null || !included(id.getNamespace())) continue;
                 for (BlockState state : block.getStateDefinition().getPossibleStates()) {
                     BakedModel model = minecraft.getModelManager().getBlockModelShaper().getBlockModel(state);
@@ -93,11 +100,27 @@ public final class ClientResourceProbe {
                     states++;
                 }
             }
-            NonNullList<ItemStack> contents = NonNullList.create();
-            ItemGroups.tab_powerAdvantage.fillItemList(contents);
+            CreativeModeTab tab = ItemGroups.tab_powerAdvantage;
+            require(tab != null, "The shared creative tab was not registered");
+            tab.buildContents(new CreativeModeTab.ItemDisplayParameters(FeatureFlags.DEFAULT_FLAGS, false,
+                    RegistryAccess.EMPTY));
+            var contents = tab.getDisplayItems();
             require(items > 0 && states > 0, "Power Advantage content is not registered");
             require(!contents.isEmpty(), "Power Advantage creative tab is empty");
-            require(!ItemGroups.tab_powerAdvantage.getIconItem().isEmpty(), "Power Advantage creative tab has no icon");
+            require(!tab.getIconItem().isEmpty(), "Power Advantage creative tab has no icon");
+            require(I18n.exists("itemGroup.basepower") && tab.getDisplayName().getString().equals(I18n.get("itemGroup.basepower")),
+                    "The shared creative tab title is not translated");
+            var creativeIds = new java.util.HashSet<ResourceLocation>();
+            for (ItemStack stack : contents) {
+                ResourceLocation id = ForgeRegistries.ITEMS.getKey(stack.getItem());
+                require(id != null && creativeIds.add(id), "Duplicate or unregistered creative entry: " + id);
+            }
+            var missingCreative = new java.util.HashSet<>(expectedCreative);
+            missingCreative.removeAll(creativeIds);
+            var extraCreative = new java.util.HashSet<>(creativeIds);
+            extraCreative.removeAll(expectedCreative);
+            require(missingCreative.isEmpty() && extraCreative.isEmpty(),
+                    "Wrong creative tab contents. Missing: " + missingCreative + "; unexpected: " + extraCreative);
             require(I18n.get("block.basepower.still").equals(I18n.get("tile.basepower.still.name")),
                     "Legacy GUI translation differs from modern block name");
             TankVisualProbe.verify(minecraft, result);
@@ -142,12 +165,13 @@ public final class ClientResourceProbe {
 
     private static void verifyModel(BakedModel model, BakedModel missing, BlockState state, String id, boolean requireQuads) {
         require(model != missing, "Missing baked model: " + id);
-        require(!"missingno".equals(model.getParticleIcon(net.minecraftforge.client.model.data.EmptyModelData.INSTANCE).getName().getPath()), "Missing particle texture: " + id);
-        Random random = new Random(42L);
+        require(!"missingno".equals(model.getParticleIcon(net.minecraftforge.client.model.data.ModelData.EMPTY)
+                .contents().name().getPath()), "Missing particle texture: " + id);
+        RandomSource random = RandomSource.create(42L);
         List<BakedQuad> quads = new ArrayList<>(model.getQuads(state, null, random));
         for (Direction side : Direction.values()) quads.addAll(model.getQuads(state, side, random));
         require(!requireQuads || !quads.isEmpty(), "Empty baked model: " + id);
-        for (BakedQuad quad : quads) require(!"missingno".equals(quad.getSprite().getName().getPath()), "Missing face texture: " + id);
+        for (BakedQuad quad : quads) require(!"missingno".equals(quad.getSprite().contents().name().getPath()), "Missing face texture: " + id);
     }
 
     private static void require(boolean condition, String message) {

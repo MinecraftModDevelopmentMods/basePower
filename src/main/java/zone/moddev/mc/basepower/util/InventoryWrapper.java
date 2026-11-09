@@ -8,7 +8,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.core.Direction;
 import net.minecraft.world.Nameable;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TextComponent;
 
 /** Gives ordinary inventories the sided interface used by conveyors. */
 public class InventoryWrapper implements WorldlyContainer, Nameable {
@@ -32,7 +31,7 @@ public class InventoryWrapper implements WorldlyContainer, Nameable {
 
     public boolean isLocked() { return InventoryLocks.isLocked(inventory); }
     @Override public Component getName() {
-        return inventory instanceof Nameable ? ((Nameable) inventory).getName() : new TextComponent("Inventory");
+        return inventory instanceof Nameable ? ((Nameable) inventory).getName() : Component.literal("Inventory");
     }
     @Override public Component getCustomName() {
         return inventory instanceof Nameable ? ((Nameable) inventory).getCustomName() : null;

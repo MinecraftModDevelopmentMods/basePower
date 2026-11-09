@@ -63,7 +63,7 @@ final class ChildRendererGeometryProbe {
             drill(minecraft, cases);
             turret(minecraft, cases);
             run(cases, "hydroturbine-registration", row -> {
-                EntityType<?> type = ForgeRegistries.ENTITIES.getValue(new ResourceLocation("baseelectric:hydroturbine"));
+                EntityType<?> type = ForgeRegistries.ENTITY_TYPES.getValue(new ResourceLocation("baseelectric:hydroturbine"));
                 require(type != null, "Missing registered hydroturbine type");
                 EntityRenderer<?> renderer = minecraft.getEntityRenderDispatcher().renderers.get(type);
                 require(renderer != null && TURBINE_RENDERER.equals(renderer.getClass().getName()), "Missing production hydroturbine renderer");
@@ -175,7 +175,7 @@ final class ChildRendererGeometryProbe {
     }
 
     private static BlockEntity tile(String id) {
-        BlockEntityType<?> type = ForgeRegistries.BLOCK_ENTITIES.getValue(new ResourceLocation(id));
+        BlockEntityType<?> type = ForgeRegistries.BLOCK_ENTITY_TYPES.getValue(new ResourceLocation(id));
         require(type != null, "Missing registered tile type " + id);
         net.minecraft.world.level.block.state.BlockState state = ForgeRegistries.BLOCKS.getValues().stream()
                 .map(net.minecraft.world.level.block.Block::defaultBlockState).filter(type::isValid).findFirst()
@@ -193,8 +193,8 @@ final class ChildRendererGeometryProbe {
         row.addProperty("partial_tick", partial);
         PoseStack matrices = new PoseStack();
         PoseStack.Pose original = matrices.last();
-        com.mojang.math.Matrix4f position = original.pose().copy();
-        com.mojang.math.Matrix3f normal = original.normal().copy();
+        org.joml.Matrix4f position = new org.joml.Matrix4f(original.pose());
+        org.joml.Matrix3f normal = new org.joml.Matrix3f(original.normal());
         Capture buffers = new Capture(minecraft, new ResourceLocation(expectedTexture), row);
         boolean balanced;
         Throwable renderFailure = null;
@@ -249,18 +249,17 @@ final class ChildRendererGeometryProbe {
         void finish() throws Exception {
             for (Map.Entry<RenderType, BufferBuilder> entry : buffers.entrySet()) {
                 BufferBuilder buffer = entry.getValue();
-                buffer.end();
-                Pair<BufferBuilder.DrawState, ByteBuffer> built = buffer.popNextBuffer();
-                int count = built.getFirst().vertexCount();
+                BufferBuilder.RenderedBuffer built = buffer.end();
+                int count = built.drawState().vertexCount();
                 JsonObject batch = new JsonObject();
                 batches.add(batch);
                 batch.addProperty("vertex_count", count);
-                batch.addProperty("format", built.getFirst().format().toString());
+                batch.addProperty("format", built.drawState().format().toString());
                 JsonArray raw = new JsonArray();
                 batch.add("vertices_xyz_uv_normal_alpha", raw);
                 require(count <= 4096, "Renderer exceeded the bounded geometry fixture");
-                VertexFormat format = built.getFirst().format();
-                ByteBuffer data = built.getSecond();
+                VertexFormat format = built.drawState().format();
+                ByteBuffer data = built.vertexBuffer();
                 int p = offset(format, VertexFormatElement.Usage.POSITION, 0);
                 int uv = offset(format, VertexFormatElement.Usage.UV, 0);
                 int n = offset(format, VertexFormatElement.Usage.NORMAL, 0);
@@ -286,6 +285,7 @@ final class ChildRendererGeometryProbe {
                 batch.addProperty("texture", selectedTexture.toString());
                 require(expectedTexture.equals(selectedTexture), "Production renderer selected the wrong texture");
                 texture(minecraft, selectedTexture, batch);
+                built.release();
             }
         }
     }
@@ -322,8 +322,8 @@ final class ChildRendererGeometryProbe {
     }
 
     private static void texture(Minecraft minecraft, ResourceLocation location, JsonObject row) throws IOException {
-        try (Resource resource = minecraft.getResourceManager().getResource(location)) {
-            BufferedImage image = ImageIO.read(resource.getInputStream());
+        try (var resource = minecraft.getResourceManager().open(location)) {
+            BufferedImage image = ImageIO.read(resource);
             require(image != null && image.getWidth() > 0 && image.getHeight() > 0, "Renderer texture is not a readable image: " + location);
             row.addProperty("texture", location.toString());
             row.addProperty("texture_width", image.getWidth());

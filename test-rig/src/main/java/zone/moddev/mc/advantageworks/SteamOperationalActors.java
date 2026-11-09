@@ -78,7 +78,7 @@ final class SteamOperationalActors {
                             BlockState state = c.world.getBlockState(c.at(8, y, 8));
                             c.record("shaft/" + y, state.toString());
                             if (movedUp && y <= 6) {
-                                c.require("basesteam:platform".equals(String.valueOf(state.getBlock().getRegistryName())),
+                                c.require("basesteam:platform".equals(String.valueOf(net.minecraftforge.registries.ForgeRegistries.BLOCKS.getKey(state.getBlock()))),
                                         "Raised shaft contains physical platform segment " + y);
                                 IntegerProperty height = (IntegerProperty) state.getBlock().getStateDefinition().getProperty("height");
                                 c.require(height != null && state.getValue(height) == (y == 6 ? 4 : 0),

@@ -167,13 +167,15 @@ def authorize_broad(runtime):
         (runtime / name).touch()
 
 
-def configure_broad(runtime, port):
+def configure_broad(runtime, port, flat_settings=None):
     # Match the walkable WorksRunner rather than matrix.stage's migration-only
     # defaults. Clearing a freshly generated village can race native POI tasks.
     overrides = {"server-port": str(port), "generator-settings": "", "generate-structures": "false",
                  "level-seed": "advantage-works-1.17.1-v1", "difficulty": "0", "gamemode": "creative",
                  "allow-flight": "true", "enable-command-block": "true", "force-gamemode": "true",
                  "spawn-animals": "false", "spawn-monsters": "false", "spawn-npcs": "false", "pvp": "false"}
+    if flat_settings is not None:
+        overrides["generator-settings"] = json.dumps(flat_settings, separators=(",", ":"))
     path = runtime / "server.properties"
     lines = [line for line in path.read_text().splitlines() if line.partition("=")[0] not in overrides]
     path.write_text("\n".join(lines) + "\n" + "".join(f"{key}={value}\n" for key, value in overrides.items()))
@@ -200,7 +202,7 @@ class BroadServer(BroadCommands, Server):
     pass
 
 
-def run_profile(args, profile, output, name, port, stations, *, native118_target=None):
+def run_profile(args, profile, output, name, port, stations, *, native118_target=None, native_adapter=None):
     runtime = output / name
     if native118_target is None:
         if name == "packaged-decoupled":
@@ -212,21 +214,22 @@ def run_profile(args, profile, output, name, port, stations, *, native118_target
         server_type, java = BroadServer, args.java8
         versions = dict(minecraft="1.17.1", forge="37.1.1")
     else:
-        import native118
+        if native_adapter is None:
+            import native118 as native_adapter
 
-        class NativeBroadServer(BroadCommands, native118.Server):
+        class NativeBroadServer(BroadCommands, native_adapter.Server):
             pass
 
         seed, code, entries = native118_target
         if name == "packaged-decoupled":
             entries = {key: value for key, value in entries.items() if key != "basemetals"}
-        launcher = native118.stage(runtime, (seed, code, entries), port)
+        launcher = native_adapter.stage(runtime, (seed, code, entries), port)
         pins = entries.values()
-        verify = lambda: native118.verify_runtime(runtime)
-        require_boot = native118.require_clean_log
+        verify = lambda: native_adapter.verify_runtime(runtime)
+        require_boot = native_adapter.require_clean_log
         server_type, java = NativeBroadServer, args.java17
-        versions = dict(minecraft=native118.MINECRAFT, forge=native118.FORGE)
-    configure_broad(runtime, port)
+        versions = dict(minecraft=native_adapter.MINECRAFT, forge=native_adapter.FORGE)
+    configure_broad(runtime, port, getattr(native_adapter, "FLAT_SETTINGS", None))
     authorize_broad(runtime)
     result = dict(status="FAIL", profile=name, port=port, phases={})
     expected_mods = {pin["id"]: pin["version"] for pin in pins

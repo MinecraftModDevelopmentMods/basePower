@@ -26,7 +26,7 @@ public final class BaseMetalsCompat {
     }
 
     public static void addCrusherRecipe(Block input, ItemStack output) {
-        PowerAdvantage.LOGGER.debug("Crushing recipe for {} is supplied as data in 1.13", input.getRegistryName());
+        PowerAdvantage.LOGGER.debug("Crushing recipe for {} is supplied as data", net.minecraftforge.registries.ForgeRegistries.BLOCKS.getKey(input));
     }
 
     public static ItemStack getSteelPlate() {

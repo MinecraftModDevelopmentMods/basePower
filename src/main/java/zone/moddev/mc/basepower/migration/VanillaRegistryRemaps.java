@@ -16,8 +16,8 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.util.datafix.fixes.CavesAndCliffsRenames;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.RegistryEvent;
-import net.minecraftforge.registries.IForgeRegistryEntry;
+import net.minecraftforge.eventbus.api.EventPriority;
+import net.minecraftforge.registries.MissingMappingsEvent;
 import net.minecraftforge.registries.IForgeRegistry;
 import net.minecraftforge.registries.ForgeRegistries;
 import zone.moddev.mc.basepower.PowerAdvantage;
@@ -29,86 +29,93 @@ public final class VanillaRegistryRemaps {
     private VanillaRegistryRemaps() {}
 
     public static void register() {
-        MinecraftForge.EVENT_BUS.addGenericListener(Block.class, VanillaRegistryRemaps::blocks);
-        MinecraftForge.EVENT_BUS.addGenericListener(Item.class, VanillaRegistryRemaps::items);
-        MinecraftForge.EVENT_BUS.addGenericListener(EntityType.class, VanillaRegistryRemaps::entities);
-        MinecraftForge.EVENT_BUS.addGenericListener(SoundEvent.class, VanillaRegistryRemaps::sounds);
-        MinecraftForge.EVENT_BUS.addGenericListener(Biome.class, VanillaRegistryRemaps::biomes);
-        MinecraftForge.EVENT_BUS.addGenericListener(MemoryModuleType.class, VanillaRegistryRemaps::memories);
-        MinecraftForge.EVENT_BUS.addGenericListener(BlockEntityType.class, VanillaRegistryRemaps::blockEntities);
-        MinecraftForge.EVENT_BUS.addGenericListener(Fluid.class, VanillaRegistryRemaps::fluids);
-        MinecraftForge.EVENT_BUS.addGenericListener(Enchantment.class, VanillaRegistryRemaps::enchantments);
-        MinecraftForge.EVENT_BUS.addGenericListener(MenuType.class, VanillaRegistryRemaps::menus);
-        MinecraftForge.EVENT_BUS.addGenericListener(RecipeSerializer.class, VanillaRegistryRemaps::recipeSerializers);
+        MinecraftForge.EVENT_BUS.addListener(EventPriority.HIGHEST, VanillaRegistryRemaps::blocks);
+        MinecraftForge.EVENT_BUS.addListener(EventPriority.HIGHEST, VanillaRegistryRemaps::items);
+        MinecraftForge.EVENT_BUS.addListener(EventPriority.HIGHEST, VanillaRegistryRemaps::entities);
+        MinecraftForge.EVENT_BUS.addListener(EventPriority.HIGHEST, VanillaRegistryRemaps::sounds);
+        MinecraftForge.EVENT_BUS.addListener(EventPriority.HIGHEST, VanillaRegistryRemaps::biomes);
+        MinecraftForge.EVENT_BUS.addListener(EventPriority.HIGHEST, VanillaRegistryRemaps::memories);
+        MinecraftForge.EVENT_BUS.addListener(EventPriority.HIGHEST, VanillaRegistryRemaps::pointsOfInterest);
+        MinecraftForge.EVENT_BUS.addListener(EventPriority.HIGHEST, VanillaRegistryRemaps::blockEntities);
+        MinecraftForge.EVENT_BUS.addListener(EventPriority.HIGHEST, VanillaRegistryRemaps::fluids);
+        MinecraftForge.EVENT_BUS.addListener(EventPriority.HIGHEST, VanillaRegistryRemaps::enchantments);
+        MinecraftForge.EVENT_BUS.addListener(EventPriority.HIGHEST, VanillaRegistryRemaps::menus);
+        MinecraftForge.EVENT_BUS.addListener(EventPriority.HIGHEST, VanillaRegistryRemaps::recipeSerializers);
     }
 
-    private static void blocks(RegistryEvent.MissingMappings<Block> event) {
+    private static void blocks(MissingMappingsEvent event) {
         remap(event, ForgeRegistries.BLOCKS);
         remapAdvantage(event, ForgeRegistries.BLOCKS, LegacyMigrationApi::blockTarget);
     }
-    private static void items(RegistryEvent.MissingMappings<Item> event) {
+    private static void items(MissingMappingsEvent event) {
         remap(event, ForgeRegistries.ITEMS);
         remapAdvantage(event, ForgeRegistries.ITEMS, LegacyMigrationApi::itemTarget);
     }
-    private static void entities(RegistryEvent.MissingMappings<EntityType<?>> event) {
-        remap(event, ForgeRegistries.ENTITIES);
-        remapAdvantage(event, ForgeRegistries.ENTITIES,
+    private static void entities(MissingMappingsEvent event) {
+        remap(event, ForgeRegistries.ENTITY_TYPES);
+        remapAdvantage(event, ForgeRegistries.ENTITY_TYPES,
                 id -> new ResourceLocation(LegacyMigrationApi.entityTarget(id.toString())));
     }
-    private static void sounds(RegistryEvent.MissingMappings<SoundEvent> event) { remap(event, ForgeRegistries.SOUND_EVENTS); }
-    private static void biomes(RegistryEvent.MissingMappings<Biome> event) { remap(event, ForgeRegistries.BIOMES); }
-    private static void memories(RegistryEvent.MissingMappings<MemoryModuleType<?>> event) { remap(event, ForgeRegistries.MEMORY_MODULE_TYPES); }
+    private static void sounds(MissingMappingsEvent event) { remap(event, ForgeRegistries.SOUND_EVENTS); }
+    private static void biomes(MissingMappingsEvent event) { remap(event, ForgeRegistries.BIOMES); }
+    private static void memories(MissingMappingsEvent event) { remap(event, ForgeRegistries.MEMORY_MODULE_TYPES); }
+    private static void pointsOfInterest(MissingMappingsEvent event) { remap(event, ForgeRegistries.POI_TYPES); }
 
-    private static void blockEntities(RegistryEvent.MissingMappings<BlockEntityType<?>> event) {
-        remapAdvantage(event, ForgeRegistries.BLOCK_ENTITIES,
+    private static void blockEntities(MissingMappingsEvent event) {
+        remapAdvantage(event, ForgeRegistries.BLOCK_ENTITY_TYPES,
                 id -> new ResourceLocation(LegacyMigrationApi.tileTarget(id.toString())));
     }
-    private static void fluids(RegistryEvent.MissingMappings<Fluid> event) {
+    private static void fluids(MissingMappingsEvent event) {
         remapAdvantage(event, ForgeRegistries.FLUIDS,
                 id -> new ResourceLocation(LegacyMigrationApi.fluidTarget(id.toString())));
     }
-    private static void enchantments(RegistryEvent.MissingMappings<Enchantment> event) {
+    private static void enchantments(MissingMappingsEvent event) {
         remapAdvantage(event, ForgeRegistries.ENCHANTMENTS, LegacyMigrationApi::registryTarget);
     }
-    private static void menus(RegistryEvent.MissingMappings<MenuType<?>> event) {
-        remapAdvantage(event, ForgeRegistries.CONTAINERS, LegacyMigrationApi::registryTarget);
+    private static void menus(MissingMappingsEvent event) {
+        remapAdvantage(event, ForgeRegistries.MENU_TYPES, LegacyMigrationApi::registryTarget);
     }
-    private static void recipeSerializers(RegistryEvent.MissingMappings<RecipeSerializer<?>> event) {
+    private static void recipeSerializers(MissingMappingsEvent event) {
         remapAdvantage(event, ForgeRegistries.RECIPE_SERIALIZERS, LegacyMigrationApi::registryTarget);
     }
 
-    private static <T extends IForgeRegistryEntry<T>> void remapAdvantage(RegistryEvent.MissingMappings<T> event,
+    private static <T> void remapAdvantage(MissingMappingsEvent event,
             IForgeRegistry<T> active, UnaryOperator<ResourceLocation> replacement) {
-        for (RegistryEvent.MissingMappings.Mapping<T> mapping : event.getAllMappings()) {
-            if (mapping.getAction() != RegistryEvent.MissingMappings.Action.DEFAULT) continue;
-            ResourceLocation target = replacement.apply(mapping.key);
-            if (!mapping.key.equals(target) && active.containsKey(target)) {
+        for (MissingMappingsEvent.Mapping<T> mapping : event.getAllMappings(active.getRegistryKey())) {
+            ResourceLocation target = replacement.apply(mapping.getKey());
+            if (!mapping.getKey().equals(target) && active.containsKey(target)) {
                 mapping.remap(active.getValue(target));
-                PowerAdvantage.LOGGER.info("Migrated Advantage registry entry {} to {}", mapping.key, target);
+                PowerAdvantage.LOGGER.info("Migrated Advantage registry entry {} to {}", mapping.getKey(), target);
             }
         }
     }
 
-    static <T extends IForgeRegistryEntry<T>> void remap(RegistryEvent.MissingMappings<T> event, IForgeRegistry<T> active) {
-        for (RegistryEvent.MissingMappings.Mapping<T> mapping : event.getMappings("minecraft")) {
-            if (mapping.getAction() != RegistryEvent.MissingMappings.Action.DEFAULT) continue;
-            if (retiredTransientMemory(event.getName(), mapping.key)) {
+    static <T> void remap(MissingMappingsEvent event, IForgeRegistry<T> active) {
+        for (MissingMappingsEvent.Mapping<T> mapping : event.getMappings(active.getRegistryKey(), "minecraft")) {
+            if (retiredTransientMemory(active.getRegistryName(), mapping.getKey())) {
                 // Both old types used register(name) without a serializer: no saved
                 // brain values exist. Retire only their obsolete Forge ID indexes.
                 mapping.ignore();
-                PowerAdvantage.LOGGER.info("Retired non-serialized vanilla AI registry index {}", mapping.key);
+                PowerAdvantage.LOGGER.info("Retired non-serialized vanilla AI registry index {}", mapping.getKey());
                 continue;
             }
-            ResourceLocation updatedBiome = vanillaBiomeFixTarget(event.getName(), mapping.key);
+            if (retiredVanillaPoi(active.getRegistryName(), mapping.getKey())) {
+                // Vanilla's "Remove unpopulated villager PoI types" fixer handles
+                // saved POI sections. Forge still sees the obsolete numeric indexes.
+                mapping.ignore();
+                PowerAdvantage.LOGGER.info("Retired unused vanilla point of interest index {}", mapping.getKey());
+                continue;
+            }
+            ResourceLocation updatedBiome = vanillaBiomeFixTarget(active.getRegistryName(), mapping.getKey());
             if (updatedBiome != null && active.containsKey(updatedBiome)) {
                 // Vanilla fixes biome names in chunks and world settings. Several
                 // old entries share one target; do not assign it multiple numeric IDs.
                 mapping.ignore();
                 PowerAdvantage.LOGGER.info("Retired vanilla biome registry index {} (data fixer: {})",
-                        mapping.key, updatedBiome);
+                        mapping.getKey(), updatedBiome);
                 continue;
             }
-            ResourceLocation replacement = replacement(event.getName(), mapping.key);
+            ResourceLocation replacement = replacement(active.getRegistryName(), mapping.getKey());
             if (replacement == null) continue;
             // The event's registry is STAGING: new entries need not be present there yet.
             if (!active.containsKey(replacement)) {
@@ -116,7 +123,7 @@ public final class VanillaRegistryRemaps {
             }
             T target = active.getValue(replacement);
             mapping.remap(target);
-            PowerAdvantage.LOGGER.info("Migrated vanilla registry entry {} to {}", mapping.key, replacement);
+            PowerAdvantage.LOGGER.info("Migrated vanilla registry entry {} to {}", mapping.getKey(), replacement);
         }
     }
 
@@ -124,6 +131,12 @@ public final class VanillaRegistryRemaps {
         return registry.equals(new ResourceLocation("minecraft:memory_module_type"))
                 && old.getNamespace().equals("minecraft")
                 && (old.getPath().equals("golem_last_seen_time") || old.getPath().equals("opened_doors"));
+    }
+
+    static boolean retiredVanillaPoi(ResourceLocation registry, ResourceLocation old) {
+        return registry.equals(new ResourceLocation("minecraft:point_of_interest_type"))
+                && old.getNamespace().equals("minecraft")
+                && (old.getPath().equals("nitwit") || old.getPath().equals("unemployed"));
     }
 
     static ResourceLocation vanillaBiomeFixTarget(ResourceLocation registry, ResourceLocation old) {

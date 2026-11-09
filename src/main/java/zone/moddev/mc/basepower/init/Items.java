@@ -6,7 +6,9 @@ import java.util.Set;
 
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.BucketItem;
-import net.minecraftforge.event.RegistryEvent;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraftforge.registries.RegisterEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import zone.moddev.mc.basepower.PowerAdvantage;
@@ -29,32 +31,32 @@ public final class Items {
 
     public static synchronized void init() {
         if (initialized) return;
-        ItemGroups.init();
         starch = add("starch", new Item(properties()));
         bioplastic_ingot = add("bioplastic_ingot", new Item(properties()));
         sprocket = add("sprocket", new Item(properties()));
         rotator_tool = add("rotator_tool", new RotationTool(properties().stacksTo(1)));
         crude_oil_bucket = add("crude_oil_bucket", new BucketItem(() -> Fluids.crude_oil,
-                new Item.Properties().tab(ItemGroups.tab_powerAdvantage).stacksTo(1).craftRemainder(net.minecraft.world.item.Items.BUCKET)));
+                properties().stacksTo(1).craftRemainder(net.minecraft.world.item.Items.BUCKET)));
         refined_oil_bucket = add("refined_oil_bucket", new BucketItem(() -> Fluids.refined_oil,
-                new Item.Properties().tab(ItemGroups.tab_powerAdvantage).stacksTo(1).craftRemainder(net.minecraft.world.item.Items.BUCKET)));
+                properties().stacksTo(1).craftRemainder(net.minecraft.world.item.Items.BUCKET)));
         initialized = true;
     }
 
     private static Item.Properties properties() {
-        return new Item.Properties().tab(ItemGroups.tab_powerAdvantage);
+        return new Item.Properties();
     }
 
     private static Item add(String id, Item item) {
-        item.setRegistryName(PowerAdvantage.MODID, id);
         allItems.put(id, item);
         return item;
     }
 
     @SubscribeEvent
-    public static void register(RegistryEvent.Register<Item> event) {
+    public static void register(RegisterEvent event) {
+        if (!ForgeRegistries.Keys.ITEMS.equals(event.getRegistryKey())) return;
         init();
-        event.getRegistry().registerAll(allItems.values().toArray(new Item[0]));
+        event.register(ForgeRegistries.Keys.ITEMS, helper -> allItems.forEach((id, item) ->
+                helper.register(new ResourceLocation(PowerAdvantage.MODID, id), ItemGroups.show(item))));
     }
 
     public static Item getItemByName(String id) { return allItems.get(id); }

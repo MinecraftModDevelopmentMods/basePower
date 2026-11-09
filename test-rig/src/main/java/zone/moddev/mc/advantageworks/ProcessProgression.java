@@ -129,7 +129,7 @@ final class ProcessProgression {
             Class<?> hammerClass = hammer.getItem().getClass();
             if (!hammerClass.getName().equals("zone.moddev.mc.basemetals.content.CrackhammerItem"))
                 throw new IllegalStateException("Unexpected hammer class " + hammerClass.getName());
-            RecipeType<?> type = net.minecraft.core.Registry.RECIPE_TYPE
+            RecipeType<?> type = net.minecraft.core.registries.BuiltInRegistries.RECIPE_TYPE
                     .getOptional(new ResourceLocation("basemetals", "crushing")).orElseThrow();
             Recipe<?> selected = world.getRecipeManager().getRecipeFor(
                     (RecipeType<Recipe<Container>>) type, new SimpleContainer(input.copy()), world).orElse(null);
@@ -138,7 +138,8 @@ final class ProcessProgression {
             if (selected != null) {
                 selection.addProperty("id", selected.getId().toString());
                 selection.addProperty("class", selected.getClass().getName());
-                selection.addProperty("resultNbt", selected.getResultItem().save(new net.minecraft.nbt.CompoundTag()).toString());
+                selection.addProperty("resultNbt", selected.getResultItem(world.registryAccess())
+                        .save(new net.minecraft.nbt.CompoundTag()).toString());
             }
         } catch (RuntimeException | LinkageError error) {
             selection.addProperty("status", "OBSERVER_ERROR");

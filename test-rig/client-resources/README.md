@@ -1,26 +1,26 @@
 # Native Client Resource Check
 
-This disposable Minecraft 1.18.2 / Forge 40.3.0 client checks models, textures,
+This disposable Minecraft 1.19.4 / Forge 45.4.0 client checks models, textures,
 translations, recipe-book cells and machine screens after Minecraft loads them.
 It registers no gameplay content, opens no world and closes when finished.
 The probe is excluded from release jars and ordinary Eclipse launches.
-See [port status](../../docs/1.18/PORT-STATUS.md) for current qualification.
+See [port status](../../docs/1.19/PORT-STATUS.md) for current qualification.
 Earlier-version results do not qualify this version.
 
 Use Java 17 for Gradle, compilation and the client and server runners. The
-target is official 1.18.2 mappings with MCP `20220404.173914`.
+target is official 1.19.4 mappings with MCP `20230314.122934`.
 
 ## Build And Run
 
 ```powershell
 ./gradlew.bat check clientResourceProbeJar verifyEclipseProductionClasspath prepareCombinedEclipseLaunch
 ./test-rig/client-resources/test-launcher.ps1
-./test-rig/client-resources/run.ps1 -JavaHome '<Java 17 home>' -LaunchProfile runClientAllAdvantage.launch -RequireExtensions -MachineGuiLayouts -ChildRendererGeometry -RecipeBookFixtures '<native 1.18 recipe run>/unlock' -PreflightOnly
-./test-rig/client-resources/run.ps1 -JavaHome '<Java 17 home>' -LaunchProfile runClientAllAdvantage.launch -RequireExtensions -MachineGuiLayouts -ChildRendererGeometry -RecipeBookFixtures '<native 1.18 recipe run>/unlock'
+./test-rig/client-resources/run.ps1 -JavaHome '<Java 17 home>' -LaunchProfile runClientAllAdvantage.launch -RequireExtensions -MachineGuiLayouts -ChildRendererGeometry -RecipeBookFixtures '<native 1.19 recipe run>/unlock' -PreflightOnly
+./test-rig/client-resources/run.ps1 -JavaHome '<Java 17 home>' -LaunchProfile runClientAllAdvantage.launch -RequireExtensions -MachineGuiLayouts -ChildRendererGeometry -RecipeBookFixtures '<native 1.19 recipe run>/unlock'
 ```
 
-The combined launch requires Power `2.4.10.118021`, Steam `2.2.11.118021` and
-Electric `2.2.11.118021`. Pin the exact rebuilt jars in `profiles/native118`
+The combined launch requires Power `2.4.11.119041`, Steam `2.2.12.119041` and
+Electric `2.2.12.119041`. Pin the exact rebuilt jars in `profiles/native119`
 before regenerating it. Omitting the combined profile retains Power-only
 scope. Normal Eclipse launches contain production code only.
 
@@ -39,10 +39,10 @@ is provenance, not proof that the selected loose output equals that jar.
 
 ## Recipe Fixtures
 
-Generate fresh exports from the packaged 1.18.2 candidates, not a historical run:
+Generate fresh exports from the packaged 1.19.4 candidates, not a historical run:
 
 ```powershell
-<python.exe> -B test-rig/migration/native118_recipes.py --profile test-rig/profiles/native118/packaged-current.json --seed '<Forge 40.3.0 server>' --inventory '<sealed inventory>' --inventory-sha256 '<inventory SHA-256>' --java17 '<Java 17 home>/bin/java.exe' --port 25577 --output test-rig/build/native118-recipes-new
+<python.exe> -B test-rig/migration/native119_recipes.py --profile test-rig/profiles/native119/packaged-current.json --seed '<Forge 45.4.0 server>' --inventory '<sealed inventory>' --inventory-sha256 '<inventory SHA-256>' --java17 '<Java 17 home>/bin/java.exe' --port 25577 --output test-rig/build/native119-recipes-new
 ```
 
 Use an existing Python 3.11+ environment with `migration/requirements.txt`.
