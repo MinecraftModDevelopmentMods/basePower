@@ -49,22 +49,43 @@ function initializeCoreMod() {
         'poweradvantage_legacy_world_info': {
             'target': { 'type': 'CLASS', 'name': 'net.minecraft.world.level.storage.LevelStorageSource' },
             'transformer': function(classNode) {
-                var patched = false;
+                var worldReaders = 0;
+                var packReaders = 0;
                 for (var i = 0; i < classNode.methods.size(); ++i) {
                     var method = classNode.methods.get(i);
-                    if (method.desc !== '(Lcom/mojang/serialization/DynamicOps;' +
+                    var worldReader = method.desc === '(Lcom/mojang/serialization/DynamicOps;' +
                             'Lnet/minecraft/world/level/DataPackConfig;' +
                             'Lnet/minecraft/world/level/storage/LevelStorageSource$LevelStorageAccess;' +
                             'Ljava/io/File;Lcom/mojang/datafixers/DataFixer;)' +
-                            'Lnet/minecraft/world/level/storage/PrimaryLevelData;') continue;
-                    var prefix = new InsnList();
-                    prefix.add(new VarInsnNode(Opcodes.ALOAD, 3));
-                    prefix.add(new MethodInsnNode(Opcodes.INVOKESTATIC, hook,
-                            'prepareLegacyWorld', '(Ljava/io/File;)V', false));
-                    method.instructions.insert(prefix);
-                    patched = true;
+                            'Lnet/minecraft/world/level/storage/PrimaryLevelData;';
+                    var packReader = method.desc === '(Ljava/io/File;Lcom/mojang/datafixers/DataFixer;)' +
+                            'Lnet/minecraft/world/level/DataPackConfig;';
+                    if (!worldReader && !packReader) continue;
+                    if (worldReader) {
+                        var prefix = new InsnList();
+                        prefix.add(new VarInsnNode(Opcodes.ALOAD, 3));
+                        prefix.add(new MethodInsnNode(Opcodes.INVOKESTATIC, hook,
+                                'prepareLegacyWorld', '(Ljava/io/File;)V', false));
+                        method.instructions.insert(prefix);
+                    }
+                    var reads = 0;
+                    for (var read = method.instructions.getFirst(); read !== null; read = read.getNext()) {
+                        if (read.getOpcode() === Opcodes.INVOKESTATIC && read.owner === 'net/minecraft/nbt/NbtIo' &&
+                                read.desc === '(Ljava/io/File;)Lnet/minecraft/nbt/CompoundTag;') {
+                            var replacement = new MethodInsnNode(Opcodes.INVOKESTATIC,
+                                    'zone/moddev/mc/basepower/migration/LegacyWorldMetadata', 'read', read.desc, false);
+                            method.instructions.set(read, replacement);
+                            read = replacement;
+                            ++reads;
+                        }
+                    }
+                    if (reads !== 1) throw new Error('Power Advantage expected one level metadata read');
+                    if (worldReader) ++worldReaders;
+                    if (packReader) ++packReaders;
                 }
-                if (!patched) throw new Error('Power Advantage could not attach its legacy world reader');
+                if (worldReaders !== 1 || packReaders !== 1) {
+                    throw new Error('Power Advantage could not attach both legacy level readers');
+                }
                 return classNode;
             }
         },
