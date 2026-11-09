@@ -111,7 +111,7 @@ tasks.register('verifyWorksCompileInputPin') {
         if (actual != project.poweradvantage_deobf_sha256) {
             throw new GradleException("Power compile input changed: ${actual}; obtain a new parent pin")
         }
-        if (project.poweradvantage_source_commit != 'c7843fdaaa9e407948a0aa6bc1e6d5562eac7bbe'
+        if (project.poweradvantage_source_commit != '83a3f028ffad220fe2f3cc4983a9340dde2295a8'
                 || project.poweradvantage_pin_status != 'SOURCE_AND_ARTIFACT_PINNED') {
             throw new GradleException('The harness requires the verified 1.20.1 Power source pin')
         }
