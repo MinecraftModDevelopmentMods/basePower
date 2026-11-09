@@ -4,6 +4,7 @@ basePower 2.4.12.120011 (Minecraft 1.20.1 local candidate)
 - Use Minecraft's current screen rendering, creative tabs, and block properties.
 - Keep all three mods on one creative tab and retain the old recipe unlocks.
 - Keep the shared world upgrade hook so old machine facings, item wear and contents can be read before Minecraft converts the chunks.
+- Map the renamed vanilla pottery and sound entries so 1.19.4 worlds open without a missing registry warning.
 
 basePower 2.4.11.119041 (Minecraft 1.19.4)
 
