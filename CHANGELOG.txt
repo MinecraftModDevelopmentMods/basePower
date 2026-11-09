@@ -12,7 +12,7 @@ basePower 2.4.10.118021 (Minecraft 1.18.2)
 - Use Forge's registry lifecycle for blocks, items and oil, and native save and update packets for machines.
 - Carry old machine and entity data into 1.18's chunk format without blocking new terrain below the old world floor.
 - Retire old Forge biome entries only when Minecraft's own data fixer handles the rename or merge.
-- Share saved Advantage data with Base Metals before it flattens old chunks, keeping item wear, entities and block facings intact.
+- When upgrading with Base Metals, use 3.1.2. It lets basePower preserve old item wear, entities and machine facings before Minecraft converts the chunks.
 
 basePower 2.4.9.117011 (Minecraft 1.17.1)
 

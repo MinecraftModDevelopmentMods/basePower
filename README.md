@@ -9,9 +9,10 @@ basePower continues DrCyano's Power Advantage. It provides shared power,
 fluids and item transport for baseSteam and baseElectric.
 
 **Back up the entire world before upgrading. Test only disposable copies.**
-The port retains existing registry names and legacy migration code. Upgrade tests
-use disposable original and maintained saves, including connected machines.
-Check every other mod's target-version support too.
+The port keeps existing registry names and machine data. I tested disposable
+copies of original Advantage and released base* saves, including connected
+machines, and checked them again after closing and restarting Minecraft.
+Check that the other mods in your world support 1.18.2 before you upgrade.
 The accepted [1.14 results](docs/1.14/BROADER-QUALIFICATION.md) are historical
 evidence, not qualification of this port or a whole modpack.
 
@@ -30,9 +31,11 @@ automatic discovery and downloads for a reproducibility check.
 
 Build the pinned Base Metals `3.1.2.119041` and OreSpawn `4.1.0.119041` deobf jars first.
 The source pins and checksums are in `gradle.properties`.
-The Base Metals pin is a local candidate with the shared legacy migration hook.
-It has not been published. Base Metals remains optional to Forge, but when it
-is installed this port requires the hook so it can preserve Advantage data.
+Check out the pinned dependency sources with `core.autocrlf=false` so the
+Base Metals development jar matches CI.
+Use Base Metals 3.1.2 for upgrades with Base Metals installed. Its shared
+save hook lets both mods preserve old items and machines before Minecraft
+converts the chunk. Older Base Metals builds do not have that hook.
 
 Then run from the repository root:
 

@@ -1,4 +1,4 @@
-name: Validate Power Advantage release tag
+name: Validate basePower release tag
 
 on:
   push:
