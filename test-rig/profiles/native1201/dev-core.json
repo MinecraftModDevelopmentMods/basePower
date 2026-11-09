@@ -5,9 +5,9 @@
   "minecraftVersion": "1.20.1",
   "portStatus": "PORTED_UNQUALIFIED",
   "qualificationStatus": "UNQUALIFIED",
-  "sourceCommit": "c7843fdaaa9e407948a0aa6bc1e6d5562eac7bbe",
+  "sourceCommit": "83a3f028ffad220fe2f3cc4983a9340dde2295a8",
   "sourceVersion": "2.4.12.120011",
-  "powerDeobfSha256": "4FD489774396CC4776CBF21DCCE30DA0AD14E9542AE2FA7F58BFD767EB5D4F0F",
+  "powerDeobfSha256": "21A2A3007BA076D219E6836707EF365E2031823A09D5E3DC2A92DD88BD67EA01",
   "levelType": "minecraft:flat",
   "levelSeed": "advantage-works-1.20.1-v1",
   "startupTimeoutSeconds": 180,
@@ -30,7 +30,7 @@
       "version": "2.2.13.120011",
       "file": "baseElectric-2.2.13.120011-deobf.jar",
       "path": "../../ElectricAdvantage/ElectricAdvantage/build/libs-dev/baseElectric-2.2.13.120011-deobf.jar",
-      "sha256": "A9F672B328BCFAD7556A107BB66D873A38401B0211782AC2806B952B367606EF"
+      "sha256": "14107B4602E4749FD1FD570F7974B420AB425CB05CE82C0A080D9A3A2747E3C5"
     },
     {
       "id": "advantageworkstest",

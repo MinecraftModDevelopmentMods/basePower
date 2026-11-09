@@ -5,9 +5,9 @@
   "minecraftVersion": "1.20.1",
   "portStatus": "PORTED_UNQUALIFIED",
   "qualificationStatus": "UNQUALIFIED",
-  "sourceCommit": "c7843fdaaa9e407948a0aa6bc1e6d5562eac7bbe",
+  "sourceCommit": "83a3f028ffad220fe2f3cc4983a9340dde2295a8",
   "sourceVersion": "2.4.12.120011",
-  "powerDeobfSha256": "4FD489774396CC4776CBF21DCCE30DA0AD14E9542AE2FA7F58BFD767EB5D4F0F",
+  "powerDeobfSha256": "21A2A3007BA076D219E6836707EF365E2031823A09D5E3DC2A92DD88BD67EA01",
   "levelType": "minecraft:flat",
   "levelSeed": "advantage-works-1.20.1-v1",
   "startupTimeoutSeconds": 180,
@@ -23,7 +23,7 @@
       "version": "2.4.12.120011",
       "file": "basePower-2.4.12.120011.jar",
       "path": "../build/libs/basePower-2.4.12.120011.jar",
-      "sha256": "7CBDDD402CB9BA79DB4037ABF03A213666E7E1FE12E5B8C2A32ABF67CC2F3AE6"
+      "sha256": "E6835ECB04D3F2D5F54731694F7B8D87F06B4A0A9DDB18AA5EDD70EE0E1B099A"
     },
     {
       "id": "basesteam",
@@ -37,7 +37,7 @@
       "version": "2.2.13.120011",
       "file": "baseElectric-2.2.13.120011.jar",
       "path": "../../ElectricAdvantage/ElectricAdvantage/build/libs/baseElectric-2.2.13.120011.jar",
-      "sha256": "F032D9A80C65FD3E76E20D07B497BCF6AD37C3C578F9DD25F3F13E82294540D4"
+      "sha256": "9344CFCE7B9FB725957F885E2A21FC207DCD58679ED95D319DA04CE854576C5F"
     },
     {
       "id": "orespawn",

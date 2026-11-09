@@ -45,11 +45,11 @@ def main():
     if len(stations) != 21:
         raise AssertionError("The complete 21-bay specification is required")
     output.mkdir(parents=True)
-    manifest = output / "target119.json"
+    manifest = output / "target1201.json"
     seed, code, entries = target
     entries = freeze_mods(entries, output / "pinned-inputs")
     target = seed, code, entries
-    write_json(manifest, {"target119": {
+    write_json(manifest, {"target1201": {
         "seed": str(seed), "launcher": native1201.LAUNCHER,
         "launcher_sha256": digest(seed / native1201.LAUNCHER), "serverCode": code,
         "jars": [{**item, "path": str(item["path"])} for item in entries.values()],
