@@ -1,0 +1,64 @@
+{
+  "name": "packaged-current",
+  "mode": "packaged",
+  "runtimeBase": "build/works-native118",
+  "minecraftVersion": "1.18.2",
+  "portStatus": "PORTED_UNQUALIFIED",
+  "qualificationStatus": "UNQUALIFIED",
+  "sourceCommit": "bab9971cc2d593eee1f4a3de6dafc7ec268d25c2",
+  "sourceVersion": "2.4.10.118021",
+  "powerDeobfSha256": "C00F835A7A80BAF332355EF1F181F252B603A017A979D2F41EA3BBEAE314E280",
+  "levelType": "advantageworkstest:test_flat",
+  "levelSeed": "advantage-works-1.18.2-v1",
+  "startupTimeoutSeconds": 180,
+  "forge": {
+    "version": "1.18.2-40.3.0",
+    "installerPath": "../../../../BaseMetals/.runtime-cache/forge-1.18.2-40.3.0-installer.jar",
+    "url": "https://maven.minecraftforge.net/net/minecraftforge/forge/1.18.2-40.3.0/forge-1.18.2-40.3.0-installer.jar",
+    "sha256": "9434C29790504DCD11CE97CB30DD8891B4B18848982357BC1B5ABFA79FB95103"
+  },
+  "mods": [
+    {
+      "id": "basepower",
+      "version": "2.4.10.118021",
+      "file": "basePower-2.4.10.118021.jar",
+      "path": "../build/libs/basePower-2.4.10.118021.jar",
+      "sha256": "595991E8BB6B831C4F3A291251F283CD5FB1EC1F9BC48C1BB54BC5D88490ECB9"
+    },
+    {
+      "id": "basesteam",
+      "version": "2.2.11.118021",
+      "file": "baseSteam-2.2.11.118021.jar",
+      "path": "../../SteamAdvantage/SteamAdvantage/build/libs/baseSteam-2.2.11.118021.jar",
+      "sha256": "2E7131FD22F9486905212F64323F5E11EEFBE0A538499E92477373D0C5D2A2CC"
+    },
+    {
+      "id": "baseelectric",
+      "version": "2.2.11.118021",
+      "file": "baseElectric-2.2.11.118021.jar",
+      "path": "../../ElectricAdvantage/ElectricAdvantage/build/libs/baseElectric-2.2.11.118021.jar",
+      "sha256": "C5C1A6DEAE795F8AF741DBE35B0D8941F7FA4BBC708758BDFE056B4AEBADCBC1"
+    },
+    {
+      "id": "basemetals",
+      "version": "3.1.2.118021",
+      "file": "BaseMetals-3.1.2.118021.jar",
+      "path": "../../../../BaseMetals/BaseMetals 118/BaseMetals/build/libs/BaseMetals-3.1.2.118021.jar",
+      "sha256": "9EA9DE0E5D548FD77BBAB05565D3C2004E1C2C985353C626F6610CDA07EE3BBF"
+    },
+    {
+      "id": "orespawn",
+      "version": "4.1.0.118021",
+      "file": "OreSpawn-4.1.0.118021.jar",
+      "path": "../../../../MinecraftMineralogy/OS118/OreSpawn/build/libs/OreSpawn-4.1.0.118021.jar",
+      "sha256": "BD8D84A96DAFB7668E95D61B9D72C62AEF3440675473E41244C182C64653356F"
+    },
+    {
+      "id": "advantageworkstest",
+      "version": "1.1.2.118021",
+      "file": "AdvantageWorksTestHarness-1.1.2.118021.jar",
+      "path": "build/gradle/libs/AdvantageWorksTestHarness-1.1.2.118021.jar",
+      "sha256": "CB3EE29B4BDD28ED005D1CA5231BFE8C7017A40714D3ED156FA7C2E045D0CA4D"
+    }
+  ]
+}

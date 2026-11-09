@@ -53,7 +53,7 @@ class NativeEnduranceTests(unittest.TestCase):
                 rig.documents = {"W-01": {"worldTime": next(ticks)}}
             rig.checkpoint = checkpoint
             rig.command = lambda command, response=None: commands.append(command)
-            with patch("native117_endurance.Server"), patch("native117_endurance.time.sleep"):
+            with patch.object(rig, "server_type"), patch("native117_endurance.time.sleep"):
                 rig.boot("endurance-restart")
             self.assertEqual(len(observations), 3)
             self.assertEqual(len(commands), len(endurance.CHECKED))
@@ -67,14 +67,14 @@ class NativeEnduranceTests(unittest.TestCase):
             rig = NativeEnduranceRig("test", Path(directory), None, None, definitions)
             rig.command = lambda *args: None
             rig.checkpoint = lambda label: rig.documents.update({"W-01": {"worldTime": 200}})
-            with patch("native117_endurance.Server"), patch("native117_endurance.time.sleep"):
+            with patch.object(rig, "server_type"), patch("native117_endurance.time.sleep"):
                 with self.assertRaisesRegex(TimeoutError, "No actual native tick"):
                     rig.boot("endurance-restart")
 
     def test_initial_boot_does_not_restore_or_rebuild_anything(self):
         rig = NativeEnduranceRig("test", Path("unused"), None, None, {})
         rig.command = lambda *args: self.fail("Initial boot issued a command")
-        with patch("native117_endurance.Server") as server:
+        with patch.object(rig, "server_type") as server:
             rig.boot("endurance")
         server.assert_called_once_with(rig.runtime, rig.java, rig.launcher, 'endurance')
 

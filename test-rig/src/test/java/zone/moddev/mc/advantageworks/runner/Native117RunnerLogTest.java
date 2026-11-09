@@ -164,6 +164,29 @@ public class Native117RunnerLogTest {
 
     private static final String MIXIN_CLEANUP = "[31Oct2026 06:47:24.115] [main/DEBUG] [mixin/]: "
             + "Error cleaning class output directory: .mixin.out";
+    private static final String NETTY_HEADER = "[09Nov2026 12:38:11.123] [main/DEBUG] "
+            + "[io.netty.util.internal.PlatformDependent0/]: direct buffer constructor: unavailable";
+    private static final String NETTY_CAUSE = "java.lang.UnsupportedOperationException: Reflective setAccessible(true) disabled";
+
+    @Test public void exactNettyCapabilityProbeRemainsVisibleWithoutFailingTheBoot() throws Exception {
+        WorksRunner.BootLogs boot = boot("first-run");
+        fill(boot);
+        String raw = CLEAN + NETTY_HEADER + "\n" + NETTY_CAUSE + "\n"
+                + "\tat io.netty.util.internal.PlatformDependent0.run(PlatformDependent0.java:11) ~[?:?]\n";
+        write(log(boot, "debug"), raw);
+        boot.archive();
+        assertTrue(boot.clean);
+        assertTrue(receipt(boot).contains("Netty DEBUG optional capability probe"));
+        assertEquals(raw, Files.readString(new File(boot.results, "first-run-debug.log").toPath()));
+    }
+
+    @Test public void nettyDoesNotHideAnUnrelatedExceptionOrAnErrorLevelProbe() throws Exception {
+        for (String event : Arrays.asList(NETTY_CAUSE, NETTY_HEADER.replace("DEBUG", "ERROR") + "\n" + NETTY_CAUSE,
+                NETTY_HEADER + "\n" + NETTY_CAUSE + " other cause",
+                NETTY_HEADER + "\n" + NETTY_CAUSE + "\nCaused by: unrelated crash")) {
+            rejectEventInEveryLog(event);
+        }
+    }
 
     private void rejectEventInEveryLog(String event) throws Exception {
         for (String kind : Arrays.asList("console", "latest", "debug")) {

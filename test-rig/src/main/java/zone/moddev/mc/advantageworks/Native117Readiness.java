@@ -75,14 +75,14 @@ final class Native117Readiness {
         for (int x = observation.bounds.minX; x <= observation.bounds.maxX; x++) {
             for (int z = observation.bounds.minZ; z <= observation.bounds.maxZ; z++) {
                 BlockPos pos = new BlockPos(x * 16, world.getMinBuildHeight(), z * 16);
-                states.add(new State(x, z, world.isPositionTickingWithEntitiesLoaded(pos),
-                        world.isPositionEntityTicking(new ChunkPos(x, z))));
+                states.add(new State(x, z, Native118ChunkTicking.withEntitiesLoaded(world, pos),
+                        world.isPositionEntityTicking(pos)));
             }
         }
         if (!observation.observe(world.getGameTime(), System.nanoTime(), states)) return;
         JsonObject report = observation.report();
         report.addProperty("label", label);
-        report.addProperty("minecraft", "1.17.1");
+        report.addProperty("minecraft", "1.18.2");
         report.addProperty("dimension", world.dimension().location().toString());
         try {
             Files.createDirectories(output.toPath().getParent());

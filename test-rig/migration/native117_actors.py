@@ -14,7 +14,6 @@ import dimensions
 from matrix import WORLD, copy_fixture, digest, fingerprint, write_json
 from native117_code import Server
 from native117 import output_path, pinned_profile, require_clean_log, require_disjoint
-from native117 import boot
 from native117_actor_io import capture_actors, capture_dimensions, source_identities
 from native117_dimension_assessment import assess, load_native_proof, summarize_checks
 import native117_dimension_assessment
@@ -135,7 +134,7 @@ def await_natural_ticks(server, runtime, kind, released):
     raise TimeoutError(f"Actor world did not advance 80 natural ticks after {released}")
 
 
-def ready_entities(server, runtime, kind, label):
+def ready_entities(server, runtime, kind, label, minecraft="1.17.1"):
     definition = json.loads((runtime / (
         'dimension-fixture.json' if kind == 'dimensions' else 'actor-fixture.json')).read_text())
     dimension = DIMENSIONS[definition['dimension']] if kind == 'dimensions' else DIMENSIONS[0]
@@ -143,20 +142,25 @@ def ready_entities(server, runtime, kind, label):
     console = SimpleNamespace(send=lambda command: server.send('execute in ' + dimension + ' run ' + command),
         wait=server.wait)
     console.send('forceload add 96 -32 223 47')
-    receipt = await_ready(console, runtime, (6, -2, 13, 2), 'entities-' + label, dimension)
+    receipt = await_ready(console, runtime, (6, -2, 13, 2), 'entities-' + label, dimension, minecraft=minecraft)
     if receipt['dimension'] != dimension:
         raise AssertionError('Entity readiness observed the wrong dimension')
     return receipt
 
 
-def run_route(source, runtime, target, args):
+def run_route(source, runtime, target, args, *, stage=None, server_type=None,
+              stop_audit=None, check_log=None, minecraft="1.17.1"):
     from native117 import boot
+    server_type = server_type or Server
+    stop_audit = stop_audit or audit_stopped
+    check_log = check_log or require_clean_log
+    java = getattr(args, "java17", None) or args.java8
     before = fingerprint(source)
     approved = source / "fixture-hashes.json"
     if approved.is_file() and fingerprint(source / WORLD) != json.loads(approved.read_text()):
         raise AssertionError(f"Protected fixture differs from approved hashes: {source}")
     expected, source_label = baseline(source, args.kind)
-    launcher = boot(runtime, target, args.java8, args.port)
+    launcher = stage(runtime, target, args.port) if stage else boot(runtime, target, java, args.port)
     (runtime / 'advantage-works.allow').touch()
     copy_fixture(source, runtime)
     fixture_name = "dimension-fixture.json" if args.kind == "dimensions" else "actor-fixture.json"
@@ -178,7 +182,7 @@ def run_route(source, runtime, target, args):
     checks, assessments = {}, {}
 
     def corroborate_stopped(label):
-        receipt = audit_stopped(runtime, runtime / 'stopped-entity-evidence' / label)
+        receipt = stop_audit(runtime, runtime / 'stopped-entity-evidence' / label)
         checks['saved-entities-' + label] = dict(status=receipt['status'],
             snapshotSha256=receipt['snapshotSha256'], matchedEntities=receipt['matchedEntities'],
             auditedDimensions=receipt['auditedDimensions'])
@@ -192,9 +196,9 @@ def run_route(source, runtime, target, args):
                                       "survival" if survival else "strict", adapter)
         return strict
     try:
-        server = Server(runtime, args.java8, launcher, "conversion")
+        server = server_type(runtime, java, launcher, "conversion")
         try:
-            checks['readiness-conversion'] = ready_entities(server, runtime, args.kind, 'conversion')
+            checks['readiness-conversion'] = ready_entities(server, runtime, args.kind, 'conversion', minecraft)
             if args.kind == "dimensions":
                 release(server, runtime, args.kind, "conversion-release")
                 await_natural_ticks(server, runtime, args.kind, "conversion-release")
@@ -211,10 +215,10 @@ def run_route(source, runtime, target, args):
         finally:
             server.close()
         corroborate_stopped('conversion')
-        require_clean_log(runtime / "console-conversion.log")
-        server = Server(runtime, args.java8, launcher, "restart")
+        check_log(runtime / "console-conversion.log")
+        server = server_type(runtime, java, launcher, "restart")
         try:
-            checks['readiness-restart'] = ready_entities(server, runtime, args.kind, 'restart')
+            checks['readiness-restart'] = ready_entities(server, runtime, args.kind, 'restart', minecraft)
             if args.kind == "dimensions":
                 release(server, runtime, args.kind, "restart-load-release")
                 await_natural_ticks(server, runtime, args.kind, "restart-load-release")
@@ -231,10 +235,10 @@ def run_route(source, runtime, target, args):
         finally:
             server.close()
         corroborate_stopped('restart')
-        require_clean_log(runtime / "console-restart.log")
-        server = Server(runtime, args.java8, launcher, "runtime-restart")
+        check_log(runtime / "console-restart.log")
+        server = server_type(runtime, java, launcher, "runtime-restart")
         try:
-            checks['readiness-runtime-restart'] = ready_entities(server, runtime, args.kind, 'runtime-restart')
+            checks['readiness-runtime-restart'] = ready_entities(server, runtime, args.kind, 'runtime-restart', minecraft)
             release(server, runtime, args.kind, "restart-released")
             await_natural_ticks(server, runtime, args.kind, "restart-released")
             operated_again = command(server, runtime, args.kind, "read", "runtime-restart")
@@ -243,7 +247,7 @@ def run_route(source, runtime, target, args):
         finally:
             server.close()
         corroborate_stopped('runtime-restart')
-        require_clean_log(runtime / "console-runtime-restart.log")
+        check_log(runtime / "console-runtime-restart.log")
         checks["backup-stability"] = {"status": "PASS" if actors.backup_state(runtime) == backups else "FAIL", "backups": backups}
         return checks
     finally:

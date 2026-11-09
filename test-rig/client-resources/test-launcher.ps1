@@ -76,33 +76,33 @@ if ($CrossVersionEvidenceRoots) {
 
 $native = @'
 modLoader="javafml"
-loaderVersion="[37,)" # native Forge
+loaderVersion="[40,)" # native Forge
 [[mods]] # mandatory header
 modId="basepower" # inline comment
-version="2.4.9.117011" # native candidate
+version="2.4.10.118021" # native candidate
 [[dependencies.basepower]]
 modId="minecraft"
 mandatory=true
-versionRange="[1.17.1]"
+versionRange="[1.18.2]"
 '@
 Assert-NativeMetadata $native 'basepower'
 $checks++
-Assert-Throws { Assert-NativeMetadata ($native.Replace('2.4.9.117011','2.4.4.113021')) 'basepower' }
-Assert-Throws { Assert-NativeMetadata ($native.Replace('2.4.9.117011','2.4.5.114041')) 'basepower' }
-Assert-Throws { Assert-NativeMetadata ($native.Replace('2.4.9.117011','2.4.5.115021')) 'basepower' }
-Assert-Throws { Assert-NativeMetadata ($native.Replace('[37,)','[36,)')) 'basepower' }
-Assert-Throws { Assert-NativeMetadata ($native.Replace('2.4.9.117011','2.4.7.116051')) 'basepower' }
-Assert-Throws { Assert-NativeMetadata ($native.Replace('2.4.9.117011','${version}')) 'basepower' }
+Assert-Throws { Assert-NativeMetadata ($native.Replace('2.4.10.118021','2.4.4.113021')) 'basepower' }
+Assert-Throws { Assert-NativeMetadata ($native.Replace('2.4.10.118021','2.4.5.114041')) 'basepower' }
+Assert-Throws { Assert-NativeMetadata ($native.Replace('2.4.10.118021','2.4.5.115021')) 'basepower' }
+Assert-Throws { Assert-NativeMetadata ($native.Replace('[40,)','[36,)')) 'basepower' }
+Assert-Throws { Assert-NativeMetadata ($native.Replace('2.4.10.118021','2.4.7.116051')) 'basepower' }
+Assert-Throws { Assert-NativeMetadata ($native.Replace('2.4.10.118021','${version}')) 'basepower' }
 Assert-Throws { Assert-NativeMetadata $native 'baseelectric' }
 Assert-Throws { Assert-NativeMetadata '' 'basepower' }
 foreach ($id in 'basesteam','baseelectric') {
-    $expansion = $native.Replace('basepower', $id).Replace('2.4.9.117011','2.2.10.117011')
+    $expansion = $native.Replace('basepower', $id).Replace('2.4.10.118021','2.2.11.118021')
     Assert-NativeMetadata $expansion $id
     $checks++
-    Assert-Throws { Assert-NativeMetadata ($expansion.Replace('2.2.10.117011','2.2.6.115021')) $id }
+    Assert-Throws { Assert-NativeMetadata ($expansion.Replace('2.2.11.118021','2.2.6.115021')) $id }
 }
-$environment = @{ MC_VERSION = '1.17.1'; FORGE_VERSION = '37.1.1'; MCP_MAPPINGS = 'official_1.17.1'; MCP_VERSION = '20210706.113038'; target = 'fmluserdevclient' }
-$attributes = @{ 'org.eclipse.jdt.launching.PROGRAM_ARGUMENTS' = '--main cpw.mods.bootstraplauncher.BootstrapLauncher --cache D:\native\1.17.1-37.1.1 -- --launchTarget forgeclientuserdev --gameDir .'; 'org.eclipse.jdt.launching.MAIN_TYPE' = 'net.minecraftforge.launcher.Main' }
+$environment = @{ MC_VERSION = '1.18.2'; FORGE_VERSION = '40.3.0'; MCP_MAPPINGS = 'official_1.18.2'; MCP_VERSION = '20220404.173914'; target = 'fmluserdevclient' }
+$attributes = @{ 'org.eclipse.jdt.launching.PROGRAM_ARGUMENTS' = '--main cpw.mods.bootstraplauncher.BootstrapLauncher --cache D:\native\1.18.2-40.3.0 -- --launchTarget forgeclientuserdev --gameDir .'; 'org.eclipse.jdt.launching.MAIN_TYPE' = 'net.minecraftforge.launcher.Main' }
 Assert-NativeLaunch $environment $attributes
 $checks++
 foreach ($key in 'MC_VERSION','FORGE_VERSION','MCP_MAPPINGS','MCP_VERSION','target') {
@@ -118,7 +118,7 @@ foreach ($argument in '--server localhost','--port 25565','--gameDir D:\protecte
 $invalid = $attributes.Clone()
 $invalid['org.eclipse.jdt.launching.MAIN_TYPE'] = 'net.minecraft.client.main.Main'
 Assert-Throws { Assert-NativeLaunch $environment $invalid }
-Assert-NativeArchive 'D:\native\forge-1.17.1-37.1.1.jar'
+Assert-NativeArchive 'D:\native\forge-1.18.2-40.3.0.jar'
 $checks++
 foreach ($path in 'D:\PA114\client.jar','D:\PA113\client.jar','D:\PA116\client.jar','D:\native\forge-1.16.5-36.2.34.jar','D:\native\forge-1.14.4-28.2.26.jar','D:\native\client-extra-1.13.2.jar') {
     Assert-Throws { Assert-NativeArchive $path }
@@ -135,7 +135,7 @@ if ($StaticOnly) {
     return
 }
 $project = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
-$power = Join-Path $project 'build/libs-dev/basePower-2.4.9.117011-deobf.jar'
+$power = Join-Path $project 'build/libs-dev/basePower-2.4.10.118021-deobf.jar'
 Assert-NativeMetadata (Read-JarMetadata $power) 'basepower'
 $checks++
 [xml]$launch = Get-Content -LiteralPath (Join-Path $project 'runClientAllAdvantage.launch') -Raw

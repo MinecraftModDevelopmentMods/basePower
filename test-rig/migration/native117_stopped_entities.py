@@ -29,7 +29,8 @@ def _unique_object(pairs):
     return result
 
 
-def audit_stopped(runtime, evidence_folder):
+def audit_stopped(runtime, evidence_folder, *, minecraft_version="1.17.1", data_version=2730,
+                  stopping_phase="FMLServerStoppingEvent"):
     """Call after clean process shutdown; retain a NEW immutable snapshot copy.
 
     Empty dimensions are explicit skips, not inferred-empty saves. An all-empty
@@ -57,9 +58,9 @@ def audit_stopped(runtime, evidence_folder):
             output.write(data)
         document = json.loads(data, object_pairs_hook=_unique_object)
         if (not isinstance(document, dict) or type(document.get("format")) is not int or document["format"] not in (1, 2)
-                or document.get("status") != "CAPTURED" or document.get("phase") != "FMLServerStoppingEvent"
-                or document.get("minecraftVersion") != "1.17.1" or type(document.get("dataVersion")) is not int
-                or document["dataVersion"] != 2730 or document.get("worldName") != "AdvantageWorksMigration"
+                or document.get("status") != "CAPTURED" or document.get("phase") != stopping_phase
+                or document.get("minecraftVersion") != minecraft_version or type(document.get("dataVersion")) is not int
+                or document["dataVersion"] != data_version or document.get("worldName") != "AdvantageWorksMigration"
                 or document.get("enumeration") != "ServerLevel.getAllEntities"):
             raise ValueError("Not a complete native stopping-event snapshot")
         if str(uuid.UUID(document.get("bootId", ""))) != document["bootId"]:
@@ -107,7 +108,8 @@ def audit_stopped(runtime, evidence_folder):
             _, native_rows, _ = entity_storage._snapshots(record)
             if any(entry.get("id") != str(native_rows[entry["uuid"]]["id"]) for entry in record["entities"]):
                 raise AssertionError("Stopping entity type attestation differs from its complete native NBT")
-            result = entity_storage.audit(record, world / directory, evidence / (directory or "overworld"))
+            result = entity_storage.audit(record, world / directory, evidence / (directory or "overworld"),
+                                          data_version=data_version)
             if result.get("status") != "PASS":
                 raise AssertionError("Raw entity audit did not pass: " + key)
             identities = set(result["matched"])
@@ -123,7 +125,8 @@ def audit_stopped(runtime, evidence_folder):
         if document['format'] == 2:
             from native117_helper_contract import raw_helpers_absent
             raw_helpers_absent({p.relative_to(evidence).as_posix(): p.read_bytes()
-                for p in evidence.rglob('*.mca')}, receipt['helperLifecycle']['helpers'])
+                for p in evidence.rglob('*.mca')}, receipt['helperLifecycle']['helpers'],
+                data_version=data_version)
         receipt.update(status="PASS" if audited else "NO_NONEMPTY_DIMENSIONS", bootId=document["bootId"],
                        auditedDimensions=audited, snapshotRecords=count, matchedEntities=len(matched))
     except Exception as error:

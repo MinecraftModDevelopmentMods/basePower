@@ -154,14 +154,14 @@ def _payloads(data, rx, rz):
         yield (rx * 32 + (slot & 31), rz * 32 + (slot >> 5)), data[start:start + 4 + length]
 
 
-def _entity_chunk(payload, coordinates):
+def _entity_chunk(payload, coordinates, version=DATA_VERSION):
     if len(payload) < 6 or int.from_bytes(payload[:4], "big") != len(payload) - 4:
         raise ValueError("Malformed entity chunk payload")
     root = _nbt(_decompress(payload[5:], payload[4]))
     if set(root) != {"DataVersion", "Position", "Entities"}:
         raise ValueError("Unexpected EntityStorage root keys (terrain Level is not entity storage)")
-    if not isinstance(root["DataVersion"], nbtlib.Int) or int(root["DataVersion"]) != DATA_VERSION:
-        raise ValueError("EntityStorage must have native DataVersion 2730")
+    if not isinstance(root["DataVersion"], nbtlib.Int) or int(root["DataVersion"]) != version:
+        raise ValueError(f"EntityStorage must have native DataVersion {version}")
     position = root["Position"]
     if not isinstance(position, nbtlib.IntArray) or len(position) != 2 or tuple(map(int, position)) != coordinates:
         raise ValueError("EntityStorage Position int[2] differs from its actual region slot")
@@ -202,7 +202,7 @@ def _snapshots(record):
     return expected, rows, roots
 
 
-def audit(snapshot_record, world_path, evidence_folder):
+def audit(snapshot_record, world_path, evidence_folder, *, data_version=DATA_VERSION):
     """Retain stopped raw regions and require complete NBT equality for every UUID.
 
     world_path is the explicit dimension directory. All its entity regions are
@@ -255,7 +255,7 @@ def audit(snapshot_record, world_path, evidence_folder):
                 relative = "chunks/%d.%d.chunk" % coordinates
                 retain(relative, payload)
                 receipt["chunks"][relative] = dict(position=list(coordinates), sha256=_sha(payload), source=path.name)
-                for root in _entity_chunk(payload, coordinates):
+                for root in _entity_chunk(payload, coordinates, data_version):
                     root_id = _identity(root)
                     if _chunk(root) != coordinates:
                         raise AssertionError("Root entity saved Pos differs from its EntityStorage chunk")

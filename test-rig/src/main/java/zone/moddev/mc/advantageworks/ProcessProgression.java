@@ -12,8 +12,11 @@ import java.util.Collections;
 import java.util.Map;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Container;
+import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.crafting.Recipe;
+import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.core.Direction;
@@ -50,7 +53,7 @@ final class ProcessProgression {
                 && !output.isEmpty() && id(output).equals(id(expected)) && output.getCount() == expected.getCount(),
                 "Live furnace failed " + recipe + ": input=" + furnace.getItem(0)
                     + ", fuel=" + furnace.getItem(1) + ", output=" + output
-                    + ", expected=" + expected + ", saved=" + furnace.save(new net.minecraft.nbt.CompoundTag()));
+                    + ", expected=" + expected + ", saved=" + furnace.saveWithFullMetadata());
         record("live_furnace:" + recipe, input.getCount(), output.getCount());
     }
 
@@ -93,12 +96,12 @@ final class ProcessProgression {
                         new net.minecraft.world.phys.Vec3(pos.getX() + 0.5D, pos.getY() + 1D, pos.getZ() + 0.5D),
                         Direction.UP, pos, false)));
         attempt.addProperty("action", action.name());
-        attempt.addProperty("success", action == InteractionResult.SUCCESS);
+        attempt.addProperty("success", action == InteractionResult.CONSUME);
         attempt.addProperty("sourceConsumed", source.getItem().isEmpty());
         attempt.addProperty("damageIsOne", player.getMainHandItem().getDamageValue() == 1);
         attempt.add("after", hammerSnapshot(world, player, pos, area, source));
         System.out.println("ADVHAMMER AFTER " + attempt);
-        require(action == InteractionResult.SUCCESS && source.getItem().isEmpty()
+        require(action == InteractionResult.CONSUME && source.getItem().isEmpty()
                 && player.getMainHandItem().getDamageValue() == 1, "Live hammer failed " + recipe);
         int produced = 0;
         for (ItemEntity entity : world.getEntitiesOfClass(ItemEntity.class, area)) {
@@ -113,10 +116,11 @@ final class ProcessProgression {
         record("live_hammer:" + recipe, input.getCount(), produced);
     }
 
+    @SuppressWarnings("unchecked")
     private static JsonObject hammerRecipeSelection(ServerLevel world, ItemStack hammer, ItemStack input,
             String requestedRecipe) {
         JsonObject selection = new JsonObject();
-        selection.addProperty("selector", "CrackhammerItem.findRecipe(Level,ItemStack)");
+        selection.addProperty("selector", "RecipeManager.getRecipeFor(basemetals:crushing)");
         selection.addProperty("inputNbt", input.save(new net.minecraft.nbt.CompoundTag()).toString());
         selection.addProperty("recipeManagerIdentity", System.identityHashCode(world.getRecipeManager()));
         selection.addProperty("requestedIdPresent",
@@ -125,19 +129,18 @@ final class ProcessProgression {
             Class<?> hammerClass = hammer.getItem().getClass();
             if (!hammerClass.getName().equals("zone.moddev.mc.basemetals.content.CrackhammerItem"))
                 throw new IllegalStateException("Unexpected hammer class " + hammerClass.getName());
-            java.lang.reflect.Method selector = net.minecraftforge.fml.util.ObfuscationReflectionHelper.findMethod(
-                    hammerClass, "findRecipe", net.minecraft.world.level.Level.class, ItemStack.class);
-            Object selected = selector.invoke(null, world, input.copy());
+            RecipeType<?> type = net.minecraft.core.Registry.RECIPE_TYPE
+                    .getOptional(new ResourceLocation("basemetals", "crushing")).orElseThrow();
+            Recipe<?> selected = world.getRecipeManager().getRecipeFor(
+                    (RecipeType<Recipe<Container>>) type, new SimpleContainer(input.copy()), world).orElse(null);
             selection.addProperty("status", selected == null ? "NO_MATCH" : "MATCH");
             selection.addProperty("matched", selected != null);
             if (selected != null) {
-                net.minecraft.world.item.crafting.Recipe<?> actual =
-                        (net.minecraft.world.item.crafting.Recipe<?>) selected;
-                selection.addProperty("id", actual.getId().toString());
-                selection.addProperty("class", actual.getClass().getName());
-                selection.addProperty("resultNbt", actual.getResultItem().save(new net.minecraft.nbt.CompoundTag()).toString());
+                selection.addProperty("id", selected.getId().toString());
+                selection.addProperty("class", selected.getClass().getName());
+                selection.addProperty("resultNbt", selected.getResultItem().save(new net.minecraft.nbt.CompoundTag()).toString());
             }
-        } catch (ReflectiveOperationException | RuntimeException | LinkageError error) {
+        } catch (RuntimeException | LinkageError error) {
             selection.addProperty("status", "OBSERVER_ERROR");
             selection.addProperty("errorType", error.getClass().getName());
             selection.addProperty("error", error.toString());
@@ -158,8 +161,8 @@ final class ProcessProgression {
         sample.addProperty("sourceNbt", source.getItem().save(new net.minecraft.nbt.CompoundTag()).toString());
         sample.addProperty("uuidLookupIsSource", world.getEntity(source.getUUID()) == source);
         sample.addProperty("entitiesLoaded", world.areEntitiesLoaded(net.minecraft.world.level.ChunkPos.asLong(pos)));
-        sample.addProperty("blockAndEntitiesTicking", world.isPositionTickingWithEntitiesLoaded(pos));
-        sample.addProperty("entityTicking", world.isPositionEntityTicking(new net.minecraft.world.level.ChunkPos(pos)));
+        sample.addProperty("blockAndEntitiesTicking", Native118ChunkTicking.withEntitiesLoaded(world, pos));
+        sample.addProperty("entityTicking", world.isPositionEntityTicking(pos));
         sample.addProperty("clientSide", world.isClientSide);
         sample.addProperty("creative", player.isCreative());
         sample.addProperty("shift", player.isShiftKeyDown());

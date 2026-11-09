@@ -1,27 +1,26 @@
 # Native Client Resource Check
 
-This disposable Minecraft 1.17.1 / Forge 37.1.1 client checks models, textures,
+This disposable Minecraft 1.18.2 / Forge 40.3.0 client checks models, textures,
 translations, recipe-book cells and machine screens after Minecraft loads them.
 It registers no gameplay content, opens no world and closes when finished.
 The probe is excluded from release jars and ordinary Eclipse launches.
-See [port status](../../docs/1.17/PORT-STATUS.md) for current qualification.
+See [port status](../../docs/1.18/PORT-STATUS.md) for current qualification.
 Earlier-version results do not qualify this version.
 
-Use Java 17 for Gradle and the configured Java 16 compilation toolchain. Supply
-Java 16 to the client and server runners. The target is official 1.17.1 mappings
-with MCP `20210706.113038`. Keep the shared Gradle cache free of other builds.
+Use Java 17 for Gradle, compilation and the client and server runners. The
+target is official 1.18.2 mappings with MCP `20220404.173914`.
 
 ## Build And Run
 
 ```powershell
 ./gradlew.bat check clientResourceProbeJar verifyEclipseProductionClasspath prepareCombinedEclipseLaunch
 ./test-rig/client-resources/test-launcher.ps1
-./test-rig/client-resources/run.ps1 -JavaHome '<Java 16 home>' -LaunchProfile runClientAllAdvantage.launch -RequireExtensions -MachineGuiLayouts -ChildRendererGeometry -RecipeBookFixtures '<native 1.17 recipe run>/unlock' -PreflightOnly
-./test-rig/client-resources/run.ps1 -JavaHome '<Java 16 home>' -LaunchProfile runClientAllAdvantage.launch -RequireExtensions -MachineGuiLayouts -ChildRendererGeometry -RecipeBookFixtures '<native 1.17 recipe run>/unlock'
+./test-rig/client-resources/run.ps1 -JavaHome '<Java 17 home>' -LaunchProfile runClientAllAdvantage.launch -RequireExtensions -MachineGuiLayouts -ChildRendererGeometry -RecipeBookFixtures '<native 1.18 recipe run>/unlock' -PreflightOnly
+./test-rig/client-resources/run.ps1 -JavaHome '<Java 17 home>' -LaunchProfile runClientAllAdvantage.launch -RequireExtensions -MachineGuiLayouts -ChildRendererGeometry -RecipeBookFixtures '<native 1.18 recipe run>/unlock'
 ```
 
-The combined launch requires Power `2.4.8.117011`, Steam `2.2.9.117011` and
-Electric `2.2.9.117011`. Pin the exact rebuilt jars in `profiles/native117`
+The combined launch requires Power `2.4.10.118021`, Steam `2.2.11.118021` and
+Electric `2.2.11.118021`. Pin the exact rebuilt jars in `profiles/native118`
 before regenerating it. Omitting the combined profile retains Power-only
 scope. Normal Eclipse launches contain production code only.
 
@@ -40,10 +39,10 @@ is provenance, not proof that the selected loose output equals that jar.
 
 ## Recipe Fixtures
 
-Generate fresh exports from the packaged 1.17 candidates, not a historical run:
+Generate fresh exports from the packaged 1.18.2 candidates, not a historical run:
 
 ```powershell
-<python.exe> -B test-rig/migration/native117_recipes.py --target-manifest '<native117 manifest>' --java16 '<Java 16 home>/bin/java.exe' --port 25577 --output test-rig/build/native117-recipes-new
+<python.exe> -B test-rig/migration/native118_recipes.py --profile test-rig/profiles/native118/packaged-current.json --seed '<Forge 40.3.0 server>' --inventory '<sealed inventory>' --inventory-sha256 '<inventory SHA-256>' --java17 '<Java 17 home>/bin/java.exe' --port 25577 --output test-rig/build/native118-recipes-new
 ```
 
 Use an existing Python 3.11+ environment with `migration/requirements.txt`.
@@ -80,16 +79,11 @@ this is explicitly `NOT_RUN_NO_NATIVE_FIXTURES`.
   buffers. Hydroturbine registration and texture are checked; its live
   orientation and spin still require a disposable world.
 
-The probes preserve their earlier pixel, packet and missing-model assertions
-through explicit native API translations. Run the static preservation and
-negative controls without launching Minecraft:
+The live probes retain the pixel, packet and missing-model checks. Run the
+current launcher's parser and negative controls without starting Minecraft:
 
 ```powershell
 ./test-rig/client-resources/test-launcher.ps1 -StaticOnly
-./test-rig/client-resources/test-launcher.ps1 -StaticOnly -CrossVersionEvidenceRoots
-./test-rig/client-resources/test-probe-contract.ps1
-./test-rig/client-resources/test-geometry-contract.ps1
-./test-rig/client-resources/test-probe-contract-negative-controls.ps1
 ```
 
 These checks do not certify machine operation, live animated entities,

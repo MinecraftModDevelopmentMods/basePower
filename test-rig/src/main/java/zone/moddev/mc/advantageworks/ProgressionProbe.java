@@ -99,11 +99,17 @@ final class ProgressionProbe {
             if (item != null) acquire(known, player, new ItemStack(item), "natural_resource", Collections.emptyList());
         }
         JsonArray loot = new JsonArray();
+        var overriddenTable = server.getLootTables().get(new ResourceLocation("minecraft:chests/simple_dungeon"));
         for (int seed = 0; seed < 8; seed++) {
-            List<ItemStack> overridden = server.getLootTables().get(
-                    new ResourceLocation("minecraft:chests/simple_dungeon")).getRandomItems(chestContext(world, seed));
-            require(overridden.size() == 1 && id(overridden.get(0)).equals("minecraft:dirt")
-                    && overridden.get(0).getCount() == 1, "Player loot data-pack override was changed");
+            List<ItemStack> raw = new ArrayList<>();
+            overriddenTable.getRandomItemsRaw(chestContext(world, seed), raw::add);
+            require(raw.size() == 1 && id(raw.get(0)).equals("minecraft:dirt")
+                    && raw.get(0).getCount() == 1, "Player loot data-pack override was changed");
+            // Base Metals has its own Forge global modifier. It may add loot after the table runs.
+            List<ItemStack> gameplay = overriddenTable.getRandomItems(chestContext(world, seed));
+            require(gameplay.stream().filter(stack -> id(stack).equals("minecraft:dirt")).mapToInt(ItemStack::getCount).sum() == 1
+                    && gameplay.stream().noneMatch(ProgressionProbe::advantage),
+                    "The live loot pipeline changed the override's contents or added Advantage parts");
         }
         if (PowerAdvantage.recipeMode == RecipeMode.APOCALYPTIC) {
             for (int i = 0; i < 4096; i++) {
@@ -217,12 +223,13 @@ final class ProgressionProbe {
         report.add("blockedRecipes", missingRecipes);
         report.add("lootSeeds", loot);
         report.addProperty("lootDataPackOverrideVerified", true);
+        report.addProperty("lootOverrideWithModifiersVerified", true);
         report.add("processWitnesses", ProcessProgression.witnesses());
         JsonObject tags = new JsonObject();
         for (String name : new String[] {"wires", "dusts/carbon", "rubber", "plastic", "circuit_boards", "solder"}) {
             List<String> members = new ArrayList<>();
-            for (Item item : ItemTags.getAllTags().getTagOrEmpty(new ResourceLocation("forge", name)).getValues())
-                members.add(item.getRegistryName().toString());
+            for (var item : net.minecraft.core.Registry.ITEM.getTagOrEmpty(ItemTags.create(new ResourceLocation("forge", name))))
+                members.add(item.value().getRegistryName().toString());
             Collections.sort(members);
             tags.add(name, JSON.toJsonTree(members));
         }

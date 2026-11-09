@@ -35,19 +35,19 @@ def read_json(path):
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def fixtures(pins):
+def fixtures(pins, *, mineralogy_version=MINERALOGY_VERSION, mineralogy_source=MINERALOGY_SOURCE_COMMIT):
     definition = deepcopy(oil_transfer.fixtures("basepower"))
     mineralogy = [jar for jar in pins["jars"] if jar["id"] == "mineralogy"]
     if mineralogy:
-        if (len(mineralogy) != 1 or mineralogy[0]["version"] != MINERALOGY_VERSION
-                or mineralogy[0].get("sourceRef") != MINERALOGY_SOURCE_COMMIT):
-            raise ValueError("Mineralogy oil lanes require the parent-pinned native 6.1.4.117011 candidate")
+        if (len(mineralogy) != 1 or mineralogy[0]["version"] != mineralogy_version
+                or mineralogy[0].get("sourceRef") != mineralogy_source):
+            raise ValueError("Mineralogy oil lanes require the parent-pinned native candidate")
         pin = mineralogy[0]
         if not re.fullmatch(r"[A-Fa-f0-9]{64}", pin.get("sha256") or ""):
             raise ValueError("Mineralogy artifact SHA-256 is pending")
         if digest(Path(pin["path"])) != pin["sha256"].upper():
             raise ValueError("Mineralogy oil input differs from the exact parent hash")
-        jar_identity(Path(pin["path"]), "mineralogy", MINERALOGY_VERSION)
+        jar_identity(Path(pin["path"]), "mineralogy", mineralogy_version)
         for template in definition[:2]:
             lane = deepcopy(template)
             for pos in [lane["min"], lane["max"], lane["source"], lane["drain"], *lane["pipes"], lane["output"]]:
@@ -160,6 +160,14 @@ def construction_commands(definition):
 
 
 class NativeOilRun(LifecycleRun):
+    expected_launcher = LAUNCHER
+
+    def open_server(self, label):
+        verify_staged(self.runtime, self.pins, self.seed_before)
+        return Server(self.runtime, self.java, self.launcher, label)
+
+    require_boot = staticmethod(require_native_boot)
+
     def __init__(self, runtime, java, launcher, definition, pins, seed_before):
         super().__init__(runtime, java, launcher, definition)
         self.pins, self.seed_before = pins, seed_before
@@ -170,16 +178,15 @@ class NativeOilRun(LifecycleRun):
         self.bucket_placements = 0
 
     def boot(self, label):
-        if self.server is not None or self.launcher != LAUNCHER or self.boots != list(BOOT_LABELS[:len(self.boots)]):
+        if self.server is not None or self.launcher != self.expected_launcher or self.boots != list(BOOT_LABELS[:len(self.boots)]):
             raise AssertionError("Invalid native oil process lifecycle")
         if len(self.boots) >= 3 or label != BOOT_LABELS[len(self.boots)]:
             raise AssertionError("Only the three ordered native oil boots are permitted")
         if self.boots and not self.construction_sealed:
             raise AssertionError("Restart before initial construction was sealed")
-        verify_staged(self.runtime, self.pins, self.seed_before)
-        self.server = Server(self.runtime, self.java, self.launcher, label)
+        self.server = self.open_server(label)
         self.boots.append(label)
-        require_native_boot(self.runtime / f"console-{label}.log")
+        self.require_boot(self.runtime / f"console-{label}.log")
 
     def seal_construction(self):
         if self.pending_construction or self.construction_sealed or len(self.boots) != 1:

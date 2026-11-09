@@ -281,7 +281,7 @@ final class MachineOperationalProbe {
                     actual.addProperty("block", world.getBlockState(pos).getBlock().getRegistryName().toString());
                     actual.addProperty("state", world.getBlockState(pos).toString());
                     BlockEntity tile = world.getBlockEntity(pos);
-                    if (tile != null) actual.addProperty("nbt", tile.save(new net.minecraft.nbt.CompoundTag()).toString());
+                    if (tile != null) actual.addProperty("nbt", tile.saveWithFullMetadata().toString());
                     positions.add(actual);
                 }
                 row.add("positions", positions); inspectionResults.add(row);

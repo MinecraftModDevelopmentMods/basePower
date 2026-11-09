@@ -31,8 +31,8 @@ public class Native117RedstoneReadinessTest {
         int end = source.indexOf("private void construct(Witness witness)", start);
         assertTrue(start >= 0 && end > start);
         String readiness = source.substring(start, end);
-        assertTrue(readiness.contains("world.isPositionTickingWithEntitiesLoaded(witness.pos)"));
-        assertTrue(readiness.contains("world.isPositionEntityTicking(new net.minecraft.world.level.ChunkPos(witness.pos))"));
+        assertTrue(readiness.contains("Native118ChunkTicking.withEntitiesLoaded(world, witness.pos)"));
+        assertTrue(readiness.contains("world.isPositionEntityTicking(witness.pos)"));
         assertTrue(readiness.contains("NativeBlockEntityTicks.contains(world, tile)"));
         assertTrue(readiness.contains("all &= nativeReady(ticking, listed, blockAndEntitiesLoaded, entityTicking);"));
         for (String field : new String[]{"blockTicking", "tickableListed", "blockAndEntitiesLoaded", "entityTicking"}) {

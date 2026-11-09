@@ -203,7 +203,7 @@ final class NativeInteropProbe {
         input.setItem(0, new ItemStack(net.minecraft.world.item.Items.DIRT, 16));
         TileEntityConveyor belt = (TileEntityConveyor) world.getBlockEntity(BELT);
         BlockEntity chest = world.getBlockEntity(BELT.west());
-        CompoundTag state = chest.save(new CompoundTag());
+        CompoundTag state = chest.saveWithFullMetadata();
         state.putString("Lock", "AdvantageInteropKey");
         chest.load(state);
         check(checks, "locked-chest/conveyor-refuses-extraction", () -> {

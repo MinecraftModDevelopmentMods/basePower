@@ -25,7 +25,7 @@ import net.minecraft.world.entity.vehicle.Boat;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.fmlserverevents.FMLServerStoppingEvent;
+import net.minecraftforge.event.server.ServerStoppingEvent;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
@@ -140,7 +140,7 @@ public class Native117StoppedEntitiesSnapshotTest {
     }
 
     @Test public void entrypointRegistersNativeStoppingHandlerAndRealEnumeration() throws Exception {
-        assertNotNull(Native117StoppedEntitiesSnapshot.class.getDeclaredMethod("stopping", FMLServerStoppingEvent.class));
+        assertNotNull(Native117StoppedEntitiesSnapshot.class.getDeclaredMethod("stopping", ServerStoppingEvent.class));
         Path sources = Path.of("src/main/java/zone/moddev/mc/advantageworks");
         assertTrue(Files.readString(sources.resolve("AdvantageWorksMod.java")).contains("Native117StoppedEntitiesSnapshot.register();"));
         String source = Files.readString(sources.resolve("Native117StoppedEntitiesSnapshot.java"));

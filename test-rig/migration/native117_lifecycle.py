@@ -20,7 +20,7 @@ from matrix import WORLD, copy_fixture, digest, fingerprint, stage, write_json
 from native117 import stage
 from native117 import (LAUNCHER, compare_upgraded, output_path, pinned_profile,
                        require_clean_log, require_disjoint)
-from native117_geometry import require_geometry
+from native117_geometry import MAX_DISTANCE, require_geometry
 from native117_identity import command_ids, fixture_ids
 from native117_readiness import await_ready
 
@@ -220,6 +220,15 @@ def unload_event_issues(before, after):
 class NativeLifecycleRun(lifecycle.LifecycleRun):
     """Native transport readiness only; inherited fixtures, operations and oracles."""
 
+    minecraft = "1.17.1"
+    max_ticket_distance = MAX_DISTANCE
+    require_boot = staticmethod(require_native_boot)
+
+    def open_server(self, label):
+        verify_if_sealed(self.runtime)
+        from native117_code import Server
+        return Server(self.runtime, self.java, self.launcher, label)
+
     def __init__(self, *args):
         super().__init__(*args)
         self.observations = []
@@ -233,7 +242,7 @@ class NativeLifecycleRun(lifecycle.LifecycleRun):
         if path.exists():
             raise FileExistsError("Refusing to overwrite native observation: " + str(path))
         result = super().probe(operation, label)
-        require_geometry(result, forced=operation == "load")
+        require_geometry(result, forced=operation == "load", max_distance=self.max_ticket_distance)
         return result
 
     def _record(self):
@@ -245,7 +254,8 @@ class NativeLifecycleRun(lifecycle.LifecycleRun):
                               for fixture in self.definition)
         # FULL terrain may be loaded while its entity sections are still pending.
         # Observe only; the Java probe still owns the first eligible START/END.
-        return [await_ready(self.server, self.runtime, bounds, f"{label}-chunks-{index}")["label"]
+        return [await_ready(self.server, self.runtime, bounds, f"{label}-chunks-{index}",
+                            minecraft=self.minecraft)["label"]
                 for index, bounds in enumerate(areas)]
 
     def _wait_ready(self, label, initial, reload_before=None):
@@ -288,12 +298,10 @@ class NativeLifecycleRun(lifecycle.LifecycleRun):
             raise
 
     def boot(self, label):
-        verify_if_sealed(self.runtime)
-        from native117_code import Server
-        self.server = Server(self.runtime, self.java, self.launcher, label)
+        self.server = self.open_server(label)
         if label not in ("lifecycle-restart", "midblock-restart"):
             return
-        require_native_boot(self.runtime / f"console-{label}.log")
+        self.require_boot(self.runtime / f"console-{label}.log")
         before = self._raw_probe("snapshot", label + "-native-unrestored")
         loaded = self._raw_probe("load", label + "-native-initial")
         self._wait_ready(label + "-native", loaded, reload_before=before)
@@ -400,7 +408,7 @@ def exercise(runner, label, progress, trace_loads=False):
     """Original sequence/fixtures/oracles, with native observation readiness gates."""
     definition = runner.definition
     runner.boot("lifecycle")
-    require_native_boot(runner.runtime / "console-lifecycle.log")
+    runner.require_boot(runner.runtime / "console-lifecycle.log")
     if trace_loads:
         runner.probe("trace-loads", "tracing-loads")
     runner.build()
@@ -428,7 +436,7 @@ def exercise(runner, label, progress, trace_loads=False):
     runner.command("save-all flush")
     runner.close()
     runner.boot("lifecycle-restart")
-    require_native_boot(runner.runtime / "console-lifecycle-restart.log")
+    runner.require_boot(runner.runtime / "console-lifecycle-restart.log")
     time.sleep(1)
     after = runner.probe("snapshot", "after-restart")
     for fixture in definition:

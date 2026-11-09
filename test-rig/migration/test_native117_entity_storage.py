@@ -107,6 +107,15 @@ class NativeEntityStorageTests(unittest.TestCase):
         self.assertEqual([[-1, -33]], [row["chunk"] for row in receipt["matched"].values()])
         self.assertIn("chunks/-1.-33.chunk", receipt["files"])
 
+    def test_118_reader_requires_the_exact_entity_region_version(self):
+        native = root((0, 0), [self.actor])
+        native["DataVersion"] = n.Int(2975)
+        put(self.world, (0, 0), value=native)
+        with self.assertRaisesRegex(ValueError, "DataVersion"):
+            self.audit()
+        receipt = storage.audit(self.record, self.world, self.base / "native-118", data_version=2975)
+        self.assertEqual(1, receipt["matchedEntities"])
+
     def test_nether_and_end_dimension_directories(self):
         for name, key, identity in (("DIM-1", "minecraft:the_nether", -1), ("DIM1", "minecraft:the_end", 1)):
             world = self.world / name

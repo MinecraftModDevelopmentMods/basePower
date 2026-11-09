@@ -107,7 +107,7 @@ final class ConnectedProbe implements ConnectedSession.Port {
             entry.add("properties", properties);
             BlockEntity tile = world.getBlockEntity(pos);
             if (tile != null) {
-                CompoundTag tag = tile.save(new CompoundTag());
+                CompoundTag tag = tile.saveWithFullMetadata();
                 java.io.ByteArrayOutputStream bytes = new java.io.ByteArrayOutputStream();
                 net.minecraft.nbt.NbtIo.writeCompressed(tag, bytes);
                 entry.addProperty("nbt", tag.toString());

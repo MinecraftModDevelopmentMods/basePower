@@ -374,7 +374,8 @@ final class MachineGuiLayoutProbe {
     private static final class GuiWorld extends ClientLevel {
         private net.minecraft.world.level.block.state.BlockState state;
         private GuiWorld() {
-            super(null, null, net.minecraft.world.level.Level.OVERWORLD, null, 0, () -> net.minecraft.util.profiling.InactiveProfiler.INSTANCE, null, false, 0);
+            super(null, null, net.minecraft.world.level.Level.OVERWORLD, null, 0, 0,
+                    () -> net.minecraft.util.profiling.InactiveProfiler.INSTANCE, null, false, 0);
             throw new AssertionError("Allocate the read-only GUI fixture without a world constructor");
         }
         @Override public net.minecraft.world.level.block.state.BlockState getBlockState(BlockPos pos) { return state; }

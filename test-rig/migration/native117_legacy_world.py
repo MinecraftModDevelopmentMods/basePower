@@ -24,13 +24,13 @@ def read(path):
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def turbine(world, position):
+def turbine(world, position, *, data_version=2730):
     x, _, z = position
     cx, cz = x // 16, z // 16
     rx, rz = cx // 32, cz // 32
     region = world / "entities" / f"r.{rx}.{rz}.mca"
     payloads = dict(_payloads(region.read_bytes(), rx, rz))
-    entities = _entity_chunk(payloads[(cx, cz)], (cx, cz))
+    entities = _entity_chunk(payloads[(cx, cz)], (cx, cz), data_version)
     actors = [actor for actor in entities if str(actor["id"]) == "baseelectric:hydroturbine"]
     if len(actors) != 1:
         raise AssertionError("Expected one saved hydroelectric turbine")

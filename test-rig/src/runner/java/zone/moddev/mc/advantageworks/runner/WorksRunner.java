@@ -67,7 +67,7 @@ public final class WorksRunner {
 
     public static void main(String[] args) throws Exception {
         Arguments arguments = Arguments.parse(args);
-        Profile profile = readNative117Profile(arguments.profile);
+        Profile profile = readNative118Profile(arguments.profile);
         if (arguments.serverPort != null) profile.serverPort = arguments.serverPort;
         File testRig = findTestRig(arguments.profile);
         File powerRoot = testRig.getParentFile().getCanonicalFile();
@@ -80,7 +80,7 @@ public final class WorksRunner {
                 runtimeJavaHome(profile);
                 if (profile.preparedSeed != null) packagedCommand(profile, profile.preparedSeed.root.toFile());
             }
-            System.out.println("Native 1.17.1 profile preflight only (no world opened): " + GSON.toJson(inputs));
+            System.out.println("Native " + profile.minecraftVersion + " profile preflight only (no world opened): " + GSON.toJson(inputs));
             return;
         }
         String stamp = timestamp();
@@ -247,7 +247,7 @@ public final class WorksRunner {
             command.add("--no-daemon");
             workingDirectory = powerRoot;
         } else {
-            if ("1.17.1".equals(profile.minecraftVersion)) {
+            if (modularForge(profile)) {
                 command.addAll(packagedCommand(profile, runtime));
             } else if (profile.launchCommand != null && !profile.launchCommand.isEmpty()) {
                 for (String token : profile.launchCommand) {
@@ -293,7 +293,7 @@ public final class WorksRunner {
 
     static List<String> packagedCommand(Profile profile, File runtime) throws Exception {
         if (profile.launchCommand != null && !profile.launchCommand.isEmpty()) {
-            throw new IllegalArgumentException("Native117 packaged launches cannot override the pinned command");
+            throw new IllegalArgumentException("Packaged launches cannot override the pinned command");
         }
         File java = javaExecutable(runtimeJavaHome(profile));
         String launcher = serverLauncherPath(profile);
@@ -315,13 +315,20 @@ public final class WorksRunner {
         PreparedServerSeed.requirePlain(root);
         Path args = root.resolve(launcher);
         PreparedServerSeed.requirePlain(args);
+        boolean native118 = launcher.startsWith("libraries/net/minecraftforge/forge/1.18.2-40.3.0/");
         Set<String> expected = new LinkedHashSet<>(Arrays.asList(
                 "--add-modules ALL-MODULE-PATH",
                 "--add-opens java.base/java.util.jar=cpw.mods.securejarhandler",
                 "--add-exports java.base/sun.security.util=cpw.mods.securejarhandler",
                 "-DlibraryDirectory=libraries", "cpw.mods.bootstraplauncher.BootstrapLauncher",
-                "--launchTarget forgeserver", "--fml.forgeVersion 37.1.1", "--fml.mcVersion 1.17.1",
-                "--fml.forgeGroup net.minecraftforge", "--fml.mcpVersion 20210706.113038"));
+                "--launchTarget forgeserver", native118 ? "--fml.forgeVersion 40.3.0" : "--fml.forgeVersion 37.1.1",
+                native118 ? "--fml.mcVersion 1.18.2" : "--fml.mcVersion 1.17.1",
+                "--fml.forgeGroup net.minecraftforge",
+                native118 ? "--fml.mcpVersion 20220404.173914" : "--fml.mcpVersion 20210706.113038"));
+        if (native118) expected.addAll(Arrays.asList(
+                "--add-opens java.base/java.lang.invoke=cpw.mods.securejarhandler",
+                "--add-exports jdk.naming.dns/com.sun.jndi.dns=java.naming",
+                "-Djava.net.preferIPv6Addresses=system"));
         Set<String> seen = new LinkedHashSet<>();
         for (String line : Files.readAllLines(args, StandardCharsets.UTF_8)) {
             if (line.isEmpty()) continue;
@@ -381,6 +388,16 @@ public final class WorksRunner {
 
     /** Captures each process separately; no earlier boot can supply a later boot's evidence. */
     static final class BootLogs {
+        private static final String NETTY_DEBUG = "[io.netty.util.internal.PlatformDependent0/]: ";
+        private static final Map<String, String> NETTY_PROBES = Map.of(
+                "direct buffer constructor: unavailable",
+                "java.lang.UnsupportedOperationException: Reflective setAccessible(true) disabled",
+                "jdk.internal.misc.Unsafe.allocateUninitializedArray(int): unavailable",
+                "java.lang.IllegalAccessException: class io.netty.util.internal.PlatformDependent0$6 (in module io.netty.all) cannot access class jdk.internal.misc.Unsafe (in module java.base) because module java.base does not export jdk.internal.misc to module io.netty.all");
+        private static final Pattern NETTY_HEADER = Pattern.compile(
+                "^\\[[^\\]]+\\] \\[[^\\]]+/DEBUG\\] " + Pattern.quote(NETTY_DEBUG) + "(.*)$");
+        private static final Pattern NETTY_FRAME = Pattern.compile(
+                "^\\tat [\\w.$/<>]+\\([^()]*\\)(?: ~?\\[[^\\]]*\\])?$");
         static final Pattern ERROR = Pattern.compile("/(?:ERROR|FATAL)\\]|\\[(?:ERROR|FATAL)\\]|^(?:ERROR|FATAL) StatusLogger|"
                 + "\\b(?:[\\w$]+\\.)*[\\w$]*(?:Exception|Error)\\b|Exception in thread|Caused by:|"
                 + "Failed to reload data packs|Encountered an unexpected exception|Advantage Works command failed|"
@@ -443,9 +460,27 @@ public final class WorksRunner {
                     List<Map<String, String>> nonFatalDiagnostics = new ArrayList<>();
                     try (BufferedReader reader = Files.newBufferedReader(target.toPath(), StandardCharsets.UTF_8)) {
                         String line;
+                        String nettyProbe = null;
+                        boolean nettyFrames = false;
                         while ((line = reader.readLine()) != null) {
                             ready |= line.contains("Done (");
                             stopped |= line.contains("Stopping server");
+                            java.util.regex.Matcher header = NETTY_HEADER.matcher(line);
+                            if (header.matches() && NETTY_PROBES.containsKey(header.group(1))) {
+                                nettyProbe = header.group(1);
+                                nettyFrames = false;
+                                continue;
+                            }
+                            if (nettyProbe != null && line.equals(NETTY_PROBES.get(nettyProbe))) {
+                                nonFatalDiagnostics.add(Map.of("line", line, "reason",
+                                        "Netty DEBUG optional capability probe: " + nettyProbe));
+                                nettyProbe = null;
+                                nettyFrames = true;
+                                continue;
+                            }
+                            if (nettyFrames && NETTY_FRAME.matcher(line).matches()) continue;
+                            nettyProbe = null;
+                            nettyFrames = false;
                             if (MIXIN_DEBUG_CLEANUP.matcher(line).matches()) {
                                 Map<String, String> diagnostic = new LinkedHashMap<>();
                                 diagnostic.put("line", line);
@@ -747,7 +782,9 @@ public final class WorksRunner {
         }
         return new PreparedServerSeed(preparedPath(testRig, arguments.preparedServerSeed),
                 preparedPath(testRig, arguments.preparedServerSeedInventory), arguments.preparedServerSeedSha256,
-                serverLauncherPath(profile), "1.17.1".equals(profile.minecraftVersion)
+                serverLauncherPath(profile), "1.18.2".equals(profile.minecraftVersion)
+                        ? "libraries/net/minecraft/server/1.18.2-20220404.173914/server-1.18.2-20220404.173914-extra.jar"
+                        : "1.17.1".equals(profile.minecraftVersion)
                         ? "libraries/net/minecraft/server/1.17.1-20210706.113038/server-1.17.1-20210706.113038-extra.jar"
                         : "minecraft_server." + profile.minecraftVersion + ".jar");
     }
@@ -1053,16 +1090,22 @@ public final class WorksRunner {
     }
 
     static String serverLauncherPath(Profile profile) {
-        if (!"1.17.1".equals(profile.minecraftVersion)) return "forge-" + profile.forge.version + ".jar";
+        if (!modularForge(profile)) return "forge-" + profile.forge.version + ".jar";
         boolean windows = System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("win");
         return "libraries/net/minecraftforge/forge/" + profile.forge.version + "/"
                 + (windows ? "win_args.txt" : "unix_args.txt");
     }
 
+    private static boolean modularForge(Profile profile) {
+        return "1.17.1".equals(profile.minecraftVersion) || "1.18.2".equals(profile.minecraftVersion);
+    }
+
     private static File runtimeJavaHome(Profile profile) throws Exception {
-        if (!"1.17.1".equals(profile.minecraftVersion)) return java8Home(profile);
-        String configured = profile.java16Home;
-        if (configured == null || configured.trim().isEmpty()) configured = System.getenv("ADVANTAGE_WORKS_JAVA16_HOME");
+        if (!modularForge(profile)) return java8Home(profile);
+        boolean native118 = "1.18.2".equals(profile.minecraftVersion);
+        String variable = native118 ? "ADVANTAGE_WORKS_JAVA17_HOME" : "ADVANTAGE_WORKS_JAVA16_HOME";
+        String configured = native118 ? profile.java17Home : profile.java16Home;
+        if (configured == null || configured.trim().isEmpty()) configured = System.getenv(variable);
         File home = configured == null || configured.trim().isEmpty()
                 ? new File(System.getProperty("java.home")) : new File(expand(configured));
         File release = new File(home, "release");
@@ -1070,9 +1113,11 @@ public final class WorksRunner {
         if (release.isFile()) {
             try (InputStream input = Files.newInputStream(release.toPath())) { metadata.load(input); }
         }
-        if (!javaExecutable(home).isFile() || !"\"16.0.2\"".equals(metadata.getProperty("JAVA_VERSION"))
-                || !"\"Temurin-16.0.2+7\"".equals(metadata.getProperty("IMPLEMENTOR_VERSION"))) {
-            throw new IllegalStateException("Set ADVANTAGE_WORKS_JAVA16_HOME to the pinned Temurin 16.0.2+7 runtime: " + home);
+        String javaVersion = native118 ? "17.0.20.1" : "16.0.2";
+        String temurin = native118 ? "17.0.20.1+1" : "16.0.2+7";
+        if (!javaExecutable(home).isFile() || !("\"" + javaVersion + "\"").equals(metadata.getProperty("JAVA_VERSION"))
+                || !("\"Temurin-" + temurin + "\"").equals(metadata.getProperty("IMPLEMENTOR_VERSION"))) {
+            throw new IllegalStateException("Set " + variable + " to the pinned Temurin " + temurin + " runtime: " + home);
         }
         return home.getCanonicalFile();
     }
@@ -1218,6 +1263,19 @@ public final class WorksRunner {
         return profile;
     }
 
+    static Profile readNative118Profile(File file) throws Exception {
+        Profile profile = readProfile(file, "1.18.2", "1.18.2-40.3.0");
+        if (!"UNQUALIFIED".equals(profile.qualificationStatus)) {
+            throw new IllegalArgumentException("The 1.18.2 destination must start UNQUALIFIED");
+        }
+        for (ModInput input : profile.mods) {
+            if (input.version == null || !input.version.endsWith(".118021")) {
+                throw new IllegalArgumentException("Non-1.18.2 destination mod version: " + input.id);
+            }
+        }
+        return profile;
+    }
+
     static Profile readNative116Profile(File file) throws Exception {
         Profile profile = readProfile(file, "1.16.5", "1.16.5-36.2.34");
         if (!"UNQUALIFIED".equals(profile.qualificationStatus)) {
@@ -1255,9 +1313,9 @@ public final class WorksRunner {
     }
 
     static void requireInputPins(Profile profile) {
-        if ("1.17.1".equals(profile.minecraftVersion) && "packaged".equals(profile.mode)
+        if (modularForge(profile) && "packaged".equals(profile.mode)
                 && profile.launchCommand != null && !profile.launchCommand.isEmpty()) {
-            throw new IllegalArgumentException("Native117 packaged launches cannot override the pinned command");
+            throw new IllegalArgumentException("Packaged launches cannot override the pinned command");
         }
         for (ModInput input : profile.mods) {
             if (input.sha256 == null || !input.sha256.matches("[A-Fa-f0-9]{64}")) {
@@ -1747,6 +1805,7 @@ public final class WorksRunner {
         List<String> stableWorldgenCountExclusions = new ArrayList<>();
         String java8Home;
         String java16Home;
+        String java17Home;
         String gradleJavaHome;
         String recipeMode = "NORMAL";
         String sourceCommit;

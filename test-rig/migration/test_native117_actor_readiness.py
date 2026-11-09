@@ -31,6 +31,14 @@ class ActorReadinessTests(unittest.TestCase):
                 with self.assertRaisesRegex(AssertionError, 'wrong dimension'):
                     ready_entities(Mock(), runtime, 'dimensions', 'converted')
 
+    def test_native_port_requires_its_own_readiness_version(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            runtime = Path(temporary)
+            (runtime / 'actor-fixture.json').write_text('{}')
+            with patch('native117_actors.await_ready', return_value={'dimension': 'minecraft:overworld'}) as ready:
+                ready_entities(Mock(), runtime, 'actors', 'converted', '1.18.2')
+            self.assertEqual('1.18.2', ready.call_args.kwargs['minecraft'])
+
 
 if __name__ == '__main__':
     unittest.main()

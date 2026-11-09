@@ -45,8 +45,8 @@ public final class ClientResourceProbe {
         try {
             result.addProperty("minecraft", net.minecraftforge.versions.mcp.MCPVersion.getMCVersion());
             result.addProperty("forge", net.minecraftforge.versions.forge.ForgeVersion.getVersion());
-            require("1.17.1".equals(result.get("minecraft").getAsString())
-                    && "37.1.1".equals(result.get("forge").getAsString()), "Wrong native client target");
+            require("1.18.2".equals(result.get("minecraft").getAsString())
+                    && "40.3.0".equals(result.get("forge").getAsString()), "Wrong native client target");
             require(minecraft.level == null && minecraft.player == null && !minecraft.hasSingleplayerServer(),
                     "Resource probe must not open a world or connect to a server");
             verifyNetworkBootstrap(result);
@@ -65,9 +65,9 @@ public final class ClientResourceProbe {
             result.add("mod_versions", versions);
             require(versions.has("basepower") && zone.moddev.mc.basepower.PowerAdvantage.VERSION
                     .equals(versions.get("basepower").getAsString()), "Power metadata does not match the compiled version");
-            require("2.4.9.117011".equals(versions.get("basepower").getAsString()), "Wrong native Power candidate");
+            require("2.4.10.118021".equals(versions.get("basepower").getAsString()), "Wrong native Power candidate");
             for (String id : new String[]{"basesteam", "baseelectric"}) {
-                if (versions.has(id)) require("2.2.10.117011".equals(versions.get(id).getAsString()), "Wrong native expansion candidate: " + id);
+                if (versions.has(id)) require("2.2.11.118021".equals(versions.get(id).getAsString()), "Wrong native expansion candidate: " + id);
             }
             require(minecraft.getModelManager().getMissingModel() != null, "Timed out before model baking");
             require(minecraft.getOverlay() == null, "Timed out before native resource loading completed");

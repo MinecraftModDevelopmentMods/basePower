@@ -32,7 +32,7 @@ final class Native117WorldgenAccess implements WorldgenSamplingJob.WorldAccess {
             }
 
             @Override public CompletableFuture<LevelChunk> request(int x, int z) {
-                // Forge 37's public API managedBlocks on the server-thread branch, but not here.
+                // The public API managedBlocks on the server-thread branch, but not here.
                 return source.getChunkFuture(x, z, ChunkStatus.FULL, true).thenApply(result -> {
                     net.minecraft.world.level.chunk.ChunkAccess access = result.left().orElseThrow(() ->
                             new IllegalStateException("Native FULL chunk unavailable: " + result.right()));
@@ -55,8 +55,10 @@ final class Native117WorldgenAccess implements WorldgenSamplingJob.WorldAccess {
         }));
     }
 
+    @Override public int minBuildHeight() { return world.getMinBuildHeight(); }
+
     @Override public boolean matchesBiome(String expected, int x, int y, int z) {
-        return WorksController.matchesExpectedBiome(world, expected, world.getBiome(cursor.set(x, y, z)));
+        return WorksController.matchesExpectedBiome(world, expected, world.getBiome(cursor.set(x, y, z)).value());
     }
 
     @Override public CompletableFuture<WorldgenSamplingJob.SampleChunk> requestChunk(int x, int z, boolean counting) {
@@ -64,7 +66,7 @@ final class Native117WorldgenAccess implements WorldgenSamplingJob.WorldAccess {
             private Biome center;
 
             @Override public boolean centerMatches(String expected) {
-                if (center == null) center = world.getBiome(new BlockPos((x << 4) + 8, world.getSeaLevel(), (z << 4) + 8));
+                if (center == null) center = world.getBiome(new BlockPos((x << 4) + 8, world.getSeaLevel(), (z << 4) + 8)).value();
                 return WorksController.matchesExpectedBiome(world, expected, center);
             }
 

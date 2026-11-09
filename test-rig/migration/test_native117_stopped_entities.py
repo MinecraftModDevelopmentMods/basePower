@@ -128,8 +128,8 @@ class StoppedEntitiesAuditTest(unittest.TestCase):
         self.stage()
         original = stopped.entity_storage.audit
 
-        def overwrite(*args):
-            result = original(*args)
+        def overwrite(*args, **kwargs):
+            result = original(*args, **kwargs)
             self.source.write_text("reused by another boot")
             return result
 

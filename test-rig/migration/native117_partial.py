@@ -155,7 +155,7 @@ class NativePartialRun(NativeLifecycleRun):
 
     def boot(self, label):
         super().boot(label)
-        require_native_boot(self.runtime / f"console-{label}.log")
+        self.require_boot(self.runtime / f"console-{label}.log")
         if label == "blocked-restart":
             self.probe("load", "blocked-restart-native-restored")
 

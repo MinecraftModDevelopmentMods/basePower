@@ -17,6 +17,10 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.core.Direction;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
+import net.minecraft.core.Registry;
+import net.minecraft.tags.FluidTags;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.ColorResolver;
@@ -27,6 +31,7 @@ import zone.moddev.mc.basepower.init.Items;
 
 import java.nio.ByteBuffer;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -36,26 +41,13 @@ final class OilRenderProbe {
 
     static void verify(Minecraft minecraft, JsonObject result) {
         // Before a world/server is opened, vanilla's fluid tags have not been synchronized.
-        net.minecraft.tags.TagContainer previousTags = net.minecraft.tags.SerializationTags.getInstance();
-        net.minecraft.tags.TagCollection<Fluid> previousFluids = net.minecraft.tags.FluidTags.getAllTags();
-        java.util.Map<net.minecraft.resources.ResourceKey<? extends net.minecraft.core.Registry<?>>,
-                net.minecraft.tags.TagCollection<?>> restoredCollections = new java.util.HashMap<>(previousTags.collections);
-        restoredCollections.put(net.minecraft.core.Registry.FLUID_REGISTRY, previousFluids);
-        net.minecraft.tags.TagContainer restore = new net.minecraft.tags.TagContainer(restoredCollections);
-        net.minecraft.tags.StaticTagHelper<?> fluidRegistry = net.minecraft.tags.StaticTags.get(new ResourceLocation("fluid"));
-        Map<ResourceLocation, net.minecraft.tags.Tag<Fluid>> tags = new HashMap<>(previousFluids.getAllTags());
-        tags.put(new ResourceLocation("minecraft", "water"), net.minecraft.tags.Tag.fromSet(
-                new java.util.HashSet<>(java.util.Arrays.asList(net.minecraft.world.level.material.Fluids.WATER, net.minecraft.world.level.material.Fluids.FLOWING_WATER))));
-        tags.put(new ResourceLocation("minecraft", "lava"), net.minecraft.tags.Tag.fromSet(
-                new java.util.HashSet<>(java.util.Arrays.asList(net.minecraft.world.level.material.Fluids.LAVA, net.minecraft.world.level.material.Fluids.FLOWING_LAVA))));
-        java.util.Map<net.minecraft.resources.ResourceKey<? extends net.minecraft.core.Registry<?>>,
-                net.minecraft.tags.TagCollection<?>> temporaryCollections = new java.util.HashMap<>(previousTags.collections);
-        temporaryCollections.put(net.minecraft.core.Registry.FLUID_REGISTRY, net.minecraft.tags.TagCollection.of(tags));
-        net.minecraft.tags.TagContainer temporary = new net.minecraft.tags.TagContainer(temporaryCollections);
-        net.minecraft.tags.SerializationTags.bind(temporary);
-        // The initial manager contains named wrappers, not resolved collections. Resetting
-        // every registry would bind those wrappers to themselves and recurse indefinitely.
-        fluidRegistry.reset(temporary);
+        Map<TagKey<Fluid>, List<Holder<Fluid>>> previous = fluidTags();
+        Map<TagKey<Fluid>, List<Holder<Fluid>>> synthetic = new HashMap<>(previous);
+        synthetic.put(FluidTags.WATER, List.of(net.minecraft.world.level.material.Fluids.WATER.builtInRegistryHolder(),
+                net.minecraft.world.level.material.Fluids.FLOWING_WATER.builtInRegistryHolder()));
+        synthetic.put(FluidTags.LAVA, List.of(net.minecraft.world.level.material.Fluids.LAVA.builtInRegistryHolder(),
+                net.minecraft.world.level.material.Fluids.FLOWING_LAVA.builtInRegistryHolder()));
+        Registry.FLUID.bindTags(synthetic);
         try {
         requireBucket(Items.crude_oil_bucket, Fluids.crude_oil);
         requireBucket(Items.refined_oil_bucket, Fluids.refined_oil);
@@ -72,10 +64,19 @@ final class OilRenderProbe {
         valid &= check(minecraft, net.minecraft.world.level.material.Fluids.LAVA.defaultFluidState(), "minecraft:block/lava_still", false, cases);
         if (!valid) throw new IllegalStateException("Native fluid renderer used the wrong sprite or tint: " + cases);
         } finally {
-            fluidRegistry.reset(restore);
-            net.minecraft.tags.SerializationTags.bind(previousTags);
-            require(net.minecraft.tags.FluidTags.getAllTags() == previousFluids, "Synthetic fluid tags were not restored");
+            Registry.FLUID.resetTags();
+            Registry.FLUID.bindTags(previous);
+            require(fluidTags().equals(previous), "Synthetic fluid tag membership was not restored");
         }
+    }
+
+    private static Map<TagKey<Fluid>, List<Holder<Fluid>>> fluidTags() {
+        Map<TagKey<Fluid>, List<Holder<Fluid>>> tags = new HashMap<>();
+        Registry.FLUID.getTags().forEach(tag -> {
+            List<Holder<Fluid>> values = tag.getSecond().stream().toList();
+            if (!values.isEmpty()) tags.put(tag.getFirst(), values);
+        });
+        return tags;
     }
 
     private static void requireBucket(net.minecraft.world.item.Item bucket, Fluid expected) {
@@ -105,7 +106,8 @@ final class OilRenderProbe {
         };
         BufferBuilder buffer = new BufferBuilder(4096);
         buffer.begin(com.mojang.blaze3d.vertex.VertexFormat.Mode.QUADS, DefaultVertexFormat.BLOCK);
-        boolean rendered = minecraft.getBlockRenderer().renderLiquid(BlockPos.ZERO, world, buffer, state);
+        boolean rendered = minecraft.getBlockRenderer().renderLiquid(
+                BlockPos.ZERO, world, buffer, world.getBlockState(BlockPos.ZERO), state);
         buffer.end();
         com.mojang.datafixers.util.Pair<BufferBuilder.DrawState, ByteBuffer> built = buffer.popNextBuffer();
         int vertices = built.getFirst().vertexCount();

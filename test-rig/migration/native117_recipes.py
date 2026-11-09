@@ -148,7 +148,7 @@ def validate_unlock(result, definition, operation):
             "skipped": sum(row["status"] != "PASS" for row in rows), "potatoCraftingCases": 59}
 
 
-def validate_progression(result, mode, rubber):
+def validate_progression(result, mode, rubber, *, verify_global_loot=False):
     validate_tags(result, mode, rubber, power="basepower", electric="baseelectric")
     if result["mode"] != mode or result["plasticEqualsRubber"] != rubber:
         raise AssertionError("Native progression ignored its requested mode/rubber configuration")
@@ -159,28 +159,30 @@ def validate_progression(result, mode, rubber):
         raise AssertionError("Empty native manufacture evidence")
     if not result["lootDataPackOverrideVerified"]:
         raise AssertionError("Player loot override was not preserved")
+    if verify_global_loot and result.get("lootOverrideWithModifiersVerified") is not True:
+        raise AssertionError("Missing gameplay loot-modifier observation")
 
 
-def verify_level(runtime, entry):
+def verify_level(runtime, entry, minecraft="1.17.1", forge="37.1.1"):
     level_path = runtime / WORLD / "level.dat"
     level = nbtlib.load(level_path)
-    if str(level["Data"]["Version"]["Name"]) != "1.17.1":
-        raise AssertionError("Server did not write a native 1.17.1 level header")
+    if str(level["Data"]["Version"]["Name"]) != minecraft:
+        raise AssertionError(f"Server did not write a native {minecraft} level header")
     mods = {str(row["ModId"]): str(row["ModVersion"]) for row in level["fml"]["LoadingModList"]}
-    if mods.get("forge") != "37.1.1" or any(mods.get(jar["id"]) != jar["version"] for jar in entry["jars"]):
+    if mods.get("forge") != forge or any(mods.get(jar["id"]) != jar["version"] for jar in entry["jars"]):
         raise AssertionError(f"Saved native mod identities differ from the target manifest: {mods}")
     registry = level["fml"]["Registries"]
     if any(not registry.get(name, {}).get("ids") for name in ("minecraft:item", "minecraft:block")):
         raise AssertionError("Missing native item/block registry snapshot; legacy plural registry names are not valid")
-    return {"path": str(level_path), "sha256": digest(level_path), "minecraft": "1.17.1", "mods": mods}
+    return {"path": str(level_path), "sha256": digest(level_path), "minecraft": minecraft, "mods": mods}
 
 
-def audit_unlock_log(path, previous_recipes, current_recipes):
+def audit_unlock_log(path, previous_recipes, current_recipes, errors=runtime_error_lines):
     """Witness vanilla's exact mode-conditional saved-book pruning, not arbitrary errors."""
     removed = set(previous_recipes) - set(current_recipes)
     observed = set()
     events = []
-    for original in runtime_error_lines(path.read_text(encoding="utf-8", errors="replace")):
+    for original in errors(path.read_text(encoding="utf-8", errors="replace")):
         line = re.sub(r"\x1b\[[0-9;]*m", "", original)
         match = re.search(r"\[Server thread/ERROR\] \[(?:minecraft/ServerRecipeBook|net\.minecraft\.stats\.ServerRecipeBook/?)\]: Tried to load unrecognized recipe: ([a-z0-9_]+:[a-z0-9_./-]+) removed now\.$", line)
         if not match or match[1] not in removed:
@@ -192,7 +194,9 @@ def audit_unlock_log(path, previous_recipes, current_recipes):
     return {"expected_removed_ids": sorted(removed), "observed_removed_ids": sorted(observed), "events": events}
 
 
-class RecipeServer(Server):
+class RecipePruning:
+    errors = staticmethod(runtime_error_lines)
+
     def __init__(self, runtime, java, launcher, label, previous):
         self.previous = set(previous)
         self.current = None
@@ -202,21 +206,29 @@ class RecipeServer(Server):
     def validate_native_log(self, path):
         if self.current is None:
             return super().validate_native_log(path)
-        self.pruning[path.name] = audit_unlock_log(path, self.previous, self.current)
+        self.pruning[path.name] = audit_unlock_log(path, self.previous, self.current, self.errors)
 
 
-def unlock_campaign(root, target, entry, java, port, definition, report):
+class RecipeServer(RecipePruning, Server):
+    pass
+
+
+def unlock_campaign(root, target, entry, java, port, definition, report, *, engine=None):
+    stage_runtime = stage_native if engine is None else engine.stage
+    server_type = RecipeServer if engine is None else engine.recipe_server
+    version = ("1.17.1", "37.1.1") if engine is None else engine.version
+    result_name = "native117-recipes-results.json" if engine is None else engine.result_name
     runtime = root / "unlock"
-    launcher = stage_native(runtime, target, port, "unlock")
+    launcher = stage_runtime(runtime, target, port, "unlock")
     write_json(runtime / "recipe-fixture.json", definition)
     previous_recipes = set()
     for mode, label, operations in UNLOCK_BOOTS:
         configure(runtime, mode)
         row = {"mode": mode, "label": label, "operations": [], "status": "RUNNING"}
         report["unlock_boots"].append(row)
-        write_json(root / "native117-recipes-results.json", report)
-        print(f"Native117 unlock boot {label}: {', '.join(operations)}", flush=True)
-        server = RecipeServer(runtime, java, launcher, label, previous_recipes)
+        write_json(root / result_name, report)
+        print(f"{version[0]} unlock boot {label}: {', '.join(operations)}", flush=True)
+        server = server_type(runtime, java, launcher, label, previous_recipes)
         try:
             for operation in operations:
                 name = f"{label}-{operation}"
@@ -238,15 +250,15 @@ def unlock_campaign(root, target, entry, java, port, definition, report):
             raise AssertionError("Recipe pruning was not verified in all three native logs")
         row["vanilla_recipe_pruning"] = server.pruning
         previous_recipes = current_recipes
-        verify_level(runtime, entry)
+        verify_level(runtime, entry, *version)
         row["status"] = "PASS"
     artifacts = [runtime / f"recipes-{mode}-sweep.{extension}" for mode in ("normal", "tech", "apocalyptic")
                  for extension in ("bin", "json")]
-    report["recipe_fixture"] = {"directory": str(runtime), "registry": verify_level(runtime, entry),
+    report["recipe_fixture"] = {"directory": str(runtime), "registry": verify_level(runtime, entry, *version),
                                 "files": [{"file": path.name, "sha256": digest(path)} for path in artifacts]}
 
 
-def prepare_progression(server, runtime, bounds, label, reload):
+def prepare_progression(server, runtime, bounds, label, reload, minecraft="1.17.1"):
     if reload:
         server.send("reload")
         server.wait("Reloading!", 60)
@@ -255,17 +267,22 @@ def prepare_progression(server, runtime, bounds, label, reload):
     server.send(f"forceload add {low[0]} {low[2]} {high[0]} {high[2]}")
     chunks = (low[0] // 16, low[2] // 16, high[0] // 16, high[2] // 16)
     readiness = "progression-" + label
-    await_ready(server, runtime, chunks, readiness)
+    await_ready(server, runtime, chunks, readiness, minecraft=minecraft)
     return runtime / "advantage-works-results" / f"native-readiness-{readiness}.json"
 
 
-def progression_campaign(root, target, entry, java, port, report):
+def progression_campaign(root, target, entry, java, port, report, *, engine=None):
+    stage_runtime = stage_native if engine is None else engine.stage
+    server_type = Server if engine is None else engine.server
+    version = ("1.17.1", "37.1.1") if engine is None else engine.version
+    result_name = "native117-recipes-results.json" if engine is None else engine.result_name
+    pack_format = 7 if engine is None else engine.pack_format
     runtime = root / "progression"
-    launcher = stage_native(runtime, target, port, "progression")
+    launcher = stage_runtime(runtime, target, port, "progression")
     definition = fixture_ids(progression_fixture())
     write_json(runtime / "progression-fixture.json", definition)
     pack = runtime / WORLD / "datapacks/progression-override"
-    write_json(pack / "pack.mcmeta", {"pack": {"pack_format": 7, "description": "Disposable loot-override witness"}})
+    write_json(pack / "pack.mcmeta", {"pack": {"pack_format": pack_format, "description": "Disposable loot-override witness"}})
     write_json(pack / "data/minecraft/loot_tables/chests/simple_dungeon.json", {
         "pools": [{"name": "test_override", "rolls": 1, "entries": [{"type": "item", "name": "minecraft:dirt"}]}]})
     for mode in MODES:
@@ -273,28 +290,28 @@ def progression_campaign(root, target, entry, java, port, report):
             configure(runtime, mode, rubber)
             for phase in ("initial", "restart"):
                 label = mode.lower() + ("-rubber" if rubber else "-no-rubber") + "-" + phase
-                print(f"Native117 progression boot {label}", flush=True)
-                server = Server(runtime, java, launcher, label)
+                print(f"{version[0]} progression boot {label}", flush=True)
+                server = server_type(runtime, java, launcher, label)
                 try:
                     for reload in ((False, True) if phase == "initial" else (False,)):
                         name = label + ("-reload" if reload else "")
                         row = {"mode": mode, "rubber": rubber, "phase": "reload" if reload else phase,
                                "report": f"progression-{name}.json", "status": "RUNNING"}
                         report["progression_cases"].append(row)
-                        write_json(root / "native117-recipes-results.json", report)
-                        readiness = prepare_progression(server, runtime, definition["machineBounds"], name, reload)
+                        write_json(root / result_name, report)
+                        readiness = prepare_progression(server, runtime, definition["machineBounds"], name, reload, version[0])
                         row["readiness"] = {"file": str(readiness.relative_to(runtime)), "sha256": digest(readiness)}
                         server.send(f"advprogression {name}")
                         server.wait(f"ADVPROGRESSION COMPLETE {name}", 240)
                         result = read_json(runtime / row["report"])
-                        validate_progression(result, mode, rubber)
+                        validate_progression(result, mode, rubber, verify_global_loot=engine is not None)
                         row.update(status="PASS", targets=len(result["targets"]),
                                    witnesses=len(result["processWitnesses"]), blocked=result["blocked"])
                     server.send("save-all flush")
                 finally:
                     server.close()
                 require_clean_log(runtime / f"console-{label}.log")
-                verify_level(runtime, entry)
+                verify_level(runtime, entry, *version)
 
 
 def run(args):

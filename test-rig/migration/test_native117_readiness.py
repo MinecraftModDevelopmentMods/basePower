@@ -76,8 +76,12 @@ class NativeReadinessTests(unittest.TestCase):
         source = (Path(__file__).resolve().parents[1] /
                   "src/main/java/zone/moddev/mc/advantageworks/Native117Readiness.java").read_text()
         self.assertIn("TickEvent.Phase.END", source)
-        self.assertIn("world.isPositionTickingWithEntitiesLoaded(pos)", source)
-        self.assertIn("world.isPositionEntityTicking(new ChunkPos(x, z))", source)
+        self.assertIn("Native118ChunkTicking.withEntitiesLoaded(world, pos)", source)
+        self.assertIn("world.isPositionEntityTicking(pos)", source)
+        native = (Path(__file__).resolve().parents[1] /
+                  "src/main/java/zone/moddev/mc/advantageworks/Native118ChunkTicking.java").read_text()
+        self.assertIn("long key = ChunkPos.asLong(pos)", native)
+        self.assertIn("world.areEntitiesLoaded(key) && world.getChunkSource().isPositionTicking(key)", native)
         for forbidden in ("setChunkForced(", "setChanged(", "setBlock(", "getChunk(",
                           "addFreshEntity(", "getPrivateValue(", "Thread.sleep("):
             self.assertNotIn(forbidden, source)

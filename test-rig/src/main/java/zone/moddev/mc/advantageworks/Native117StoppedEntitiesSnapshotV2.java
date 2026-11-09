@@ -29,8 +29,8 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.storage.LevelResource;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.EventPriority;
-import net.minecraftforge.fmlserverevents.FMLServerStartingEvent;
-import net.minecraftforge.fmlserverevents.FMLServerStoppingEvent;
+import net.minecraftforge.event.server.ServerStartingEvent;
+import net.minecraftforge.event.server.ServerStoppingEvent;
 import org.apache.logging.log4j.LogManager;
 
 /** Versioned stop-boundary observation. Native no-save helpers are never saved-state witnesses. */
@@ -74,7 +74,7 @@ final class Native117StoppedEntitiesSnapshotV2 {
         return result;
     }
 
-    private static void starting(FMLServerStartingEvent event) {
+    private static void starting(ServerStartingEvent event) {
         MinecraftServer server = event.getServer();
         Path runtime = Path.of("").toAbsolutePath().normalize();
         if (!Native117StoppedEntitiesSnapshot.marked(runtime, server.getWorldData().getLevelName())) return;
@@ -82,7 +82,7 @@ final class Native117StoppedEntitiesSnapshotV2 {
         BOOTS.put(server, boot);
         try {
             Files.write(runtime.resolve(CONTRACT), contract());
-            JsonObject pending = header(server, boot, "FMLServerStartingEvent");
+            JsonObject pending = header(server, boot, "ServerStartingEvent");
             pending.addProperty("status", "PENDING_STOP");
             Native117StoppedEntitiesSnapshot.write(runtime, pending);
         } catch (Exception error) {
@@ -90,14 +90,14 @@ final class Native117StoppedEntitiesSnapshotV2 {
         }
     }
 
-    private static void stopping(FMLServerStoppingEvent event) {
+    private static void stopping(ServerStoppingEvent event) {
         MinecraftServer server = event.getServer();
         Path runtime = Path.of("").toAbsolutePath().normalize();
         if (!Native117StoppedEntitiesSnapshot.marked(runtime, server.getWorldData().getLevelName())) return;
         JsonObject result = new JsonObject();
         try {
             String boot = BOOTS.remove(server);
-            result = header(server, boot, "FMLServerStoppingEvent");
+            result = header(server, boot, "ServerStoppingEvent");
             if (boot == null) throw new IllegalStateException("No marked startup for this server");
             JsonObject dimensions = new JsonObject();
             Set<UUID> seen = new HashSet<>();

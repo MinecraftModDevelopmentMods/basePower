@@ -39,7 +39,7 @@ import net.minecraftforge.common.BiomeDictionary;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.fml.ModList;
-import net.minecraftforge.fmlserverevents.FMLServerStoppingEvent;
+import net.minecraftforge.event.server.ServerStoppingEvent;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraft.world.level.material.Fluid;
 import cyano.poweradvantage.api.fluid.FluidStack;
@@ -80,7 +80,7 @@ final class WorksController {
 
     synchronized void loadDefinition() {
         if (definition != null) return;
-        definition = WorksDefinitionLoader.loadNative117();
+        definition = WorksDefinitionLoader.loadNative118();
         for (WorksDefinition.Station station : definition.stations) {
             stations.put(station.id.toUpperCase(Locale.ROOT), station);
             statuses.put(station.id, "NOT_BUILT");
@@ -252,7 +252,7 @@ final class WorksController {
         }
     }
 
-    private synchronized void worldgenStopping(FMLServerStoppingEvent event) {
+    private synchronized void worldgenStopping(ServerStoppingEvent event) {
         worldgenJob.release();
     }
 
@@ -355,7 +355,7 @@ final class WorksController {
             block.put("block", name == null ? "unknown" : name.toString());
             block.put("state", state.toString());
             BlockEntity tile = world.getBlockEntity(pos);
-            if (tile != null) block.put("nbt", tile.save(new CompoundTag()).toString());
+            if (tile != null) block.put("nbt", tile.saveWithFullMetadata().toString());
             snapshot.add(block);
         }
         return snapshot;
@@ -394,7 +394,7 @@ final class WorksController {
             for (int[] position : assertion.positions) {
                 BlockEntity source = world.getBlockEntity(absolute(station, position));
                 if (source == null) return false;
-                total += AssertionChecks.fluidAmount(source.save(new CompoundTag()), assertion.nbtPath, assertion.fluid);
+                total += AssertionChecks.fluidAmount(source.saveWithFullMetadata(), assertion.nbtPath, assertion.fluid);
             }
             return compare(total, assertion.operator, assertion.value);
         }
@@ -442,18 +442,18 @@ final class WorksController {
         }
         if ("nbtNumber".equals(assertion.type)) {
             if (tile == null) return false;
-            CompoundTag nbt = tile.save(new CompoundTag());
+            CompoundTag nbt = tile.saveWithFullMetadata();
             Number number = numberAt(nbt, assertion.nbtPath);
             return number != null && compare(number.doubleValue(), assertion.operator, assertion.value);
         }
         if ("nbtString".equals(assertion.type)) {
             if (tile == null) return false;
-            String text = stringAt(tile.save(new CompoundTag()), assertion.nbtPath);
+            String text = stringAt(tile.saveWithFullMetadata(), assertion.nbtPath);
             return assertion.expectedText != null && assertion.expectedText.equals(text);
         }
         if ("energy".equals(assertion.type)) {
             if (tile == null) return false;
-            int[] energy = tile.save(new CompoundTag()).getIntArray("Energy");
+            int[] energy = tile.saveWithFullMetadata().getIntArray("Energy");
             int index = assertion.energyIndex == null ? 0 : assertion.energyIndex;
             return index >= 0 && index < energy.length
                     && compare(Float.intBitsToFloat(energy[index]), assertion.operator, assertion.value);
@@ -749,7 +749,7 @@ final class WorksController {
         BlockEntity tile = world.getBlockEntity(pos);
         if (tile == null) throw new IllegalStateException("No tile entity at " + pos);
         try {
-            CompoundTag base = tile.save(new CompoundTag());
+            CompoundTag base = tile.saveWithFullMetadata();
             CompoundTag additions = JsonNbtConverter.toCompound(supplied);
             base.merge(additions);
             base.putInt("x", pos.getX());
