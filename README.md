@@ -31,6 +31,8 @@ automatic discovery and downloads for a reproducibility check.
 
 Build the pinned Base Metals `3.1.2.118021` and OreSpawn `4.1.0.118021` deobf jars first.
 The source pins and checksums are in `gradle.properties`.
+Check out the pinned dependency sources with `core.autocrlf=false` so the
+Base Metals development jar matches CI.
 Use Base Metals 3.1.2 for upgrades with Base Metals installed. Its shared
 save hook lets both mods preserve old items and machines before Minecraft
 converts the chunk. Older Base Metals builds do not have that hook.
