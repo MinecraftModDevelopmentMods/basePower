@@ -11,8 +11,8 @@ to MMD Maven before creating the GitHub release.
 
 If CurseForge has accepted the file but it isn't public yet, wait for approval.
 Start a new run with the recorded CurseForge file ID so it verifies that upload
-without submitting the jar again. The release workflow currently covers Java 8
-Forge targets only.
+without submitting the jar again. The release workflow sets Java 8 through
+Minecraft 1.16.5 and Java 16 for Minecraft 1.17.1.
 
 ## Existing CurseForge releases
 

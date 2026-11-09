@@ -71,10 +71,12 @@ jobs:
           fi
           mc=$(jq -er --arg v "$RELEASE_VERSION" '.releases[$v].branch | capture("^master-(?<mc>1\\.[0-9]+\\.[0-9]+)$").mc' .github/maven-release/releases.json)
           case "$mc" in
-            1.10.2|1.12.2|1.13.2|1.14.4|1.15.2|1.16.5) ;;
-            *) echo "This publisher only handles the Java 8 Forge releases" >&2; exit 1 ;;
+            1.10.2|1.12.2|1.13.2|1.14.4|1.15.2|1.16.5) java="Java 8" ;;
+            1.17.1) java="Java 16" ;;
+            *) echo "Unsupported Minecraft version for this publisher: $mc" >&2; exit 1 ;;
           esac
           echo "minecraft=$mc" >> "$GITHUB_OUTPUT"
+          echo "java=$java" >> "$GITHUB_OUTPUT"
           echo "state=$state" >> "$GITHUB_OUTPUT"
           echo "RELEASE_WORK=$release_work" >> "$GITHUB_ENV"
           echo "Verified $RELEASE_VERSION for Minecraft $mc. Maven: $state." >> "$GITHUB_STEP_SUMMARY"
@@ -112,7 +114,7 @@ jobs:
           game-version-filter: none
           loaders: forge
           environment: client | server
-          java: Java 8
+          java: ${{ steps.preflight.outputs.java }}
           curseforge-dependencies: |
             240967(required)
             245586(required)
