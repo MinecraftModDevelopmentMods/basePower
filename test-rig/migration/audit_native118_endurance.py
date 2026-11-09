@@ -75,18 +75,22 @@ def replay(run, profile, specification):
                 totals.update(verified["outputs"])
         setup_time = snapshot("W-01", "setup")["worldTime"]
         ticks = ledger[29]["world_time"] - setup_time
-        require(ticks == report["profiles"][mode]["game_ticks"] and ticks >= 32400,
-                mode + ": less than 18 game ticks per second")
+        require(ticks == report["profiles"][mode]["game_ticks"],
+                mode + ": reported ticks differ from the setup-to-end checkpoints")
         require(all(before < after for before, after in zip(times.values(), list(times.values())[1:])),
                 mode + ": nonmonotonic checkpoint times")
+        sampled_seconds = (times["cycle-030"] - times["cycle-001"]).total_seconds()
+        sampled_ticks = ledger[29]["world_time"] - ledger[0]["world_time"]
         require(report["profiles"][mode]["elapsed_seconds"] >= 1800
-                and (times["cycle-030"] - times["cycle-001"]).total_seconds() >= 1735,
+                and sampled_seconds >= 1735,
                 mode + ": checkpoints do not span the measured endurance period")
+        require(sampled_ticks >= 18 * sampled_seconds, mode + ": less than 18 measured game ticks per second")
         require((times["restart-resumed"] - times["after-restart"]).total_seconds() >= 60,
                 mode + ": missing minute of resumed operation")
         require(dict(totals) == report["profiles"][mode]["endurance_outputs"], mode + ": output totals differ")
         results[mode] = dict(checkpoints=len(ledger), stationSnapshots=len(ledger) * len(endurance.CHECKED),
-                             gameTicks=ticks, outputs=dict(totals))
+                             setupToEndTicks=ticks, sampledTicks=sampled_ticks, sampledSeconds=sampled_seconds,
+                             sampledTicksPerSecond=sampled_ticks / sampled_seconds, outputs=dict(totals))
     return dict(status="PASS", inputReceiptSha256=digest(run / "native118-endurance-results.json"), profiles=results)
 
 

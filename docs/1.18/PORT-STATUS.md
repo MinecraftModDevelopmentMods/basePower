@@ -38,6 +38,17 @@ and saved state, then start the same world in a new server process and run
 its existing conveyor, steam crusher and electric furnace without replacing
 any blocks. Always keep a backup of a real world before upgrading.
 
+The player and dimension fixtures also check ownership and inventory.
+The strict Nether and End reports record one native difference: a tamed
+wolf loaded at 8 health heals to 20. A fresh Forge server with no mods
+reproduced that change; the upgrade checks retain the original verdicts.
+
+The final 30-minute test exercised both a fresh and a migrated world.
+Both processed the expected items and fluids in 30 batches, reopened their
+saves, and processed fresh inputs again. The read-only replay checks all
+33 checkpoints per world and measures tick rate between production batches,
+without counting setup time.
+
 ## Running the local checks
 
 Use Java 17, an installed Forge 40.3.0 dedicated server, and a separate
