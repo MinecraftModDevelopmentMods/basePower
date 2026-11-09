@@ -1,0 +1,6 @@
+# Forge 45.4.0 dedicated-server defaults, captured without mod jars.
+versionCheck = true
+splashscreen = true
+disableOptimizedDFU = true
+defaultConfigPath = "defaultconfigs"
+maxThreads = -1

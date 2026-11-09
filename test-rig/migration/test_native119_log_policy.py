@@ -1,6 +1,9 @@
+from pathlib import Path
+import tempfile
+import tomllib
 import unittest
 
-from native119 import log_findings
+from native119 import log_findings, prepare_fml_defaults
 
 
 PROBE = "jdk.internal.misc.Unsafe.allocateUninitializedArray(int): unavailable"
@@ -26,3 +29,16 @@ class Native119LogPolicyTests(unittest.TestCase):
         error = "[15:22:53] [Server thread/ERROR] [minecraft/MinecraftServer]: Failed machine tick"
         errors, _ = log_findings("\n".join((DEBUG + PROBE, DETAIL, FRAME, error)))
         self.assertEqual([error], errors)
+
+    def test_disposable_first_start_uses_forge_defaults_but_preserves_existing_config(self):
+        with tempfile.TemporaryDirectory() as directory:
+            runtime = Path(directory)
+            prepare_fml_defaults(runtime)
+            config = runtime / "config/fml.toml"
+            self.assertEqual({"versionCheck": True, "splashscreen": True, "disableOptimizedDFU": True,
+                              "defaultConfigPath": "defaultconfigs", "maxThreads": -1},
+                             tomllib.loads(config.read_text(encoding="utf-8")))
+            original = b'maxThreads = 2\n'
+            config.write_bytes(original)
+            prepare_fml_defaults(runtime)
+            self.assertEqual(original, config.read_bytes())

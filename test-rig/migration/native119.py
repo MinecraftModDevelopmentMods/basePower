@@ -19,6 +19,7 @@ RIG = Path(__file__).resolve().parents[1]
 LAUNCHER = f"libraries/net/minecraftforge/forge/{FORGE_VERSION}/" + (
     "win_args.txt" if os.name == "nt" else "unix_args.txt")
 INVENTORY = "native119-code-inventory.json"
+FML_DEFAULTS = RIG / "migration/fixtures/native119/fml.toml"
 NETTY_PROBES = {
     "direct buffer constructor: unavailable": "java.lang.UnsupportedOperationException: Reflective setAccessible(true) disabled",
     "jdk.internal.misc.Unsafe.allocateUninitializedArray(int): unavailable": (
@@ -138,6 +139,18 @@ def verify_runtime(runtime):
         raise AssertionError("Staged mod jars changed")
 
 
+def prepare_fml_defaults(runtime):
+    # Avoid Forge's first-write/file-watcher race without touching imported settings.
+    config = runtime / "config/fml.toml"
+    config.parent.mkdir(exist_ok=True)
+    try:
+        with config.open("xb") as output:
+            output.write(FML_DEFAULTS.read_bytes())
+    except FileExistsError:
+        return
+    write_json(runtime / "native119-fml-defaults.json", {"sha256": digest(FML_DEFAULTS), "forge": FORGE_VERSION})
+
+
 class Server(NativeLaunch):
     forge_version = FORGE_VERSION
 
@@ -145,6 +158,7 @@ class Server(NativeLaunch):
         if launcher != LAUNCHER:
             raise ValueError("Wrong server launch target")
         verify_runtime(runtime)
+        prepare_fml_defaults(runtime)
         super().__init__(runtime, java, launcher, label)
 
     def validate_native_log(self, path):
