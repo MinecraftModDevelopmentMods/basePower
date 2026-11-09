@@ -30,8 +30,8 @@ needs Java 25. CI pins these JDKs and Java 8 for the legacy renamer. Pass the in
 automatic discovery and downloads for a reproducibility check.
 
 Build the pinned Base Metals `3.1.1.117011` and OreSpawn `4.1.0.117011` deobf jars first.
-The Base Metals startup fix is local while we test this port. The source pins
-and checksums are in `gradle.properties`.
+Use Base Metals 3.1.1 for its 1.17.1 startup fix. The build pins the exact
+dependency source and checksums in `gradle.properties`.
 
 Then run from the repository root:
 
