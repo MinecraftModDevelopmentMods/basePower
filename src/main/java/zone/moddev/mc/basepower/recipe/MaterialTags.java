@@ -1,19 +1,5 @@
 package zone.moddev.mc.basepower.recipe;
 
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.Map;
-import java.util.Set;
-import net.minecraft.world.item.Item;
-import net.minecraft.tags.Tag;
-import net.minecraft.tags.TagCollection;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.core.Registry;
-import net.minecraftforge.fml.ModList;
-import zone.moddev.mc.basepower.PowerAdvantage;
-import zone.moddev.mc.basepower.RecipeMode;
-import zone.moddev.mc.basepower.init.Items;
-
 /** Config-dependent aliases resolved by the server's native tag reload. */
 public final class MaterialTags {
     private MaterialTags() {}
@@ -29,30 +15,4 @@ public final class MaterialTags {
         });
     }
 
-    static TagCollection<Item> applyPolicy(TagCollection<Item> tags, Item plastic,
-            boolean rubber, boolean solder) {
-        if (!rubber && !solder) return tags;
-        Map<ResourceLocation, Tag<Item>> result = new LinkedHashMap<>(tags.getAllTags());
-        if (rubber) {
-            append(result, "forge:rubber", java.util.Collections.singleton(plastic));
-            append(result, "forge:ingots/rubber", java.util.Collections.singleton(plastic));
-        }
-        if (solder) {
-            for (String metal : new String[] {"lead", "tin", "silver"}) {
-                append(result, "forge:solder", tags.getTagOrEmpty(
-                        new ResourceLocation("forge", "ingots/" + metal)).getValues());
-            }
-        }
-        return TagCollection.of(result);
-    }
-
-    private static void append(Map<ResourceLocation, Tag<Item>> tags, String name,
-            java.util.Collection<Item> additions) {
-        ResourceLocation id = new ResourceLocation(name);
-        Set<Item> values = new LinkedHashSet<>();
-        Tag<Item> existing = tags.get(id);
-        if (existing != null) values.addAll(existing.getValues());
-        for (Item item : additions) if (item != null) values.add(item);
-        tags.put(id, Tag.fromSet(values));
-    }
 }

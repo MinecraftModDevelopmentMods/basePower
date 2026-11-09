@@ -16,7 +16,7 @@ concurrency:
 jobs:
   validate-release-tag:
     name: Validate tag for manual release confirmation
-    if: github.repository == 'MinecraftModDevelopmentMods/PowerAdvantage'
+    if: github.repository == 'MinecraftModDevelopmentMods/basePower'
     runs-on: ubuntu-latest
     timeout-minutes: 10
 

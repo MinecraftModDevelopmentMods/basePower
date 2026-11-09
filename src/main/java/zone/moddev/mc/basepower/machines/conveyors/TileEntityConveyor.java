@@ -270,8 +270,8 @@ public class TileEntityConveyor extends BlockEntity implements WorldlyContainer,
 	 * @param tagRoot The root of the NBT
 	 */
 	@Override
-	public CompoundTag save(final CompoundTag tagRoot) {
-		super .save(tagRoot);
+	protected void saveAdditional(final CompoundTag tagRoot) {
+		super.saveAdditional(tagRoot);
 		ItemStack[] inventory = this.getInventory();
 		if(inventory != null ){
 			final ListTag nbttaglist = new ListTag();
@@ -288,7 +288,6 @@ public class TileEntityConveyor extends BlockEntity implements WorldlyContainer,
 		if (this.hasCustomName()) {
 			tagRoot.putString("CustomName", this.customName);
 		}
-		return tagRoot;
 	}
 
 	/**

@@ -1,3 +1,9 @@
+basePower 2.4.10.118021 (Minecraft 1.18.2)
+
+- Bring basePower to Forge 40 and Java 17, keeping the same blocks, items and machine data.
+- Use Forge's registry lifecycle for blocks, items and oil, and native save and update packets for machines.
+- Carry old machine and entity data into 1.18's chunk format without blocking new terrain below the old world floor.
+
 basePower 2.4.9.117011 (Minecraft 1.17.1)
 
 - Bring basePower to Minecraft 1.17.1 with one shared tab for the three mods.

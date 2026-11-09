@@ -182,10 +182,9 @@ public abstract class TileEntityConverter extends TileEntitySimplePowerMachine {
 	}
 
 	@Override
-	public CompoundTag save(final CompoundTag tagRoot) {
-		super .save(tagRoot);
+	protected void saveAdditional(final CompoundTag tagRoot) {
+		super.saveAdditional(tagRoot);
 		tagRoot.putDouble("Other", this.getOtherEnergy());
-		return tagRoot;
 	}
 
 

@@ -89,10 +89,9 @@ public class InfiniteEnergyTileEntity extends TileEntitySimplePowerMachine {
 	}
 
 	@Override
-	public CompoundTag save(final CompoundTag tagRoot) {
-		super .save(tagRoot);
+	protected void saveAdditional(final CompoundTag tagRoot) {
+		super.saveAdditional(tagRoot);
 		tagRoot.putString("InfType", this.type[0].toString());
-		return tagRoot;
 	}
 
 	@Override

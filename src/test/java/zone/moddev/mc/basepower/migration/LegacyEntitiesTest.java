@@ -13,6 +13,10 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 public class LegacyEntitiesTest {
+    @org.junit.BeforeClass public static void detectVersion() {
+        SharedConstants.tryDetectVersion();
+    }
+
     @Test public void retainsWolfInDirect110Chunk() {
         assertWolf(false);
     }
@@ -36,7 +40,7 @@ public class LegacyEntitiesTest {
         vehicle.put("Passengers", passengers);
         CompoundTag root = chunk(vehicle, 512);
         root = convert(root, 512);
-        CompoundTag actual = root.getCompound("Level").getList("Entities", 10).getCompound(0);
+        CompoundTag actual = root.getList("entities", 10).getCompound(0);
         assertEquals("example:vehicle", actual.getString("id"));
         assertEquals("keep-verbatim", actual.getString("CustomState"));
         ListTag fixed = actual.getList("Passengers", 10);
@@ -52,7 +56,7 @@ public class LegacyEntitiesTest {
         skeleton.putByte("SkeletonType", (byte) 1);
         CompoundTag root = chunk(skeleton, 512);
         root = convert(root, 512);
-        assertEquals("minecraft:wither_skeleton", root.getCompound("Level").getList("Entities", 10).getCompound(0).getString("id"));
+        assertEquals("minecraft:wither_skeleton", root.getList("entities", 10).getCompound(0).getString("id"));
     }
 
     @Test public void leavesModernEntityAndUnrelatedCustomNbtUnchangedOnRepeatedPreparation() {
@@ -85,6 +89,8 @@ public class LegacyEntitiesTest {
         CompoundTag root = new CompoundTag();
         root.putInt("DataVersion", version);
         CompoundTag level = new CompoundTag();
+        level.putInt("xPos", 0);
+        level.putInt("zPos", 0);
         ListTag entities = new ListTag();
         entities.add(entity);
         level.put("Entities", entities);
@@ -96,6 +102,8 @@ public class LegacyEntitiesTest {
         CompoundTag root = new CompoundTag();
         root.putInt("DataVersion", 512);
         CompoundTag level = new CompoundTag();
+        level.putInt("xPos", 0);
+        level.putInt("zPos", 0);
         ListTag entities = new ListTag();
         CompoundTag wolf = new CompoundTag();
         wolf.putString("id", "Wolf");
@@ -113,12 +121,12 @@ public class LegacyEntitiesTest {
         level.put("Entities", entities);
         root.put("Level", level);
         CompoundTag fixed = convert(root, 512);
-        CompoundTag actual = fixed.getCompound("Level").getList("Entities", 10).getCompound(0);
+        CompoundTag actual = fixed.getList("entities", 10).getCompound(0);
         assertEquals("minecraft:wolf", actual.getString("id"));
         assertEquals(UUID.fromString(wolf.getString("OwnerUUID")), actual.getUUID("Owner"));
         assertTrue(actual.getBoolean("Sitting"));
         assertEquals(new UUID(123L, 456L), actual.getUUID("UUID"));
-        assertEquals(customEntity ? 2 : 1, fixed.getCompound("Level").getList("Entities", 10).size());
+        assertEquals(customEntity ? 2 : 1, fixed.getList("entities", 10).size());
     }
 
     @Test public void preservesCustomEntityUuidAndPrivateNbtThroughWholeChunkFix() {
@@ -131,7 +139,7 @@ public class LegacyEntitiesTest {
         custom.put("PrivateData", privateData);
         for (int version : new int[] {512, 1343, 1631, 1976, 2230}) {
             CompoundTag converted = convert(chunk(custom.copy(), version), version);
-            CompoundTag actual = converted.getCompound("Level").getList("Entities", 10).getCompound(0);
+            CompoundTag actual = converted.getList("entities", 10).getCompound(0);
             assertEquals(new UUID(-9014291490481488382L, -5032249493117728499L), actual.getUUID("UUID"));
             assertEquals(privateData, actual.getCompound("PrivateData"));
             assertFalse(converted.contains("AdvantageLegacyEntityDataFix"));
@@ -151,7 +159,7 @@ public class LegacyEntitiesTest {
             CompoundTag root = chunk(wolf, version);
             root.getCompound("Level").getList("Entities", 10).add(entity("example:turbine"));
             CompoundTag converted = convert(root, version);
-            CompoundTag actual = converted.getCompound("Level").getList("Entities", 10).getCompound(0);
+            CompoundTag actual = converted.getList("entities", 10).getCompound(0);
             assertEquals(uuid, actual.getUUID("UUID"));
             assertEquals(owner, actual.getUUID("Owner"));
             assertEquals(8F, actual.getFloat("Health"), 0F);
@@ -174,15 +182,15 @@ public class LegacyEntitiesTest {
             CompoundTag custom = entity("example:vehicle");
             custom.putLong("UUIDMost", uuid.getMostSignificantBits());
             custom.putLong("UUIDLeast", uuid.getLeastSignificantBits());
-            assertEquals(uuid, convert(chunk(custom, 512), 512).getCompound("Level")
-                    .getList("Entities", 10).getCompound(0).getUUID("UUID"));
+            assertEquals(uuid, convert(chunk(custom, 512), 512)
+                    .getList("entities", 10).getCompound(0).getUUID("UUID"));
         }
         CompoundTag custom = entity("example:vehicle");
         custom.putUUID("UUID", new UUID(17L, 19L));
         custom.putLong("UUIDMost", 88L);
         custom.putLong("UUIDLeast", 99L);
-        assertEquals(new UUID(17L, 19L), convert(chunk(custom, 2230), 2230).getCompound("Level")
-                .getList("Entities", 10).getCompound(0).getUUID("UUID"));
+        assertEquals(new UUID(17L, 19L), convert(chunk(custom, 2230), 2230)
+                .getList("entities", 10).getCompound(0).getUUID("UUID"));
     }
 
     @Test public void baseMetalsDurabilitySurvivesBothEntryHookOrders() throws Exception {
@@ -205,7 +213,7 @@ public class LegacyEntitiesTest {
             root = NbtUtils.update(DataFixers.getDataFixer(), DataFixTypes.CHUNK,
                     root, 1343, SharedConstants.getCurrentVersion().getWorldVersion());
             root = LegacyWorldDataHook.finalizeLegacyChunk(root);
-            CompoundTag actual = root.getCompound("Level").getList("Entities", 10).getCompound(0)
+            CompoundTag actual = root.getList("entities", 10).getCompound(0)
                     .getList("Items", 10).getCompound(0);
             assertEquals("basemetals:steel_pickaxe", actual.getString("id"));
             assertEquals(1, actual.getInt("Count"));

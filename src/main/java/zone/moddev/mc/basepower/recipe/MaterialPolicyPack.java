@@ -87,7 +87,7 @@ final class MaterialPolicyPack implements PackResources {
     @Override @SuppressWarnings("unchecked")
     public <T> T getMetadataSection(MetadataSectionSerializer<T> serializer) {
         return serializer == PackMetadataSection.SERIALIZER
-                ? (T)new PackMetadataSection(new TextComponent(NAME), 7) : null;
+                ? (T)new PackMetadataSection(new TextComponent(NAME), 9) : null;
     }
     @Override public String getName() { return NAME; }
     @Override public void close() {}

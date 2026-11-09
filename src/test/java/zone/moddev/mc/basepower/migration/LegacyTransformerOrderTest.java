@@ -31,8 +31,11 @@ public class LegacyTransformerOrderTest {
         for (String[] target : targets) {
             ClassNode node = new ClassNode();
             try (InputStream input = getResource("/" + target[0] + ".class")) { new ClassReader(input).accept(node, 0); }
-            if (productionNames) for (MethodNode method : node.methods)
-                if (!method.name.startsWith("<")) method.name = "test_srg_" + method.name;
+            for (MethodNode method : node.methods) {
+                // Plain JUnit has no Forge name-mapping service for this SRG target.
+                if (method.name.equals("ensureCanWrite")) method.name = "m_180807_";
+                else if (productionNames && !method.name.startsWith("<")) method.name = "test_srg_" + method.name;
+            }
             transform(node, target[1], baseFirst);
             transform(node, target[1], !baseFirst);
             assertEquals(target[0], 1, calls(node, "basepower", target[2]));
@@ -71,7 +74,7 @@ public class LegacyTransformerOrderTest {
 
     private static void transform(ClassNode node, String target, boolean base) throws Exception {
         String mod = base ? "basemetals" : "poweradvantage";
-        String path = base ? "/coremods/basemetals_117_compatibility.js" : "/coremods/poweradvantage_116_migration.js";
+        String path = base ? "/coremods/basemetals_118_compatibility.js" : "/coremods/poweradvantage_118_migration.js";
         ScriptEngine engine = new ScriptEngineManager().getEngineByName("nashorn");
         assertNotNull("Transformer tests require Forge's bundled Nashorn engine", engine);
         try (InputStreamReader reader = new InputStreamReader(getResource(path), StandardCharsets.UTF_8)) { engine.eval(reader); }

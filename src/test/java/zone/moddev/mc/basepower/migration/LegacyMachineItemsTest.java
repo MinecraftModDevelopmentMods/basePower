@@ -78,7 +78,7 @@ public class LegacyMachineItemsTest {
         tile.put("Recipe", nested);
         tile.putFloat("Energy", 19.5F);
         tile.putString("CustomName", "keep");
-        CompoundTag actual = convert(chunk(tile), 512).getCompound("Level").getList("TileEntities", 10).getCompound(0);
+        CompoundTag actual = convert(chunk(tile), 512).getList("block_entities", 10).getCompound(0);
         assertEquals("minecraft:lapis_lazuli", actual.getCompound("Recipe").getCompound("Reference").getString("id"));
         assertEquals(19.5F, actual.getFloat("Energy"), 0F);
         assertEquals("keep", actual.getString("CustomName"));
@@ -165,7 +165,7 @@ public class LegacyMachineItemsTest {
         book.put("tag", tag);
         CompoundTag root = chunk(tile(carrier(book)));
         root.putInt("DataVersion", 1343);
-        CompoundTag actual = convert(root, 1343).getCompound("Level").getList("TileEntities", 10)
+        CompoundTag actual = convert(root, 1343).getList("block_entities", 10)
                 .getCompound(0).getList("Items", 10).getCompound(0).getCompound("tag")
                 .getCompound("BlockEntityTag").getList("Items", 10).getCompound(0);
         assertEquals(enchantments, actual.getCompound("tag").getList("StoredEnchantments", 10));
@@ -313,7 +313,7 @@ public class LegacyMachineItemsTest {
     }
 
     private static CompoundTag convertedTile(CompoundTag item) {
-        return convert(chunk(tile(item)), 512).getCompound("Level").getList("TileEntities", 10).getCompound(0);
+        return convert(chunk(tile(item)), 512).getList("block_entities", 10).getCompound(0);
     }
 
     private static CompoundTag convert(CompoundTag root, int version) {

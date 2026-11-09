@@ -88,7 +88,7 @@ public class FluidDischargeTileEntity extends TileEntitySimpleFluidMachine {
     }
     @Override public void handleUpdateTag(CompoundTag tag) { getTank().readFromNBT(tag); }
     @Override public ClientboundBlockEntityDataPacket getUpdatePacket() {
-        return new ClientboundBlockEntityDataPacket(getBlockPos(), 0, getUpdateTag());
+        return ClientboundBlockEntityDataPacket.create(this);
     }
     @Override public void onDataPacket(Connection net, ClientboundBlockEntityDataPacket packet) {
         handleUpdateTag(packet.getTag());

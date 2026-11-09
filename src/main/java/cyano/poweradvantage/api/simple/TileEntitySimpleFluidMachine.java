@@ -294,8 +294,8 @@ public abstract class TileEntitySimpleFluidMachine extends FluidPoweredEntity im
      * @param tagRoot The root of the NBT
      */
     @Override
-    public CompoundTag save(final CompoundTag tagRoot) {
-        super .save(tagRoot);
+    protected void saveAdditional(final CompoundTag tagRoot) {
+        super.saveAdditional(tagRoot);
         ItemStack[] inventory = this.getInventory();
         if(inventory != null ){
 	        final ListTag nbttaglist = new ListTag();
@@ -312,7 +312,6 @@ public abstract class TileEntitySimpleFluidMachine extends FluidPoweredEntity im
         if (this.hasCustomName()) {
             tagRoot.putString("CustomName", this.customName);
         }
-		return tagRoot;
     }
     
 private final ConduitType[] types = {Fluids.fluidConduit_general};
@@ -433,13 +432,12 @@ private final ConduitType[] types = {Fluids.fluidConduit_general};
      */
     @Override 
     public ClientboundBlockEntityDataPacket getUpdatePacket(){
-        CompoundTag nbtTag = createDataFieldUpdateTag();
-        return new ClientboundBlockEntityDataPacket(this.worldPosition, 0, nbtTag);
+        return ClientboundBlockEntityDataPacket.create(this, tile -> createDataFieldUpdateTag());
     }
 
 	@Override
 	public CompoundTag getUpdateTag() {
-		return save(new CompoundTag());
+		return saveWithFullMetadata();
 	}
 
 	@Override

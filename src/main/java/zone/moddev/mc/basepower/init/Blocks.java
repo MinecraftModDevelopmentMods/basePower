@@ -105,10 +105,10 @@ public final class Blocks {
 
         Block.Properties oilProperties = Block.Properties.of(Material.WATER).noCollission()
                 .strength(100.0F).dynamicShape();
-        refined_oil_block = (LiquidBlock) add(new InteractiveFluidBlock(Fluids.refined_oil,
+        refined_oil_block = (LiquidBlock) add(new InteractiveFluidBlock(() -> Fluids.refined_oil,
                 oilProperties, true, (world, entity) -> entity .addEffect(new MobEffectInstance(MobEffects.CONFUSION, 200))),
                 "refined_oil");
-        crude_oil_block = (LiquidBlock) add(new InteractiveFluidBlock(Fluids.crude_oil,
+        crude_oil_block = (LiquidBlock) add(new InteractiveFluidBlock(() -> Fluids.crude_oil,
                 oilProperties, true, (world, entity) -> entity .addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 200, 2))),
                 "crude_oil");
 

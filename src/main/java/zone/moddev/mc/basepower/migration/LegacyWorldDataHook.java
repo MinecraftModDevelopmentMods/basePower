@@ -34,9 +34,6 @@ import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtUtils;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.datafix.fixes.BlockStateData;
-import net.minecraft.world.level.storage.LevelStorageSource.LevelStorageAccess;
-import net.minecraft.world.level.storage.WorldData;
-import net.minecraftforge.fmllegacy.WorldPersistenceHooks;
 import net.minecraftforge.fml.util.ObfuscationReflectionHelper;
 import net.minecraftforge.registries.ForgeRegistries;
 import zone.moddev.mc.basepower.PowerAdvantage;
@@ -45,27 +42,19 @@ import zone.moddev.mc.basepower.PowerAdvantage;
  * Shared Advantage pre-flattening migration hook for Minecraft 1.10 and 1.12
  * worlds. Add-ons contribute their identities through {@link LegacyMigrationApi}.
  */
-public final class LegacyWorldDataHook implements WorldPersistenceHooks.WorldPersistenceHook {
-    private static final LegacyWorldDataHook INSTANCE = new LegacyWorldDataHook();
+public final class LegacyWorldDataHook {
     private static final ResourceLocation BLOCK_REGISTRY = new ResourceLocation("minecraft", "blocks");
-    private static final Map<String, CompoundTag> LEGACY_WORLD_DATA = new ConcurrentHashMap<>();
+    private static final Set<String> PREPARED_WORLDS = ConcurrentHashMap.newKeySet();
+    private static final String REGISTRY_SIDECAR = "basepower-legacy-registry.dat";
     private static final BitSet LEGACY_BLOCK_IDS = new BitSet();
     private static final Map<Integer, String> LEGACY_ENCHANTMENTS = new LinkedHashMap<>();
-    private static final Set<Long> LEGACY_CHUNKS = Collections.newSetFromMap(new ConcurrentHashMap<>());
+    private static final Map<ResourceLocation, Set<Long>> LEGACY_CHUNKS = new ConcurrentHashMap<>();
     private static final Map<Long, Integer> LEGACY_BLOCK_COUNTS = new ConcurrentHashMap<>();
     private static final Map<String, String> VANILLA_BLOCK_ENTITY_IDS = vanillaBlockEntityIds();
     private static final String PRESERVE_CHUNK_MARKER = "AdvantageLegacyPreserveChunk";
     private static boolean legacyWorldActive;
-    private static boolean registered;
 
     private LegacyWorldDataHook() {}
-
-    public static synchronized void register() {
-        if (!registered) {
-            WorldPersistenceHooks.addHook(INSTANCE);
-            registered = true;
-        }
-    }
 
     /** Called by the coremod before Forge reads level.dat. */
     public static synchronized void prepareLegacyWorld(File levelDat) {
@@ -74,12 +63,16 @@ public final class LegacyWorldDataHook implements WorldPersistenceHooks.WorldPer
         LEGACY_ENCHANTMENTS.clear();
         LEGACY_CHUNKS.clear();
         LEGACY_BLOCK_COUNTS.clear();
-        removeRetiredProfessionSnapshot(levelDat);
+        prepareForgeRegistryMetadata(levelDat);
         File source = legacyRegistrySource(levelDat);
         try {
             if (source != null) {
                 try (FileInputStream input = new FileInputStream(source)) {
                     CompoundTag registryArchive = NbtIo.readCompressed(input);
+                    if (!containsLegacyRegistryEntry(registryArchive)) {
+                        throw new IOException("Invalid retained Advantage registry snapshot " + source);
+                    }
+                    preserveLegacyRegistry(levelDat, registryArchive);
                     prepareLegacyData(levelDat.getParentFile(), registryArchive.getCompound("FML"));
                 }
             }
@@ -106,7 +99,7 @@ public final class LegacyWorldDataHook implements WorldPersistenceHooks.WorldPer
         return false;
     }
 
-    private static void removeRetiredProfessionSnapshot(File levelDat) {
+    static void prepareForgeRegistryMetadata(File levelDat) {
         if (!levelDat.isFile()) return;
         try {
             CompoundTag root;
@@ -224,32 +217,28 @@ public final class LegacyWorldDataHook implements WorldPersistenceHooks.WorldPer
     public static CompoundTag finalizeLegacyChunk(CompoundTag root) {
         LegacyEntityDataFixes.finish(root);
         LegacyMachineItemDataFixes.finish(root);
-        if (root != null && root.contains("Level", 10)) {
-            CompoundTag level = root.getCompound("Level");
+        if (root != null) {
+            CompoundTag level = root.contains("Level", 10) ? root.getCompound("Level") : root;
             if (level.getBoolean(PRESERVE_CHUNK_MARKER)) {
-                level.putString("Status", "full");
+                // Let vanilla fill newly added underground space without rewriting the old surface.
+                if (!level.contains("below_zero_retrogen", 10)) level.putString("Status", "full");
                 level.remove(PRESERVE_CHUNK_MARKER);
             }
         }
         return root;
     }
 
-    public static boolean shouldBlockWorldgenWrite(net.minecraft.core.BlockPos position) {
+    public static boolean shouldBlockWorldgenWrite(net.minecraft.server.level.WorldGenRegion region,
+            net.minecraft.core.BlockPos position) {
         return legacyWorldActive && position != null
-                && LEGACY_CHUNKS.contains(Long.valueOf(chunkKey(position.getX() >> 4, position.getZ() >> 4)));
+                && isProtectedChunk(region.getLevel().dimension().location(), position);
     }
 
-    @Override public String getModId() { return "FML"; }
-
-    @Override
-    public CompoundTag getDataForWriting(LevelStorageAccess handler, WorldData info) {
-        CompoundTag legacy = LEGACY_WORLD_DATA.get(worldKey(handler.getWorldDir().toFile()));
-        return legacy == null ? new CompoundTag() : legacy.copy();
-    }
-
-    @Override
-    public void readData(LevelStorageAccess handler, WorldData info, CompoundTag tag) {
-        prepareLegacyData(handler.getWorldDir().toFile(), tag);
+    static boolean isProtectedChunk(ResourceLocation dimension, net.minecraft.core.BlockPos position) {
+        Set<Long> chunks = LEGACY_CHUNKS.get(dimension);
+        // Do not block the native 1.18 underground extension or newly added height.
+        return position.getY() >= 0 && position.getY() < 256 && chunks != null
+                && chunks.contains(chunkKey(position.getX() >> 4, position.getZ() >> 4));
     }
 
     private static synchronized void prepareLegacyData(File worldDirectory, CompoundTag tag) {
@@ -258,9 +247,8 @@ public final class LegacyWorldDataHook implements WorldPersistenceHooks.WorldPer
         if (!registries.contains(BLOCK_REGISTRY.toString(), 10)) return;
         installLegacyEnchantments(registries);
         String key = worldKey(worldDirectory);
-        boolean first = !LEGACY_WORLD_DATA.containsKey(key);
+        boolean first = PREPARED_WORLDS.add(key);
         int states = installLegacyBlockStates(registries.getCompound(BLOCK_REGISTRY.toString()));
-        if (first) LEGACY_WORLD_DATA.put(key, tag.copy());
         legacyWorldActive = states > 0;
         int chunks = indexLegacyChunks(worldDirectory);
         if (first && states > 0) {
@@ -455,7 +443,9 @@ public final class LegacyWorldDataHook implements WorldPersistenceHooks.WorldPer
         return 1;
     }
 
-    private static File legacyRegistrySource(File levelDat) {
+    static File legacyRegistrySource(File levelDat) {
+        File sidecar = new File(levelDat.getParentFile(), REGISTRY_SIDECAR);
+        if (sidecar.isFile()) return sidecar;
         for (File candidate : new File[] { levelDat, new File(levelDat.getParentFile(), "level.dat_old") }) {
             if (!candidate.isFile()) continue;
             try (FileInputStream input = new FileInputStream(candidate)) {
@@ -464,6 +454,21 @@ public final class LegacyWorldDataHook implements WorldPersistenceHooks.WorldPer
             } catch (IOException ignored) {}
         }
         return null;
+    }
+
+    static void preserveLegacyRegistry(File levelDat, CompoundTag source) throws IOException {
+        java.nio.file.Path target = levelDat.toPath().resolveSibling(REGISTRY_SIDECAR);
+        if (Files.exists(target)) return;
+        // Forge no longer writes the uppercase FML archive. Unvisited legacy chunks still need it.
+        CompoundTag archive = new CompoundTag();
+        archive.put("FML", source.getCompound("FML").copy());
+        java.nio.file.Path temporary = Files.createTempFile(target.getParent(), "basepower-legacy-", ".tmp");
+        try {
+            NbtIo.writeCompressed(archive, temporary.toFile());
+            Files.move(temporary, target, StandardCopyOption.ATOMIC_MOVE);
+        } finally {
+            Files.deleteIfExists(temporary);
+        }
     }
 
     private static boolean containsLegacyRegistryEntry(CompoundTag root) {
@@ -497,11 +502,17 @@ public final class LegacyWorldDataHook implements WorldPersistenceHooks.WorldPer
         return new LinkedHashMap<>(LEGACY_BLOCK_COUNTS);
     }
 
-    private static int indexLegacyChunks(File worldDirectory) {
+    static int indexLegacyChunks(File worldDirectory) {
         LEGACY_CHUNKS.clear();
-        File regionDirectory = new File(worldDirectory, "region");
+        return indexLegacyChunks(new ResourceLocation("overworld"), new File(worldDirectory, "region"))
+                + indexLegacyChunks(new ResourceLocation("the_nether"), new File(worldDirectory, "DIM-1/region"))
+                + indexLegacyChunks(new ResourceLocation("the_end"), new File(worldDirectory, "DIM1/region"));
+    }
+
+    private static int indexLegacyChunks(ResourceLocation dimension, File regionDirectory) {
         File[] regions = regionDirectory.listFiles((directory, name) -> name.matches("r\\.-?\\d+\\.-?\\d+\\.mc[ar]"));
         if (regions == null) return 0;
+        Set<Long> chunks = ConcurrentHashMap.newKeySet();
         byte[] locations = new byte[4096];
         for (File region : regions) {
             String[] parts = region.getName().split("\\.");
@@ -518,7 +529,7 @@ public final class LegacyWorldDataHook implements WorldPersistenceHooks.WorldPer
                 for (int index = 0; index < read / 4; index++) {
                     int offset = index * 4;
                     if ((locations[offset] | locations[offset + 1] | locations[offset + 2] | locations[offset + 3]) != 0) {
-                        LEGACY_CHUNKS.add(Long.valueOf(chunkKey(
+                        chunks.add(Long.valueOf(chunkKey(
                                 regionX * 32 + (index & 31), regionZ * 32 + (index >> 5))));
                     }
                 }
@@ -526,7 +537,8 @@ public final class LegacyWorldDataHook implements WorldPersistenceHooks.WorldPer
                 PowerAdvantage.LOGGER.warn("Could not inspect legacy chunk locations in '{}'", region, exception);
             }
         }
-        return LEGACY_CHUNKS.size();
+        LEGACY_CHUNKS.put(dimension, chunks);
+        return chunks.size();
     }
 
     @SuppressWarnings("unchecked")

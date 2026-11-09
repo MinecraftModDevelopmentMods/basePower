@@ -319,8 +319,8 @@ public abstract class TileEntitySimplePowerMachine extends PoweredEntity impleme
 	 * @param tagRoot The root of the NBT
 	 */
 	@Override
-	public CompoundTag save(final CompoundTag tagRoot) {
-		super .save(tagRoot);
+	protected void saveAdditional(final CompoundTag tagRoot) {
+		super.saveAdditional(tagRoot);
 		ItemStack[] inventory = this.getInventory();
 		if(inventory != null ){
 			final ListTag nbttaglist = new ListTag();
@@ -337,7 +337,6 @@ public abstract class TileEntitySimplePowerMachine extends PoweredEntity impleme
 		if (this.hasCustomName()) {
 			tagRoot.putString("CustomName", this.customName);
 		}
-		return tagRoot;
 	}
 	
 
@@ -431,8 +430,7 @@ public abstract class TileEntitySimplePowerMachine extends PoweredEntity impleme
 	 */
 	@Override 
 	public ClientboundBlockEntityDataPacket getUpdatePacket(){
-		CompoundTag nbtTag = createDataFieldUpdateTag();
-		return new ClientboundBlockEntityDataPacket(this.worldPosition, 0, nbtTag);
+		return ClientboundBlockEntityDataPacket.create(this, tile -> createDataFieldUpdateTag());
 	}
 
 	/**
