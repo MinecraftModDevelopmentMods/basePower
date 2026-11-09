@@ -870,6 +870,17 @@ tasks.register('isolateEclipseProductionRuns') {
                 String eclipseModClasses = "${project.mod_id}%%${mainOutput}" +
                         "${File.pathSeparator}${project.mod_id}%%${mainOutput}"
                 modClasses[0].@value = eclipseModClasses
+                def vmArguments = launchXml.stringAttribute.find { it.@key == 'org.eclipse.jdt.launching.VM_ARGUMENTS' }
+                if (vmArguments != null) {
+                    // ForgeGradle leaves these path arguments bare even when a directory contains spaces.
+                    vmArguments.@value = (vmArguments.@value as String)
+                            .replaceAll(/(?<!\S)(-DlegacyClassPath\.file=[^"].*?)(?=\s+-[A-Za-z]|$)/) { full, argument ->
+                                "\"${argument}\""
+                            }
+                            .replaceAll(/(?<!\S)-p\s+([^"\s].*?)(?=\s+--add-modules\b)/) { full, argument ->
+                                "-p \"${argument}\""
+                            }
+                }
                 contents = groovy.xml.XmlUtil.serialize(launchXml)
             }
             launch.setText(contents.replace('\r\n', '\n'), 'UTF-8')
@@ -1027,6 +1038,14 @@ tasks.register('verifyEclipseProductionClasspath') {
         ['runClient.launch', 'runServer.launch'].each { name ->
             def launch = new groovy.xml.XmlSlurper().parse(file(name))
             String contents = file(name).getText('UTF-8').replace('\\', '/')
+            String vmArguments = launch.stringAttribute.find {
+                it.@key.text() == 'org.eclipse.jdt.launching.VM_ARGUMENTS'
+            }.@value.text()
+            def legacyFile = vmArguments =~ /(?:^|\s)"-DlegacyClassPath\.file=([^"]+)"(?=\s|$)/
+            if (!legacyFile.find() || !file(legacyFile.group(1)).isFile()
+                    || !(vmArguments =~ /(?:^|\s)-p\s+"[^"]+"/).find()) {
+                throw new GradleException("${name} must quote the Forge classpath and module paths")
+            }
             if (launch.booleanAttribute.find {
                 it.@key.text() == 'org.eclipse.jdt.launching.ATTR_EXCLUDE_TEST_CODE'
             }.@value.text() != 'true'
