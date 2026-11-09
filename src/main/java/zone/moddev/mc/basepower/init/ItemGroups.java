@@ -4,22 +4,34 @@ import java.util.Comparator;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.BlockItem;
-import net.minecraftforge.event.CreativeModeTabEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import zone.moddev.mc.basepower.PowerAdvantage;
 
-@Mod.EventBusSubscriber(modid = PowerAdvantage.MODID, bus = Mod.EventBusSubscriber.Bus.MOD)
 public final class ItemGroups {
 
 	public static CreativeModeTab tab_powerAdvantage;
 	private static final Set<Item> VISIBLE_ITEMS = ConcurrentHashMap.newKeySet();
+	private static final DeferredRegister<CreativeModeTab> TABS =
+			DeferredRegister.create(Registries.CREATIVE_MODE_TAB, PowerAdvantage.MODID);
+
+	static {
+		TABS.register("machines", () -> tab_powerAdvantage = CreativeModeTab.builder()
+				.title(Component.translatable("itemGroup." + PowerAdvantage.MODID))
+				.icon(() -> Items.sprocket.getDefaultInstance())
+				.displayItems((parameters, output) -> VISIBLE_ITEMS.stream()
+						.sorted(Comparator.comparing(ItemGroups::category, String.CASE_INSENSITIVE_ORDER)
+								.thenComparing(ForgeRegistries.ITEMS::getKey))
+						.forEach(output::accept))
+				.build());
+	}
+
 
 	private ItemGroups() {}
 
@@ -29,15 +41,8 @@ public final class ItemGroups {
 		return item;
 	}
 
-	@SubscribeEvent
-	public static void register(CreativeModeTabEvent.Register event) {
-		tab_powerAdvantage = event.registerCreativeModeTab(new ResourceLocation(PowerAdvantage.MODID, "machines"),
-				builder -> builder.title(Component.translatable("itemGroup." + PowerAdvantage.MODID))
-						.icon(() -> Items.sprocket.getDefaultInstance())
-						.displayItems((parameters, output) -> VISIBLE_ITEMS.stream()
-								.sorted(Comparator.comparing(ItemGroups::category, String.CASE_INSENSITIVE_ORDER)
-										.thenComparing(ForgeRegistries.ITEMS::getKey))
-								.forEach(output::accept)));
+	public static void register(IEventBus bus) {
+		TABS.register(bus);
 	}
 
 	private static String category(Item item) {

@@ -9,7 +9,6 @@ import cyano.poweradvantage.api.PoweredEntity;
 import cyano.poweradvantage.api.fluid.FluidStack;
 import cyano.poweradvantage.api.fluid.FluidTank;
 import cyano.poweradvantage.api.simple.BlockSimpleFluidMachine;
-import net.minecraft.world.level.material.Material;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
@@ -26,7 +25,7 @@ import zone.moddev.mc.basepower.init.Fluids;
 
 /** Portable tank block. FluidID and Volume remain unchanged for old item stacks. */
 public class StorageTankBlock extends BlockSimpleFluidMachine {
-    public StorageTankBlock() { super(Material.PISTON, 3F); }
+    public StorageTankBlock() { super(machineProperties(3F)); }
 
     @Override public PoweredEntity newBlockEntity(net.minecraft.core.BlockPos pos, net.minecraft.world.level.block.state.BlockState state) { return new StorageTankTileEntity(pos, state); }
     @Override public boolean hasAnalogOutputSignal(BlockState state) { return true; }

@@ -3,7 +3,7 @@ package zone.moddev.mc.basepower.machines.creative;
 import cyano.poweradvantage.api.ConduitType;
 import cyano.poweradvantage.api.PoweredEntity;
 import cyano.poweradvantage.api.simple.BlockSimplePowerMachine;
-import net.minecraft.world.level.material.Material;
+import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
@@ -12,7 +12,8 @@ import net.minecraft.world.level.BlockGetter;
 public class InfiniteEnergyBlock extends BlockSimplePowerMachine {
 
 	public InfiniteEnergyBlock(ConduitType energyType) {
-		super(Material.METAL, 0.75f, energyType);
+		super(Properties.of().mapColor(MapColor.METAL).forceSolidOn().strength(0.75F)
+				.noOcclusion().dynamicShape(), energyType);
 	}
 
 	@Override

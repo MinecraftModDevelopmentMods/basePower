@@ -5,7 +5,6 @@ import cyano.poweradvantage.api.PowerConnectorContext;
 import cyano.poweradvantage.api.fluid.FluidConduitBlock;
 import zone.moddev.mc.basepower.util.PowerHelper;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.material.Material;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.pathfinder.PathComputationType;
@@ -31,8 +30,8 @@ public abstract class BlockSimpleFluidConduit extends FluidConduitBlock {
 
     private final double pipeRadius;
 
-    public BlockSimpleFluidConduit(Material material, float hardness, float pipeRadius) {
-        super(material, hardness);
+    public BlockSimpleFluidConduit(Block.Properties properties, float pipeRadius) {
+        super(properties);
         this.pipeRadius = pipeRadius;
         registerDefaultState(getStateDefinition().any()
                 .setValue(WEST, false).setValue(DOWN, false).setValue(SOUTH, false)

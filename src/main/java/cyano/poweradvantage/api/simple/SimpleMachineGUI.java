@@ -4,6 +4,7 @@ package cyano.poweradvantage.api.simple;
 import zone.moddev.mc.basepower.PowerAdvantage;
 import zone.moddev.mc.basepower.math.Integer2D;
 import zone.moddev.mc.basepower.registry.ITileEntityGUI;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.player.Inventory;
@@ -106,8 +107,7 @@ public class SimpleMachineGUI implements ITileEntityGUI {
 	 * @param guiContainer This is the instance of GUIContainer that is drawing 
 	 * the GUI. You need to use it to draw on the screen. For example:<br>
 	   <pre>
-guiContainer.minecraft.getTextureManager().bindTexture(arrowTexture);
-guiContainer.blit(x+79, y+35, 0, 0, arrowLength, 17); // x, y, textureOffsetX, textureOffsetY, width, height)
+guiContainer.blit(arrowTexture, x+79, y+35, 0, 0, arrowLength, 17);
 	   </pre>
 	 * @param x This is the x coordinate (in pixels) from the top-left corner of 
 	 * the GUI
@@ -248,7 +248,7 @@ guiContainer.blit(x+79, y+35, 0, 0, arrowLength, 17); // x, y, textureOffsetX, t
 	public class GUIContainer extends net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<Container>{
 		private final Object entity;
 		private final Component playerInventoryLabel;
-		private PoseStack matrices = new PoseStack();
+		private GuiGraphics graphics;
 
         public net.minecraft.client.Minecraft getMinecraft() { return minecraft; }
 		public GUIContainer(Inventory playerItems, net.minecraft.world.Container entity) {
@@ -265,21 +265,21 @@ guiContainer.blit(x+79, y+35, 0, 0, arrowLength, 17); // x, y, textureOffsetX, t
 		}
 
 		@Override
-		public void render(PoseStack matrices, int mouseX, int mouseY, float partialTicks) {
-			this.renderBackground(matrices);
-			super.render(matrices, mouseX, mouseY, partialTicks);
-			this.renderTooltip(matrices, mouseX, mouseY);
+		public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+			this.renderBackground(graphics);
+			super.render(graphics, mouseX, mouseY, partialTicks);
+			this.renderTooltip(graphics, mouseX, mouseY);
 			if (font.width(title.getString()) > width - 8
 					&& mouseY >= topPos + 1 && mouseY < topPos + MACHINE_TOP) {
-				this.renderTooltip(matrices, title, mouseX, mouseY);
+				graphics.renderTooltip(font, title, mouseX, mouseY);
 			}
 		}
 
 		@Override
-		protected void renderLabels(PoseStack matrices, int mouseX, int mouseY) {
+		protected void renderLabels(GuiGraphics graphics, int mouseX, int mouseY) {
 			String machineName = fitLabel(title.getString(), width - 8);
-			font.drawShadow(matrices, machineName, (imageWidth - font.width(machineName)) / 2, 1, 0xFFFFFF);
-			font.drawShadow(matrices, fitLabel(playerInventoryLabel.getString(), imageWidth - 16),
+			graphics.drawString(font, machineName, (imageWidth - font.width(machineName)) / 2, 1, 0xFFFFFF);
+			graphics.drawString(font, fitLabel(playerInventoryLabel.getString(), imageWidth - 16),
 					8, MACHINE_TOP + MACHINE_HEIGHT, 0xFFFFFF);
 		}
 
@@ -289,29 +289,38 @@ guiContainer.blit(x+79, y+35, 0, 0, arrowLength, 17); // x, y, textureOffsetX, t
 		}
 
 		@Override
-		protected void renderBg(PoseStack matrices, float f, int i, int j) {
-			this.matrices = matrices;
+		protected void renderBg(GuiGraphics graphics, float partialTicks, int mouseX, int mouseY) {
+			this.graphics = graphics;
 			RenderSystem.enableBlend();
 			RenderSystem.defaultBlendFunc();
 			RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-			com.mojang.blaze3d.systems.RenderSystem.setShaderTexture(0, playerInventoryBox);
 			int x = (width - imageWidth) / 2;
 			int y = (height - imageHeight) / 2;
 			final int playerInventoryWidth = 176;
 			final int playerInventoryHeight = 90;
-			this.blit(x, y + PLAYER_PANEL_TOP, 0, 132, playerInventoryWidth, playerInventoryHeight);
-			com.mojang.blaze3d.systems.RenderSystem.setShaderTexture(0, guiDisplayImage);
-			this.blit(x, y + MACHINE_TOP, 0, 0, guiWidth, MACHINE_HEIGHT);
-			drawGUIDecorations(entity, this, x, y + MACHINE_TOP, getZLevel());
-			RenderSystem.disableBlend();
+			try {
+				blit(playerInventoryBox, x, y + PLAYER_PANEL_TOP, 0, 132, playerInventoryWidth, playerInventoryHeight);
+				blit(x, y + MACHINE_TOP, 0, 0, guiWidth, MACHINE_HEIGHT);
+				drawGUIDecorations(entity, this, x, y + MACHINE_TOP, getZLevel());
+			} finally {
+				this.graphics = null;
+				RenderSystem.disableBlend();
+			}
 		}
 
-		/** Retains the decoration API while using the current screen matrix. */
+		/** Draws from the machine texture during the decoration callback. */
 		public void blit(int x, int y, int u, int v, int width, int height) {
-			super.blit(matrices, x, y, u, v, width, height);
+			blit(guiDisplayImage, x, y, u, v, width, height);
 		}
 
-		public PoseStack getMatrices() { return matrices; }
+		public void blit(ResourceLocation texture, int x, int y, int u, int v, int width, int height) {
+			graphics.blit(texture, x, y, u, v, width, height);
+		}
+
+		/** The active render context, available while drawing decorations. */
+		public GuiGraphics getGraphics() { return graphics; }
+
+		public PoseStack getMatrices() { return getGraphics().pose(); }
 		/**
 		 * Gets the z-coordinate of this GUI element
 		 * @return screen depth coordinate

@@ -9,7 +9,9 @@ import cyano.poweradvantage.api.GUIBlock;
 import cyano.poweradvantage.api.fluid.InteractiveFluidBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.LiquidBlock;
-import net.minecraft.world.level.material.Material;
+import net.minecraft.world.level.material.MapColor;
+import net.minecraft.world.level.material.PushReaction;
+import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.BlockItem;
@@ -87,10 +89,11 @@ public final class Blocks {
         fluid_pipe = add(new FluidPipeBlock(), "fluid_pipe");
         fluid_pipe_terminal = add(new TerminalFluidPipeBlock(), "fluid_pipe_terminal");
         fluid_switch = add(new BlockPowerSwitch(Fluids.fluidConduit_general), "fluid_switch");
-        steel_frame = add(new BlockFrame(Material.PISTON, 0.75F, STEEL_BLAST_RESISTANCE), "steel_frame");
+        steel_frame = add(new BlockFrame(GUIBlock.machineProperties(0.75F)
+                .strength(0.75F, STEEL_BLAST_RESISTANCE)), "steel_frame");
 
         final float hardness = 0.75F;
-        item_conveyor = (GUIBlock) add(new BlockConveyor(Material.PISTON, hardness), "item_conveyor");
+        item_conveyor = (GUIBlock) add(new BlockConveyor(hardness), "item_conveyor");
         item_filter_block = filter("item_filter_block", TileEntityBlockFilter.class, hardness);
         item_filter_food = filter("item_filter_food", TileEntityFoodFilter.class, hardness);
         item_filter_fuel = filter("item_filter_fuel", TileEntityFuelFilter.class, hardness);
@@ -104,13 +107,11 @@ public final class Blocks {
         infinite_electricity = (GUIBlock) add(new InfiniteEnergyBlock(new ConduitType("electricity")), "infinite_electricity");
         infinite_quantum = (GUIBlock) add(new InfiniteEnergyBlock(new ConduitType("quantum")), "infinite_quantum");
 
-        Block.Properties oilProperties = Block.Properties.of(Material.WATER).noCollission()
-                .strength(100.0F).dynamicShape();
         refined_oil_block = (LiquidBlock) add(new InteractiveFluidBlock(() -> Fluids.refined_oil,
-                oilProperties, true, (world, entity) -> entity .addEffect(new MobEffectInstance(MobEffects.CONFUSION, 200))),
+                oilProperties(), true, (world, entity) -> entity.addEffect(new MobEffectInstance(MobEffects.CONFUSION, 200))),
                 "refined_oil");
         crude_oil_block = (LiquidBlock) add(new InteractiveFluidBlock(() -> Fluids.crude_oil,
-                oilProperties, true, (world, entity) -> entity .addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 200, 2))),
+                oilProperties(), true, (world, entity) -> entity.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 200, 2))),
                 "crude_oil");
 
         ModSupport.initBlocks();
@@ -119,7 +120,12 @@ public final class Blocks {
 
     private static GUIBlock filter(String id, Class<? extends zone.moddev.mc.basepower.machines.conveyors.TileEntityConveyor> type,
             float hardness) {
-        return (GUIBlock) add(new BlockConveyorFilter(Material.PISTON, hardness, type), id);
+        return (GUIBlock) add(new BlockConveyorFilter(hardness, type), id);
+    }
+
+    private static Block.Properties oilProperties() {
+        return Block.Properties.of().mapColor(MapColor.WATER).replaceable().liquid().noCollission()
+                .strength(100.0F).dynamicShape().pushReaction(PushReaction.DESTROY).noLootTable().sound(SoundType.EMPTY);
     }
 
     public static Block add(Block block, String id) {

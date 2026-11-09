@@ -18,7 +18,7 @@ public final class FluidContainerHelper {
 
     public static boolean interact(Player player, InteractionHand hand,
             IAdvantageFluidHandler handler, Direction face) {
-        if (player.level.isClientSide) return false;
+        if (player.level().isClientSide) return false;
         return net.minecraftforge.fluids.FluidUtil.interactWithFluidHandler(player, hand,
                 new ForgeFluidAdapter(handler, face, () -> {
                     if (handler instanceof net.minecraft.world.level.block.entity.BlockEntity)

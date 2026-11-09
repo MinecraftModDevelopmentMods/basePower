@@ -2,7 +2,6 @@ package zone.moddev.mc.basepower.blocks;
 
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
-import net.minecraft.world.level.material.Material;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.core.BlockPos;
@@ -19,9 +18,8 @@ import net.minecraftforge.api.distmarker.OnlyIn;
  */
 public class BlockFrame extends Block {
 
-	public BlockFrame(Material material, float hardness, float resistance) {
-		super(Block.Properties.of(material).sound(SoundType.METAL)
-				.strength(hardness, resistance).noOcclusion().dynamicShape());
+	public BlockFrame(Properties properties) {
+		super(properties.sound(SoundType.METAL).noOcclusion().dynamicShape());
 	}
 
 	public boolean isFullCube(BlockState bs) {

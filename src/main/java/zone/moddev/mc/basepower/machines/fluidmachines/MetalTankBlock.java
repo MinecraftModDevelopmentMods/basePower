@@ -3,7 +3,6 @@ package zone.moddev.mc.basepower.machines.fluidmachines;
 import cyano.poweradvantage.api.ConduitType;
 import cyano.poweradvantage.api.PoweredEntity;
 import cyano.poweradvantage.api.simple.BlockSimpleFluidMachine;
-import net.minecraft.world.level.material.Material;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.core.BlockPos;
@@ -13,7 +12,7 @@ import net.minecraft.world.level.BlockGetter;
 public class MetalTankBlock extends BlockSimpleFluidMachine {
 
 	public MetalTankBlock() {
-		super(Material.PISTON, 3f);
+		super(machineProperties(3F));
 	}
 
 	@Override

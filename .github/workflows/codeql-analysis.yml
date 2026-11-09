@@ -2,9 +2,9 @@ name: CodeQL
 
 on:
   push:
-    branches: [master-1.19.4, 'feature/**']
+    branches: [master-1.20.1, 'feature/**']
   pull_request:
-    branches: [master-1.19.4]
+    branches: [master-1.20.1]
   schedule:
     - cron: '47 7 * * 4'
 
@@ -25,7 +25,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           repository: MinecraftModDevelopmentMods/OreSpawn
-          ref: 444d86ef48db2bf54422901b067c51d5832197fc
+          ref: 9d9db6cd315c9fce542808aa2551c94bf9267e93
           path: .ci-dependencies/OreSpawn
       - name: Use canonical LF dependency inputs
         # Use the same source bytes on hosted and local dependency builds.
@@ -34,7 +34,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           repository: MinecraftModDevelopmentMods/BaseMetals
-          ref: a9fdd6842f2a2e1e2e5b9a0abf9178d5675df044
+          ref: d9614e3d26a3b57ddff9703861f18a283c7e8358
           path: .ci-dependencies/BaseMetals
       - name: Install pinned Java 25 Mavenizer runtime
         uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
@@ -71,8 +71,8 @@ jobs:
           chmod +x "$orespawn/gradlew" "$basemetals/gradlew"
           (cd "$orespawn" && ./gradlew $MMD_GRADLE_TOOLCHAINS jar --no-daemon --stacktrace)
           (cd "$basemetals" && ./gradlew $MMD_GRADLE_TOOLCHAINS jar --no-daemon --stacktrace)
-          echo "orespawn=$orespawn/build/libs-dev/OreSpawn-4.1.0.119041-deobf.jar" >> "$GITHUB_OUTPUT"
-          echo "basemetals=$basemetals/build/libs-dev/BaseMetals-3.1.2.119041-deobf.jar" >> "$GITHUB_OUTPUT"
+          echo "orespawn=$orespawn/build/libs-dev/OreSpawn-4.1.0.120011-deobf.jar" >> "$GITHUB_OUTPUT"
+          echo "basemetals=$basemetals/build/libs-dev/BaseMetals-3.1.2.120011-deobf.jar" >> "$GITHUB_OUTPUT"
           echo "mavenizer=$mavenizer" >> "$GITHUB_OUTPUT"
       - name: Initialize CodeQL
         uses: github/codeql-action/init@db488ddef3bf6cb639b32c2e9a7c0a7ea8271d28 # v4
@@ -84,6 +84,6 @@ jobs:
           ./gradlew $MMD_GRADLE_TOOLCHAINS clean classes --rerun-tasks --no-build-cache --no-daemon --stacktrace \
             -PbaseMetalsDeobfJar=${{ steps.dependencies.outputs.basemetals }} \
             -PoreSpawnDeobfJar=${{ steps.dependencies.outputs.orespawn }} \
-            -Pforge45MavenizerJar=${{ steps.dependencies.outputs.mavenizer }}
+            -Pforge47MavenizerJar=${{ steps.dependencies.outputs.mavenizer }}
       - name: Analyze
         uses: github/codeql-action/analyze@db488ddef3bf6cb639b32c2e9a7c0a7ea8271d28 # v4

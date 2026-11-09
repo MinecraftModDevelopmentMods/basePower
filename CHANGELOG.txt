@@ -1,3 +1,8 @@
+basePower 2.4.12.120011 (Minecraft 1.20.1 local candidate)
+
+- Bring basePower to Forge 47 with the same blocks, items, and machine data.
+- Use Minecraft's current screen rendering, creative tabs, and block properties.
+
 basePower 2.4.11.119041 (Minecraft 1.19.4)
 
 - Bring basePower to Forge 45 and Java 17 without renaming existing machines or items.

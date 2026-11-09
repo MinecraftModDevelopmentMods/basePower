@@ -5,7 +5,8 @@ import cyano.poweradvantage.api.ITypedConduit;
 import cyano.poweradvantage.api.PowerConnectorContext;
 import zone.moddev.mc.basepower.conduitnetwork.ConduitRegistry;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.material.Material;
+import net.minecraft.world.level.material.MapColor;
+import net.minecraft.world.level.material.PushReaction;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.BlockState;
@@ -31,11 +32,10 @@ public class BlockPowerSwitch extends Block implements ITypedConduit {
 	 * Constructor for making a power switch
 	 *
 	 * @param powerType     Type of power to switch
-	 * @param blockMaterial The block material (usually piston material)
-	 * @param blockHardness The hardness of the block (0.75 is a good value)
+	 * @param properties    Block behavior, including break hardness
 	 */
-	public BlockPowerSwitch(ConduitType powerType, Material blockMaterial, float blockHardness) {
-		super(Block.Properties.of(blockMaterial).strength(blockHardness));
+	public BlockPowerSwitch(ConduitType powerType, Block.Properties properties) {
+		super(properties);
 		this.powerType = new ConduitType[1];
 		this.powerType[0] = powerType;
 		this.registerDefaultState(defaultBlockState().setValue(ACTIVE, false));
@@ -47,7 +47,8 @@ public class BlockPowerSwitch extends Block implements ITypedConduit {
 	 * @param powerType Type of power to switch
 	 */
 	public BlockPowerSwitch(ConduitType powerType) {
-		this(powerType, Material.PISTON, 0.75f);
+		this(powerType, Properties.of().mapColor(MapColor.STONE).pushReaction(PushReaction.BLOCK)
+				.forceSolidOn().strength(0.75F));
 	}
 
 	/**
