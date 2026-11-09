@@ -1,23 +1,14 @@
 package zone.moddev.mc.basepower.client;
 
-import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.event.TextureStitchEvent;
-import net.minecraftforge.common.MinecraftForge;
-import zone.moddev.mc.basepower.PowerAdvantage;
 
-/** Forge FluidAttributes handle rendering; only the custom atlas sprites need stitching. */
+/** Configure the translucent render layer for the registered oils. */
 @OnlyIn(Dist.CLIENT)
 public final class ClientOilRenderer {
     private ClientOilRenderer() {}
-
-    public static void register() {
-        MinecraftForge.EVENT_BUS.addListener(ClientOilRenderer::stitch);
-    }
 
     public static void configureRenderLayers() {
         ItemBlockRenderTypes.setRenderLayer(zone.moddev.mc.basepower.init.Blocks.steel_frame,
@@ -35,10 +26,4 @@ public final class ClientOilRenderer {
                 RenderType.translucent());
     }
 
-    private static void stitch(TextureStitchEvent.Pre event) {
-        if (!TextureAtlas.LOCATION_BLOCKS.equals(event.getAtlas().location())) return;
-        for (String name : new String[] {"crude_oil_still", "crude_oil_flow", "refined_oil_still", "refined_oil_flow"}) {
-            event.addSprite(new ResourceLocation(PowerAdvantage.MODID, "blocks/" + name));
-        }
-    }
 }

@@ -88,7 +88,7 @@ final class TankVisualProbe {
         SimpleMachineGUI.Container container = definition.createMenu(1, inventory, tile);
         require(container.getType() == MachineGUIRegistry.TYPE && MachineGUIRegistry.TYPE != null,
                 "Tank GUI is not backed by the registered native container type");
-        SimpleMachineGUI.GUIContainer screen = container.createScreen(inventory, new net.minecraft.network.chat.TextComponent("Tank probe"));
+        SimpleMachineGUI.GUIContainer screen = container.createScreen(inventory, net.minecraft.network.chat.Component.literal("Tank probe"));
         screen.init(minecraft, width, height);
         require(screen.getMinecraft() == minecraft, "Native tank screen was not initialized");
         tile.getTank().setFluid(new cyano.poweradvantage.api.fluid.FluidStack(net.minecraft.world.level.material.Fluids.WATER, 10000));
@@ -98,7 +98,6 @@ final class TankVisualProbe {
         RenderSystem.disableDepthTest();
         RenderSystem.enableBlend();
         RenderSystem.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
-        RenderSystem.enableTexture();
         RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
         try {
             RenderSystem.clearColor(0F, 0F, 0F, 1F);

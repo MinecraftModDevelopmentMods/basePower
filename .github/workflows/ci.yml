@@ -1,16 +1,16 @@
-name: basePower 1.18 CI
+name: basePower 1.19 CI
 
 on:
   push:
-    branches: [master-1.18.2, 'feature/**']
+    branches: [master-1.19.4, 'feature/**']
   pull_request:
-    branches: [master-1.18.2]
+    branches: [master-1.19.4]
 
 permissions:
   contents: read
 
 concurrency:
-  group: basepower-1.18-${{ github.workflow }}-${{ github.ref }}
+  group: basepower-1.19-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -25,7 +25,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           repository: MinecraftModDevelopmentMods/OreSpawn
-          ref: d31f52f296739f34a0c13f554abf3e1ac071ae25
+          ref: 444d86ef48db2bf54422901b067c51d5832197fc
           path: .ci-dependencies/OreSpawn
       - name: Use canonical LF dependency inputs
         # Use the same source bytes on hosted and local dependency builds.
@@ -34,7 +34,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           repository: MinecraftModDevelopmentMods/BaseMetals
-          ref: 3488ed58403722ac3ff203cff7680dfc16e0fd3f
+          ref: a9fdd6842f2a2e1e2e5b9a0abf9178d5675df044
           path: .ci-dependencies/BaseMetals
       - name: Install pinned Java 25 Mavenizer runtime
         uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
@@ -70,8 +70,8 @@ jobs:
           chmod +x "$orespawn/gradlew" "$basemetals/gradlew"
           (cd "$orespawn" && ./gradlew $MMD_GRADLE_TOOLCHAINS jar --no-daemon --stacktrace)
           (cd "$basemetals" && ./gradlew $MMD_GRADLE_TOOLCHAINS jar --no-daemon --stacktrace)
-          osjar="$orespawn/build/libs-dev/OreSpawn-4.1.0.118021-deobf.jar"
-          bmjar="$basemetals/build/libs-dev/BaseMetals-3.1.2.118021-deobf.jar"
+          osjar="$orespawn/build/libs-dev/OreSpawn-4.1.0.119041-deobf.jar"
+          bmjar="$basemetals/build/libs-dev/BaseMetals-3.1.2.119041-deobf.jar"
           test -f "$osjar" && test -f "$bmjar"
           echo "orespawn=$osjar" >> "$GITHUB_OUTPUT"
           echo "basemetals=$bmjar" >> "$GITHUB_OUTPUT"
@@ -85,20 +85,20 @@ jobs:
       - name: Upload audited release candidate
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: basePower-1.18.2-${{ github.sha }}
+          name: basePower-1.19.4-${{ github.sha }}
           if-no-files-found: error
           retention-days: 30
           path: |
-            build/libs/basePower-2.4.10.118021.jar
-            build/libs/basePower-2.4.10.118021-sources.jar
-            build/libs/basePower-2.4.10.118021-javadoc.jar
+            build/libs/basePower-2.4.11.119041.jar
+            build/libs/basePower-2.4.11.119041-sources.jar
+            build/libs/basePower-2.4.11.119041-javadoc.jar
             build/release/SHA256SUMS
             CHANGELOG.txt
       - name: Upload diagnostics on failure
         if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: basePower-1.18.2-diagnostics-${{ github.sha }}
+          name: basePower-1.19.4-diagnostics-${{ github.sha }}
           if-no-files-found: ignore
           retention-days: 14
           path: |

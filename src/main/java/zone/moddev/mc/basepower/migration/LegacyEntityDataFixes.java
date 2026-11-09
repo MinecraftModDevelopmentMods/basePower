@@ -29,7 +29,7 @@ final class LegacyEntityDataFixes {
     static void prepare(CompoundTag root) {
         if (root.contains(STAGED)) return;
         int version = root.contains("DataVersion", 99) ? root.getInt("DataVersion") : -1;
-        int current = SharedConstants.getCurrentVersion().getWorldVersion();
+        int current = SharedConstants.getCurrentVersion().getDataVersion().getVersion();
         if (version >= current) return;
         CompoundTag level = entityOwner(root);
         if (level == null) return;

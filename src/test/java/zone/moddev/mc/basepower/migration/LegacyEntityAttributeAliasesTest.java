@@ -28,9 +28,6 @@ import net.minecraft.server.Bootstrap;
 import net.minecraft.world.level.Level;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraftforge.common.ForgeMod;
-import net.minecraftforge.event.RegistryEvent;
-import net.minecraftforge.registries.DeferredRegister;
-import net.minecraftforge.registries.ForgeRegistries;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -119,12 +116,12 @@ public class LegacyEntityAttributeAliasesTest {
 
     @Test public void modernChunksAndPlayersRemainUnchanged() {
         CompoundTag root = chunk(entity("minecraft:wolf", true));
-        root.putInt("DataVersion", SharedConstants.getCurrentVersion().getWorldVersion());
+        root.putInt("DataVersion", SharedConstants.getCurrentVersion().getDataVersion().getVersion());
         CompoundTag before = root.copy();
         LegacyEntityDataFixes.prepare(root); assertEquals(before, root);
         CompoundTag player = player(entity("minecraft:wolf", true));
         CompoundTag result = LegacyPlayerDataFixes.update(DataFixers.getDataFixer(), DataFixTypes.PLAYER,
-                player, SharedConstants.getCurrentVersion().getWorldVersion());
+                player, SharedConstants.getCurrentVersion().getDataVersion().getVersion());
         assertEquals(player, result);
     }
 
@@ -239,7 +236,7 @@ public class LegacyEntityAttributeAliasesTest {
         source.putFloat("Health", 8F);
         CompoundTag red = (CompoundTag) DataFixers.getDataFixer().update(References.ENTITY,
                 new Dynamic<>(NbtOps.INSTANCE, source.copy()), 1343,
-                SharedConstants.getCurrentVersion().getWorldVersion()).getValue();
+                SharedConstants.getCurrentVersion().getDataVersion().getVersion()).getValue();
         Wolf before = new Wolf(EntityType.WOLF, world); before.load(red);
         assertEquals(1D, before.getAttribute(ForgeMod.SWIM_SPEED.get()).getBaseValue(), 0D);
         CompoundTag root = chunk(source);
@@ -293,10 +290,7 @@ public class LegacyEntityAttributeAliasesTest {
     }
 
     private static void registerForgeAttributes() throws Exception {
-        if (ForgeMod.SWIM_SPEED.isPresent()) return;
-        Field attributes = ForgeMod.class.getDeclaredField("ATTRIBUTES"); attributes.setAccessible(true);
-        Method register = DeferredRegister.class.getDeclaredMethod("addEntries", RegistryEvent.Register.class); register.setAccessible(true);
-        register.invoke(attributes.get(null), new RegistryEvent.Register<>(ForgeRegistries.ATTRIBUTES.getRegistryName(), ForgeRegistries.ATTRIBUTES));
+        LegacyForgeAttributeRegistryTest.registerForgeAttributes();
     }
 
     private static void set(Class<?> owner, Object instance, String name, Object value) throws Exception {

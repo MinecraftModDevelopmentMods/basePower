@@ -96,7 +96,7 @@ public class LegacyMachineItemsTest {
 
     @Test public void currentVersionMachineDataIsNotRewritten() {
         CompoundTag root = chunk(tile(stack("minecraft:red_wool", 0, 7)));
-        root.putInt("DataVersion", SharedConstants.getCurrentVersion().getWorldVersion());
+        root.putInt("DataVersion", SharedConstants.getCurrentVersion().getDataVersion().getVersion());
         CompoundTag expected = root.copy();
         LegacyWorldDataHook.prepareLegacyEntities(root);
         assertEquals(expected, root);
@@ -319,8 +319,8 @@ public class LegacyMachineItemsTest {
     private static CompoundTag convert(CompoundTag root, int version) {
         LegacyWorldDataHook.prepareLegacyChunk(root);
         LegacyWorldDataHook.prepareLegacyEntities(root);
-        CompoundTag fixed = NbtUtils.update(DataFixers.getDataFixer(), DataFixTypes.CHUNK,
-                root, version, SharedConstants.getCurrentVersion().getWorldVersion());
+        CompoundTag fixed = DataFixTypes.CHUNK.update(DataFixers.getDataFixer(),
+                root, version, SharedConstants.getCurrentVersion().getDataVersion().getVersion());
         return LegacyWorldDataHook.finalizeLegacyChunk(fixed);
     }
 

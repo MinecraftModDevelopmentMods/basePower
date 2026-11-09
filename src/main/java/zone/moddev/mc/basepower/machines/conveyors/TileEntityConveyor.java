@@ -15,9 +15,6 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.core.Direction;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.core.BlockPos;
-import net.minecraft.network.chat.BaseComponent;
-import net.minecraft.network.chat.TextComponent;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.level.Level;
@@ -409,8 +406,8 @@ public class TileEntityConveyor extends BlockEntity implements WorldlyContainer,
 	}
 
 	@Override
-	public BaseComponent getDisplayName() {
-		return (BaseComponent) getName();
+	public Component getDisplayName() {
+		return getName();
 	}
 
 	private String customName = null;
@@ -421,13 +418,13 @@ public class TileEntityConveyor extends BlockEntity implements WorldlyContainer,
 	 */
 	@Override
 	public Component getName() {
-		return this.hasCustomName() ? new TextComponent(this.customName)
-				: new TranslatableComponent(this.getDescriptionId());
+		return this.hasCustomName() ? Component.literal(this.customName)
+				: Component.translatable(this.getDescriptionId());
 	}
 
 	@Override
 	public Component getCustomName() {
-		return this.hasCustomName() ? new TextComponent(this.customName) : null;
+		return this.hasCustomName() ? Component.literal(this.customName) : null;
 	}
 	
 	/**

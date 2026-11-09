@@ -14,7 +14,13 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 public class WorldFluidPickupTest {
-    @BeforeClass public static void bootstrap() { net.minecraft.SharedConstants.tryDetectVersion(); net.minecraft.server.Bootstrap.bootStrap(); }
+    @BeforeClass public static void bootstrap() {
+        net.minecraft.SharedConstants.tryDetectVersion();
+        net.minecraft.server.Bootstrap.bootStrap();
+        // Forge normally rebuilds these caches after the mod registry phase.
+        Blocks.WATER.getStateDefinition().getPossibleStates().forEach(BlockState::initCache);
+        Blocks.OAK_SLAB.getStateDefinition().getPossibleStates().forEach(BlockState::initCache);
+    }
 
     @Test public void waterloggedHostSurvivesTheNativePickup() {
         AtomicReference<BlockState> state = new AtomicReference<>(Blocks.OAK_SLAB.defaultBlockState()

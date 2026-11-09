@@ -6,7 +6,7 @@ import cyano.poweradvantage.api.fluid.IAdvantageFluidHandler;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.core.Direction;
-import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
 
@@ -21,7 +21,7 @@ final class AdvantageFluidAdapter implements IAdvantageFluidHandler {
     }
 
     private IFluidHandler handler() {
-        return tile.isRemoved() ? null : tile.getCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, side).orElse(null);
+        return tile.isRemoved() ? null : tile.getCapability(ForgeCapabilities.FLUID_HANDLER, side).orElse(null);
     }
 
     @Override public FluidTankInfo[] getTankInfo(Direction ignored) {

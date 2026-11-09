@@ -19,8 +19,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TextComponent;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.world.level.material.Fluid;
 import cyano.poweradvantage.api.fluid.FluidStack;
 import cyano.poweradvantage.api.fluid.FluidTank;
@@ -662,13 +660,13 @@ private final ConduitType[] types = {Fluids.fluidConduit_general};
 	 */
 	@Override
 	public Component getName() {
-		return this.hasCustomName() ? new TextComponent(this.customName)
-				: new TranslatableComponent(unlocalizedName);
+		return this.hasCustomName() ? Component.literal(this.customName)
+				: Component.translatable(unlocalizedName);
 	}
 
 	@Override
 	public Component getCustomName() {
-		return this.hasCustomName() ? new TextComponent(this.customName) : null;
+		return this.hasCustomName() ? Component.literal(this.customName) : null;
 	}
 
 	/**

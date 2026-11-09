@@ -2,7 +2,9 @@ package zone.moddev.mc.basepower.init;
 
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
-import net.minecraftforge.event.RegistryEvent;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraftforge.registries.RegisterEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import zone.moddev.mc.basepower.PowerAdvantage;
@@ -54,7 +56,8 @@ public final class Entities {
     private Entities() {}
 
     @SubscribeEvent
-    public static void register(RegistryEvent.Register<BlockEntityType<?>> event) {
+    public static void register(RegisterEvent event) {
+        if (!ForgeRegistries.Keys.BLOCK_ENTITY_TYPES.equals(event.getRegistryKey())) return;
         PIPE_TERMINAL = register(event, "tileentity.pipe_terminal", TerminalFluidPipeTileEntity::new, Blocks.fluid_pipe_terminal);
         FLUID_DRAIN = register(event, "tileentity.fluid_drain", FluidDrainTileEntity::new, Blocks.fluid_drain);
         FLUID_DISCHARGE = register(event, "tileentity.fluid_discharge", FluidDischargeTileEntity::new, Blocks.fluid_discharge);
@@ -79,11 +82,10 @@ public final class Entities {
     }
 
     private static <T extends BlockEntity> BlockEntityType<T> register(
-            RegistryEvent.Register<BlockEntityType<?>> event, String id,
+            RegisterEvent event, String id,
             BlockEntityType.BlockEntitySupplier<T> factory, net.minecraft.world.level.block.Block... validBlocks) {
         BlockEntityType<T> type = BlockEntityType.Builder.<T>of(factory, validBlocks).build(null);
-        type.setRegistryName(PowerAdvantage.MODID, id);
-        event.getRegistry().register(type);
+        event.register(ForgeRegistries.Keys.BLOCK_ENTITY_TYPES, new ResourceLocation(PowerAdvantage.MODID, id), () -> type);
         return type;
     }
 }

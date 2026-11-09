@@ -21,10 +21,11 @@ import net.minecraft.util.datafix.DataFixers;
 import static org.junit.Assert.*;
 
 public class LegacyPlayerTransformerTest {
-    private static final String NATIVE = "net/minecraft/nbt/NbtUtils";
+    private static final String NATIVE = "net/minecraft/util/datafix/DataFixTypes";
     private static final String WRAPPER = "zone/moddev/mc/basepower/migration/LegacyPlayerDataFixes";
-    private static final String DESC = "(Lcom/mojang/datafixers/DataFixer;Lnet/minecraft/util/datafix/DataFixTypes;"
+    private static final String DESC = "(Lcom/mojang/datafixers/DataFixer;"
             + "Lnet/minecraft/nbt/CompoundTag;I)Lnet/minecraft/nbt/CompoundTag;";
+    private static final String WRAPPER_DESC = "(L" + NATIVE + ";" + DESC.substring(1);
     private static final String[][] TARGETS = {{"PlayerData", "legacy_player_file"}, {"ServerWorldInfo", "legacy_embedded_player"}};
 
     @Test public void exactNativeLoosePlayerLoadAndEmbeddedUpdateArePatched() throws Exception {
@@ -132,7 +133,8 @@ public class LegacyPlayerTransformerTest {
         for (MethodNode method : node.methods) for (AbstractInsnNode instruction : method.instructions.toArray()) {
             if (instruction instanceof MethodInsnNode) {
                 MethodInsnNode call = (MethodInsnNode) instruction;
-                if ((call.owner.equals(NATIVE) || call.owner.equals(WRAPPER)) && call.desc.equals(DESC)) return method;
+                if ((call.owner.equals(NATIVE) && call.desc.equals(DESC))
+                        || (call.owner.equals(WRAPPER) && call.desc.equals(WRAPPER_DESC))) return method;
             }
         }
         throw new AssertionError("No player update call");
@@ -151,9 +153,10 @@ public class LegacyPlayerTransformerTest {
         for (MethodNode method : node.methods) for (AbstractInsnNode instruction : method.instructions.toArray()) {
             if (instruction instanceof MethodInsnNode) {
                 MethodInsnNode call = (MethodInsnNode) instruction;
-                if (call.owner.equals(owner) && call.desc.equals(DESC)) {
-                    assertEquals(Opcodes.INVOKESTATIC, call.getOpcode());
-                    if (owner.equals(WRAPPER)) assertEquals("update", call.name);
+                boolean wrapper = owner.equals(WRAPPER);
+                if (call.owner.equals(owner) && call.desc.equals(wrapper ? WRAPPER_DESC : DESC)) {
+                    assertEquals(wrapper ? Opcodes.INVOKESTATIC : Opcodes.INVOKEVIRTUAL, call.getOpcode());
+                    if (wrapper) assertEquals("updateNativePlayer", call.name);
                     count++;
                 }
             }
@@ -185,7 +188,7 @@ public class LegacyPlayerTransformerTest {
                 if (types[i] == net.minecraft.world.level.LevelSettings.class) {
                     args[i] = new net.minecraft.world.level.LevelSettings("Test", net.minecraft.world.level.GameType.SURVIVAL,
                             false, net.minecraft.world.Difficulty.NORMAL, false, new net.minecraft.world.level.GameRules(),
-                            net.minecraft.world.level.DataPackConfig.DEFAULT);
+                            net.minecraft.world.level.WorldDataConfiguration.DEFAULT);
                 }
             }
             args[0] = DataFixers.getDataFixer();
@@ -204,7 +207,7 @@ public class LegacyPlayerTransformerTest {
 
     private static void transform(ClassNode node, String target) throws Exception {
         ScriptEngine engine = new ScriptEngineManager().getEngineByName("nashorn");
-        assertNotNull("Use the Java 8 test toolchain", engine);
+        assertNotNull("Transformer tests require Forge's bundled Nashorn engine", engine);
         try (InputStreamReader reader = new InputStreamReader(resource("/coremods/poweradvantage_118_migration.js"), StandardCharsets.UTF_8)) {
             engine.eval(reader);
         }

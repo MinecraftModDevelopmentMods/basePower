@@ -40,8 +40,8 @@ public class BuildWorkflowContractTest {
             assertTrue(name, policy >= 0 && checkout > policy);
             assertTrue(name, workflow.contains("ref: " + pins.getProperty("basemetals_source_commit")));
             assertTrue(name, workflow.contains("BaseMetals-" + pins.getProperty("basemetals_version") + "-deobf.jar"));
-            assertTrue(name, workflow.contains("ref: d31f52f296739f34a0c13f554abf3e1ac071ae25"));
-            assertTrue(name, workflow.contains("master-1.18.2"));
+            assertTrue(name, workflow.contains("ref: 444d86ef48db2bf54422901b067c51d5832197fc"));
+            assertTrue(name, workflow.contains("master-1.19.4"));
             assertTrue(name, workflow.contains("java-version: '25.0.3+9.0.LTS'"));
             assertTrue(name, workflow.contains("java-version: '17.0.1+12'"));
             assertTrue(name, workflow.contains("java-version: '8.0.502+7'"));

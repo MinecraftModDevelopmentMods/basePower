@@ -2,6 +2,7 @@ package zone.moddev.mc.basepower.init;
 
 import java.util.IdentityHashMap;
 import java.util.Map;
+import java.util.function.Consumer;
 
 import cyano.poweradvantage.api.ConduitType;
 import net.minecraft.world.level.block.LiquidBlock;
@@ -19,11 +20,13 @@ import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.LevelReader;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.event.RegistryEvent;
+import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fluids.FluidAttributes;
+import net.minecraftforge.fluids.FluidType;
 import net.minecraftforge.fluids.ForgeFlowingFluid;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraftforge.registries.RegisterEvent;
 import zone.moddev.mc.basepower.PowerAdvantage;
 
 /** Native Forge fluids and their persistent PowerAdvantage conduit identities. */
@@ -38,6 +41,8 @@ public final class Fluids {
     public static PowerFluid.Flowing flowing_crude_oil;
     public static PowerFluid.Source refined_oil;
     public static PowerFluid.Flowing flowing_refined_oil;
+    private static FluidType crudeOilType;
+    private static FluidType refinedOilType;
 
     private static boolean initialized;
 
@@ -51,29 +56,47 @@ public final class Fluids {
     }
 
     @SubscribeEvent
-    public static void registerFluids(RegistryEvent.Register<Fluid> event) {
+    public static void registerFluids(RegisterEvent event) {
+        if (ForgeRegistries.Keys.FLUID_TYPES.equals(event.getRegistryKey())) {
+            crudeOilType = oilType("crude_oil", 850, 6000);
+            refinedOilType = oilType("refined_oil", 720, 1000);
+            event.register(ForgeRegistries.Keys.FLUID_TYPES, id("crude_oil"), () -> crudeOilType);
+            event.register(ForgeRegistries.Keys.FLUID_TYPES, id("refined_oil"), () -> refinedOilType);
+        }
+        if (!ForgeRegistries.Keys.FLUIDS.equals(event.getRegistryKey())) return;
         flowing_crude_oil = new PowerFluid.Flowing(Kind.CRUDE);
         crude_oil = new PowerFluid.Source(Kind.CRUDE);
         flowing_refined_oil = new PowerFluid.Flowing(Kind.REFINED);
         refined_oil = new PowerFluid.Source(Kind.REFINED);
 
-        register("flowing_crude_oil", flowing_crude_oil);
-        register("crude_oil", crude_oil);
-        register("flowing_refined_oil", flowing_refined_oil);
-        register("refined_oil", refined_oil);
+        event.register(ForgeRegistries.Keys.FLUIDS, id("flowing_crude_oil"), () -> flowing_crude_oil);
+        event.register(ForgeRegistries.Keys.FLUIDS, id("crude_oil"), () -> crude_oil);
+        event.register(ForgeRegistries.Keys.FLUIDS, id("flowing_refined_oil"), () -> flowing_refined_oil);
+        event.register(ForgeRegistries.Keys.FLUIDS, id("refined_oil"), () -> refined_oil);
         registerNewFluid(crude_oil);
         registerNewFluid(flowing_crude_oil);
         registerNewFluid(refined_oil);
         registerNewFluid(flowing_refined_oil);
-        event.getRegistry().registerAll(crude_oil, flowing_crude_oil, refined_oil, flowing_refined_oil);
     }
 
-    private static void register(String name, Fluid fluid) {
-        fluid.setRegistryName(PowerAdvantage.MODID, name);
+    private static ResourceLocation id(String name) {
+        return new ResourceLocation(PowerAdvantage.MODID, name);
+    }
+
+    private static FluidType oilType(String name, int density, int viscosity) {
+        return new FluidType(FluidType.Properties.create().descriptionId("fluid.basepower." + name)
+                .density(density).viscosity(viscosity).temperature(300)) {
+            @Override public void initializeClient(Consumer<IClientFluidTypeExtensions> consumer) {
+                consumer.accept(new IClientFluidTypeExtensions() {
+                    @Override public ResourceLocation getStillTexture() { return id("blocks/" + name + "_still"); }
+                    @Override public ResourceLocation getFlowingTexture() { return id("blocks/" + name + "_flow"); }
+                });
+            }
+        };
     }
 
     public static ConduitType registerNewFluid(Fluid fluid) {
-        ResourceLocation id = fluid.getRegistryName();
+        ResourceLocation id = ForgeRegistries.FLUIDS.getKey(fluid);
         ConduitType type = new ConduitType(id == null ? "unknown_fluid" : id.toString());
         FLUID_TYPES.put(fluid, type);
         return type;
@@ -125,15 +148,10 @@ public final class Fluids {
         public Kind getKind() { return kind; }
 
         private static ForgeFlowingFluid.Properties properties(Kind kind) {
-            String name = kind == Kind.CRUDE ? "crude_oil" : "refined_oil";
             return new ForgeFlowingFluid.Properties(
+                    () -> kind == Kind.CRUDE ? crudeOilType : refinedOilType,
                     () -> kind == Kind.CRUDE ? crude_oil : refined_oil,
-                    () -> kind == Kind.CRUDE ? flowing_crude_oil : flowing_refined_oil,
-                    FluidAttributes.builder(new ResourceLocation(PowerAdvantage.MODID, "blocks/" + name + "_still"),
-                            new ResourceLocation(PowerAdvantage.MODID, "blocks/" + name + "_flow"))
-                            .translationKey("fluid.basepower." + name).color(0xFFFFFFFF)
-                            .density(kind == Kind.CRUDE ? 850 : 720)
-                            .viscosity(kind == Kind.CRUDE ? 6000 : 1000).temperature(300))
+                    () -> kind == Kind.CRUDE ? flowing_crude_oil : flowing_refined_oil)
                     .bucket(() -> kind == Kind.CRUDE ? Items.crude_oil_bucket : Items.refined_oil_bucket)
                     .block(() -> kind == Kind.CRUDE ? Blocks.crude_oil_block : Blocks.refined_oil_block)
                     .slopeFindDistance(4).levelDecreasePerBlock(1)

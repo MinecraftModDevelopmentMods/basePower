@@ -8,7 +8,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
-import net.minecraft.tags.Tag;
 import net.minecraft.resources.ResourceLocation;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -26,12 +25,10 @@ public class NativeTagReaderContractTest {
         JsonObject json = new JsonParser().parse(new String(Files.readAllBytes(Paths.get(
                 "src/main/resources/data/forge/tags/items/bars/steel.json")), StandardCharsets.UTF_8)).getAsJsonObject();
         assertFalse("Do not silently ignore an obsolete optional array", json.has("optional"));
-        Tag.Builder builder = Tag.Builder.tag().addFromJson(json, "test");
-        Tag<Item> absent = builder.<Item>build(id -> null, id -> null).right().get();
-        assertTrue(absent.getValues().isEmpty());
-        Tag<Item> present = builder.<Item>build(id -> null, id ->
-                id.equals(new ResourceLocation("basemetals:steel_bars")) ? Items.IRON_BARS : null).right().get();
-        assertEquals(java.util.Collections.singletonList(Items.IRON_BARS), present.getValues());
+        assertTrue(NativeTestTags.<Item>resolve(id -> null, id -> null, json).isEmpty());
+        var present = NativeTestTags.resolve(id ->
+                id.equals(new ResourceLocation("basemetals:steel_bars")) ? Items.IRON_BARS : null, id -> null, json);
+        assertEquals(java.util.Set.of(Items.IRON_BARS), present);
     }
 
     @Test public void configuredAliasesUseANativeDataPackWithoutGlobalTagMutation() throws Exception {
@@ -49,7 +46,7 @@ public class NativeTagReaderContractTest {
                 assertNotEquals("net/minecraft/tags/SerializationTags", call.owner);
                 assertNotEquals("net/minecraft/tags/StaticTags", call.owner);
                 if (call.owner.equals("net/minecraft/server/packs/repository/Pack")
-                        && call.name.equals("create")) {
+                        && call.name.equals("readMetaAndCreate")) {
                     policies++;
                 }
             }

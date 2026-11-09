@@ -54,15 +54,15 @@ final class RecipeBookGroupingProbe {
             net.minecraft.nbt.CompoundTag saved;
             try (java.io.InputStream input = Files.newInputStream(root.resolve("server-registries.dat"))) {
                 net.minecraft.nbt.CompoundTag level = net.minecraft.nbt.NbtIo.readCompressed(input);
-                require("1.18.2".equals(level.getCompound("Data").getCompound("Version").getString("Name")),
-                        "Recipe fixture is not a native 1.18.2 server export");
+                require("1.19.4".equals(level.getCompound("Data").getCompound("Version").getString("Name")),
+                        "Recipe fixture is not a native 1.19.4 server export");
                 net.minecraft.nbt.ListTag mods = level.getCompound("fml").getList("LoadingModList", 10);
                 boolean nativeForge = false;
                 for (int i = 0; i < mods.size(); i++) {
                     net.minecraft.nbt.CompoundTag mod = mods.getCompound(i);
-                    if ("forge".equals(mod.getString("ModId"))) nativeForge = "40.3.0".equals(mod.getString("ModVersion"));
+                    if ("forge".equals(mod.getString("ModId"))) nativeForge = "45.4.0".equals(mod.getString("ModVersion"));
                 }
-                require(nativeForge, "Recipe fixture was not saved by Forge 40.3.0");
+                require(nativeForge, "Recipe fixture was not saved by Forge 45.4.0");
                 saved = level.getCompound("fml").getCompound("Registries");
             }
             String itemRegistry = net.minecraftforge.registries.ForgeRegistries.ITEMS.getRegistryName().toString();
@@ -92,11 +92,11 @@ final class RecipeBookGroupingProbe {
                 for (Recipe<?> recipe : packet.getRecipes()) {
                     JsonObject row = expected.get(recipe.getId().toString());
                     require(row != null, "Unexpected network recipe " + recipe.getId());
-                    String output = recipe.getResultItem().getItem().getRegistryName().toString();
-                    require(output.equals(row.get("output").getAsString()) && recipe.getResultItem().getCount() == row.get("count").getAsInt(),
+                    String output = net.minecraftforge.registries.ForgeRegistries.ITEMS.getKey(recipe.getResultItem(net.minecraft.core.RegistryAccess.EMPTY).getItem()).toString();
+                    require(output.equals(row.get("output").getAsString()) && recipe.getResultItem(net.minecraft.core.RegistryAccess.EMPTY).getCount() == row.get("count").getAsInt(),
                             "Client/server item registry mismatch for " + recipe.getId());
                     require(recipe.getGroup().equals(row.get("group").getAsString()) && recipe.getGroup().equals(output), "Group changed in recipe packet");
-                    String type = net.minecraft.core.Registry.RECIPE_TYPE.getKey(recipe.getType()).toString();
+                    String type = net.minecraft.core.registries.BuiltInRegistries.RECIPE_TYPE.getKey(recipe.getType()).toString();
                     require(type.equals(row.get("type").getAsString()), "Recipe type changed in packet");
                     cellKeys.add(type + "|" + output);
                 }
@@ -104,10 +104,10 @@ final class RecipeBookGroupingProbe {
                 require(manager.getRecipes().size() == expected.size(), "Missing network recipes");
                 ClientRecipeBook book = new ClientRecipeBook();
                 manager.getRecipes().forEach(book::add);
-                book.setupCollections(manager.getRecipes());
+                book.setupCollections(manager.getRecipes(), net.minecraft.core.RegistryAccess.EMPTY);
                 int counted = 0;
                 for (RecipeCollection cell : book.getCollections()) {
-                    Set<String> outputs = cell.getRecipes().stream().map(recipe -> recipe.getResultItem().getItem().getRegistryName().toString())
+                    Set<String> outputs = cell.getRecipes().stream().map(recipe -> net.minecraftforge.registries.ForgeRegistries.ITEMS.getKey(recipe.getResultItem(net.minecraft.core.RegistryAccess.EMPTY).getItem()).toString())
                             .collect(Collectors.toSet());
                     require(outputs.size() == 1 && cell.hasSingleResultItem(), "Mixed items share a native recipe-book cell: " + outputs);
                     counted += cell.getRecipes().size();
@@ -134,10 +134,10 @@ final class RecipeBookGroupingProbe {
                 "baseelectric:integrated_circuit", "baseelectric:control_circuit", "baseelectric:psu", "basepower:item_conveyor"));
         for (RecipeCollection cell : book.getCollections()) {
             Recipe<?> recipe = cell.getRecipes().get(0);
-            String id = recipe.getResultItem().getItem().getRegistryName().toString();
+            String id = net.minecraftforge.registries.ForgeRegistries.ITEMS.getKey(recipe.getResultItem(net.minecraft.core.RegistryAccess.EMPTY).getItem()).toString();
             if (selected.contains(id) || id.startsWith("basepower:item_filter_")) shown.add(cell);
         }
-        shown.sort(java.util.Comparator.comparing(cell -> cell.getRecipes().get(0).getResultItem().getItem().getRegistryName().toString()));
+        shown.sort(java.util.Comparator.comparing(cell -> net.minecraftforge.registries.ForgeRegistries.ITEMS.getKey(cell.getRecipes().get(0).getResultItem(net.minecraft.core.RegistryAccess.EMPTY).getItem()).toString()));
         require(shown.size() == 13, "The thirteen reported circuit/conveyor cells must be separate");
         int width = 1000, height = 180;
         RenderTarget target = new com.mojang.blaze3d.pipeline.TextureTarget(width, height, true, Minecraft.ON_OSX);
@@ -164,7 +164,7 @@ final class RecipeBookGroupingProbe {
                 }
                 button.setPosition(x, y);
                 button.render(new com.mojang.blaze3d.vertex.PoseStack(), -1, -1, 1F);
-                minecraft.font.draw(new com.mojang.blaze3d.vertex.PoseStack(), shown.get(i).getRecipes().get(0).getResultItem().getDisplayName().getString(), x + 30, y + 8, 0xFFFFFF);
+                minecraft.font.draw(new com.mojang.blaze3d.vertex.PoseStack(), shown.get(i).getRecipes().get(0).getResultItem(net.minecraft.core.RegistryAccess.EMPTY).getDisplayName().getString(), x + 30, y + 8, 0xFFFFFF);
             }
             ByteBuffer pixels = ByteBuffer.allocateDirect(width * height * 4);
             RenderSystem.readPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels);

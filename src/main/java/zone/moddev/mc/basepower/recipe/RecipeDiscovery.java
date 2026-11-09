@@ -18,8 +18,7 @@ public final class RecipeDiscovery {
     private RecipeDiscovery() {}
 
     public static void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
-        if (!(event.getPlayer() instanceof ServerPlayer)) return;
-        ServerPlayer player = (ServerPlayer) event.getPlayer();
+        if (!(event.getEntity() instanceof ServerPlayer player)) return;
         // Disabled recipes have no reward to grant. Replay only already-earned
         // discoveries when that exact recipe becomes available on a later login.
         for (Recipe recipe : player.getServer().getRecipeManager().getRecipes()) {

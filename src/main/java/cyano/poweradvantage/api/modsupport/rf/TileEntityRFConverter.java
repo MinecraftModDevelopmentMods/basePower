@@ -10,7 +10,7 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.core.Direction;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.energy.CapabilityEnergy;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.energy.IEnergyStorage;
 import zone.moddev.mc.basepower.PowerAdvantage;
 
@@ -35,7 +35,7 @@ public class TileEntityRFConverter extends TileEntityConverter implements IEnerg
         Direction side = Direction.values()[index];
         BlockEntity neighbor = getLevel().getBlockEntity(getBlockPos().relative(side));
         if (neighbor == null) return;
-        neighbor.getCapability(CapabilityEnergy.ENERGY, side.getOpposite()).ifPresent(storage -> {
+        neighbor.getCapability(ForgeCapabilities.ENERGY, side.getOpposite()).ifPresent(storage -> {
             int delta = forgeBuffer - halfBuffer;
             if (delta < 0 && storage.canExtract()) {
                 int extracted = storage.extractEnergy(-delta, true);
@@ -66,7 +66,7 @@ public class TileEntityRFConverter extends TileEntityConverter implements IEnerg
     @Override
     public <T> LazyOptional<T> getCapability(@Nonnull Capability<T> capability, @Nullable Direction side) {
         if (!areCapabilitiesValid()) return LazyOptional.empty();
-        return energyCapability != null && capability == CapabilityEnergy.ENERGY ? energyCapability.cast() : super.getCapability(capability, side);
+        return energyCapability != null && capability == ForgeCapabilities.ENERGY ? energyCapability.cast() : super.getCapability(capability, side);
     }
 
     @Override public void invalidateCaps() {

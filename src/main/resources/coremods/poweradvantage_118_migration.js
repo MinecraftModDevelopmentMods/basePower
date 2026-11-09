@@ -13,7 +13,6 @@ var metadata = 'zone/moddev/mc/basepower/migration/LegacyWorldMetadata';
 
 function patchPlayerDataFix(classNode) {
     var descriptor = '(Lcom/mojang/datafixers/DataFixer;' +
-            'Lnet/minecraft/util/datafix/DataFixTypes;' +
             'Lnet/minecraft/nbt/CompoundTag;I)Lnet/minecraft/nbt/CompoundTag;';
     var matches = 0;
     var matchedMethod = null;
@@ -22,8 +21,8 @@ function patchPlayerDataFix(classNode) {
         var method = classNode.methods.get(i);
         for (var instruction = method.instructions.getFirst(); instruction !== null;
                 instruction = instruction.getNext()) {
-            if (instruction.getOpcode() === Opcodes.INVOKESTATIC &&
-                    instruction.owner === 'net/minecraft/nbt/NbtUtils' && instruction.desc === descriptor) {
+            if (instruction.getOpcode() === Opcodes.INVOKEVIRTUAL &&
+                    instruction.owner === 'net/minecraft/util/datafix/DataFixTypes' && instruction.desc === descriptor) {
                 ++matches;
                 matchedMethod = method;
                 matchedCall = instruction;
@@ -34,7 +33,8 @@ function patchPlayerDataFix(classNode) {
         throw new Error('Power Advantage requires exactly one native player datafix call in ' + classNode.name);
     }
     matchedMethod.instructions.set(matchedCall, new MethodInsnNode(Opcodes.INVOKESTATIC,
-            'zone/moddev/mc/basepower/migration/LegacyPlayerDataFixes', 'update', descriptor, false));
+            'zone/moddev/mc/basepower/migration/LegacyPlayerDataFixes', 'updateNativePlayer',
+            '(Lnet/minecraft/util/datafix/DataFixTypes;' + descriptor.substring(1), false));
     return classNode;
 }
 
@@ -56,16 +56,18 @@ function initializeCoreMod() {
                 for (var i = 0; i < classNode.methods.size(); ++i) {
                     var method = classNode.methods.get(i);
                     var worldReader = method.desc === '(Lcom/mojang/serialization/DynamicOps;' +
-                            'Lnet/minecraft/world/level/DataPackConfig;' +
+                            'Lnet/minecraft/world/level/WorldDataConfiguration;Lnet/minecraft/core/Registry;' +
                             'Lcom/mojang/serialization/Lifecycle;' +
-                            'Ljava/io/File;Lcom/mojang/datafixers/DataFixer;)' +
-                            'Lnet/minecraft/world/level/storage/PrimaryLevelData;';
-                    var packReader = method.desc === '(Ljava/io/File;Lcom/mojang/datafixers/DataFixer;)' +
-                            'Lnet/minecraft/world/level/DataPackConfig;';
+                            'Ljava/nio/file/Path;Lcom/mojang/datafixers/DataFixer;)' +
+                            'Lcom/mojang/datafixers/util/Pair;';
+                    var packReader = method.desc === '(Ljava/nio/file/Path;Lcom/mojang/datafixers/DataFixer;)' +
+                            'Lnet/minecraft/world/level/WorldDataConfiguration;';
                     if (!worldReader && !packReader) continue;
                     if (worldReader) {
                         var prefix = new InsnList();
-                        prefix.add(new VarInsnNode(Opcodes.ALOAD, 3));
+                        prefix.add(new VarInsnNode(Opcodes.ALOAD, 4));
+                        prefix.add(new MethodInsnNode(Opcodes.INVOKEINTERFACE,
+                                'java/nio/file/Path', 'toFile', '()Ljava/io/File;', true));
                         prefix.add(new MethodInsnNode(Opcodes.INVOKESTATIC, hook,
                                 'prepareLegacyWorld', '(Ljava/io/File;)V', false));
                         method.instructions.insert(prefix);
@@ -75,7 +77,7 @@ function initializeCoreMod() {
                     var reads = 0;
                     for (var read = method.instructions.getFirst(); read !== null; read = read.getNext()) {
                         if (read.getOpcode() === Opcodes.INVOKESTATIC && read.owner === classNode.name &&
-                                read.desc === '(Ljava/io/File;)Lnet/minecraft/nbt/Tag;') {
+                                read.desc === '(Ljava/nio/file/Path;)Lnet/minecraft/nbt/Tag;') {
                             method.instructions.insert(read, new MethodInsnNode(Opcodes.INVOKESTATIC,
                                     metadata, 'remapLightweight', '(Lnet/minecraft/nbt/Tag;)Lnet/minecraft/nbt/Tag;', false));
                             ++reads;
@@ -103,7 +105,8 @@ function initializeCoreMod() {
                                 call.desc === '(Ljava/io/File;)Lnet/minecraft/nbt/CompoundTag;') read = call;
                         if (call.owner === 'net/minecraftforge/common/ForgeHooks' &&
                                 call.name === 'readAdditionalLevelSaveData' &&
-                                call.desc === '(Lnet/minecraft/nbt/CompoundTag;Ljava/nio/file/Path;)V') {
+                                call.desc === '(Lnet/minecraft/nbt/CompoundTag;' +
+                                        'Lnet/minecraft/world/level/storage/LevelStorageSource$LevelDirectory;)V') {
                             if (read === null) throw new Error('Power Advantage expected Forge to read level.dat');
                             method.instructions.set(read, new MethodInsnNode(Opcodes.INVOKESTATIC,
                                     metadata, 'read', read.desc, false));
@@ -127,12 +130,12 @@ function initializeCoreMod() {
                 var patchedEntities = false;
                 for (var i = 0; i < classNode.methods.size(); ++i) {
                     var method = classNode.methods.get(i);
-                    if (method.desc === '(Lnet/minecraft/world/level/ChunkPos;)Lnet/minecraft/nbt/CompoundTag;') {
+                    if (method.desc === '(Lnet/minecraft/world/level/ChunkPos;)Ljava/util/concurrent/CompletableFuture;') {
                         for (var read = method.instructions.getFirst(); read !== null; read = read.getNext()) {
                             if (read.getOpcode() === Opcodes.ARETURN) {
                                 method.instructions.insertBefore(read, new MethodInsnNode(Opcodes.INVOKESTATIC,
-                                        hook, 'copyChunkForMigration',
-                                        '(Lnet/minecraft/nbt/CompoundTag;)Lnet/minecraft/nbt/CompoundTag;', false));
+                                        hook, 'copyChunkReadForMigration',
+                                        '(Ljava/util/concurrent/CompletableFuture;)Ljava/util/concurrent/CompletableFuture;', false));
                                 patchedOwnership = true;
                             }
                         }

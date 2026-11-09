@@ -1,8 +1,8 @@
 # basePower
 
-**Minecraft 1.18.2, version 2.4.10.118021. Local test candidate.**
+**Minecraft 1.19.4, version 2.4.11.119041. Local test candidate.**
 
-See the [1.18 port record](docs/1.18/PORT-STATUS.md) for the current checks.
+See the [1.19 port record](docs/1.19/PORT-STATUS.md) for the current checks.
 Results from earlier versions do not qualify this build.
 
 basePower continues DrCyano's Power Advantage. It provides shared power,
@@ -19,16 +19,16 @@ Recipe-book discovery now follows relevant ingredients. See the [all-Advantage m
 
 The [manufacturing progression audit](docs/1.13/MANUFACTURING-PROGRESSION.md) traces survival parts from raw resources, including configured material aliases, processing, loot-only parts and automated restart checks.
 
-## Building Minecraft 1.18.2
+## Building Minecraft 1.19.4
 
-The build uses Forge 40.3.0, official `1.18.2` mappings,
-MCP `20220404.173914`, ForgeGradle 7.0.34 and Gradle 9.6.1.
+The build uses Forge 45.4.0, official `1.19.4` mappings,
+MCP `20230314.122934`, ForgeGradle 7.0.34 and Gradle 9.6.1.
 Use Java 17 for Gradle, compilation and Minecraft. Mavenizer also
 needs Java 25. CI pins these JDKs and Java 8 for the legacy renamer. Pass the installed homes using
 `-Porg.gradle.java.installations.paths=<java8>,<java17>,<java25>` and disable
 automatic discovery and downloads for a reproducibility check.
 
-Build the pinned Base Metals `3.1.2.118021` and OreSpawn `4.1.0.118021` deobf jars first.
+Build the pinned Base Metals `3.1.2.119041` and OreSpawn `4.1.0.119041` deobf jars first.
 The source pins and checksums are in `gradle.properties`.
 The Base Metals pin is a local candidate with the shared legacy migration hook.
 It has not been published. Base Metals remains optional to Forge, but when it
@@ -43,8 +43,8 @@ gradlew.bat clean check build javadoc verifyReleaseDependencies verifyReleaseArt
 The default dependency jars are:
 
 ```text
-D:\BaseMetals\BaseMetals 118\BaseMetals\build\libs-dev\BaseMetals-3.1.2.118021-deobf.jar
-D:\MinecraftMineralogy\OS118\OreSpawn\build\libs-dev\OreSpawn-4.1.0.118021-deobf.jar
+D:\BaseMetals\BaseMetals 119\BaseMetals\build\libs-dev\BaseMetals-3.1.2.119041-deobf.jar
+D:\MinecraftMineralogy\OS119\OreSpawn\build\libs-dev\OreSpawn-4.1.0.119041-deobf.jar
 ```
 
 Other layouts can pass `-PbaseMetalsDeobfJar=<path>` and `-PoreSpawnDeobfJar=<path>`.
@@ -66,10 +66,10 @@ Refresh the project in Eclipse, allow its Java build to finish, and launch the g
 
 Eclipse copies production resources from `build/resources/main`, not directly from `src/main/resources`. This prevents its builder from overwriting the expanded `mods.toml` with raw `${version}` placeholders. After updating this setup, use **Gradle > Refresh Gradle Project**, then **Project > Clean** before relaunching. After editing resources or version properties, run `processResources` or refresh the Gradle project before the Eclipse build. See the [metadata regression notes](docs/1.13/ECLIPSE-METADATA.md).
 
-To prepare a combined client, build the baseSteam and baseElectric `2.2.11.118021` deobf jars,
+To prepare a combined client, build the baseSteam and baseElectric `2.2.12.119041` deobf jars,
 run `gradlew.bat prepareCombinedEclipseLaunch`, refresh Eclipse, then launch
 `runClientAllAdvantage.launch`. Inputs must match
-`test-rig/profiles/native118/dev-core.json`; alternative layouts can pass
+`test-rig/profiles/native119/dev-core.json`; alternative layouts can pass
 `-PsteamAdvantageDeobfJar=<path>` and `-PelectricAdvantageDeobfJar=<path>`.
 The ordinary `runClient.launch` remains Power-only. Both use the `run` directory;
 preparing a launch does not copy, open or qualify a save.
@@ -104,6 +104,6 @@ data-pack tags. The shared pre-flattening migration hook remains necessary;
 its presence is not proof that an upgrade is safe.
 
 The [legacy migration guide](docs/1.13/MIGRATION.md) describes the earlier protocols.
-The [1.18 status](docs/1.18/PORT-STATUS.md) tracks this port's qualification.
+The [1.19 status](docs/1.19/PORT-STATUS.md) tracks this port's qualification.
 
 The historical 1.10 handbook remains on the [1.10.2 branch](https://github.com/MinecraftModDevelopmentMods/PowerAdvantage/blob/master-1.10.2/docs/1.10/README.md).

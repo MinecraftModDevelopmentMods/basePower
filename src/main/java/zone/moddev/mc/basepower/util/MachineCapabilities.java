@@ -9,8 +9,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.core.Direction;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
-import net.minecraftforge.items.CapabilityItemHandler;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.items.wrapper.InvWrapper;
 import net.minecraftforge.items.wrapper.SidedInvWrapper;
 
@@ -25,11 +24,11 @@ public final class MachineCapabilities {
 
     public <T> LazyOptional<T> get(Capability<T> capability, Direction face) {
         if (!valid || owner.isRemoved()) return LazyOptional.empty();
-        if (capability == CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY && owner instanceof IAdvantageFluidHandler) {
+        if (capability == ForgeCapabilities.FLUID_HANDLER && owner instanceof IAdvantageFluidHandler) {
             return fluids.computeIfAbsent(face, side -> LazyOptional.of(() ->
                     new ForgeFluidAdapter((IAdvantageFluidHandler) owner, side, owner::setChanged))).cast();
         }
-        if (capability == CapabilityItemHandler.ITEM_HANDLER_CAPABILITY && owner instanceof Container) {
+        if (capability == ForgeCapabilities.ITEM_HANDLER && owner instanceof Container) {
             return items.computeIfAbsent(face, side -> LazyOptional.of(() -> side != null && owner instanceof WorldlyContainer
                     ? new SidedInvWrapper((WorldlyContainer) owner, side) : new InvWrapper((Container) owner))).cast();
         }
