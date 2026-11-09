@@ -23,7 +23,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
-public class Native119TestFlatTest {
+public class Native1201TestFlatTest {
     private static RegistryAccess registries;
 
     @BeforeClass public static void bootstrap() {

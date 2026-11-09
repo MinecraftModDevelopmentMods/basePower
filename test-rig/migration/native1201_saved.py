@@ -1,4 +1,4 @@
-"""Verify the actual flattened terrain and block entity data written by 1.19.4."""
+"""Verify the actual flattened terrain and block entity data written by 1.20.1."""
 
 import gzip
 import io
@@ -13,7 +13,7 @@ from native117_format import decode_palette
 from transformer_order import read_region
 
 
-DATA_VERSION = 3337
+DATA_VERSION = 3465
 
 
 def decode_chunk(payload, coordinates):
@@ -24,7 +24,7 @@ def decode_chunk(payload, coordinates):
         raise ValueError("Unknown chunk compression")
     chunk = plain(nbtlib.File.parse(io.BytesIO(decoders[payload[4]](payload[5:]))).unpack())
     if chunk.get("DataVersion") != DATA_VERSION or "Level" in chunk:
-        raise ValueError("Chunk was not written in native 1.19.4 format")
+        raise ValueError("Chunk was not written in native 1.20.1 format")
     if (chunk["xPos"], chunk["zPos"]) != coordinates:
         raise ValueError("Saved chunk coordinates do not match the region slot")
     sections = {}
@@ -45,12 +45,12 @@ def decode_chunk(payload, coordinates):
 
 def capture(runtime, label, rows):
     world = runtime / WORLD
-    evidence = runtime / "native119-save" / label
+    evidence = runtime / "native1201-save" / label
     evidence.mkdir(parents=True)
     shutil.copy2(world / "level.dat", evidence / "level.dat")
     level = nbtlib.load(evidence / "level.dat")["Data"]
     if level["DataVersion"] != DATA_VERSION:
-        raise AssertionError("Saved level does not identify 1.19.4")
+        raise AssertionError("Saved level does not identify 1.20.1")
     regions, chunks = {}, {}
     for row in rows:
         x, y, z = pos = tuple(int(row[field]) for field in ("x", "y", "z"))

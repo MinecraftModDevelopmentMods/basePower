@@ -20,7 +20,7 @@ PROFILES = ("packaged-current", "packaged-decoupled")
 VERSIONS = {"113": ("1.13.2", "25.0.223"), "114": ("1.14.4", "28.2.26"),
             "115": ("1.15.2", "31.2.57"), "116": ("1.16.5", "36.2.34"),
             "117": ("1.17.1", "37.1.1"), "118": ("1.18.2", "40.3.0"),
-            "119": ("1.19.4", "45.4.0")}
+            "119": ("1.19.4", "45.4.0"), "1201": ("1.20.1", "47.4.10")}
 NATIVE117_LAUNCHERS = {
     "libraries/net/minecraftforge/forge/1.17.1-37.1.1/win_args.txt",
     "libraries/net/minecraftforge/forge/1.17.1-37.1.1/unix_args.txt",
@@ -48,10 +48,20 @@ NATIVE119_REQUIRED_CODE = {
     "libraries/cpw/mods/bootstraplauncher/1.1.2/bootstraplauncher-1.1.2.jar",
     "libraries/net/minecraft/server/1.19.4-20230314.122934/server-1.19.4-20230314.122934-extra.jar",
 }
+NATIVE1201_LAUNCHERS = {
+    "libraries/net/minecraftforge/forge/1.20.1-47.4.10/win_args.txt",
+    "libraries/net/minecraftforge/forge/1.20.1-47.4.10/unix_args.txt",
+}
+NATIVE1201_REQUIRED_CODE = {
+    "libraries/net/minecraftforge/fmlloader/1.20.1-47.4.10/fmlloader-1.20.1-47.4.10.jar",
+    "libraries/cpw/mods/bootstraplauncher/1.1.2/bootstraplauncher-1.1.2.jar",
+    "libraries/net/minecraft/server/1.20.1-20230612.114412/server-1.20.1-20230612.114412-extra.jar",
+}
 MODULAR_CODE = {
     "117": (NATIVE117_LAUNCHERS, NATIVE117_REQUIRED_CODE, ".117011"),
     "118": (NATIVE118_LAUNCHERS, NATIVE118_REQUIRED_CODE, ".118021"),
     "119": (NATIVE119_LAUNCHERS, NATIVE119_REQUIRED_CODE, ".119041"),
+    "1201": (NATIVE1201_LAUNCHERS, NATIVE1201_REQUIRED_CODE, ".120011"),
 }
 STATIONS = tuple(["W-%02d" % n for n in range(1, 5)]
                  + ["S-%02d" % n for n in range(1, 9)]
@@ -283,11 +293,13 @@ def log_evidence(evidence, path, line, phase, records):
                            r"Advantage Works command failed")
         for row in text.splitlines():
             require(not error.search(row), str(path) + ": native117 runtime error: " + row)
-    elif line in ("118", "119"):
+    elif line in ("118", "119", "1201"):
         if line == "118":
             from native118 import log_findings, MCP
         else:
-            from native119 import log_findings, MCP
+            from native1201 import log_findings, MCP
+            if line == "119":
+                MCP = "20230314.122934"
         require("with MCP " + MCP in text, str(path) + ": missing native" + line + " MCP identity")
         require("ThreadedAnvilChunkStorage: All dimensions are saved" in shutdown,
                 str(path) + ": missing completed all-dimension shutdown")

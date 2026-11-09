@@ -3,7 +3,7 @@ import tempfile
 import tomllib
 import unittest
 
-from native119 import log_findings, prepare_fml_defaults
+from native1201 import log_findings, prepare_fml_defaults
 
 
 PROBE = "jdk.internal.misc.Unsafe.allocateUninitializedArray(int): unavailable"
@@ -13,7 +13,7 @@ DETAIL = ("java.lang.IllegalAccessException: class io.netty.util.internal.Platfo
 FRAME = "\tat io.netty.util.internal.PlatformDependent0$7.run(PlatformDependent0.java:410)"
 
 
-class Native119LogPolicyTests(unittest.TestCase):
+class Native1201LogPolicyTests(unittest.TestCase):
     def test_records_exact_netty_debug_fallback(self):
         errors, diagnostics = log_findings("\n".join((DEBUG + PROBE, DETAIL, FRAME)))
         self.assertEqual([], errors)
@@ -35,8 +35,13 @@ class Native119LogPolicyTests(unittest.TestCase):
             runtime = Path(directory)
             prepare_fml_defaults(runtime)
             config = runtime / "config/fml.toml"
-            self.assertEqual({"versionCheck": True, "splashscreen": True, "disableOptimizedDFU": True,
-                              "defaultConfigPath": "defaultconfigs", "maxThreads": -1},
+            self.assertEqual({"versionCheck": True, "disableOptimizedDFU": True,
+                              "defaultConfigPath": "defaultconfigs", "maxThreads": -1,
+                              "earlyWindowHeight": 480, "earlyWindowWidth": 854,
+                              "earlyWindowControl": True, "earlyWindowFBScale": 1,
+                              "earlyWindowProvider": "fmlearlywindow", "earlyWindowMaximized": False,
+                              "earlyWindowSkipGLVersions": [], "earlyWindowLogHelpMessage": True,
+                              "earlyWindowSquir": False, "earlyWindowShowCPU": False},
                              tomllib.loads(config.read_text(encoding="utf-8")))
             original = b'maxThreads = 2\n'
             config.write_bytes(original)

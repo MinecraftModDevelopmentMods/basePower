@@ -7,8 +7,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import net.minecraft.world.level.chunk.ChunkStatus;
-import net.minecraft.server.level.ChunkHolder;
-import net.minecraft.server.level.ChunkMap;
+import net.minecraft.server.level.ChunkLevel;
+import net.minecraft.server.level.FullChunkStatus;
 import net.minecraft.server.level.Ticket;
 import net.minecraft.server.level.DistanceManager;
 import net.minecraft.server.level.TicketType;
@@ -23,9 +23,9 @@ final class NativeTicketGeometry {
     static Map<String, Object> observe(ServerLevel world) {
         try {
             int fullLevel = -1, entityTickingLevel = -1;
-            for (int level = 0; level <= ChunkMap.MAX_CHUNK_DISTANCE; level++) {
-                if (ChunkHolder.getStatus(level) == ChunkStatus.FULL) fullLevel = level;
-                if (ChunkHolder.getFullChunkStatus(level) == ChunkHolder.FullChunkStatus.ENTITY_TICKING)
+            for (int level = 0; level <= ChunkLevel.MAX_LEVEL; level++) {
+                if (ChunkLevel.generationStatus(level) == ChunkStatus.FULL) fullLevel = level;
+                if (ChunkLevel.fullStatus(level) == FullChunkStatus.ENTITY_TICKING)
                     entityTickingLevel = level;
             }
             ServerChunkCache provider = world.getChunkSource();
@@ -45,12 +45,12 @@ final class NativeTicketGeometry {
             result.put("fullLevel", fullLevel);
             result.put("entityTickingLevel", entityTickingLevel);
             result.put("maxDistance", ChunkStatus.maxDistance());
-            result.put("lastHolderLevel", ChunkMap.MAX_CHUNK_DISTANCE);
-            result.put("holderRadius", ChunkMap.MAX_CHUNK_DISTANCE - entityTickingLevel);
+            result.put("lastHolderLevel", ChunkLevel.MAX_LEVEL);
+            result.put("holderRadius", ChunkLevel.MAX_LEVEL - entityTickingLevel);
             result.put("observedForcedLevels", new ArrayList<>(forcedLevels));
             return result;
         } catch (Exception error) {
-            throw new IllegalStateException("Cannot observe native Forge 36 ticket geometry", error);
+            throw new IllegalStateException("Cannot observe native chunk ticket geometry", error);
         }
     }
 }

@@ -36,7 +36,7 @@ public class Native117JoiningHoldTest {
         assertTrue(boat.canUpdate());
         assertEquals(17, boat.tickCount);
         assertEquals(identity, boat.getUUID());
-        assertSame(world, boat.level);
+        assertSame(world, boat.level());
         assertFalse(boat.isRemoved());
     }
 

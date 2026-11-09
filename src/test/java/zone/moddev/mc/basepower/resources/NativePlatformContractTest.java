@@ -54,17 +54,19 @@ public class NativePlatformContractTest {
     }
 
     @Test public void nativeLootLoaderCallsForgeJsonHookAndNotTheRemovedAdvantageBridge() throws Exception {
-        ClassNode node = read("net/minecraft/world/level/storage/loot/LootTables");
+        ClassNode node = read("net/minecraft/world/level/storage/loot/LootDataType");
         int calls = 0;
         for (MethodNode method : node.methods) for (AbstractInsnNode instruction : method.instructions.toArray()) {
-            if (!(instruction instanceof MethodInsnNode)) continue;
-            MethodInsnNode call = (MethodInsnNode) instruction;
-            assertNotEquals("zone/moddev/mc/basepower/recipe/PartsLoot", call.owner);
-            if (call.owner.equals("net/minecraftforge/common/ForgeHooks") && call.name.equals("loadLootTable")) {
-                assertEquals("(Lcom/google/gson/Gson;Lnet/minecraft/resources/ResourceLocation;"
-                        + "Lcom/google/gson/JsonElement;ZLnet/minecraft/world/level/storage/loot/LootTables;)"
-                        + "Lnet/minecraft/world/level/storage/loot/LootTable;", call.desc);
-                calls++;
+            if (instruction instanceof MethodInsnNode call) {
+                assertNotEquals("zone/moddev/mc/basepower/recipe/PartsLoot", call.owner);
+            }
+            if (instruction instanceof org.objectweb.asm.tree.InvokeDynamicInsnNode dynamic) {
+                for (Object argument : dynamic.bsmArgs) {
+                    if (!(argument instanceof org.objectweb.asm.Handle target)) continue;
+                    assertNotEquals("zone/moddev/mc/basepower/recipe/PartsLoot", target.getOwner());
+                    if (target.getOwner().equals("net/minecraftforge/common/ForgeHooks")
+                            && target.getName().equals("getLootTableDeserializer")) calls++;
+                }
             }
         }
         assertEquals(1, calls);

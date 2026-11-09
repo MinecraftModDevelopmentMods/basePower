@@ -296,7 +296,7 @@ final class DimensionEntityProbe {
         ServerPlayer player = new ServerPlayer(server, world,
                 new GameProfile(UUID.fromString(definition.get("playerUuid").getAsString()), definition.get("playerName").getAsString()));
         if (server.getPlayerList().load(player) == null) throw new IllegalStateException("No player file loaded");
-        if (Native117Worlds.legacyId(player.getLevel().dimension()) != dimension(definition) || player.getLevel() != world) {
+        if (Native117Worlds.legacyId(player.level().dimension()) != dimension(definition) || player.level() != world) {
             throw new IllegalStateException("Player loaded in wrong dimension");
         }
         return player;
@@ -313,7 +313,7 @@ final class DimensionEntityProbe {
         result.addProperty("playerAdapter", read); result.add("playerWorldDimension", JsonNull.INSTANCE);
         if (read) {
             ServerPlayer player = readPlayer(server, world, definition);
-            result.addProperty("playerWorldDimension", Native117Worlds.legacyId(player.getLevel().dimension()));
+            result.addProperty("playerWorldDimension", Native117Worlds.legacyId(player.level().dimension()));
             result.add("player", encode(player.saveWithoutId(new CompoundTag())));
             if (operation.equals("respawn")) result.add("respawn", respawn(server, world, definition, player));
             else Native117PlayerIo.save(server.getPlayerList(), player);
@@ -376,7 +376,7 @@ final class DimensionEntityProbe {
         result.addProperty("handler", "ServerPlayNetHandler.PERFORM_RESPAWN");
         result.addProperty("keepInventory", keep); result.addProperty("bedMode", bedMode);
         CompoundTag before = player.saveWithoutId(new CompoundTag());
-        result.addProperty("fromDimension", Native117Worlds.legacyId(player.getLevel().dimension())); result.add("before", encode(before));
+        result.addProperty("fromDimension", Native117Worlds.legacyId(player.level().dimension())); result.add("before", encode(before));
         JsonObject diagnostics = new JsonObject(); result.add("spawnDiagnostics", diagnostics);
         diagnostics.add("before", spawnDiagnostics(player, before));
         Set<Entity> existing = Collections.newSetFromMap(new IdentityHashMap<Entity, Boolean>()); Native117Worlds.entities(world).forEach(existing::add);
@@ -399,7 +399,7 @@ final class DimensionEntityProbe {
             CompoundTag after = replacement.saveWithoutId(new CompoundTag());
             result.add("after", encode(after));
             diagnostics.add("after", spawnDiagnostics(replacement, after));
-            result.addProperty("toDimension", Native117Worlds.legacyId(replacement.getLevel().dimension()));
+            result.addProperty("toDimension", Native117Worlds.legacyId(replacement.level().dimension()));
             BlockPos bed = replacement.getRespawnPosition();
             result.add("bedLocation", bed == null ? JsonNull.INSTANCE : JSON.toJsonTree(new int[] {bed.getX(), bed.getY(), bed.getZ()}));
             JsonArray drops = new JsonArray();
@@ -421,7 +421,7 @@ final class DimensionEntityProbe {
 
     private static JsonObject spawnDiagnostics(ServerPlayer player, CompoundTag nbt) {
         JsonObject result = new JsonObject(); result.addProperty("queryDimension", 0);
-        result.addProperty("playerWorldDimension", Native117Worlds.legacyId(player.getLevel().dimension()));
+        result.addProperty("playerWorldDimension", Native117Worlds.legacyId(player.level().dimension()));
         result.addProperty("spawnDimension", Native117Worlds.legacyId(player.getRespawnDimension()));
         BlockPos bed = player.getRespawnPosition();
         result.add("bedLocation", bed == null ? JsonNull.INSTANCE : JSON.toJsonTree(new int[] {bed.getX(), bed.getY(), bed.getZ()}));

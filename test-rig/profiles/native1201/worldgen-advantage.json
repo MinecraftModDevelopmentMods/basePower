@@ -1,0 +1,153 @@
+{
+  "mode": "packaged",
+  "runtimeBase": "build/works-native1201-worldgen",
+  "serverPort": 25565,
+  "startupTimeoutSeconds": 180,
+  "stationRunSeconds": 5,
+  "recipeMode": "NORMAL",
+  "sourceCommit": "c7843fdaaa9e407948a0aa6bc1e6d5562eac7bbe",
+  "sourceVersion": "2.4.12.120011",
+  "forge": {
+    "version": "1.20.1-47.4.10",
+    "installerPath": "../../../../BaseMetals/.verification-basemetals1201/dependencies/forge-1.20.1-47.4.10-installer.jar",
+    "url": "https://maven.minecraftforge.net/net/minecraftforge/forge/1.20.1-47.4.10/forge-1.20.1-47.4.10-installer.jar",
+    "sha256": "1912760B4CB6B803D8A826DE603C9076B1DA71EC2765E9A1F8C1CA78F65278E3"
+  },
+  "mods": [
+    {
+      "id": "basepower",
+      "version": "2.4.12.120011",
+      "file": "basePower-2.4.12.120011.jar",
+      "path": "../build/libs/basePower-2.4.12.120011.jar",
+      "sha256": "7CBDDD402CB9BA79DB4037ABF03A213666E7E1FE12E5B8C2A32ABF67CC2F3AE6"
+    },
+    {
+      "id": "basesteam",
+      "version": "2.2.13.120011",
+      "file": "baseSteam-2.2.13.120011.jar",
+      "path": "../../SteamAdvantage/SteamAdvantage/build/libs/baseSteam-2.2.13.120011.jar",
+      "sha256": "248F87F7731472025C73F766F7B634268AC38CC987C4CA41E4743C229D54B80E"
+    },
+    {
+      "id": "baseelectric",
+      "version": "2.2.13.120011",
+      "file": "baseElectric-2.2.13.120011.jar",
+      "path": "../../ElectricAdvantage/ElectricAdvantage/build/libs/baseElectric-2.2.13.120011.jar",
+      "sha256": "F032D9A80C65FD3E76E20D07B497BCF6AD37C3C578F9DD25F3F13E82294540D4"
+    },
+    {
+      "id": "orespawn",
+      "version": "4.1.0.120011",
+      "file": "OreSpawn-4.1.0.120011.jar",
+      "path": "../../../../MinecraftMineralogy/OS1201/OreSpawn/build/libs/OreSpawn-4.1.0.120011.jar",
+      "sha256": "E6BDE47C1BB0BF4D08396F1D1FD5B1D2D3F8A5DF09905F279D39E2601D7FE4B0"
+    },
+    {
+      "id": "advantageworkstest",
+      "version": "1.1.4.120011",
+      "file": "AdvantageWorksTestHarness-1.1.4.120011.jar",
+      "path": "build/gradle/libs/AdvantageWorksTestHarness-1.1.4.120011.jar",
+      "sha256": "26654C0A363818FD088DF80900D63E8E4B0981A8A4AE6BEDAC7758853095861D"
+    }
+  ],
+  "name": "worldgen-advantage",
+  "levelName": "AdvantageWorksWorldgen",
+  "levelSeed": "advantage-works-worldgen-1.15.2-v1",
+  "levelType": "minecraft:normal",
+  "generatorSettings": "",
+  "buildWorks": false,
+  "worldgenSampleRadius": 8,
+  "shutdownTimeoutSeconds": 300,
+  "lifecycleStations": [],
+  "firstProfileAssertions": [
+    {
+      "id": "desert-oil-visible",
+      "section": "fluid_deposits",
+      "entry": "basepower:fluid_deposit/desert_crude_oil",
+      "present": true,
+      "field": "enabled",
+      "expectedBoolean": true
+    },
+    {
+      "id": "desert-oil-owner",
+      "section": "fluid_deposits",
+      "entry": "basepower:fluid_deposit/desert_crude_oil",
+      "present": true,
+      "field": "source_provider",
+      "expectedString": "basepower"
+    },
+    {
+      "id": "electric-sulfur-default",
+      "section": "ores",
+      "entry": "baseelectric:ore/sulfur",
+      "present": true,
+      "field": "enabled",
+      "expectedBoolean": true
+    },
+    {
+      "id": "electric-lithium-default",
+      "section": "ores",
+      "entry": "baseelectric:ore/lithium",
+      "present": true,
+      "field": "enabled",
+      "expectedBoolean": true
+    }
+  ],
+  "profileMutations": [
+    {
+      "section": "fluid_deposits",
+      "entry": "basepower:fluid_deposit/desert_crude_oil",
+      "field": "enabled",
+      "booleanValue": false
+    },
+    {
+      "section": "ores",
+      "entry": "baseelectric:ore/sulfur",
+      "field": "enabled",
+      "booleanValue": false
+    }
+  ],
+  "restartProfileAssertions": [
+    {
+      "id": "desert-oil-user-disable-persists",
+      "section": "fluid_deposits",
+      "entry": "basepower:fluid_deposit/desert_crude_oil",
+      "present": true,
+      "field": "enabled",
+      "expectedBoolean": false
+    },
+    {
+      "id": "electric-sulfur-user-disable-persists",
+      "section": "ores",
+      "entry": "baseelectric:ore/sulfur",
+      "present": true,
+      "field": "enabled",
+      "expectedBoolean": false
+    },
+    {
+      "id": "electric-lithium-remains-enabled",
+      "section": "ores",
+      "entry": "baseelectric:ore/lithium",
+      "present": true,
+      "field": "enabled",
+      "expectedBoolean": true
+    }
+  ],
+  "worldgenExpectations": {
+    "minimumCounts": {
+      "basepower:crude_oil": 1,
+      "baseelectric:li_ore": 1,
+      "baseelectric:sulfur_ore": 1
+    },
+    "maximumCounts": {
+      "mineralogy:crude_oil": 0,
+      "mineralogy:sulfur_ore": 0
+    },
+    "zeroBiomeViolations": true
+  },
+  "minecraftVersion": "1.20.1",
+  "portStatus": "PORTED_UNQUALIFIED",
+  "qualificationStatus": "UNQUALIFIED",
+  "inputStatus": "ARTIFACTS_AND_SOURCES_PINNED_QUALIFICATION_PENDING",
+  "powerDeobfSha256": "4FD489774396CC4776CBF21DCCE30DA0AD14E9542AE2FA7F58BFD767EB5D4F0F"
+}

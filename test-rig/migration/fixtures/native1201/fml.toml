@@ -1,0 +1,15 @@
+# Forge 47.4.10 defaults for a new disposable launch.
+versionCheck = true
+disableOptimizedDFU = true
+defaultConfigPath = "defaultconfigs"
+maxThreads = -1
+earlyWindowHeight = 480
+earlyWindowWidth = 854
+earlyWindowControl = true
+earlyWindowFBScale = 1
+earlyWindowProvider = "fmlearlywindow"
+earlyWindowMaximized = false
+earlyWindowSkipGLVersions = []
+earlyWindowLogHelpMessage = true
+earlyWindowSquir = false
+earlyWindowShowCPU = false
