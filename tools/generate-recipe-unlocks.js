@@ -30,7 +30,8 @@ for (const file of fs.readdirSync(recipes).filter(name => name.endsWith('.json')
   const criteria = {};
   unique.forEach((ingredient, index) => {
     criteria[`has_ingredient_${index + 1}`] = {
-      trigger: 'minecraft:inventory_changed', conditions: {items: [ingredient]}
+      trigger: 'minecraft:inventory_changed',
+      conditions: {items: [ingredient.item ? {items: [ingredient.item]} : ingredient]}
     };
   });
   criteria.has_recipe = {trigger: 'minecraft:recipe_unlocked', conditions: {recipe: id}};

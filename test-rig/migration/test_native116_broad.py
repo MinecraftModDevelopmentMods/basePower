@@ -8,11 +8,12 @@ import unittest
 
 import nbtlib
 import native116_broad as broad
+from historical_test_inputs import POWER116, STATIONS, git_blob
 
 
 class BroadOracleTests(unittest.TestCase):
     def setUp(self):
-        definition = broad.read_json(broad.RIG / "src/main/resources/assets/advantageworkstest/works/works-1.13.2.json")
+        definition = json.loads(git_blob(POWER116, STATIONS))
         self.stations = [s for s in definition["stations"] if s["id"] in broad.DRILL_BAYS]
 
     def snapshot(self, station, moved=False):

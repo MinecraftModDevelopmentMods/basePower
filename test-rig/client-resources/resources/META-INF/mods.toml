@@ -1,5 +1,5 @@
 modLoader="javafml"
-loaderVersion="[36,37)"
+loaderVersion="[37,38)"
 license="GPL-3.0-only"
 
 [[mods]]
@@ -9,22 +9,22 @@ displayName="Advantage Client Resource Probe"
 description='''Build-only model, texture and translation checks. Never distribute with the mod.'''
 
 [[dependencies.advantageclientresources]]
-modId="poweradvantage"
+modId="basepower"
 mandatory=true
-versionRange="[2.4.7.116051]"
+versionRange="[2.4.9.117011]"
 ordering="AFTER"
 side="CLIENT"
 
 [[dependencies.advantageclientresources]]
 modId="forge"
 mandatory=true
-versionRange="[36.2.34]"
+versionRange="[37.1.1]"
 ordering="NONE"
 side="CLIENT"
 
 [[dependencies.advantageclientresources]]
 modId="minecraft"
 mandatory=true
-versionRange="[1.16.5]"
+versionRange="[1.17.1]"
 ordering="NONE"
 side="CLIENT"

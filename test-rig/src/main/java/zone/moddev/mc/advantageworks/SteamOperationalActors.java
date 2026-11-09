@@ -4,25 +4,25 @@ import com.mojang.authlib.GameProfile;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.UUID;
-import net.minecraft.block.BlockState;
-import net.minecraft.enchantment.Enchantment;
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.ai.attributes.Attributes;
-import net.minecraft.entity.item.ArmorStandEntity;
-import net.minecraft.entity.passive.CowEntity;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.network.IPacket;
-import net.minecraft.network.NetworkManager;
-import net.minecraft.network.PacketDirection;
-import net.minecraft.network.play.ServerPlayNetHandler;
-import net.minecraft.state.IntegerProperty;
-import net.minecraft.util.ActionResultType;
-import net.minecraft.util.Hand;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.GameType;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.decoration.ArmorStand;
+import net.minecraft.world.entity.animal.Cow;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.Connection;
+import net.minecraft.network.protocol.PacketFlow;
+import net.minecraft.server.network.ServerGamePacketListenerImpl;
+import net.minecraft.world.level.block.state.properties.IntegerProperty;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.GameType;
 import net.minecraftforge.common.util.FakePlayer;
 import net.minecraftforge.registries.ForgeRegistries;
 
@@ -37,22 +37,22 @@ final class SteamOperationalActors {
 
     private static void elevator(List<MachineScenario> cases) {
         for (String mode : new String[]{"up", "down", "no-power", "scarce"}) {
-            final ArmorStandEntity[] passenger = new ArmorStandEntity[1];
+            final ArmorStand[] passenger = new ArmorStand[1];
             cases.add(new MachineScenario("steam/elevator-" + mode,
                     "A real passenger moves to the physical stop, one move costs exactly 32 steam, "
                     + "a steady signal never repeats the move, and insufficient steam leaves passenger/shaft unchanged.",
                     80, c -> {
-                        c.block(8, 0, 8, "steamadvantage:steam_elevator");
+                        c.block(8, 0, 8, "basesteam:steam_elevator");
                         c.block(8, 9, 8, "minecraft:stone");
                         boolean down = mode.equals("down");
                         if (down) {
                             for (int y = 1; y <= 6; y++) platform(c, y, y == 6 ? 4 : 0);
-                            CompoundNBT patch = new CompoundNBT(); patch.putBoolean("up", true);
+                            CompoundTag patch = new CompoundTag(); patch.putBoolean("up", true);
                             c.seed(8, 0, 8, patch);
                         } else c.block(9, 0, 8, "minecraft:redstone_block");
                         if (!mode.equals("no-power")) c.power(8, 0, 8, "steam", mode.equals("scarce") ? 31 : 64);
                         BlockPos base = c.at(8, 0, 8);
-                        ArmorStandEntity rider = new ArmorStandEntity(c.world, base.getX() + 0.5,
+                        ArmorStand rider = new ArmorStand(c.world, base.getX() + 0.5,
                                 base.getY() + (down ? 7 : 1) + 0.00390625, base.getZ() + 0.5);
                         rider.setNoGravity(true);
                         rider.setInvulnerable(true);
@@ -61,7 +61,7 @@ final class SteamOperationalActors {
                         c.record("passenger/uuid", rider.getUUID().toString());
                         c.record("passenger/startY", rider.getY());
                     }, c -> {
-                        ArmorStandEntity rider = passenger[0];
+                        ArmorStand rider = passenger[0];
                         c.require(rider != null && rider.isAlive(), "Passenger survives the movement test");
                         c.record("passenger/endY", rider.getY());
                         c.record("passenger/naturalTicks", rider.tickCount);
@@ -78,14 +78,14 @@ final class SteamOperationalActors {
                             BlockState state = c.world.getBlockState(c.at(8, y, 8));
                             c.record("shaft/" + y, state.toString());
                             if (movedUp && y <= 6) {
-                                c.require("steamadvantage:platform".equals(String.valueOf(state.getBlock().getRegistryName())),
+                                c.require("basesteam:platform".equals(String.valueOf(state.getBlock().getRegistryName())),
                                         "Raised shaft contains physical platform segment " + y);
                                 IntegerProperty height = (IntegerProperty) state.getBlock().getStateDefinition().getProperty("height");
                                 c.require(height != null && state.getValue(height) == (y == 6 ? 4 : 0),
                                         "Raised shaft/top collision height is preserved at " + y);
                             } else c.require(state.isAir(), "Shaft is clear at " + y + " after " + mode);
                         }
-                        c.require(c.world.getBlockState(c.at(8, 9, 8)).getBlock() == net.minecraft.block.Blocks.STONE,
+                        c.require(c.world.getBlockState(c.at(8, 9, 8)).getBlock() == net.minecraft.world.level.block.Blocks.STONE,
                                 "Elevator preserves the real upper stop");
                         c.require(c.nbt(8, 0, 8).getBoolean("up") == movedUp,
                                 "Saved latch agrees with physical movement, not just an NBT flag");
@@ -94,7 +94,7 @@ final class SteamOperationalActors {
     }
 
     private static void platform(MachineContext c, int y, int height) {
-        c.block(8, y, 8, "steamadvantage:platform");
+        c.block(8, y, 8, "basesteam:platform");
         BlockState state = c.world.getBlockState(c.at(8, y, 8));
         IntegerProperty property = (IntegerProperty) state.getBlock().getStateDefinition().getProperty("height");
         if (property == null) throw new IllegalStateException("Missing native platform height");
@@ -103,7 +103,7 @@ final class SteamOperationalActors {
 
     private static final class Shot {
         FakePlayer player;
-        CowEntity target;
+        Cow target;
         ItemStack weapon;
         float expectedDamage;
         int expectedAmmo;
@@ -122,23 +122,23 @@ final class SteamOperationalActors {
                         UUID id = UUID.nameUUIDFromBytes(("SteamOperational/" + mode + "/" + muzzle)
                                 .getBytes(StandardCharsets.UTF_8));
                         shot.player = new FakePlayer(c.world, new GameProfile(id, "SteamOperational"));
-                        shot.player.connection = new ServerPlayNetHandler(c.world.getServer(),
-                                new NetworkManager(PacketDirection.SERVERBOUND), shot.player) {
-                            @Override public void send(IPacket<?> packet) {}
+                        shot.player.connection = new ServerGamePacketListenerImpl(c.world.getServer(),
+                                new Connection(PacketFlow.SERVERBOUND), shot.player) {
+                            @Override public void send(Packet<?> packet) {}
                         };
-                        shot.player.gameMode.setGameModeForPlayer(GameType.SURVIVAL);
+                        shot.player.gameMode.changeGameModeForPlayer(GameType.SURVIVAL);
                         shot.player.moveTo(muzzle.getX() + 0.5, muzzle.getY(), muzzle.getZ() + 0.5, 0, 0);
-                        Item weapon = ForgeRegistries.ITEMS.getValue(new ResourceLocation("steamadvantage:musket"));
-                        c.require(weapon != null && weapon != net.minecraft.item.Items.AIR, "Native musket is registered");
+                        Item weapon = ForgeRegistries.ITEMS.getValue(new ResourceLocation("basesteam:musket"));
+                        c.require(weapon != null && weapon != net.minecraft.world.item.Items.AIR, "Native musket is registered");
                         shot.weapon = new ItemStack(weapon);
-                        shot.player.setItemInHand(Hand.MAIN_HAND, shot.weapon);
-                        if (!mode.equals("no-ammo")) enchant(c, shot.weapon, "steamadvantage:rapid_reload");
-                        if (mode.equals("powderless")) enchant(c, shot.weapon, "steamadvantage:powderless");
+                        shot.player.setItemInHand(InteractionHand.MAIN_HAND, shot.weapon);
+                        if (!mode.equals("no-ammo")) enchant(c, shot.weapon, "basesteam:rapid_reload");
+                        if (mode.equals("powderless")) enchant(c, shot.weapon, "basesteam:powderless");
                         if (mode.equals("infinity")) enchant(c, shot.weapon, "minecraft:infinity");
                         if (mode.equals("last-cartridge") || mode.equals("infinity")) {
-                            Item cartridge = ForgeRegistries.ITEMS.getValue(new ResourceLocation("steamadvantage:blackpowder_cartridge"));
-                            c.require(cartridge != null && cartridge != net.minecraft.item.Items.AIR, "Cartridge is registered");
-                            shot.player.inventory.setItem(1, new ItemStack(cartridge));
+                            Item cartridge = ForgeRegistries.ITEMS.getValue(new ResourceLocation("basesteam:blackpowder_cartridge"));
+                            c.require(cartridge != null && cartridge != net.minecraft.world.item.Items.AIR, "Cartridge is registered");
+                            shot.player.getInventory().setItem(1, new ItemStack(cartridge));
                         }
                         shot.expectedAmmo = mode.equals("infinity") ? 1 : 0;
                         shot.target = EntityType.COW.create(c.world);
@@ -150,21 +150,21 @@ final class SteamOperationalActors {
                         c.require(c.world.addFreshEntity(shot.target), "Living target added to the real server world");
                         c.record("target/uuid", shot.target.getUUID().toString());
                         c.record("target/initialHealth", shot.target.getHealth());
-                        ActionResultType reload = weapon.use(c.world, shot.player, Hand.MAIN_HAND).getResult();
+                        InteractionResult reload = weapon.use(c.world, shot.player, InteractionHand.MAIN_HAND).getResult();
                         c.record("musket/reload-result", reload.toString());
                         if (mode.equals("no-ammo")) {
-                            c.require(reload == ActionResultType.FAIL, "Unloaded musket rejects use without ammunition");
+                            c.require(reload == InteractionResult.FAIL, "Unloaded musket rejects use without ammunition");
                             shot.expectedDamage = 0;
                         } else {
-                            c.require(reload == ActionResultType.SUCCESS, "Rapid-reload interaction succeeds");
+                            c.require(reload == InteractionResult.SUCCESS, "Rapid-reload interaction succeeds");
                             c.require(shot.weapon.getOrCreateTag().getByte("loaded") == 1,
                                     "Reload interaction loads the chamber before the shot");
-                            c.record("musket/ammo-after-reload", shot.player.inventory.getItem(1).getCount());
-                            c.require(shot.player.inventory.getItem(1).getCount() == shot.expectedAmmo,
+                            c.record("musket/ammo-after-reload", shot.player.getInventory().getItem(1).getCount());
+                            c.require(shot.player.getInventory().getItem(1).getCount() == shot.expectedAmmo,
                                     "Reload consumes exactly one cartridge unless an ammunition-saving enchantment applies");
-                            ActionResultType aim = weapon.use(c.world, shot.player, Hand.MAIN_HAND).getResult();
+                            InteractionResult aim = weapon.use(c.world, shot.player, InteractionHand.MAIN_HAND).getResult();
                             c.record("musket/aim-result", aim.toString());
-                            c.require(aim == ActionResultType.SUCCESS, "Loaded musket can aim even without a spare cartridge");
+                            c.require(aim == InteractionResult.SUCCESS, "Loaded musket can aim even without a spare cartridge");
                             c.require(shot.player.isUsingItem(), "Native player enters the use lifecycle");
                             shot.player.releaseUsingItem();
                             shot.expectedDamage = shotDamage();
@@ -173,14 +173,14 @@ final class SteamOperationalActors {
                         c.record("target/finalHealth", shot.target.getHealth());
                         c.record("target/naturalTicks", shot.target.tickCount);
                         c.record("musket/durabilityDebit", shot.weapon.getDamageValue());
-                        c.record("musket/finalAmmo", shot.player.inventory.getItem(1).getCount());
+                        c.record("musket/finalAmmo", shot.player.getInventory().getItem(1).getCount());
                         c.require(shot.target.isAlive() && shot.target.tickCount >= 35,
                                 "Real target remains available after natural server ticks");
                         c.require(Math.abs(shot.target.getHealth() - (1000 - shot.expectedDamage)) < 0.001F,
                                 "Target damage is exactly the configured shot damage, or zero for rejected use");
                         c.require(shot.weapon.getDamageValue() == (mode.equals("no-ammo") ? 0 : 1),
                                 "Only a real shot debits one musket durability");
-                        c.require(shot.player.inventory.getItem(1).getCount() == shot.expectedAmmo,
+                        c.require(shot.player.getInventory().getItem(1).getCount() == shot.expectedAmmo,
                                 "Firing does not charge ammunition a second time");
                         c.require(shot.weapon.getOrCreateTag().getByte("loaded") == 0,
                                 "The chamber is empty after firing or failed unladen use");
@@ -191,7 +191,7 @@ final class SteamOperationalActors {
 
     private static float shotDamage() {
         try {
-            float damage = Class.forName("zone.moddev.mc.steamadvantage.SteamAdvantage", false,
+            float damage = Class.forName("zone.moddev.mc.basesteam.SteamAdvantage", false,
                     SteamOperationalActors.class.getClassLoader()).getDeclaredField("MUSKET_DAMAGE").getFloat(null);
             if (!Float.isFinite(damage) || damage <= 0 || damage >= 1000) throw new IllegalStateException("Unsupported configured musket damage");
             return damage;

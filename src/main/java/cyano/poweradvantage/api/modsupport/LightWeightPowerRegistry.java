@@ -2,11 +2,11 @@ package cyano.poweradvantage.api.modsupport;
 
 import cyano.poweradvantage.api.ConduitType;
 import cyano.poweradvantage.api.IPowerMachine;
-import net.minecraft.block.Block;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.IBlockReader;
-import zone.moddev.mc.poweradvantage.PowerAdvantage;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.BlockGetter;
+import zone.moddev.mc.basepower.PowerAdvantage;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -18,7 +18,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * considered "external" power systems because their power implementation is not controlled by Power 
  * Advantage. </p>
  * <p>For example, you can add Power Advantage compatibility to an existing mod like this:</p><pre>
-	if(Loader.isModLoaded("poweradvantage")){
+	if(Loader.isModLoaded("basepower")){
 		LightWeightPowerRegistry.registerLightWeightPowerAcceptor(Blocks.myMachine, 
 				new ILightWeightPowerAcceptor(){
 
@@ -109,9 +109,9 @@ public class LightWeightPowerRegistry {
 	 * @param energyType The type of energy being offered
 	 * @return How much of the offered energy the target machine would like to receive.
 	 */
-	public float getRequestedPowerAmount(IBlockReader w, BlockPos coord, ConduitType energyType) {
+	public float getRequestedPowerAmount(BlockGetter w, BlockPos coord, ConduitType energyType) {
 		Block b = w.getBlockState(coord).getBlock();
-		TileEntity te = w.getBlockEntity(coord);
+		BlockEntity te = w.getBlockEntity(coord);
 		if (te == null) return 0;
 		if (te instanceof IPowerMachine) {
 			return ((IPowerMachine) te).getPowerRequest(energyType).amount;
@@ -132,9 +132,9 @@ public class LightWeightPowerRegistry {
 	 * @return The amount of energy that the target machine actually added (may be less than the
 	 * amount provided)
 	 */
-	public float addPower(IBlockReader w, BlockPos coord, ConduitType energyType, float amount) {
+	public float addPower(BlockGetter w, BlockPos coord, ConduitType energyType, float amount) {
 		Block b = w.getBlockState(coord).getBlock();
-		TileEntity te = w.getBlockEntity(coord);
+		BlockEntity te = w.getBlockEntity(coord);
 		if (te == null) return 0;
 		if (te instanceof IPowerMachine) {
 			return ((IPowerMachine) te).addEnergy(amount, energyType);

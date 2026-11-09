@@ -12,14 +12,14 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Base64;
 import java.util.UUID;
-import net.minecraft.command.Commands;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.ServerPlayerEntity;
-import net.minecraft.nbt.CompressedStreamTools;
-import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.commands.Commands;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.nbt.NbtIo;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.management.PlayerInteractionManager;
-import net.minecraft.world.server.ServerWorld;
+import net.minecraft.server.level.ServerPlayerGameMode;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.RegisterCommandsEvent;
@@ -28,30 +28,40 @@ import net.minecraftforge.event.RegisterCommandsEvent;
 final class ActorProbe {
     private static final Gson JSON = new GsonBuilder().setPrettyPrinting().create();
     private static final File MARKER = new File("advantage-migration.allow");
-    private final java.util.Set<net.minecraft.world.World> liveWorlds = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
-    private final java.util.Map<net.minecraft.world.World, NativeEntityHold> heldActors = new java.util.IdentityHashMap<>();
+    private final java.util.Set<net.minecraft.world.level.Level> liveWorlds = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+    private final java.util.Map<net.minecraft.world.level.Level, NativeEntityHold> heldActors = new java.util.IdentityHashMap<>();
 
     static void register() {
         if (!MARKER.isFile()) return;
         ActorProbe probe = new ActorProbe();
         MinecraftForge.EVENT_BUS.addListener(probe::tick);
+        MinecraftForge.EVENT_BUS.addListener(probe::entityJoining);
         MinecraftForge.EVENT_BUS.addListener(probe::starting);
     }
 
-    private boolean frozen(net.minecraft.world.World world) {
+    private boolean frozen(net.minecraft.world.level.Level world) {
         return new File("actor-fixture.json").isFile() && !new File("actor-operate.allow").isFile() && !liveWorlds.contains(world);
     }
 
+    static boolean witnessed(Entity entity) { return NativeEntityData.containsString(entity, "AdvWorksActor"); }
+
     private void tick(TickEvent.WorldTickEvent event) {
-        if (!(event.world instanceof ServerWorld)) return;
+        if (!(event.world instanceof ServerLevel)) return;
         if (event.phase == TickEvent.Phase.START && frozen(event.world)) {
-            NativeEntityHold held = new NativeEntityHold();
-            Native116Worlds.entities((ServerWorld) event.world).filter(entity -> entity.getPersistentData().contains("AdvWorksActor", 8))
+            NativeEntityHold held = heldActors.computeIfAbsent(event.world, key -> new NativeEntityHold());
+            Native117Worlds.entities((ServerLevel) event.world).filter(ActorProbe::witnessed)
                     .forEach(held::hold);
             heldActors.put(event.world, held);
         } else if (event.phase == TickEvent.Phase.END) {
             NativeEntityHold held = heldActors.remove(event.world);
             if (held != null) held.restore();
+        }
+    }
+
+    private void entityJoining(net.minecraftforge.event.entity.EntityJoinWorldEvent event) {
+        if (event.getWorld() instanceof ServerLevel && frozen(event.getWorld())
+                && witnessed(event.getEntity())) {
+            heldActors.computeIfAbsent(event.getWorld(), key -> new NativeEntityHold()).hold(event.getEntity());
         }
     }
 
@@ -68,7 +78,7 @@ final class ActorProbe {
         }
     }
 
-    private void snapshot(MinecraftServer server, ServerWorld world, String operation, String label) throws Exception {
+    private void snapshot(MinecraftServer server, ServerLevel world, String operation, String label) throws Exception {
         if (!MARKER.isFile() || !world.getServer().getWorldData().getLevelName().equals("AdvantageWorksMigration")
                 || !label.matches("[a-zA-Z0-9_-]+")) throw new IllegalStateException("Unmarked world or unsafe label");
         JsonObject definition = JSON.fromJson(new String(Files.readAllBytes(new File("actor-fixture.json").toPath()),
@@ -86,7 +96,7 @@ final class ActorProbe {
         result.addProperty("frozen", frozen(world));
         result.addProperty("gameTime", world.getGameTime());
         try (java.io.FileInputStream input = new java.io.FileInputStream(new File("AdvantageWorksMigration/level.dat"))) {
-            CompoundNBT data = CompressedStreamTools.readCompressed(input).getCompound("Data");
+            CompoundTag data = NbtIo.readCompressed(input).getCompound("Data");
             if (data.contains("Player", 10)) result.add("embedded", encode(data.getCompound("Player")));
         }
         boolean read = operation.equals("read");
@@ -94,19 +104,19 @@ final class ActorProbe {
         if (read) {
             GameProfile profile = new GameProfile(UUID.fromString(definition.get("playerUuid").getAsString()),
                     definition.get("playerName").getAsString());
-            ServerPlayerEntity player = new ServerPlayerEntity(server, world, profile, new PlayerInteractionManager(world));
+            ServerPlayer player = new ServerPlayer(server, world, profile);
             if (server.getPlayerList().load(player) == null) throw new IllegalStateException("No player file loaded");
-            result.add("player", encode(player.saveWithoutId(new CompoundNBT())));
-            Native116PlayerIo.save(server.getPlayerList(), player);
+            result.add("player", encode(player.saveWithoutId(new CompoundTag())));
+            Native117PlayerIo.save(server.getPlayerList(), player);
         }
         JsonArray entities = new JsonArray();
-        for (Entity entity : Native116Worlds.entities(world).collect(java.util.stream.Collectors.toList())) {
-            if (!entity.getPersistentData().contains("AdvWorksActor", 8)) continue;
+        for (Entity entity : Native117Worlds.entities(world).collect(java.util.stream.Collectors.toList())) {
+            if (!witnessed(entity)) continue;
             if (operation.equals("operate")) entity.canUpdate(true);
-            CompoundNBT nbt = new CompoundNBT();
+            CompoundTag nbt = new CompoundTag();
             if (!entity.saveAsPassenger(nbt)) throw new IllegalStateException("Could not serialize actor");
             JsonObject entry = encode(nbt);
-            entry.addProperty("witness", entity.getPersistentData().getString("AdvWorksActor"));
+            entry.addProperty("witness", nbt.getCompound("ForgeData").getString("AdvWorksActor"));
             entry.addProperty("ticksExisted", entity.tickCount);
             entities.add(entry);
         }
@@ -115,9 +125,9 @@ final class ActorProbe {
         System.out.println("ADVACTORS COMPLETE " + label);
     }
 
-    private static JsonObject encode(CompoundNBT nbt) throws Exception {
+    private static JsonObject encode(CompoundTag nbt) throws Exception {
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-        CompressedStreamTools.writeCompressed(nbt, bytes);
+        NbtIo.writeCompressed(nbt, bytes);
         JsonObject result = new JsonObject();
         result.addProperty("nbtBase64", Base64.getEncoder().encodeToString(bytes.toByteArray()));
         return result;

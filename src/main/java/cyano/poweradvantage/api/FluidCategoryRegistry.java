@@ -7,9 +7,9 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
-import net.minecraft.fluid.Fluid;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.registry.Registry;
+import net.minecraft.world.level.material.Fluid;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.core.Registry;
 
 /**
  * Registry of semantic fluid categories shared by Advantage mods.
@@ -26,6 +26,7 @@ public final class FluidCategoryRegistry {
 
     static {
         registerAlias(CRUDE_OIL, "crude_oil");
+        registerAlias(CRUDE_OIL, "basepower:crude_oil");
         registerAlias(CRUDE_OIL, "poweradvantage:crude_oil");
         registerAlias(CRUDE_OIL, "mineralogy_crude_oil");
         registerAlias(CRUDE_OIL, "mineralogy:crude_oil");

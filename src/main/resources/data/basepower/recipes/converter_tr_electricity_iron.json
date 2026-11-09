@@ -1,0 +1,34 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "XXX",
+    "XZX",
+    "XXX"
+  ],
+  "key": {
+    "X": {
+      "tag": "forge:ingots/iron"
+    },
+    "Z": {
+      "tag": "forge:power_supply_units"
+    }
+  },
+  "result": {
+    "item": "basepower:converter_tr_electricity"
+  },
+  "conditions": [
+    {
+      "type": "basepower:tag_empty",
+      "tag": "forge:ingots/refined_iron"
+    },
+    {
+      "type": "basepower:tag_not_empty",
+      "tag": "forge:ingots/iron"
+    },
+    {
+      "type": "basepower:tag_not_empty",
+      "tag": "forge:power_supply_units"
+    }
+  ],
+  "group": "basepower:converter_tr_electricity"
+}

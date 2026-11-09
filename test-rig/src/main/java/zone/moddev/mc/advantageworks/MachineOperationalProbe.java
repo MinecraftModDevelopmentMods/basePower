@@ -15,12 +15,12 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import net.minecraft.command.Commands;
-import net.minecraft.entity.Entity;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.GameRules;
-import net.minecraft.world.server.ServerWorld;
+import net.minecraft.commands.Commands;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.GameRules;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.util.FakePlayer;
 import net.minecraftforge.common.util.FakePlayerFactory;
@@ -33,11 +33,12 @@ final class MachineOperationalProbe {
     private static final File FIXTURE = new File("machine-operation-fixture.json");
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private final List<Run> runs = new ArrayList<>();
-    private final List<TileEntity> held = new ArrayList<>();
+    private final List<net.minecraft.world.level.block.entity.TickingBlockEntity> held = new ArrayList<>();
     private final NativeEntityHold heldEntities = new NativeEntityHold();
-    private ServerWorld world;
+    private ServerLevel world;
     private boolean paused = true;
     private boolean preparing;
+    private int foundationIndex;
     private int prepareIndex;
     private String label;
     private long campaignStart;
@@ -51,6 +52,25 @@ final class MachineOperationalProbe {
         MachineOperationalProbe probe = new MachineOperationalProbe();
         MinecraftForge.EVENT_BUS.addListener(probe::commands);
         MinecraftForge.EVENT_BUS.addListener(probe::tick);
+        MinecraftForge.EVENT_BUS.addListener(probe::chunkLoaded);
+        MinecraftForge.EVENT_BUS.addListener(probe::entityJoining);
+    }
+
+    private void chunkLoaded(net.minecraftforge.event.world.ChunkEvent.Load event) {
+        if (paused && event.getWorld() instanceof ServerLevel) {
+            ServerLevel loaded = (ServerLevel) event.getWorld();
+            if (loaded.dimension() == net.minecraft.world.level.Level.OVERWORLD) {
+                held.addAll(NativeBlockEntityTicks.drain(loaded));
+            }
+        }
+    }
+
+    private void entityJoining(net.minecraftforge.event.entity.EntityJoinWorldEvent event) {
+        if (paused && event.getWorld() instanceof ServerLevel
+                && event.getWorld().dimension() == net.minecraft.world.level.Level.OVERWORLD
+                && !(event.getEntity() instanceof net.minecraft.world.entity.player.Player)) {
+            heldEntities.hold(event.getEntity());
+        }
     }
 
     private void commands(RegisterCommandsEvent event) {
@@ -86,7 +106,7 @@ final class MachineOperationalProbe {
         return scenarios;
     }
 
-    private void authorize(ServerWorld current, String requestedLabel) {
+    private void authorize(ServerLevel current, String requestedLabel) {
         if (!MARKER.isFile() || !current.getServer().getWorldData().getLevelName().equals("AdvantageWorksMigration")
                 || !requestedLabel.matches("[A-Za-z0-9_-]+")) throw new IllegalStateException("Unmarked or unsafe operating world");
         world = current;
@@ -95,7 +115,7 @@ final class MachineOperationalProbe {
         if (!world.players().contains(sentinel)) world.players().add(sentinel);
     }
 
-    private void start(ServerWorld current, String group, String requestedLabel) {
+    private void start(ServerLevel current, String group, String requestedLabel) {
         authorize(current, requestedLabel);
         if (FIXTURE.exists() || !runs.isEmpty() || !paused) throw new IllegalStateException("Construction is single-use; never rebuild a restarted fixture");
         List<MachineScenario> catalog = catalog();
@@ -125,6 +145,7 @@ final class MachineOperationalProbe {
         run.started = true;
         try {
             run.context.floor();
+            run.context.requireTickingFoundation();
             run.scenario.setup.accept(run.context);
             run.before = run.context.snapshot();
             run.startTick = world.getGameTime();
@@ -134,16 +155,14 @@ final class MachineOperationalProbe {
     }
 
     private void tick(TickEvent.WorldTickEvent event) {
-        if (event.world.isClientSide || !(event.world instanceof ServerWorld)
-                || event.world.dimension() != net.minecraft.world.World.OVERWORLD) return;
-        ServerWorld current = (ServerWorld) event.world;
+        if (event.world.isClientSide || !(event.world instanceof ServerLevel)
+                || event.world.dimension() != net.minecraft.world.level.Level.OVERWORLD) return;
+        ServerLevel current = (ServerLevel) event.world;
         if (event.phase == TickEvent.Phase.START && paused) {
-            held.addAll(current.tickableBlockEntities);
-            current.tickableBlockEntities.clear();
-            for (Entity entity : current.getAllEntities()) if (!(entity instanceof net.minecraft.entity.player.PlayerEntity)) heldEntities.hold(entity);
+            held.addAll(NativeBlockEntityTicks.drain(current));
+            for (Entity entity : current.getAllEntities()) if (!(entity instanceof net.minecraft.world.entity.player.Player)) heldEntities.hold(entity);
         } else if (event.phase == TickEvent.Phase.END) {
-            for (TileEntity tile : held) if (!tile.isRemoved() && !current.tickableBlockEntities.contains(tile)) current.tickableBlockEntities.add(tile);
-            held.clear(); heldEntities.restore();
+            NativeBlockEntityTicks.restore(current, held); heldEntities.restore();
             if (current != world) return;
             if (inspectionCases != null) {
                 if (world.getGameTime() >= nextPreparation) inspectNext();
@@ -151,6 +170,12 @@ final class MachineOperationalProbe {
             }
             if (preparing) {
                 if (world.getGameTime() < nextPreparation) return;
+                if (foundationIndex < runs.size()) {
+                    // Obtain native ticking tickets before creating actors or machines.
+                    runs.get(foundationIndex++).context.requestFoundation();
+                    nextPreparation = world.getGameTime() + 20;
+                    return;
+                }
                 while (prepareIndex < runs.size()) {
                     Run run = runs.get(prepareIndex++);
                     if (run.scenario.exclusive) continue;
@@ -230,7 +255,7 @@ final class MachineOperationalProbe {
         System.out.println("ADVMACHINES COMPLETE " + label);
     }
 
-    private void inspect(ServerWorld current, String requestedLabel) {
+    private void inspect(ServerLevel current, String requestedLabel) {
         authorize(current, requestedLabel);
         if (!paused || !runs.isEmpty()) throw new IllegalStateException("Restart inspection must run before any construction or operation");
         try {
@@ -255,8 +280,8 @@ final class MachineOperationalProbe {
                     actual.addProperty("x", pos.getX()); actual.addProperty("y", pos.getY()); actual.addProperty("z", pos.getZ());
                     actual.addProperty("block", world.getBlockState(pos).getBlock().getRegistryName().toString());
                     actual.addProperty("state", world.getBlockState(pos).toString());
-                    TileEntity tile = world.getBlockEntity(pos);
-                    if (tile != null) actual.addProperty("nbt", tile.save(new net.minecraft.nbt.CompoundNBT()).toString());
+                    BlockEntity tile = world.getBlockEntity(pos);
+                    if (tile != null) actual.addProperty("nbt", tile.save(new net.minecraft.nbt.CompoundTag()).toString());
                     positions.add(actual);
                 }
                 row.add("positions", positions); inspectionResults.add(row);

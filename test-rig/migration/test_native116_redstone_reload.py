@@ -172,7 +172,9 @@ class RedstoneReloadOracleTests(unittest.TestCase):
             with self.assertRaises(AssertionError): validate_readiness(bad, "seed", 100)
 
     def test_probe_never_drives_ticks_or_loads_expected_nbt(self):
-        source = (Path(__file__).parents[1] / "src/main/java/zone/moddev/mc/advantageworks/RedstoneReloadProbe.java").read_text()
+        from historical_test_inputs import JAVA, POWER116, git_blob
+
+        source = git_blob(POWER116, JAVA + "RedstoneReloadProbe.java").decode("utf-8")
         for forbidden in (".tickUpdate(", ".powerUpdate(", ".tick();", ".load("):
             self.assertNotIn(forbidden, source)
         self.assertIn("tickableBlockEntities.clear()", source)
@@ -181,7 +183,7 @@ class RedstoneReloadOracleTests(unittest.TestCase):
         self.assertIn('else if (ready("seed"))', source)
         self.assertIn('else if (ready("restart"))', source)
         self.assertIn("StandardOpenOption.CREATE_NEW", source)
-        mod = (Path(__file__).parents[1] / "src/main/java/zone/moddev/mc/advantageworks/AdvantageWorksMod.java").read_text()
+        mod = git_blob(POWER116, JAVA + "AdvantageWorksMod.java").decode("utf-8")
         self.assertEqual(1, mod.count("RedstoneReloadProbe.register();"))
 
 

@@ -189,7 +189,7 @@ def audit_connected(root, ticks=512):
                 status="FAIL" if counts["FAIL"] else "INCOMPLETE" if counts["INCOMPLETE"] else "PASS")
 
 
-def endurance_batch(documents, definitions):
+def endurance_batch(documents, definitions, *, identity=lambda value: value):
     """Check measured endpoint facts, not the ledger's asserted output counts."""
     failures, frames = [], {}
     try:
@@ -222,7 +222,7 @@ def endurance_batch(documents, definitions):
             return counts
 
         for station, pos, neighbours, block, product, fuel in BATCH_MACHINES:
-            if at(station, pos)[0]["block"] != block: raise ValueError("Wrong processing machine")
+            if at(station, pos)[0]["block"] != identity(block): raise ValueError("Wrong processing machine: " + block)
             counts = sum((contents(station, p) for p in (pos, *neighbours)), Counter())
             if fuel: counts.pop("minecraft:coal", None)
             if counts != {"minecraft:" + product: 4}: raise ValueError("Incorrect exact processing yield: " + block)
@@ -252,7 +252,7 @@ def endurance_batch(documents, definitions):
             amount = tank.get("Amount")
             if not isinstance(amount, int) or amount < 0 or "FluidName" not in tank: raise ValueError("Malformed oil amount/identity")
             if amount: fluids[tank["FluidName"]] += amount
-        if fluids != {"poweradvantage:refined_oil": 1000}: raise ValueError("Incorrect oil quantity/identity")
+        if fluids != {identity("poweradvantage:refined_oil"): 1000}: raise ValueError("Incorrect oil quantity/identity")
     except (KeyError, ValueError, TypeError) as error:
         failures.append(str(error))
     return dict(status="FAIL" if failures else "PASS", failures=failures)

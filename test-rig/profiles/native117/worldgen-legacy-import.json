@@ -1,0 +1,235 @@
+{
+  "mode": "packaged",
+  "runtimeBase": "build/works-native117",
+  "serverPort": 25565,
+  "startupTimeoutSeconds": 180,
+  "stationRunSeconds": 5,
+  "recipeMode": "NORMAL",
+  "sourceCommit": "308d42a89483d56d0fad4805cdb65dac483d9e31",
+  "sourceVersion": "2.4.9.117011",
+  "forge": {
+    "version": "1.17.1-37.1.1",
+    "installerPath": "build/native117-artifacts/31F2319B1B9CA491AACCC020887240F8524A4FF2A8E0F8B795E17E889CBC043B/forge-1.17.1-37.1.1-installer.jar",
+    "url": "https://maven.minecraftforge.net/net/minecraftforge/forge/1.17.1-37.1.1/forge-1.17.1-37.1.1-installer.jar",
+    "sha256": "31F2319B1B9CA491AACCC020887240F8524A4FF2A8E0F8B795E17E889CBC043B"
+  },
+  "mods": [
+    {
+      "id": "advantageworkstest",
+      "version": "1.1.1.117011",
+      "file": "AdvantageWorksTestHarness-1.1.1.117011.jar",
+      "path": "build/native117-artifacts/F7EBFD86550E7D595F508B6B696CEA7B52E83D011806C330F102C7245D224EAE/AdvantageWorksTestHarness-1.1.1.117011.jar",
+      "sha256": "F7EBFD86550E7D595F508B6B696CEA7B52E83D011806C330F102C7245D224EAE",
+      "sourceRef": "f2f6af74ab59aab7562d9af5936a1f17e2adb534",
+      "workspaceProduced": true,
+      "pinStatus": "PINNED_UNQUALIFIED"
+    },
+    {
+      "id": "basepower",
+      "version": "2.4.9.117011",
+      "file": "basePower-2.4.9.117011.jar",
+      "path": "build/native117-artifacts/C55782CA1B0F3B8F7B358BE3150229F5AD92F8C8CE15E3989AAAD1B4F182886F/basePower-2.4.9.117011.jar",
+      "sha256": "C55782CA1B0F3B8F7B358BE3150229F5AD92F8C8CE15E3989AAAD1B4F182886F",
+      "sourceRef": "308d42a89483d56d0fad4805cdb65dac483d9e31",
+      "workspaceProduced": true,
+      "pinStatus": "PINNED_UNQUALIFIED"
+    },
+    {
+      "id": "basesteam",
+      "version": "2.2.10.117011",
+      "file": "baseSteam-2.2.10.117011.jar",
+      "path": "build/native117-artifacts/8A9207A89C0971501BB649FC47F0FF3CF6132FCE3EB2AE651CD8437406BA191B/baseSteam-2.2.10.117011.jar",
+      "sha256": "8A9207A89C0971501BB649FC47F0FF3CF6132FCE3EB2AE651CD8437406BA191B",
+      "sourceRef": "c8e3febcd11c6854d8073c9c053c7c162cdd6687",
+      "workspaceProduced": true,
+      "pinStatus": "PINNED_UNQUALIFIED"
+    },
+    {
+      "id": "baseelectric",
+      "version": "2.2.10.117011",
+      "file": "baseElectric-2.2.10.117011.jar",
+      "path": "build/native117-artifacts/9788E9DA4DD7698D0D53FC66246ED0637FC6EB89A855B7CFCC4AFFC6EFF7559F/baseElectric-2.2.10.117011.jar",
+      "sha256": "9788E9DA4DD7698D0D53FC66246ED0637FC6EB89A855B7CFCC4AFFC6EFF7559F",
+      "sourceRef": "cf3d4b0e2d1591b2ae8e5d638002ca016e46eac4",
+      "workspaceProduced": true,
+      "pinStatus": "PINNED_UNQUALIFIED"
+    },
+    {
+      "id": "orespawn",
+      "version": "4.1.0.117011",
+      "file": "OreSpawn-4.1.0.117011.jar",
+      "path": "build/native117-artifacts/1BDEDCBB179CB5A3B169E5C8A6B301E3888AE15B94108B0AEC627D705CFAD833/OreSpawn-4.1.0.117011.jar",
+      "sha256": "1BDEDCBB179CB5A3B169E5C8A6B301E3888AE15B94108B0AEC627D705CFAD833",
+      "sourceRef": "b56e2b62a1a6ea4d1dd96f8646a87801a817dbdf",
+      "workspaceProduced": false,
+      "pinStatus": "PINNED_UNQUALIFIED"
+    }
+  ],
+  "name": "worldgen-legacy-import",
+  "levelName": "AdvantageWorksWorldgen",
+  "levelSeed": "advantage-works-worldgen-1.15.2-v1",
+  "levelType": "DEFAULT",
+  "generatorSettings": "",
+  "buildWorks": false,
+  "worldgenSampleRadius": 8,
+  "stableWorldgenCountExclusions": [
+    "basepower:crude_oil"
+  ],
+  "shutdownTimeoutSeconds": 300,
+  "lifecycleStations": [],
+  "configFixtures": [
+    {
+      "source": "../../../PA113/PowerAdvantage/test-rig/../src/test/resources/orespawn-legacy/poweradvantage.json",
+      "destination": "config/orespawn/poweradvantage.json"
+    },
+    {
+      "source": "../../../PA113/PowerAdvantage/test-rig/../../ElectricAdvantage/ElectricAdvantage/src/test/resources/orespawn-legacy/electricadvantage.json",
+      "destination": "config/orespawn/electricadvantage.json"
+    }
+  ],
+  "firstProfileAssertions": [
+    {
+      "id": "legacy-oil-retained",
+      "section": "ores",
+      "entry": "basepower:legacy/basepower_crude_oil_0",
+      "present": true,
+      "field": "enabled",
+      "expectedBoolean": true
+    },
+    {
+      "id": "legacy-lithium-retained",
+      "section": "ores",
+      "entry": "baseelectric:legacy/baseelectric_li_ore_0",
+      "present": true,
+      "field": "enabled",
+      "expectedBoolean": true
+    },
+    {
+      "id": "legacy-sulfur-retained",
+      "section": "ores",
+      "entry": "baseelectric:legacy/baseelectric_sulfur_ore_1",
+      "present": true,
+      "field": "enabled",
+      "expectedBoolean": true
+    },
+    {
+      "id": "modern-oil-not-duplicated",
+      "section": "fluid_deposits",
+      "entry": "basepower:fluid_deposit/desert_crude_oil",
+      "present": false
+    },
+    {
+      "id": "modern-lithium-not-duplicated",
+      "section": "ores",
+      "entry": "baseelectric:ore/lithium",
+      "present": false
+    },
+    {
+      "id": "modern-sulfur-not-duplicated",
+      "section": "ores",
+      "entry": "baseelectric:ore/sulfur",
+      "present": false
+    }
+  ],
+  "restartProfileAssertions": [
+    {
+      "id": "legacy-oil-retained",
+      "section": "ores",
+      "entry": "basepower:legacy/basepower_crude_oil_0",
+      "present": true,
+      "field": "enabled",
+      "expectedBoolean": true
+    },
+    {
+      "id": "legacy-lithium-retained",
+      "section": "ores",
+      "entry": "baseelectric:legacy/baseelectric_li_ore_0",
+      "present": true,
+      "field": "enabled",
+      "expectedBoolean": true
+    },
+    {
+      "id": "legacy-sulfur-retained",
+      "section": "ores",
+      "entry": "baseelectric:legacy/baseelectric_sulfur_ore_1",
+      "present": true,
+      "field": "enabled",
+      "expectedBoolean": true
+    },
+    {
+      "id": "modern-oil-not-duplicated",
+      "section": "fluid_deposits",
+      "entry": "basepower:fluid_deposit/desert_crude_oil",
+      "present": false
+    },
+    {
+      "id": "modern-lithium-not-duplicated",
+      "section": "ores",
+      "entry": "baseelectric:ore/lithium",
+      "present": false
+    },
+    {
+      "id": "modern-sulfur-not-duplicated",
+      "section": "ores",
+      "entry": "baseelectric:ore/sulfur",
+      "present": false
+    }
+  ],
+  "firstFileAssertions": [
+    {
+      "id": "migration-report",
+      "path": "config/orespawn-os3-migration-report.json",
+      "contains": "os1_config_source",
+      "minimumOccurrences": 2
+    },
+    {
+      "id": "power-provider",
+      "path": "config/basepower-orespawn.json",
+      "contains": "basepower:legacy/basepower_crude_oil_0",
+      "minimumOccurrences": 1
+    },
+    {
+      "id": "electric-provider",
+      "path": "config/baseelectric-orespawn.json",
+      "contains": "baseelectric:legacy/baseelectric_li_ore_0",
+      "minimumOccurrences": 1
+    }
+  ],
+  "restartFileAssertions": [
+    {
+      "id": "migration-report",
+      "path": "config/orespawn-os3-migration-report.json",
+      "contains": "os1_config_source",
+      "minimumOccurrences": 2
+    },
+    {
+      "id": "power-provider",
+      "path": "config/basepower-orespawn.json",
+      "contains": "basepower:legacy/basepower_crude_oil_0",
+      "minimumOccurrences": 1
+    },
+    {
+      "id": "electric-provider",
+      "path": "config/baseelectric-orespawn.json",
+      "contains": "baseelectric:legacy/baseelectric_li_ore_0",
+      "minimumOccurrences": 1
+    }
+  ],
+  "worldgenExpectations": {
+    "minimumCounts": {
+      "basepower:crude_oil": 1,
+      "baseelectric:li_ore": 1,
+      "baseelectric:sulfur_ore": 1
+    },
+    "maximumCounts": {
+      "mineralogy:crude_oil": 0,
+      "mineralogy:sulfur_ore": 0
+    },
+    "zeroBiomeViolations": false
+  },
+  "minecraftVersion": "1.17.1",
+  "portStatus": "PORTED_UNQUALIFIED",
+  "qualificationStatus": "UNQUALIFIED",
+  "legacySourceProfile": "../../../PA113/PowerAdvantage/test-rig/profiles/worldgen-legacy-import.json",
+  "inputStatus": "ARTIFACTS_AND_SOURCES_PINNED_QUALIFICATION_PENDING"
+}

@@ -2,7 +2,7 @@ package cyano.poweradvantage.api.modsupport.techreborn;
 
 import cyano.poweradvantage.api.ConduitType;
 import cyano.poweradvantage.api.modsupport.rf.BlockRFConverter;
-import net.minecraft.block.material.Material;
+import net.minecraft.world.level.material.Material;
 
 /** Historical Tech Reborn-labelled converter block, backed by Forge Energy. */
 public class BlockTRConverter extends BlockRFConverter {

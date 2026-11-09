@@ -1,7 +1,7 @@
 /**
 This package contains the light-weight API for people interested in adding Power Advantage support 
 to existing mods (instead of making a Power Advantage add-on mod). Typically, you achieve this be 
-first checking whether Power Advantage exists with <code>if(Loader.isModLoaded("poweradvantage")){ ... }</code>. 
+first checking whether basePower exists with <code>if(Loader.isModLoaded("basepower")){ ... }</code>.
 Then if you detect that Power Advantage is installed, you can add an ad-hoc power handler for each 
 of your machines like this:<br><pre>
 LightWeightPowerRegistry.registerLightWeightPowerAcceptor(Blocks.myMachine, 

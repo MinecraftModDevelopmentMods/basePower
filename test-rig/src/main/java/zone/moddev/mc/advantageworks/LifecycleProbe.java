@@ -18,20 +18,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BooleanSupplier;
-import net.minecraft.command.Commands;
-import net.minecraft.block.Blocks;
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.ChunkPos;
-import net.minecraft.world.server.ServerWorld;
-import net.minecraft.world.chunk.Chunk;
+import net.minecraft.commands.Commands;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.world.ChunkEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.event.RegisterCommandsEvent;
-import zone.moddev.mc.poweradvantage.conduitnetwork.ConduitRegistry;
+import zone.moddev.mc.basepower.conduitnetwork.ConduitRegistry;
 
 /** Observes real tile movement and chunk lifecycles only in marked disposable worlds. */
 final class LifecycleProbe {
@@ -46,6 +46,21 @@ final class LifecycleProbe {
     private final List<Map<String, Object>> chunkEvents = new ArrayList<>();
     private boolean watching;
     private boolean tracingLoads;
+    private RoundTripRequest roundTrip;
+
+    private static final class RoundTripRequest {
+        final ServerLevel world;
+        final String operation, label;
+        final LifecycleRoundTrip window = new LifecycleRoundTrip(System.nanoTime());
+        final Map<String, LifecycleNaturalTickObserver> bindings = new LinkedHashMap<>();
+        final Map<String, Map<String, Object>> prerequisites = new LinkedHashMap<>();
+        final List<Map<String, Object>> attempts = new ArrayList<>();
+        String completionPhase;
+
+        RoundTripRequest(ServerLevel world, String operation, String label) {
+            this.world = world; this.operation = operation; this.label = label;
+        }
+    }
 
     static final class Fixture {
         String id;
@@ -90,7 +105,7 @@ final class LifecycleProbe {
         for (int[] pos : fixture.witnesses) requireInside(fixture, pos);
         if (fixture.bucket != null) {
             boolean mineralogy = "mineralogy:crude_oil_bucket".equals(fixture.bucket);
-            if (!fixture.bucket.matches("poweradvantage:(crude|refined)_oil_bucket") && !mineralogy)
+            if (!fixture.bucket.matches("basepower:(crude|refined)_oil_bucket") && !mineralogy)
                 throw new IllegalArgumentException("Unsupported oil bucket");
             if (mineralogy && !mineralogyLoaded.getAsBoolean())
                 throw new IllegalArgumentException("Mineralogy oil bucket requires mineralogy");
@@ -118,8 +133,8 @@ final class LifecycleProbe {
             for (int axis = 0; axis < 3; axis++) distance += Math.abs(fixture.from[axis] - fixture.to[axis]);
             if ((fixture.route == null && distance != 1) || fixture.initialEnergy <= 0 || !Float.isFinite(fixture.initialEnergy))
                 throw new IllegalArgumentException("Invalid movement fixture");
-            if (!"steamadvantage:steam_drill".equals(fixture.block)
-                    && !"electricadvantage:electric_drill".equals(fixture.block))
+            if (!"basesteam:steam_drill".equals(fixture.block)
+                    && !"baseelectric:electric_drill".equals(fixture.block))
                 throw new IllegalArgumentException("Not an Advantage drill");
             if (fixture.route != null) {
                 if (fixture.route.size() < 2 || fixture.route.size() > 8 || fixture.controls == null
@@ -180,13 +195,18 @@ final class LifecycleProbe {
                             String operation = StringArgumentType.getString(context, "operation");
                             String label = StringArgumentType.getString(context, "label");
                             if (!label.matches("[A-Za-z0-9_-]+")) throw new IllegalArgumentException("Invalid label");
-                            execute(context.getSource().getLevel(), operation, label);
-                            System.out.println("ADVLIFECYCLE COMPLETE " + operation + " " + label);
+                            if (roundTrip != null) throw new IllegalStateException("Lifecycle round trip is busy");
+                            if ("legacy-read".equals(operation) || "changed-target-read".equals(operation)) {
+                                queueRoundTrip(context.getSource().getLevel(), operation, label);
+                            } else {
+                                execute(context.getSource().getLevel(), operation, label);
+                                System.out.println("ADVLIFECYCLE COMPLETE " + operation + " " + label);
+                            }
                             return 1;
                         }))));
     }
 
-    private void execute(ServerWorld world, String operation, String label) {
+    private void execute(ServerLevel world, String operation, String label) {
         if (operation.startsWith("release-") || operation.startsWith("load-")) {
             boolean acquire = operation.startsWith("load-");
             String group = operation.substring(acquire ? 5 : 8);
@@ -212,15 +232,15 @@ final class LifecycleProbe {
                     if (oil.bucket == null) continue;
                     BlockPos source = position(oil.source);
                     if (!world.isEmptyBlock(source)) throw new IllegalStateException("Oil source is not empty: " + oil.id);
-                    net.minecraft.item.Item item = net.minecraftforge.registries.ForgeRegistries.ITEMS.getValue(
-                            new net.minecraft.util.ResourceLocation(oil.bucket));
-                    if (!(item instanceof net.minecraft.item.BucketItem)
-                            || !((net.minecraft.item.BucketItem) item).emptyBucket(null, world, source, null))
+                    net.minecraft.world.item.Item item = net.minecraftforge.registries.ForgeRegistries.ITEMS.getValue(
+                            new net.minecraft.resources.ResourceLocation(oil.bucket));
+                    if (!(item instanceof net.minecraft.world.item.BucketItem)
+                            || !((net.minecraft.world.item.BucketItem) item).emptyContents(null, world, source, null))
                         throw new IllegalStateException("Bucket placement failed: " + oil.id);
                     String expected = oil.bucket.substring(0, oil.bucket.length() - "_bucket".length());
-                    net.minecraft.fluid.FluidState state = world.getFluidState(source);
+                    net.minecraft.world.level.material.FluidState state = world.getFluidState(source);
                     if (!state.isSource() || !expected.equals(
-                            net.minecraft.util.registry.Registry.FLUID.getKey(state.getType()).toString()))
+                            net.minecraft.core.Registry.FLUID.getKey(state.getType()).toString()))
                         throw new IllegalStateException("Bucket placed the wrong fluid: " + oil.id);
                 }
                 break;
@@ -229,7 +249,7 @@ final class LifecycleProbe {
                 for (Fixture fixture : fixtures.values()) {
                     if (fixture.from == null) continue;
                     int[] current = fixture.route == null ? fixture.from : fixture.route.get(routeSteps.getOrDefault(fixture.id, 0));
-                    TileEntity tile = world.getBlockEntity(position(current));
+                    BlockEntity tile = world.getBlockEntity(position(current));
                     if (!(tile instanceof PoweredEntity) || !fixture.block.equals(world.getBlockState(tile.getBlockPos()).getBlock().getRegistryName().toString()))
                         throw new IllegalStateException("Missing drill " + fixture.id);
                     float reserve = "low-prime".equals(operation) ? ("steam".equals(fixture.energyType) ? 9 : 249) : fixture.initialEnergy;
@@ -257,7 +277,7 @@ final class LifecycleProbe {
                 Fixture fixture = fixtures.get("C-FLUID");
                 if (fixture == null) throw new IllegalStateException("Missing fluid fixture");
                 int accepted = FluidNetworkApi.offerFluid(world, position(fixture.witnesses.get(0)),
-                        new FluidStack(net.minecraft.fluid.Fluids.WATER, 1000), 1000);
+                        new FluidStack(net.minecraft.world.level.material.Fluids.WATER, 1000), 1000);
                 int expected = "offer-blocked".equals(operation) ? 0 : 1000;
                 if (accepted != expected) throw new IllegalStateException("Fluid network accepted " + accepted + " instead of " + expected);
                 break;
@@ -275,31 +295,199 @@ final class LifecycleProbe {
             case "snapshot": break;
             case "legacy-read":
             case "changed-target-read":
-                for (Fixture drill : fixtures.values()) {
-                    if (drill.to == null) continue;
-                    TileEntity tile = world.getBlockEntity(position(drill.to));
-                    if (!(tile instanceof PoweredEntity)
-                            || !drill.block.equals(world.getBlockState(position(drill.to)).getBlock().getRegistryName().toString()))
-                        throw new IllegalStateException("Missing restored drill " + drill.id);
-                    CompoundNBT saved = tile.save(new CompoundNBT());
-                    if (!saved.contains("targetX", 99) || saved.getShort("progress") <= 0)
-                        throw new IllegalStateException("Drill must be mid-block " + drill.id);
-                    if ("legacy-read".equals(operation)) {
-                        saved.remove("TargetState");
-                        saved.remove("TargetStates");
-                    } else {
-                        int[] target = {saved.getInt("targetX"), saved.getInt("targetY"), saved.getInt("targetZ")};
-                        requireInside(drill, target);
-                        world.setBlock(position(target), Blocks.BEDROCK.defaultBlockState(), 3);
-                    }
-                    // Round-trip real saved state; never inject quantities, energy or progress.
-                    tile.load(tile.getBlockState(), saved);
-                    tile.setChanged();
-                }
-                break;
+                throw new IllegalStateException("Saved reads require a queued native START/END window");
             default: throw new IllegalArgumentException("Unknown lifecycle operation " + operation);
         }
         snapshot(world, label);
+    }
+
+    private static void requireNewResult(String label) {
+        File directory = new File(System.getProperty("advantageWorks.resultsDir", "advantage-works-results"));
+        if (new File(directory, "lifecycle-" + label + ".json").exists()
+                || new File(directory, "lifecycle-" + label + ".json.tmp").exists())
+            throw new IllegalStateException("Refusing to overwrite lifecycle evidence: " + label);
+    }
+
+    private void queueRoundTrip(ServerLevel world, String operation, String label) {
+        for (String suffix : Arrays.asList("", "-initial", "-end")) requireNewResult(label + suffix);
+        roundTrip = new RoundTripRequest(world, operation, label);
+        System.out.println("ADVLIFECYCLE QUEUED " + operation + " " + label);
+    }
+
+    private static BlockEntity existingTile(ServerLevel world, BlockPos pos) {
+        LevelChunk chunk = world.getChunkSource().getChunkNow(pos.getX() >> 4, pos.getZ() >> 4);
+        return chunk == null ? null : chunk.getBlockEntity(pos, LevelChunk.EntityCreationType.CHECK);
+    }
+
+    private boolean roundTripPrerequisites(RoundTripRequest request) {
+        ServerLevel world = request.world;
+        boolean allChunks = true;
+        for (long key : chunks()) {
+            ChunkPos chunk = new ChunkPos(key);
+            BlockPos pos = new BlockPos(chunk.getMinBlockX(), 80, chunk.getMinBlockZ());
+            allChunks &= world.getChunkSource().getChunkNow(chunk.x, chunk.z) != null
+                    && world.isPositionTickingWithEntitiesLoaded(pos) && world.isPositionEntityTicking(chunk);
+        }
+        request.bindings.clear(); request.prerequisites.clear();
+        boolean ready = true;
+        for (Fixture fixture : fixtures.values()) {
+            if (fixture.to == null) continue;
+            BlockPos pos = position(fixture.to);
+            LevelChunk chunk = world.getChunkSource().getChunkNow(pos.getX() >> 4, pos.getZ() >> 4);
+            BlockEntity tile = existingTile(world, pos);
+            CompoundTag saved = tile == null ? new CompoundTag() : tile.save(new CompoundTag());
+            boolean hasTarget = saved.contains("targetX", 99) && saved.contains("targetY", 99) && saved.contains("targetZ", 99);
+            BlockPos target = hasTarget ? new BlockPos(saved.getInt("targetX"), saved.getInt("targetY"), saved.getInt("targetZ")) : pos;
+            Map<String, Object> flags = new LinkedHashMap<>();
+            flags.put("allFixtureChunksReady", allChunks);
+            flags.put("chunkLoaded", chunk != null);
+            flags.put("blockAndEntitiesLoaded", world.isPositionTickingWithEntitiesLoaded(pos));
+            flags.put("entityTicking", world.isPositionEntityTicking(new ChunkPos(pos)));
+            flags.put("targetChunkLoaded", world.getChunkSource().getChunkNow(target.getX() >> 4, target.getZ() >> 4) != null);
+            flags.put("targetTicking", world.isPositionTickingWithEntitiesLoaded(target));
+            flags.put("worldAttached", tile != null && tile.getLevel() == world);
+            flags.put("notRemoved", tile != null && !tile.isRemoved());
+            flags.put("blockTypeValid", tile instanceof PoweredEntity && chunk != null
+                    && tile.getType().isValid(chunk.getBlockState(pos))
+                    && fixture.block.equals(chunk.getBlockState(pos).getBlock().getRegistryName().toString()));
+            String bindingFailure = null;
+            if (tile != null) {
+                try { request.bindings.put(fixture.id, new LifecycleNaturalTickObserver(world, tile)); }
+                catch (IllegalStateException error) { bindingFailure = error.getMessage(); }
+            }
+            flags.put("nativeBindingCurrent", request.bindings.containsKey(fixture.id)
+                    && request.bindings.get(fixture.id).current(world));
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("flags", flags); row.put("tileIdentity", tile == null ? null : System.identityHashCode(tile));
+            row.put("savedNbt", saved.toString()); row.put("target", Arrays.asList(target.getX(), target.getY(), target.getZ()));
+            row.put("bindingFailure", bindingFailure);
+            request.prerequisites.put(fixture.id, row);
+            ready &= flags.values().stream().allMatch(Boolean.TRUE::equals);
+        }
+        if (request.prerequisites.isEmpty()) throw new IllegalStateException("No saved-read fixtures");
+        Map<String, Object> attempt = new LinkedHashMap<>();
+        attempt.put("worldTime", world.getGameTime()); attempt.put("phase", "START");
+        attempt.put("prerequisites", new LinkedHashMap<>(request.prerequisites));
+        request.attempts.add(attempt);
+        return ready;
+    }
+
+    private void applyRoundTrip(RoundTripRequest request) {
+        Map<String, CompoundTag> saved = new LinkedHashMap<>();
+        for (Fixture fixture : fixtures.values()) {
+            if (fixture.to == null) continue;
+            CompoundTag tag = request.bindings.get(fixture.id).tile.save(new CompoundTag());
+            if (!tag.contains("targetX", 99) || !tag.contains("targetY", 99) || !tag.contains("targetZ", 99)
+                    || tag.getShort("progress") <= 0) throw new IllegalStateException("Drill must be mid-block " + fixture.id);
+            requireInside(fixture, new int[]{tag.getInt("targetX"), tag.getInt("targetY"), tag.getInt("targetZ")});
+            if ("changed-target-read".equals(request.operation) && !tag.contains("TargetState", 10) && !tag.contains("TargetStates", 9))
+                throw new IllegalStateException("Changed-target prerequisite lacks restored saved state " + fixture.id);
+            saved.put(fixture.id, tag);
+        }
+        for (Fixture fixture : fixtures.values()) {
+            if (fixture.to == null) continue;
+            request.bindings.get(fixture.id).install(request.world, request.window.startWorldTime + 1,
+                    () -> roundTrip == request && request.window.started && !request.window.finished,
+                    () -> witness(request.world, fixture.to), () -> callbackPrerequisites(request, fixture));
+        }
+        request.window.mutated();
+        for (Map.Entry<String, CompoundTag> entry : saved.entrySet()) {
+            CompoundTag tag = entry.getValue();
+            if ("legacy-read".equals(request.operation)) {
+                tag.remove("TargetState"); tag.remove("TargetStates");
+            } else {
+                request.world.setBlock(new BlockPos(tag.getInt("targetX"), tag.getInt("targetY"), tag.getInt("targetZ")),
+                        Blocks.BEDROCK.defaultBlockState(), 3);
+            }
+            BlockEntity tile = request.bindings.get(entry.getKey()).tile;
+            tile.load(tag); tile.setChanged();
+        }
+        requireNewResult(request.label + "-initial");
+        Map<String, Object> initial = observe(request.world);
+        initial.put("observedPhase", "START");
+        new WorksResultWriter().write("lifecycle", request.label + "-initial", initial);
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Boolean> callbackPrerequisites(RoundTripRequest request, Fixture fixture) {
+        ServerLevel world = request.world;
+        BlockPos pos = position(fixture.to);
+        LifecycleNaturalTickObserver binding = request.bindings.get(fixture.id);
+        List<Integer> saved = (List<Integer>) request.prerequisites.get(fixture.id).get("target");
+        BlockPos target = new BlockPos(saved.get(0), saved.get(1), saved.get(2));
+        LevelChunk chunk = world.getChunkSource().getChunkNow(pos.getX() >> 4, pos.getZ() >> 4);
+        Map<String, Boolean> flags = new LinkedHashMap<>();
+        flags.put("currentTile", existingTile(world, pos) == binding.tile);
+        flags.put("worldAttached", binding.tile.getLevel() == world);
+        flags.put("notRemoved", !binding.tile.isRemoved());
+        flags.put("blockTypeValid", chunk != null && binding.tile.getType().isValid(chunk.getBlockState(pos)));
+        flags.put("nativeBindingCurrent", binding.current(world));
+        flags.put("blockAndEntitiesLoaded", world.isPositionTickingWithEntitiesLoaded(pos));
+        flags.put("entityTicking", world.isPositionEntityTicking(new ChunkPos(pos)));
+        flags.put("targetChunkLoaded", world.getChunkSource().getChunkNow(target.getX() >> 4, target.getZ() >> 4) != null);
+        flags.put("targetHasChunkAt", world.hasChunkAt(target));
+        return flags;
+    }
+
+    @SuppressWarnings("unchecked")
+    private void finishRoundTrip(RoundTripRequest request) {
+        Map<String, Object> result = observe(request.world);
+        Map<String, Object> proof = new LinkedHashMap<>();
+        proof.put("protocol", LifecycleRoundTrip.PROTOCOL); proof.put("operation", request.operation);
+        proof.put("label", request.label); proof.put("dimension", request.world.dimension().location().toString());
+        proof.put("status", request.window.failure == null ? "PASS" : "FAIL");
+        proof.put("failure", request.window.failure); proof.put("startPhase", "START"); proof.put("endPhase", request.completionPhase);
+        proof.put("startWorldTime", request.window.startWorldTime); proof.put("endWorldTime", request.world.getGameTime());
+        proof.put("mutationCount", request.window.mutations); proof.put("attempts", request.attempts);
+        proof.put("prerequisites", request.prerequisites);
+        Map<String, Object> callbacks = new LinkedHashMap<>();
+        for (Map.Entry<String, LifecycleNaturalTickObserver> entry : request.bindings.entrySet()) {
+            callbacks.put(entry.getKey(), entry.getValue().report());
+        }
+        proof.put("callbacks", callbacks);
+        result.put("observedPhase", request.completionPhase);
+        requireNewResult(request.label + "-end");
+        new WorksResultWriter().write("lifecycle", request.label + "-end", result);
+        Map<String, List<Map<String, Object>>> cases = (Map<String, List<Map<String, Object>>>) result.get("cases");
+        for (Map.Entry<String, LifecycleNaturalTickObserver> entry : request.bindings.entrySet()) {
+            Map<String, Object> first = entry.getValue().capture.after;
+            if (first == null) continue;
+            List<Map<String, Object>> rows = cases.get(entry.getKey());
+            int[] to = fixtures.get(entry.getKey()).to;
+            for (int i = 0; i < rows.size(); i++) {
+                if (Arrays.equals((int[]) rows.get(i).get("pos"), to)) rows.set(i, first);
+            }
+        }
+        result.put("roundTrip", proof);
+        for (LifecycleNaturalTickObserver binding : request.bindings.values()) binding.close();
+        requireNewResult(request.label);
+        new WorksResultWriter().write("lifecycle", request.label, result);
+        roundTrip = null;
+        System.out.println("ADVLIFECYCLE COMPLETE " + request.operation + " " + request.label);
+    }
+
+    private void roundTripTick(TickEvent.WorldTickEvent event) {
+        RoundTripRequest request = roundTrip;
+        if (request == null || event.world != request.world) return;
+        boolean finish = false;
+        try {
+            if (event.phase == TickEvent.Phase.START && !request.window.started) {
+                if (request.window.start(request.world.getGameTime(), System.nanoTime(), roundTripPrerequisites(request)))
+                    applyRoundTrip(request);
+                finish = request.window.finished;
+            } else if (event.phase == TickEvent.Phase.END && request.window.started) {
+                boolean complete = request.bindings.values().stream().allMatch(binding -> binding.capture.complete() && binding.current(request.world));
+                request.window.end(request.world.getGameTime(), complete);
+                finish = true;
+            }
+        } catch (RuntimeException error) {
+            request.window.fail(error.toString());
+            finish = true;
+        }
+        if (finish) {
+            request.completionPhase = event.phase.name();
+            finishRoundTrip(request);
+        }
     }
 
     private Set<Long> chunks() {
@@ -311,14 +499,14 @@ final class LifecycleProbe {
     }
 
     private void unload(ChunkEvent.Unload event) {
-        if (event.getWorld() instanceof ServerWorld) {
+        if (event.getWorld() instanceof ServerLevel) {
             increment(unloads, event.getChunk().getPos().toLong());
             recordEvent(event, "unload");
         }
     }
 
     private void load(ChunkEvent.Load event) {
-        if (event.getWorld() instanceof ServerWorld) {
+        if (event.getWorld() instanceof ServerLevel) {
             increment(loads, event.getChunk().getPos().toLong());
             recordEvent(event, "load");
         }
@@ -329,7 +517,7 @@ final class LifecycleProbe {
         Map<String, Object> record = new LinkedHashMap<>();
         record.put("operation", operation);
         record.put("pos", Arrays.asList(event.getChunk().getPos().x, event.getChunk().getPos().z));
-        record.put("worldTime", ((ServerWorld) event.getWorld()).getGameTime());
+        record.put("worldTime", ((ServerLevel) event.getWorld()).getGameTime());
         if (tracingLoads && "load".equals(operation)) {
             List<String> stack = new ArrayList<>();
             for (StackTraceElement frame : Thread.currentThread().getStackTrace()) {
@@ -345,19 +533,19 @@ final class LifecycleProbe {
         if (chunks().contains(key)) counters.put(key, counters.getOrDefault(key, 0) + 1);
     }
 
-    private Map<String, Object> witness(ServerWorld world, int[] coordinates) {
+    private Map<String, Object> witness(ServerLevel world, int[] coordinates) {
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("pos", coordinates);
         BlockPos pos = position(coordinates);
         // No world.getChunk/getTileEntity call is permitted before this non-loading lookup.
-        Chunk chunk = world.getChunkSource().getChunkNow(pos.getX() >> 4, pos.getZ() >> 4);
+        LevelChunk chunk = world.getChunkSource().getChunkNow(pos.getX() >> 4, pos.getZ() >> 4);
         result.put("loaded", chunk != null);
         if (chunk == null) return result;
         result.put("block", chunk.getBlockState(pos).getBlock().getRegistryName().toString());
         result.put("state", chunk.getBlockState(pos).toString());
-        TileEntity tile = chunk.getBlockEntity(pos);
+        BlockEntity tile = chunk.getBlockEntity(pos, LevelChunk.EntityCreationType.CHECK);
         if (tile != null) {
-            result.put("nbt", tile.save(new CompoundNBT()).toString());
+            result.put("nbt", tile.save(new CompoundTag()).toString());
             result.put("tileIdentity", System.identityHashCode(tile));
             if (tile instanceof PoweredEntity) {
                 PoweredEntity powered = (PoweredEntity) tile;
@@ -370,8 +558,9 @@ final class LifecycleProbe {
     }
 
     private void tick(TickEvent.WorldTickEvent event) {
-        if (!watching || !(event.world instanceof ServerWorld)) return;
-        ServerWorld world = (ServerWorld) event.world;
+        roundTripTick(event);
+        if (!watching || !(event.world instanceof ServerLevel)) return;
+        ServerLevel world = (ServerLevel) event.world;
         for (Fixture fixture : fixtures.values()) {
             if (fixture.from == null || completed.contains(fixture.id)) continue;
             int step = routeSteps.getOrDefault(fixture.id, 0);
@@ -402,7 +591,11 @@ final class LifecycleProbe {
         }
     }
 
-    private void snapshot(ServerWorld world, String label) {
+    private void snapshot(ServerLevel world, String label) {
+        new WorksResultWriter().write("lifecycle", label, observe(world));
+    }
+
+    private Map<String, Object> observe(ServerLevel world) {
         Map<String, Object> result = new LinkedHashMap<>();
         Map<String, Object> cases = new LinkedHashMap<>();
         for (Fixture fixture : fixtures.values()) {
@@ -427,7 +620,7 @@ final class LifecycleProbe {
         result.put("movements", movements);
         result.put("chunkEvents", chunkEvents);
         result.put("routeSteps", routeSteps);
-        new WorksResultWriter().write("lifecycle", label, result);
+        return result;
     }
 
     private static BlockPos position(int[] coordinates) {

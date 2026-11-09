@@ -5,14 +5,14 @@ import javax.annotation.Nullable;
 
 import cyano.poweradvantage.api.ConduitType;
 import cyano.poweradvantage.api.modsupport.TileEntityConverter;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.tileentity.TileEntityType;
-import net.minecraft.util.Direction;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.core.Direction;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.energy.CapabilityEnergy;
 import net.minecraftforge.energy.IEnergyStorage;
-import zone.moddev.mc.poweradvantage.PowerAdvantage;
+import zone.moddev.mc.basepower.PowerAdvantage;
 
 /** Forge Energy bridge retained behind the historical RF-labelled block IDs. */
 public class TileEntityRFConverter extends TileEntityConverter implements IEnergyStorage {
@@ -21,9 +21,9 @@ public class TileEntityRFConverter extends TileEntityConverter implements IEnerg
     private LazyOptional<IEnergyStorage> energyCapability = LazyOptional.of(() -> this);
     private int forgeBuffer;
 
-    protected TileEntityRFConverter(TileEntityType<?> tileType, ConduitType type,
+    protected TileEntityRFConverter(BlockEntityType<?> tileType, net.minecraft.core.BlockPos pos, net.minecraft.world.level.block.state.BlockState state, ConduitType type,
             float advantageBuffer, int forgeBufferSize, String translationKey) {
-        super(tileType, type, advantageBuffer, translationKey);
+        super(tileType, pos, state, type, advantageBuffer, translationKey);
         this.forgeBufferSize = forgeBufferSize;
         this.halfBuffer = forgeBufferSize / 2;
     }
@@ -33,7 +33,7 @@ public class TileEntityRFConverter extends TileEntityConverter implements IEnerg
         if (!server) return;
         int index = (int) (getLevel().getGameTime() % Direction.values().length);
         Direction side = Direction.values()[index];
-        TileEntity neighbor = getLevel().getBlockEntity(getBlockPos().relative(side));
+        BlockEntity neighbor = getLevel().getBlockEntity(getBlockPos().relative(side));
         if (neighbor == null) return;
         neighbor.getCapability(CapabilityEnergy.ENERGY, side.getOpposite()).ifPresent(storage -> {
             int delta = forgeBuffer - halfBuffer;
@@ -69,12 +69,12 @@ public class TileEntityRFConverter extends TileEntityConverter implements IEnerg
         return energyCapability != null && capability == CapabilityEnergy.ENERGY ? energyCapability.cast() : super.getCapability(capability, side);
     }
 
-    @Override protected void invalidateCaps() {
+    @Override public void invalidateCaps() {
         super.invalidateCaps();
         if (energyCapability != null) energyCapability.invalidate();
     }
 
-    @Override protected void reviveCaps() {
+    @Override public void reviveCaps() {
         super.reviveCaps();
         if (energyCapability != null && !energyCapability.isPresent()) energyCapability = LazyOptional.of(() -> this);
     }

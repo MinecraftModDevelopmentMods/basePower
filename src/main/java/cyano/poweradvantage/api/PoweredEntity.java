@@ -1,15 +1,14 @@
 package cyano.poweradvantage.api;
 
-import zone.moddev.mc.poweradvantage.conduitnetwork.ConduitRegistry;
-import net.minecraft.block.BlockState;
-import net.minecraft.entity.player.ServerPlayerEntity;
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.network.IPacket;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.tileentity.TileEntityType;
-import net.minecraft.tileentity.ITickableTileEntity;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
+import zone.moddev.mc.basepower.conduitnetwork.ConduitRegistry;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.protocol.Packet;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
 
 import java.util.List;
 
@@ -25,28 +24,28 @@ import java.util.List;
  * @author DrCyano
  *
  */
-public abstract class PoweredEntity extends TileEntity implements ITickableTileEntity, IPowerMachine {
+public abstract class PoweredEntity extends BlockEntity implements IPowerMachine {
 
 	private final int powerUpdateInterval = 8;
 	private int conduitRefreshDelay = 2;
-    private final zone.moddev.mc.poweradvantage.util.MachineCapabilities machineCapabilities =
-            new zone.moddev.mc.poweradvantage.util.MachineCapabilities(this);
+    private final zone.moddev.mc.basepower.util.MachineCapabilities machineCapabilities =
+            new zone.moddev.mc.basepower.util.MachineCapabilities(this);
 
     @Override
     public <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(
-            net.minecraftforge.common.capabilities.Capability<T> capability, net.minecraft.util.Direction face) {
+            net.minecraftforge.common.capabilities.Capability<T> capability, net.minecraft.core.Direction face) {
         if (!areCapabilitiesValid()) return net.minecraftforge.common.util.LazyOptional.empty();
         if (machineCapabilities == null) return super.getCapability(capability, face);
         net.minecraftforge.common.util.LazyOptional<T> local = machineCapabilities.get(capability, face);
         return local.isPresent() ? local : super.getCapability(capability, face);
     }
 
-    @Override protected void invalidateCaps() {
+    @Override public void invalidateCaps() {
         if (machineCapabilities != null) machineCapabilities.invalidate();
         super.invalidateCaps();
     }
 
-    @Override protected void reviveCaps() {
+    @Override public void reviveCaps() {
         super.reviveCaps();
         if (machineCapabilities != null) machineCapabilities.revive();
     }
@@ -60,8 +59,8 @@ public abstract class PoweredEntity extends TileEntity implements ITickableTileE
         reviveCaps();
     }
 
-	protected PoweredEntity(TileEntityType<?> type) {
-		super(type);
+	protected PoweredEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
+		super(type, pos, state);
 	}
 
 	/**
@@ -110,13 +109,16 @@ public abstract class PoweredEntity extends TileEntity implements ITickableTileE
 		if (newValue < 0) {
 			float delta = -1 * this.getEnergy(type);
 			this.setEnergy(0, type);
+			if (delta != 0) markMachineStateUnsaved();
 			return delta;
 		} else if (newValue > this.getEnergyCapacity(type)) {
 			float delta = this.getEnergyCapacity(type) - this.getEnergy(type);
 			this.setEnergy(this.getEnergyCapacity(type), type);
+			if (delta != 0) markMachineStateUnsaved();
 			return delta;
 		}
 		this.setEnergy(newValue, type);
+		if (energy != 0) markMachineStateUnsaved();
 		return energy;
 	}
 
@@ -154,11 +156,11 @@ public abstract class PoweredEntity extends TileEntity implements ITickableTileE
 	 * @param newSate  State after change
 	 * @return true if this TileEntity should be invalidated (deleted and recreated), false otherwise
 	 */
-	public boolean shouldRefresh(World world, BlockPos pos, BlockState oldState, BlockState newSate) {
+	public boolean shouldRefresh(Level world, BlockPos pos, BlockState oldState, BlockState newSate) {
 		return oldState.getBlock() != newSate.getBlock();
 	}
 
-	protected final World powerAdvantageWorld() {
+	protected final Level powerAdvantageWorld() {
 		return super.getLevel();
 	}
 
@@ -182,9 +184,9 @@ public abstract class PoweredEntity extends TileEntity implements ITickableTileE
 	 *
 	 * @param player player receiving the current machine state
 	 */
-	public final void syncPowerAdvantageDataTo(ServerPlayerEntity player) {
+	public final void syncPowerAdvantageDataTo(ServerPlayer player) {
 		this.setChanged();
-		IPacket<?> packet = this.getUpdatePacket();
+		Packet<?> packet = this.getUpdatePacket();
 		if (packet != null) {
 			player.connection .send(packet);
 		}
@@ -194,7 +196,6 @@ public abstract class PoweredEntity extends TileEntity implements ITickableTileE
 	 * Method net.minecraft.server.gui.IUpdatePlayerListBox.update() is invoked
 	 * to do tick updates
 	 */
-	@Override
 	public final void tick() {
 		// this method was moved from TileEntity to IUpdatePlayerListBox
 		if (this.isServer()) {
@@ -204,6 +205,17 @@ public abstract class PoweredEntity extends TileEntity implements ITickableTileE
 		if (this.isServer() && ((this.getLevel().getGameTime() + this.getTickOffset()) % powerUpdateInterval == 0)) {
 			this.powerUpdate();
 		}
+		markMachineStateUnsaved();
+	}
+
+	private void markMachineStateUnsaved() {
+		if (!(this.level instanceof net.minecraft.server.level.ServerLevel) || isRemoved()) return;
+		BlockPos pos = getBlockPos();
+		net.minecraft.world.level.chunk.LevelChunk chunk = ((net.minecraft.server.level.ServerLevel) this.level)
+				.getChunkSource().getChunkNow(pos.getX() >> 4, pos.getZ() >> 4);
+		// Timers and externally supplied energy can change without a GUI sync.
+		// Mark the loaded chunk only; do not load neighbours or notify comparators.
+		if (chunk != null) chunk.setUnsaved(true);
 	}
 
 	private void refreshConduitNetworkAfterLoad() {
@@ -267,8 +279,8 @@ public abstract class PoweredEntity extends TileEntity implements ITickableTileE
 	 * packet.
 	 */
 	@Override
-	public void load(net.minecraft.block.BlockState state, final CompoundNBT tagRoot) {
-		super.load(state, tagRoot);
+	public void load(final CompoundTag tagRoot) {
+		super.load(tagRoot);
 		this.conduitRefreshDelay = 2;
 		if (tagRoot.contains("Energy", 11)) {
 			int[] data = tagRoot.getIntArray("Energy");
@@ -284,7 +296,7 @@ public abstract class PoweredEntity extends TileEntity implements ITickableTileE
 	 * the network.
 	 */
 	@Override
-	public CompoundNBT save(final CompoundNBT tagRoot) {
+	public CompoundTag save(final CompoundTag tagRoot) {
 		super.save(tagRoot);
 		int[] data = new int[this.getTypes().length];
 		for (int i = 0; i < data.length; i++) {
@@ -294,11 +306,11 @@ public abstract class PoweredEntity extends TileEntity implements ITickableTileE
 		return tagRoot;
 	}
 
-	/** @deprecated Minecraft now calls {@link #load(BlockState, CompoundNBT)}. */
-	@Deprecated public void read(CompoundNBT tag) { load(getBlockState(), tag); }
+	/** @deprecated Minecraft now calls {@link #load(CompoundTag)}. */
+	@Deprecated public void read(CompoundTag tag) { load(tag); }
 
-	/** @deprecated Minecraft now calls {@link #save(CompoundNBT)}. */
-	@Deprecated public CompoundNBT write(CompoundNBT tag) { return save(tag); }
+	/** @deprecated Minecraft now calls {@link #save(CompoundTag)}. */
+	@Deprecated public CompoundTag write(CompoundTag tag) { return save(tag); }
 
 
 	/**

@@ -3,9 +3,9 @@ package cyano.poweradvantage.api.modsupport;
 import cyano.poweradvantage.api.ConduitType;
 import cyano.poweradvantage.api.PowerRequest;
 import cyano.poweradvantage.api.simple.TileEntitySimplePowerMachine;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.tileentity.TileEntityType;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 
 import java.util.Arrays;
 
@@ -28,8 +28,8 @@ public abstract class TileEntityConverter extends TileEntitySimplePowerMachine {
 	final int INDEX_OTHER_ENERGY_UPPER = 2;
 	private final ConduitType type;
 
-	public TileEntityConverter(TileEntityType<?> tileType, ConduitType type, float powerAdvantageEnergyBuffer, String unlocalizedName) {
-		super(tileType, type, powerAdvantageEnergyBuffer, unlocalizedName);
+	public TileEntityConverter(BlockEntityType<?> tileType, net.minecraft.core.BlockPos pos, net.minecraft.world.level.block.state.BlockState state, ConduitType type, float powerAdvantageEnergyBuffer, String unlocalizedName) {
+		super(tileType, pos, state, type, powerAdvantageEnergyBuffer, unlocalizedName);
 		halfFull = powerAdvantageEnergyBuffer * 0.5f;
 		this.type = type;
 	}
@@ -174,15 +174,15 @@ public abstract class TileEntityConverter extends TileEntitySimplePowerMachine {
 	}
 
 	@Override
-	public void load(net.minecraft.block.BlockState state, final CompoundNBT tagRoot) {
-		super.load(state, tagRoot);
+	public void load(final CompoundTag tagRoot) {
+		super.load(tagRoot);
 		if (tagRoot.contains("Other", 99)) {
 			this.setOtherEnergy(tagRoot.getDouble("Other"));
 		}
 	}
 
 	@Override
-	public CompoundNBT save(final CompoundNBT tagRoot) {
+	public CompoundTag save(final CompoundTag tagRoot) {
 		super .save(tagRoot);
 		tagRoot.putDouble("Other", this.getOtherEnergy());
 		return tagRoot;

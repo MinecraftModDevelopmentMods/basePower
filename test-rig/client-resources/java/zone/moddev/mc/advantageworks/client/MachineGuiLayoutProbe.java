@@ -3,7 +3,7 @@ package zone.moddev.mc.advantageworks.client;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.systems.RenderSystem;
 import cyano.poweradvantage.api.GUIBlock;
 import cyano.poweradvantage.api.PoweredEntity;
@@ -23,20 +23,20 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import javax.imageio.ImageIO;
-import net.minecraft.block.Block;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.entity.player.ClientPlayerEntity;
-import net.minecraft.client.shader.Framebuffer;
-import net.minecraft.client.world.ClientWorld;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.player.PlayerInventory;
-import net.minecraft.inventory.IInventory;
-import net.minecraft.inventory.container.Slot;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.client.player.LocalPlayer;
+import com.mojang.blaze3d.pipeline.RenderTarget;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.Container;
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraftforge.registries.ForgeRegistries;
-import zone.moddev.mc.poweradvantage.registry.MachineGUIRegistry;
+import zone.moddev.mc.basepower.registry.MachineGUIRegistry;
 
 /** Renders every registered machine screen, not just its detached decorations. */
 final class MachineGuiLayoutProbe {
@@ -49,27 +49,27 @@ final class MachineGuiLayoutProbe {
         result.addProperty("machine_gui_text_spec", 2);
         int textChecks = 0, negativeControls = 0;
         List<String> problems = new ArrayList<>();
-        ClientPlayerEntity originalPlayer = minecraft.player;
+        LocalPlayer originalPlayer = minecraft.player;
         try {
             JsonObject expectations;
             try (InputStream stream = MachineGuiLayoutProbe.class.getResourceAsStream("/gui-label-expectations.json")) {
                 require(stream != null, "Missing independent GUI label expectations");
                 expectations = new JsonParser().parse(new InputStreamReader(stream, StandardCharsets.UTF_8)).getAsJsonObject();
             }
-            require("Inventory".equals(net.minecraft.client.resources.I18n.get("container.inventory")), "GUI label audit requires en_us");
+            require("Inventory".equals(net.minecraft.client.resources.language.I18n.get("container.inventory")), "GUI label audit requires en_us");
             // ContainerScreen needs a carried-item inventory, but no world or connection.
             Class<?> allocator = Class.forName("sun.misc.Unsafe");
             Field singleton = allocator.getDeclaredField("theUnsafe");
             singleton.setAccessible(true);
-            ClientPlayerEntity player = (ClientPlayerEntity) allocator.getMethod("allocateInstance", Class.class)
-                    .invoke(singleton.get(null), ClientPlayerEntity.class);
-            PlayerInventory inventory = new PlayerInventory(player);
-            Field inventoryField = PlayerEntity.class.getDeclaredField("inventory");
+            LocalPlayer player = (LocalPlayer) allocator.getMethod("allocateInstance", Class.class)
+                    .invoke(singleton.get(null), LocalPlayer.class);
+            Inventory inventory = new Inventory(player);
+            Field inventoryField = Player.class.getDeclaredField("inventory");
             inventoryField.setAccessible(true);
             inventoryField.set(player, inventory);
-            Field cooldowns = PlayerEntity.class.getDeclaredField("cooldowns");
+            Field cooldowns = Player.class.getDeclaredField("cooldowns");
             cooldowns.setAccessible(true);
-            cooldowns.set(player, new net.minecraft.util.CooldownTracker());
+            cooldowns.set(player, new net.minecraft.world.item.ItemCooldowns());
             minecraft.player = player;
             Field definitionsField = MachineGUIRegistry.class.getDeclaredField("DEFINITIONS");
             definitionsField.setAccessible(true);
@@ -89,8 +89,8 @@ final class MachineGuiLayoutProbe {
                     require(definition instanceof SimpleMachineGUI, "No shared screen definition");
                     Field textureField = SimpleMachineGUI.class.getDeclaredField("guiDisplayImage");
                     textureField.setAccessible(true);
-                    net.minecraft.util.ResourceLocation texture = (net.minecraft.util.ResourceLocation) textureField.get(definition);
-                    try (net.minecraft.resources.IResource resource = minecraft.getResourceManager().getResource(texture)) {
+                    net.minecraft.resources.ResourceLocation texture = (net.minecraft.resources.ResourceLocation) textureField.get(definition);
+                    try (net.minecraft.server.packs.resources.Resource resource = minecraft.getResourceManager().getResource(texture)) {
                         BufferedImage artwork = ImageIO.read(resource.getInputStream());
                         // The GUI UVs use a logical 256-square atlas; Electric supplies 2x artwork.
                         require(artwork != null && artwork.getWidth() >= 256 && artwork.getWidth() % 256 == 0
@@ -99,21 +99,21 @@ final class MachineGuiLayoutProbe {
                         row.addProperty("texture_pixels", artwork.getWidth());
                     }
                     row.addProperty("texture", texture.toString());
-                    TileEntity tile = block.createTileEntity(block.defaultBlockState(), null);
-                    require(tile instanceof IInventory, "GUI block has no inventory tile");
+                    BlockEntity tile = ((net.minecraft.world.level.block.EntityBlock)block).newBlockEntity(BlockPos.ZERO, block.defaultBlockState());
+                    require(tile instanceof Container, "GUI block has no inventory tile");
                     GuiWorld world = (GuiWorld) allocator.getMethod("allocateInstance", Class.class)
                             .invoke(singleton.get(null), GuiWorld.class);
                     world.state = block.defaultBlockState();
-                    Field clientSide = net.minecraft.world.World.class.getDeclaredField("isClientSide");
+                    Field clientSide = net.minecraft.world.level.Level.class.getDeclaredField("isClientSide");
                     clientSide.setAccessible(true);
                     clientSide.setBoolean(world, true);
-                    tile.setLevelAndPosition(world, BlockPos.ZERO);
-                    SimpleMachineGUI.Container menu = ((SimpleMachineGUI) definition).createMenu(1, inventory, (IInventory) tile);
+                    tile.setLevel(world);
+                    SimpleMachineGUI.Container menu = ((SimpleMachineGUI) definition).createMenu(1, inventory, (Container) tile);
                     require(expectations.getAsJsonObject("machines").has(id), "No human-facing label expectation for " + id);
                     String expectedTitle = expectations.getAsJsonObject("machines").get(id).getAsString();
-                    Method titleFactory = MachineGUIRegistry.class.getDeclaredMethod("menuTitle", TileEntity.class, Block.class);
+                    Method titleFactory = MachineGUIRegistry.class.getDeclaredMethod("menuTitle", BlockEntity.class, Block.class);
                     titleFactory.setAccessible(true);
-                    net.minecraft.util.text.ITextComponent title = (net.minecraft.util.text.ITextComponent) titleFactory.invoke(null, tile, block);
+                    net.minecraft.network.chat.Component title = (net.minecraft.network.chat.Component) titleFactory.invoke(null, tile, block);
                     RecordingScreen screen = new RecordingScreen((SimpleMachineGUI) definition, menu, inventory, title,
                             expectedTitle, expectations.get("inventory").getAsString());
                     row.addProperty("definition", definition.getClass().getName());
@@ -125,9 +125,9 @@ final class MachineGuiLayoutProbe {
                         screen.init(minecraft, viewport[0], viewport[1]);
                         verifySlots(screen, menu);
                         for (int fill = 0; fill <= 2; fill++) {
-                            for (net.minecraft.state.Property<?> property : block.defaultBlockState().getProperties()) {
-                                if (property instanceof net.minecraft.state.BooleanProperty && "active".equals(property.getName())) {
-                                    world.state = block.defaultBlockState().setValue((net.minecraft.state.BooleanProperty) property, fill > 0);
+                            for (net.minecraft.world.level.block.state.properties.Property<?> property : block.defaultBlockState().getProperties()) {
+                                if (property instanceof net.minecraft.world.level.block.state.properties.BooleanProperty && "active".equals(property.getName())) {
+                                    world.state = block.defaultBlockState().setValue((net.minecraft.world.level.block.state.properties.BooleanProperty) property, fill > 0);
                                 }
                             }
                             populate(tile, fill * 0.5F);
@@ -156,18 +156,18 @@ final class MachineGuiLayoutProbe {
                             negativeControls++;
                         }
                     }
-                    inventory.setItem(0, new net.minecraft.item.ItemStack(net.minecraft.item.Items.DIAMOND, 2));
+                    inventory.setItem(0, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.DIAMOND, 2));
                     screen.init(minecraft, 320, 240);
                     BufferedImage tooltip = render(minecraft, screen, VIEWPORTS[0], false, true);
                     require(screen.itemTooltipCalls == 1, "Hovered inventory item has no native tooltip");
                     require(screen.hovered() == menu.slots.get(menu.slots.size() - 9), "Inventory hitbox is misaligned");
                     ImageIO.write(tooltip, "png", new File("machine-gui-layouts/" + id.replace(':', '-') + "-tooltip.png"));
-                    inventory.setItem(0, net.minecraft.item.ItemStack.EMPTY);
-                    if (block == zone.moddev.mc.poweradvantage.init.Blocks.metal_storage_tank) {
+                    inventory.setItem(0, net.minecraft.world.item.ItemStack.EMPTY);
+                    if (block == zone.moddev.mc.basepower.init.Blocks.metal_storage_tank) {
                         negativeControls += verifyMissingLabelControls(minecraft, screen);
                         verifyLongName(minecraft, (SimpleMachineGUI) definition, menu, inventory);
                     }
-                    if (block == zone.moddev.mc.poweradvantage.init.Blocks.metal_storage_tank) {
+                    if (block == zone.moddev.mc.basepower.init.Blocks.metal_storage_tank) {
                         verifyHelperLimits(screen);
                     }
                     row.addProperty("renders", renders);
@@ -176,7 +176,7 @@ final class MachineGuiLayoutProbe {
                     row.addProperty("blank_label_controls_rejected", 9);
                     row.addProperty("status", "PASS");
                 } catch (Exception | LinkageError failure) {
-                    inventory.setItem(0, net.minecraft.item.ItemStack.EMPTY);
+                    inventory.setItem(0, net.minecraft.world.item.ItemStack.EMPTY);
                     org.apache.logging.log4j.LogManager.getLogger("advantageclientresources").error("GUI fixture {} failed", id, failure);
                     row.addProperty("status", "FAIL");
                     row.addProperty("error", failure.toString());
@@ -217,7 +217,7 @@ final class MachineGuiLayoutProbe {
         }
     }
 
-    private static void populate(TileEntity tile, float fraction) throws IllegalAccessException {
+    private static void populate(BlockEntity tile, float fraction) throws IllegalAccessException {
         if (tile instanceof PoweredEntity) {
             PoweredEntity powered = (PoweredEntity) tile;
             for (cyano.poweradvantage.api.ConduitType type : powered.getTypes()) {
@@ -230,7 +230,7 @@ final class MachineGuiLayoutProbe {
                 field.setAccessible(true);
                 FluidTank tank = (FluidTank) field.get(tile);
                 if (tank != null) tank.setFluid(fraction == 0 ? null
-                        : new FluidStack(net.minecraft.fluid.Fluids.WATER, (int) (tank.getCapacity() * fraction)));
+                        : new FluidStack(net.minecraft.world.level.material.Fluids.WATER, (int) (tank.getCapacity() * fraction)));
             }
         }
     }
@@ -243,30 +243,24 @@ final class MachineGuiLayoutProbe {
     private static BufferedImage render(Minecraft minecraft, RecordingScreen screen,
             int[] viewport, boolean backgroundOnly, boolean hover) throws Exception {
         int width = viewport[0] * viewport[2], height = viewport[1] * viewport[2];
-        Framebuffer target = new Framebuffer(width, height, true, Minecraft.ON_OSX);
+        RenderTarget target = new com.mojang.blaze3d.pipeline.TextureTarget(width, height, true, Minecraft.ON_OSX);
         target.bindWrite(true);
-        RenderSystem.matrixMode(5889);
-        RenderSystem.pushMatrix(); RenderSystem.loadIdentity();
-        RenderSystem.ortho(0, viewport[0], viewport[1], 0, 1000, 3000);
-        RenderSystem.matrixMode(5888);
-        RenderSystem.pushMatrix(); RenderSystem.loadIdentity();
-        RenderSystem.translatef(0, 0, -2000);
-        RenderSystem.enableAlphaTest();
+        NativeGuiProjection projection = new NativeGuiProjection(viewport[0], viewport[1], 1000, 3000, -2000);
         RenderSystem.enableDepthTest();
         RenderSystem.depthFunc(515);
         RenderSystem.disableBlend();
-        RenderSystem.color4f(1, 1, 1, 1);
+        RenderSystem.setShaderColor(1, 1, 1, 1);
         try {
             RenderSystem.clearColor(0.12F, 0.18F, 0.23F, 1);
             RenderSystem.clear(16384 | 256, Minecraft.ON_OSX);
             if (backgroundOnly) {
                 LabelMode original = screen.labels;
                 screen.labels = LabelMode.HIDDEN;
-                screen.render(new MatrixStack(), -100, -100, 0F);
+                screen.render(new PoseStack(), -100, -100, 0F);
                 screen.labels = original;
             } else {
                 Slot hotbar = screen.getMenu().slots.get(screen.getMenu().slots.size() - 9);
-                screen.render(new MatrixStack(), screen.hoverTitle ? screen.width / 2 : hover ? screen.getLeft() + hotbar.x + 1 : -100,
+                screen.render(new PoseStack(), screen.hoverTitle ? screen.width / 2 : hover ? screen.getLeft() + hotbar.x + 1 : -100,
                         screen.hoverTitle ? screen.getTop() + 4 : hover ? screen.getTop() + hotbar.y + 1 : -100, 0F);
             }
             ByteBuffer pixels = ByteBuffer.allocateDirect(width * height * 4);
@@ -279,13 +273,11 @@ final class MachineGuiLayoutProbe {
             }
             return image;
         } finally {
-            RenderSystem.popMatrix();
-            RenderSystem.matrixMode(5889); RenderSystem.popMatrix();
-            RenderSystem.matrixMode(5888);
+            projection.close();
             target.destroyBuffers();
             minecraft.getMainRenderTarget().bindWrite(true);
             RenderSystem.enableDepthTest();
-            RenderSystem.color4f(1, 1, 1, 1);
+            RenderSystem.setShaderColor(1, 1, 1, 1);
         }
     }
 
@@ -340,10 +332,10 @@ final class MachineGuiLayoutProbe {
     }
 
     private static void verifyLongName(Minecraft minecraft, SimpleMachineGUI definition, SimpleMachineGUI.Container menu,
-            PlayerInventory inventory) throws Exception {
+            Inventory inventory) throws Exception {
         String name = String.join(" / ", java.util.Collections.nCopies(16, "John's oil reserve"));
         RecordingScreen screen = new RecordingScreen(definition, menu, inventory,
-                new net.minecraft.util.text.StringTextComponent(name), name, "Inventory");
+                new net.minecraft.network.chat.TextComponent(name), name, "Inventory");
         screen.init(minecraft, 320, 240);
         BufferedImage actual = render(minecraft, screen, VIEWPORTS[0], false);
         BufferedImage hidden = render(minecraft, screen, VIEWPORTS[0], true);
@@ -363,10 +355,10 @@ final class MachineGuiLayoutProbe {
     }
 
     private static void verifyHelperLimits(RecordingScreen screen) throws Exception {
-        for (String name : new String[]{"zone.moddev.mc.electricadvantage.gui.GUIHelper",
-                "zone.moddev.mc.steamadvantage.gui.GUIHelper"}) {
-            if (!net.minecraftforge.fml.ModList.get().isLoaded(name.contains("electricadvantage") ? "electricadvantage" : "steamadvantage")) continue;
-            String[] methods = name.contains("electricadvantage") ? new String[]{"drawProgressBar"}
+        for (String name : new String[]{"zone.moddev.mc.baseelectric.gui.GUIHelper",
+                "zone.moddev.mc.basesteam.gui.GUIHelper"}) {
+            if (!net.minecraftforge.fml.ModList.get().isLoaded(name.contains("baseelectric") ? "baseelectric" : "basesteam")) continue;
+            String[] methods = name.contains("baseelectric") ? new String[]{"drawProgressBar"}
                     : new String[]{"drawDownArrowProgress", "drawFlameProgress"};
             for (String method : methods) {
                 Method draw = Class.forName(name).getMethod(method, int.class, int.class, float.class, SimpleMachineGUI.GUIContainer.class);
@@ -379,13 +371,13 @@ final class MachineGuiLayoutProbe {
         }
     }
 
-    private static final class GuiWorld extends ClientWorld {
-        private net.minecraft.block.BlockState state;
+    private static final class GuiWorld extends ClientLevel {
+        private net.minecraft.world.level.block.state.BlockState state;
         private GuiWorld() {
-            super(null, null, net.minecraft.world.World.OVERWORLD, null, 0, () -> net.minecraft.profiler.EmptyProfiler.INSTANCE, null, false, 0);
+            super(null, null, net.minecraft.world.level.Level.OVERWORLD, null, 0, () -> net.minecraft.util.profiling.InactiveProfiler.INSTANCE, null, false, 0);
             throw new AssertionError("Allocate the read-only GUI fixture without a world constructor");
         }
-        @Override public net.minecraft.block.BlockState getBlockState(BlockPos pos) { return state; }
+        @Override public net.minecraft.world.level.block.state.BlockState getBlockState(BlockPos pos) { return state; }
     }
 
     private static final class RecordingScreen extends SimpleMachineGUI.GUIContainer {
@@ -396,13 +388,13 @@ final class MachineGuiLayoutProbe {
         private final String expectedTitle, expectedInventory;
         private boolean hoverTitle;
         private String titleTooltip;
-        RecordingScreen(SimpleMachineGUI definition, SimpleMachineGUI.Container menu, PlayerInventory inventory,
-                net.minecraft.util.text.ITextComponent title, String expectedTitle, String expectedInventory) {
+        RecordingScreen(SimpleMachineGUI definition, SimpleMachineGUI.Container menu, Inventory inventory,
+                net.minecraft.network.chat.Component title, String expectedTitle, String expectedInventory) {
             definition.super(menu, inventory, title);
             this.expectedTitle = expectedTitle;
             this.expectedInventory = expectedInventory;
         }
-        @Override protected void renderLabels(MatrixStack matrices, int x, int y) {
+        @Override protected void renderLabels(PoseStack matrices, int x, int y) {
             if (labels == LabelMode.PRODUCTION) { super.renderLabels(matrices, x, y); return; }
             if (labels == LabelMode.HIDDEN) return;
             if (labels != LabelMode.INVENTORY_ONLY) {
@@ -416,19 +408,19 @@ final class MachineGuiLayoutProbe {
             }
             if (labels != LabelMode.TITLE_ONLY) font.drawShadow(matrices, expectedInventory, 8, 140, 0xFFFFFF);
         }
-        @Override public void render(MatrixStack matrices, int x, int y, float ticks) {
+        @Override public void render(PoseStack matrices, int x, int y, float ticks) {
             draws.clear(); tooltipCalls = 0; itemTooltipCalls = 0; titleTooltip = null;
             super.render(matrices, x, y, ticks);
         }
-        @Override protected void renderTooltip(MatrixStack matrices, int x, int y) {
+        @Override protected void renderTooltip(PoseStack matrices, int x, int y) {
             tooltipCalls++;
             super.renderTooltip(matrices, x, y);
         }
-        @Override public void renderTooltip(MatrixStack matrices, net.minecraft.item.ItemStack item, int x, int y) {
+        @Override public void renderTooltip(PoseStack matrices, net.minecraft.world.item.ItemStack item, int x, int y) {
             itemTooltipCalls++;
             super.renderTooltip(matrices, item, x, y);
         }
-        @Override public void renderTooltip(MatrixStack matrices, net.minecraft.util.text.ITextComponent text, int x, int y) {
+        @Override public void renderTooltip(PoseStack matrices, net.minecraft.network.chat.Component text, int x, int y) {
             titleTooltip = text.getString();
             super.renderTooltip(matrices, text, x, y);
         }

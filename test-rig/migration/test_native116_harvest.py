@@ -8,6 +8,7 @@ import unittest
 from uuid import UUID
 
 import native116_harvest as native
+from historical_test_inputs import JAVA, POWER116, git_blob
 
 
 def sample(label="exercise"):
@@ -44,8 +45,7 @@ class HarvestIsolationTests(unittest.TestCase):
         self.assertEqual(270, len(native.EXPECTED))
 
     def test_java_witness_inputs_masks_trial_counts_and_thresholds_are_unchanged(self):
-        source = (Path(__file__).resolve().parents[1] /
-                  "src/main/java/zone/moddev/mc/advantageworks/NativeHarvestProbe.java").read_text()
+        source = git_blob(POWER116, JAVA + "NativeHarvestProbe.java").decode("utf-8")
         region = source.split("        String sulfur =", 1)[1].split("        JsonObject solar =", 1)[0]
         self.assertEqual("3FF0AC4C13CA1B737679F67128CE2F41C5A0873E89258D456628BA8A309BAA9A",
                          hashlib.sha256(region.encode()).hexdigest().upper())

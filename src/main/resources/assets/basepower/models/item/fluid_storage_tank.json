@@ -1,0 +1,4 @@
+{
+    "parent": "basepower:block/fluid_storage_tank",
+    "ambientocclusion": false
+}

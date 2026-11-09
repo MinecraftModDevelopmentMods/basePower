@@ -2,8 +2,8 @@ package cyano.poweradvantage.api.fluid;
 
 import javax.annotation.Nullable;
 
-import net.minecraft.fluid.Fluid;
-import net.minecraft.util.Direction;
+import net.minecraft.world.level.material.Fluid;
+import net.minecraft.core.Direction;
 
 /**
  * Stable millibucket fluid contract used by Advantage machines. On Forge 1.14

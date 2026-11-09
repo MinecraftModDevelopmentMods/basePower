@@ -4,43 +4,44 @@ import com.google.gson.JsonObject;
 import cyano.poweradvantage.api.fluid.FluidNetworkApi;
 import cyano.poweradvantage.api.fluid.IAdvantageFluidHandler;
 import cyano.poweradvantage.api.migration.LegacyMigrationApi;
-import net.minecraft.block.Block;
-import net.minecraft.block.FenceGateBlock;
-import net.minecraft.block.FlowingFluidBlock;
-import net.minecraft.block.StandingSignBlock;
-import net.minecraft.block.BlockState;
-import net.minecraft.command.CommandException;
-import net.minecraft.enchantment.Enchantment;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.item.ItemEntity;
-import net.minecraft.block.Blocks;
-import net.minecraft.inventory.IInventory;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.FenceGateBlock;
+import net.minecraft.world.level.block.LiquidBlock;
+import net.minecraft.world.level.block.StandingSignBlock;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.commands.CommandRuntimeException;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.Container;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.state.Property;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.tileentity.SignTileEntity;
-import net.minecraft.util.Direction;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.registry.Registry;
-import net.minecraft.util.math.AxisAlignedBB;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.text.Style;
-import net.minecraft.util.text.StringTextComponent;
-import net.minecraft.util.text.event.ClickEvent;
-import net.minecraft.world.server.ServerWorld;
-import net.minecraft.world.World;
-import net.minecraft.world.biome.Biome;
-import net.minecraft.world.chunk.Chunk;
+import net.minecraft.world.level.block.state.properties.Property;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.SignBlockEntity;
+import net.minecraft.core.Direction;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.core.Registry;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Style;
+import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.ClickEvent;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraftforge.common.BiomeDictionary;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.fml.ModList;
+import net.minecraftforge.fmlserverevents.FMLServerStoppingEvent;
 import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraft.fluid.Fluid;
+import net.minecraft.world.level.material.Fluid;
 import cyano.poweradvantage.api.fluid.FluidStack;
 
 import java.io.File;
@@ -70,6 +71,7 @@ final class WorksController {
 
     private WorksController() {
         MinecraftForge.EVENT_BUS.addListener(this::worldgenTick);
+        MinecraftForge.EVENT_BUS.addListener(this::worldgenStopping);
     }
 
     static WorksController getInstance() {
@@ -78,23 +80,23 @@ final class WorksController {
 
     synchronized void loadDefinition() {
         if (definition != null) return;
-        definition = WorksDefinitionLoader.loadNative116();
+        definition = WorksDefinitionLoader.loadNative117();
         for (WorksDefinition.Station station : definition.stations) {
             stations.put(station.id.toUpperCase(Locale.ROOT), station);
             statuses.put(station.id, "NOT_BUILT");
         }
     }
 
-    void requireAuthorizedWorld(MinecraftServer server) throws CommandException {
+    void requireAuthorizedWorld(MinecraftServer server) throws CommandRuntimeException {
         File marker = new File("advantage-works.allow");
-        if (!WorksWorldGuard.authorized(server.getWorldPath(net.minecraft.world.storage.FolderName.ROOT), marker.isFile())) {
+        if (!WorksWorldGuard.authorized(server.getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT), marker.isFile())) {
             throw commandError("Refusing to alter an unmarked world. Expected AdvantageWorks level and advantage-works.allow.");
         }
     }
 
-    synchronized String build(MinecraftServer server, String target) throws CommandException {
+    synchronized String build(MinecraftServer server, String target) throws CommandRuntimeException {
         loadDefinition();
-        ServerWorld world = overworld(server);
+        ServerLevel world = overworld(server);
         if ("all".equalsIgnoreCase(target)) buildConcourse(world);
         List<WorksDefinition.Station> selected = select(target, true);
         int built = 0;
@@ -114,9 +116,9 @@ final class WorksController {
         return "Advantage Works built " + built + " station(s); skipped " + skipped + " for missing mods.";
     }
 
-    synchronized String reset(MinecraftServer server, String target) throws CommandException {
+    synchronized String reset(MinecraftServer server, String target) throws CommandRuntimeException {
         List<WorksDefinition.Station> selected = select(target, true);
-        ServerWorld world = overworld(server);
+        ServerLevel world = overworld(server);
         int reset = 0;
         for (WorksDefinition.Station station : selected) {
             if (!requirementsPresent(station)) continue;
@@ -129,7 +131,7 @@ final class WorksController {
         return "Reset " + reset + " station(s).";
     }
 
-    synchronized String start(MinecraftServer server, String target) throws CommandException {
+    synchronized String start(MinecraftServer server, String target) throws CommandRuntimeException {
         WorksDefinition.Station station = oneStation(target);
         if (!requirementsPresent(station)) {
             statuses.put(station.id, "SKIP");
@@ -139,7 +141,7 @@ final class WorksController {
                 && !station.id.equals(activeExclusiveStation)) {
             throw commandError("Stop exclusive station " + activeExclusiveStation + " first.");
         }
-        ServerWorld world = overworld(server);
+        ServerLevel world = overworld(server);
         setStationChunksForced(world, station, true);
         applyActions(world, station, station.startActions);
         if (station.exclusive) activeExclusiveStation = station.id;
@@ -148,9 +150,9 @@ final class WorksController {
         return "Started " + station.id + " - " + station.name;
     }
 
-    synchronized String stop(MinecraftServer server, String target) throws CommandException {
+    synchronized String stop(MinecraftServer server, String target) throws CommandRuntimeException {
         WorksDefinition.Station station = oneStation(target);
-        ServerWorld world = overworld(server);
+        ServerLevel world = overworld(server);
         if (requirementsPresent(station)) {
             applyActions(world, station, station.stopActions);
             removeTaggedEntities(world, station);
@@ -161,7 +163,7 @@ final class WorksController {
         return "Stopped " + station.id + " - " + station.name;
     }
 
-    private static void setStationChunksForced(ServerWorld world,
+    private static void setStationChunksForced(ServerLevel world,
                                                 WorksDefinition.Station station,
                                                 boolean forced) {
         int minChunkX = (station.origin[0] + station.boundsMin[0]) >> 4;
@@ -175,9 +177,9 @@ final class WorksController {
         }
     }
 
-    synchronized String check(MinecraftServer server, String target) throws CommandException {
+    synchronized String check(MinecraftServer server, String target) throws CommandRuntimeException {
         List<WorksDefinition.Station> selected = select(target, true);
-        ServerWorld world = overworld(server);
+        ServerLevel world = overworld(server);
         Map<String, Integer> summary = new LinkedHashMap<>();
         for (WorksDefinition.Station station : selected) {
             String status = checkStation(world, station);
@@ -191,13 +193,13 @@ final class WorksController {
         return "Advantage Works check: " + summary;
     }
 
-    synchronized String status(String target) throws CommandException {
+    synchronized String status(String target) throws CommandRuntimeException {
         if ("all".equalsIgnoreCase(target)) return statuses.toString();
         WorksDefinition.Station station = oneStation(target);
         return station.id + " " + station.name + ": " + statuses.get(station.id);
     }
 
-    synchronized String checkpoint(MinecraftServer server, String target, String name) throws CommandException {
+    synchronized String checkpoint(MinecraftServer server, String target, String name) throws CommandRuntimeException {
         WorksDefinition.Station station = oneStation(target);
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("checkpoint", name);
@@ -207,14 +209,14 @@ final class WorksController {
         return "Checkpoint written for " + station.id + " to " + result.getPath();
     }
 
-    synchronized String sampleWorldgen(MinecraftServer server, int radius) throws CommandException {
+    synchronized String sampleWorldgen(MinecraftServer server, int radius) throws CommandRuntimeException {
         if (radius < 1 || radius > 16) {
             throw commandError("Worldgen sample radius must be between 1 and 16 chunks");
         }
         if (worldgenJob.current() != null) throw commandError("A worldgen sample is already running");
-        ServerWorld world = overworld(server);
+        ServerLevel world = overworld(server);
         BlockPos spawn = world.getSharedSpawnPos();
-        worldgenJob.start(new WorldgenSamplingJob(new NativeWorldgenAccess(world),
+        worldgenJob.start(new WorldgenSamplingJob(new Native117WorldgenAccess(world),
                 spawn.getX(), spawn.getY(), spawn.getZ(), world.getSeaLevel(), radius));
         return "Queued worldgen sample with radius " + radius + " for bounded server-tick sampling";
     }
@@ -227,6 +229,7 @@ final class WorksController {
         try {
             if (job.failure() != null) throw job.failure();
             Map<String, Object> payload = job.result();
+            payload.put("chunkLoading", job.diagnostics());
             File result = resultWriter.write("worldgen", "sample", payload);
             org.apache.logging.log4j.LogManager.getLogger(AdvantageWorksMod.MODID).info(
                     "Worldgen sample wrote {} chunks to {}: {}", payload.get("chunksScanned"),
@@ -237,6 +240,7 @@ final class WorksController {
             Map<String, Object> payload = new LinkedHashMap<>();
             payload.put("phase", job.phase().name());
             payload.put("failure", failure.toString());
+            payload.put("chunkLoading", job.diagnostics());
             try {
                 resultWriter.write("worldgen", "sample-failed", payload);
             } catch (RuntimeException writeFailure) {
@@ -248,34 +252,12 @@ final class WorksController {
         }
     }
 
-    private static final class NativeWorldgenAccess implements WorldgenSamplingJob.WorldAccess {
-        private final ServerWorld world;
-        private final BlockPos.Mutable cursor = new BlockPos.Mutable();
-
-        NativeWorldgenAccess(ServerWorld world) { this.world = world; }
-
-        @Override public boolean matchesBiome(String expected, int x, int y, int z) {
-            return matchesExpectedBiome(world, expected, world.getBiome(cursor.set(x, y, z)));
-        }
-
-        @Override public void populateChunk(int chunkX, int chunkZ) { world.getChunk(chunkX, chunkZ); }
-
-        @Override public WorldgenSamplingJob.SampleChunk sampleChunk(int chunkX, int chunkZ) {
-            Chunk chunk = world.getChunk(chunkX, chunkZ);
-            Biome center = world.getBiome(new BlockPos((chunkX << 4) + 8, world.getSeaLevel(), (chunkZ << 4) + 8));
-            return new WorldgenSamplingJob.SampleChunk() {
-                @Override public boolean centerMatches(String expected) { return matchesExpectedBiome(world, expected, center); }
-                @Override public String blockName(int x, int y, int z) {
-                    ResourceLocation id = ForgeRegistries.BLOCKS.getKey(
-                            chunk.getBlockState(cursor.set(x, y, z)).getBlock());
-                    return id == null ? null : id.toString();
-                }
-            };
-        }
+    private synchronized void worldgenStopping(FMLServerStoppingEvent event) {
+        worldgenJob.release();
     }
 
-    private static boolean matchesExpectedBiome(ServerWorld world, String expected, Biome biome) {
-        net.minecraft.util.RegistryKey<Biome> key = world.registryAccess().registryOrThrow(Registry.BIOME_REGISTRY)
+    static boolean matchesExpectedBiome(ServerLevel world, String expected, Biome biome) {
+        net.minecraft.resources.ResourceKey<Biome> key = world.registryAccess().registryOrThrow(Registry.BIOME_REGISTRY)
                 .getResourceKey(biome).orElseThrow(() -> new IllegalStateException("Unregistered native biome"));
         if ("DESERT".equals(expected)) {
             return BiomeDictionary.hasType(key, BiomeDictionary.Type.getType("SANDY"))
@@ -296,7 +278,7 @@ final class WorksController {
         return ids;
     }
 
-    private String checkStation(ServerWorld world, WorksDefinition.Station station) {
+    private String checkStation(ServerLevel world, WorksDefinition.Station station) {
         if (!requirementsPresent(station)) {
             statuses.put(station.id, "SKIP");
             setStatusBlock(world, station, STATUS_ATTENTION);
@@ -342,7 +324,7 @@ final class WorksController {
         return status;
     }
 
-    private void writeStationResult(ServerWorld world, WorksDefinition.Station station, String status,
+    private void writeStationResult(ServerLevel world, WorksDefinition.Station station, String status,
                                     List<Map<String, Object>> assertions) {
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("name", station.name);
@@ -357,7 +339,7 @@ final class WorksController {
         resultWriter.write(station.id, "latest", payload);
     }
 
-    private List<Map<String, Object>> snapshot(ServerWorld world, WorksDefinition.Station station) {
+    private List<Map<String, Object>> snapshot(ServerLevel world, WorksDefinition.Station station) {
         List<Map<String, Object>> snapshot = new ArrayList<>();
         Set<BlockPos> positions = new LinkedHashSet<>();
         for (WorksDefinition.Placement placement : station.placements) positions.add(absolute(station, placement.pos));
@@ -372,14 +354,14 @@ final class WorksController {
             block.put("pos", Arrays.asList(pos.getX(), pos.getY(), pos.getZ()));
             block.put("block", name == null ? "unknown" : name.toString());
             block.put("state", state.toString());
-            TileEntity tile = world.getBlockEntity(pos);
-            if (tile != null) block.put("nbt", tile.save(new CompoundNBT()).toString());
+            BlockEntity tile = world.getBlockEntity(pos);
+            if (tile != null) block.put("nbt", tile.save(new CompoundTag()).toString());
             snapshot.add(block);
         }
         return snapshot;
     }
 
-    private boolean evaluateAssertion(ServerWorld world, WorksDefinition.Station station,
+    private boolean evaluateAssertion(ServerLevel world, WorksDefinition.Station station,
                                       WorksDefinition.Assertion assertion) {
         if (assertion.block != null && block(assertion.block) == Blocks.AIR
                 && !"minecraft:air".equals(assertion.block)) {
@@ -410,9 +392,9 @@ final class WorksController {
         if ("fluidAmount".equals(assertion.type)) {
             long total = 0;
             for (int[] position : assertion.positions) {
-                TileEntity source = world.getBlockEntity(absolute(station, position));
+                BlockEntity source = world.getBlockEntity(absolute(station, position));
                 if (source == null) return false;
-                total += AssertionChecks.fluidAmount(source.save(new CompoundNBT()), assertion.nbtPath, assertion.fluid);
+                total += AssertionChecks.fluidAmount(source.save(new CompoundTag()), assertion.nbtPath, assertion.fluid);
             }
             return compare(total, assertion.operator, assertion.value);
         }
@@ -439,19 +421,19 @@ final class WorksController {
                     && compare(source.getAnalogOutputSignal(state, world, pos),
                     assertion.operator, assertion.value);
         }
-        TileEntity tile = world.getBlockEntity(pos);
+        BlockEntity tile = world.getBlockEntity(pos);
         if ("tileExists".equals(assertion.type)) return tile != null;
         if ("inventoryEmpty".equals(assertion.type)) {
-            if (!(tile instanceof IInventory)) return false;
-            return inventoryCount((IInventory) tile, assertion.item) == 0;
+            if (!(tile instanceof Container)) return false;
+            return inventoryCount((Container) tile, assertion.item) == 0;
         }
         if ("inventoryCount".equals(assertion.type)) {
-            if (!(tile instanceof IInventory)) return false;
-            return compare(inventoryCount((IInventory) tile, assertion.item), assertion.operator, assertion.count);
+            if (!(tile instanceof Container)) return false;
+            return compare(inventoryCount((Container) tile, assertion.item), assertion.operator, assertion.count);
         }
         if ("inventoryNbtNumber".equals(assertion.type)) {
-            if (!(tile instanceof IInventory) || assertion.slot == null) return false;
-            IInventory inventory = (IInventory) tile;
+            if (!(tile instanceof Container) || assertion.slot == null) return false;
+            Container inventory = (Container) tile;
             if (assertion.slot < 0 || assertion.slot >= inventory.getContainerSize()) return false;
             ItemStack stack = inventory.getItem(assertion.slot);
             if (stack.isEmpty() || !stack.hasTag()) return false;
@@ -460,18 +442,18 @@ final class WorksController {
         }
         if ("nbtNumber".equals(assertion.type)) {
             if (tile == null) return false;
-            CompoundNBT nbt = tile.save(new CompoundNBT());
+            CompoundTag nbt = tile.save(new CompoundTag());
             Number number = numberAt(nbt, assertion.nbtPath);
             return number != null && compare(number.doubleValue(), assertion.operator, assertion.value);
         }
         if ("nbtString".equals(assertion.type)) {
             if (tile == null) return false;
-            String text = stringAt(tile.save(new CompoundNBT()), assertion.nbtPath);
+            String text = stringAt(tile.save(new CompoundTag()), assertion.nbtPath);
             return assertion.expectedText != null && assertion.expectedText.equals(text);
         }
         if ("energy".equals(assertion.type)) {
             if (tile == null) return false;
-            int[] energy = tile.save(new CompoundNBT()).getIntArray("Energy");
+            int[] energy = tile.save(new CompoundTag()).getIntArray("Energy");
             int index = assertion.energyIndex == null ? 0 : assertion.energyIndex;
             return index >= 0 && index < energy.length
                     && compare(Float.intBitsToFloat(energy[index]), assertion.operator, assertion.value);
@@ -479,7 +461,7 @@ final class WorksController {
         throw new IllegalArgumentException("Unsupported assertion type " + assertion.type);
     }
 
-    private static int inventoryCount(IInventory inventory, String itemName) {
+    private static int inventoryCount(Container inventory, String itemName) {
         Item expected = itemName == null ? null : item(itemName);
         if (itemName != null && expected == null) throw new IllegalArgumentException("Unregistered assertion item " + itemName);
         int count = 0;
@@ -490,10 +472,10 @@ final class WorksController {
         return count;
     }
 
-    private static Number numberAt(CompoundNBT root, String path) {
+    private static Number numberAt(CompoundTag root, String path) {
         if (path == null || path.isEmpty()) return null;
         String[] parts = path.split("\\.");
-        CompoundNBT current = root;
+        CompoundTag current = root;
         for (int i = 0; i < parts.length - 1; i++) {
             if (!current.contains(parts[i], 10)) return null;
             current = current.getCompound(parts[i]);
@@ -503,10 +485,10 @@ final class WorksController {
         return current.getDouble(leaf);
     }
 
-    private static String stringAt(CompoundNBT root, String path) {
+    private static String stringAt(CompoundTag root, String path) {
         if (path == null || path.isEmpty()) return null;
         String[] parts = path.split("\\.");
-        CompoundNBT current = root;
+        CompoundTag current = root;
         for (int i = 0; i < parts.length - 1; i++) {
             if (!current.contains(parts[i], 10)) return null;
             current = current.getCompound(parts[i]);
@@ -519,7 +501,7 @@ final class WorksController {
         return AssertionChecks.compare(actual, operator, expected);
     }
 
-    private void resetStation(ServerWorld world, WorksDefinition.Station station) {
+    private void resetStation(ServerLevel world, WorksDefinition.Station station) {
         clearStation(world, station);
         decorateStation(world, station);
         for (WorksDefinition.Placement placement : station.placements) applyPlacement(world, station, placement);
@@ -527,7 +509,7 @@ final class WorksController {
         setStatusBlock(world, station, STATUS_NEUTRAL);
     }
 
-    private void clearStation(ServerWorld world, WorksDefinition.Station station) {
+    private void clearStation(ServerLevel world, WorksDefinition.Station station) {
         BlockPos min = absolute(station, station.boundsMin);
         BlockPos max = absolute(station, station.boundsMax);
         removeTaggedEntities(world, station);
@@ -536,18 +518,24 @@ final class WorksController {
         }
     }
 
-    private void removeTaggedEntities(ServerWorld world, WorksDefinition.Station station) {
+    private void removeTaggedEntities(ServerLevel world, WorksDefinition.Station station) {
         BlockPos min = absolute(station, station.boundsMin);
         BlockPos max = absolute(station, station.boundsMax);
         for (Entity entity : world.getEntitiesOfClass(Entity.class,
-                new AxisAlignedBB(min, max.offset(1, 1, 1)))) {
-            if (station.id.equals(entity.getPersistentData().getString("AdvantageWorksStation"))) {
-                entity.remove();
+                new AABB(min, max.offset(1, 1, 1)))) {
+            if (StationOwnership.matches(entity, station.id)) {
+                entity.discard();
             }
         }
     }
 
-    private void decorateStation(ServerWorld world, WorksDefinition.Station station) {
+    static final class StationOwnership {
+        static boolean matches(Entity entity, String stationId) {
+            return stationId.equals(NativeEntityData.string(entity, "AdvantageWorksStation"));
+        }
+    }
+
+    private void decorateStation(ServerLevel world, WorksDefinition.Station station) {
         int color = districtColor(station.district);
         int maxX = station.boundsMax[0];
         int maxZ = station.boundsMax[2];
@@ -572,7 +560,7 @@ final class WorksController {
                 "/advworks stop " + station.id);
     }
 
-    private void encloseStation(ServerWorld world, WorksDefinition.Station station) {
+    private void encloseStation(ServerLevel world, WorksDefinition.Station station) {
         int minX = station.boundsMin[0];
         int maxX = station.boundsMax[0];
         int minZ = station.boundsMin[2];
@@ -598,7 +586,7 @@ final class WorksController {
                 Blocks.OAK_FENCE_GATE.defaultBlockState().setValue(FenceGateBlock.FACING, Direction.NORTH), 2);
     }
 
-    private void buildConcourse(ServerWorld world) {
+    private void buildConcourse(ServerLevel world) {
         for (int x = -15; x <= 15; x++) {
             for (int z = -15; z <= 15; z++) {
                 world.setBlock(new BlockPos(x, 3, z), Blocks.STONE_BRICKS.defaultBlockState(), 2);
@@ -616,7 +604,7 @@ final class WorksController {
         placeSign(world, new BlockPos(0, 4, 3), "PROVING", "GROUNDS SOUTH", "", "");
     }
 
-    private void applyActions(ServerWorld world, WorksDefinition.Station station,
+    private void applyActions(ServerLevel world, WorksDefinition.Station station,
                               List<WorksDefinition.Action> actions) {
         for (WorksDefinition.Action action : actions) {
             if (!requirementsPresent(action.requiredMods)) continue;
@@ -630,12 +618,12 @@ final class WorksController {
                     world.setBlock(pos, Blocks.AIR.defaultBlockState(), 2);
                     break;
                 case "clearInventory":
-                    TileEntity clearTile = world.getBlockEntity(pos);
-                    if (clearTile instanceof IInventory) ((IInventory) clearTile).clearContent();
+                    BlockEntity clearTile = world.getBlockEntity(pos);
+                    if (clearTile instanceof Container) ((Container) clearTile).clearContent();
                     break;
                 case "setInventory":
-                    TileEntity tile = world.getBlockEntity(pos);
-                    if (!(tile instanceof IInventory)) throw new IllegalStateException("No inventory at " + pos);
+                    BlockEntity tile = world.getBlockEntity(pos);
+                    if (!(tile instanceof Container)) throw new IllegalStateException("No inventory at " + pos);
                     Item stackItem = item(action.item);
                     if (stackItem == null) throw new IllegalStateException("Unknown item " + action.item);
                     ItemStack stack = itemStack(stackItem, action.count, action.damage);
@@ -654,15 +642,15 @@ final class WorksController {
                         }
                         stack.enchant(enchantment, action.level);
                     }
-                    ((IInventory) tile).setItem(action.slot, stack);
+                    ((Container) tile).setItem(action.slot, stack);
                     tile.setChanged();
                     break;
                 case "fillInventory":
-                    TileEntity fillTile = world.getBlockEntity(pos);
-                    if (!(fillTile instanceof IInventory)) throw new IllegalStateException("No inventory at " + pos);
+                    BlockEntity fillTile = world.getBlockEntity(pos);
+                    if (!(fillTile instanceof Container)) throw new IllegalStateException("No inventory at " + pos);
                     Item fillItem = item(action.item);
                     if (fillItem == null) throw new IllegalStateException("Unknown item " + action.item);
-                    IInventory inventory = (IInventory) fillTile;
+                    Container inventory = (Container) fillTile;
                     ItemStack fillTemplate = itemStack(fillItem, 1, action.damage);
                     int fillCount = Math.min(action.count,
                             Math.min(fillTemplate.getMaxStackSize(), inventory.getMaxStackSize()));
@@ -676,7 +664,7 @@ final class WorksController {
                     mergeTileNbt(world, pos, action.nbt);
                     break;
                 case "setFluid":
-                    TileEntity fluidTile = world.getBlockEntity(pos);
+                    BlockEntity fluidTile = world.getBlockEntity(pos);
                     Fluid fluid = fluid(action.fluid);
                     if (fluid == null) throw new IllegalStateException("Unknown fluid " + action.fluid);
                     int requested = (int) Math.min(Integer.MAX_VALUE, action.value);
@@ -728,15 +716,15 @@ final class WorksController {
                     break;
                 case "weatherClear":
                     world.getLevelData().setRaining(false);
-                    ((net.minecraft.world.storage.IServerWorldInfo) world.getLevelData()).setThundering(false);
+                    ((net.minecraft.world.level.storage.ServerLevelData) world.getLevelData()).setThundering(false);
                     break;
                 case "weatherRain":
                     world.getLevelData().setRaining(true);
-                    ((net.minecraft.world.storage.IServerWorldInfo) world.getLevelData()).setThundering(false);
+                    ((net.minecraft.world.level.storage.ServerLevelData) world.getLevelData()).setThundering(false);
                     break;
                 case "weatherThunder":
                     world.getLevelData().setRaining(true);
-                    ((net.minecraft.world.storage.IServerWorldInfo) world.getLevelData()).setThundering(true);
+                    ((net.minecraft.world.level.storage.ServerLevelData) world.getLevelData()).setThundering(true);
                     break;
                 default:
                     throw new IllegalArgumentException("Unsupported action type " + type);
@@ -744,7 +732,7 @@ final class WorksController {
         }
     }
 
-    private void applyPlacement(ServerWorld world, WorksDefinition.Station station,
+    private void applyPlacement(ServerLevel world, WorksDefinition.Station station,
                                 WorksDefinition.Placement placement) {
         if (!requirementsPresent(placement.requiredMods)) return;
         Block target = block(placement.block);
@@ -757,24 +745,24 @@ final class WorksController {
         if (placement.nbt != null) mergeTileNbt(world, pos, placement.nbt);
     }
 
-    private void mergeTileNbt(ServerWorld world, BlockPos pos, JsonObject supplied) {
-        TileEntity tile = world.getBlockEntity(pos);
+    private void mergeTileNbt(ServerLevel world, BlockPos pos, JsonObject supplied) {
+        BlockEntity tile = world.getBlockEntity(pos);
         if (tile == null) throw new IllegalStateException("No tile entity at " + pos);
         try {
-            CompoundNBT base = tile.save(new CompoundNBT());
-            CompoundNBT additions = JsonNbtConverter.toCompound(supplied);
+            CompoundTag base = tile.save(new CompoundTag());
+            CompoundTag additions = JsonNbtConverter.toCompound(supplied);
             base.merge(additions);
             base.putInt("x", pos.getX());
             base.putInt("y", pos.getY());
             base.putInt("z", pos.getZ());
-            tile.load(tile.getBlockState(), base);
+            tile.load(base);
             tile.setChanged();
         } catch (Exception ex) {
             throw new IllegalStateException("Cannot merge tile NBT at " + pos, ex);
         }
     }
 
-    private List<WorksDefinition.Station> select(String target, boolean allowGroups) throws CommandException {
+    private List<WorksDefinition.Station> select(String target, boolean allowGroups) throws CommandRuntimeException {
         loadDefinition();
         if ("all".equalsIgnoreCase(target)) return new ArrayList<>(stations.values());
         if (allowGroups) {
@@ -790,7 +778,7 @@ final class WorksController {
         return Collections.singletonList(oneStation(target));
     }
 
-    private WorksDefinition.Station oneStation(String id) throws CommandException {
+    private WorksDefinition.Station oneStation(String id) throws CommandRuntimeException {
         loadDefinition();
         WorksDefinition.Station station = stations.get(id.toUpperCase(Locale.ROOT));
         if (station == null) throw commandError("Unknown Advantage Works station " + id);
@@ -826,29 +814,29 @@ final class WorksController {
         return STATUS_ATTENTION;
     }
 
-    private static void setStatusBlock(ServerWorld world, WorksDefinition.Station station, int meta) {
+    private static void setStatusBlock(ServerLevel world, WorksDefinition.Station station, int meta) {
         world.setBlock(absolute(station, new int[]{11, 1, 1}), wool(meta).defaultBlockState(), 2);
     }
 
-    private static void placeCommandSign(ServerWorld world, BlockPos pos, String label, String command) {
+    private static void placeCommandSign(ServerLevel world, BlockPos pos, String label, String command) {
         world.setBlock(pos, Blocks.OAK_SIGN.defaultBlockState().setValue(StandingSignBlock.ROTATION, 8), 2);
-        TileEntity tile = world.getBlockEntity(pos);
-        if (!(tile instanceof SignTileEntity)) return;
-        SignTileEntity sign = (SignTileEntity) tile;
-        StringTextComponent clickable = new StringTextComponent(label);
+        BlockEntity tile = world.getBlockEntity(pos);
+        if (!(tile instanceof SignBlockEntity)) return;
+        SignBlockEntity sign = (SignBlockEntity) tile;
+        TextComponent clickable = new TextComponent(label);
         clickable.setStyle(Style.EMPTY.withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, command)));
         sign.setMessage(0, clickable);
-        sign.setMessage(1, new StringTextComponent("right-click"));
+        sign.setMessage(1, new TextComponent("right-click"));
         sign.setChanged();
     }
 
-    private static void placeSign(ServerWorld world, BlockPos pos, String... lines) {
+    private static void placeSign(ServerLevel world, BlockPos pos, String... lines) {
         world.setBlock(pos, Blocks.OAK_SIGN.defaultBlockState().setValue(StandingSignBlock.ROTATION, 8), 2);
-        TileEntity tile = world.getBlockEntity(pos);
-        if (!(tile instanceof SignTileEntity)) return;
-        SignTileEntity sign = (SignTileEntity) tile;
+        BlockEntity tile = world.getBlockEntity(pos);
+        if (!(tile instanceof SignBlockEntity)) return;
+        SignBlockEntity sign = (SignBlockEntity) tile;
         for (int i = 0; i < 4; i++) {
-            sign.setMessage(i, new StringTextComponent(i < lines.length ? trimSign(lines[i]) : ""));
+            sign.setMessage(i, new TextComponent(i < lines.length ? trimSign(lines[i]) : ""));
         }
         sign.setChanged();
     }
@@ -867,8 +855,8 @@ final class WorksController {
         entity.getPersistentData().putString("AdvantageWorksStation", stationId);
     }
 
-    private static ServerWorld overworld(MinecraftServer server) throws CommandException {
-        ServerWorld world = server.getLevel(World.OVERWORLD);
+    private static ServerLevel overworld(MinecraftServer server) throws CommandRuntimeException {
+        ServerLevel world = server.getLevel(Level.OVERWORLD);
         if (world == null) throw commandError("Overworld is not loaded");
         return world;
     }
@@ -889,17 +877,17 @@ final class WorksController {
         return ForgeRegistries.ITEMS.containsKey(key) ? ForgeRegistries.ITEMS.getValue(key) : null;
     }
 
-    private static CommandException commandError(String message) {
-        return new CommandException(new StringTextComponent(message));
+    private static CommandRuntimeException commandError(String message) {
+        return new CommandRuntimeException(new TextComponent(message));
     }
 
     private static BlockState legacyState(String name, Block block, int metadata) {
-        if (name != null && (name.startsWith("poweradvantage:")
-                || name.startsWith("steamadvantage:") || name.startsWith("electricadvantage:"))) {
+        if (name != null && (name.startsWith("basepower:")
+                || name.startsWith("basesteam:") || name.startsWith("baseelectric:"))) {
             return LegacyMigrationApi.decodeBlockState(new ResourceLocation(name), block, metadata);
         }
-        if (block instanceof FlowingFluidBlock) {
-            return block.defaultBlockState().setValue(FlowingFluidBlock.LEVEL, Integer.valueOf(metadata & 15));
+        if (block instanceof LiquidBlock) {
+            return block.defaultBlockState().setValue(LiquidBlock.LEVEL, Integer.valueOf(metadata & 15));
         }
         return block.defaultBlockState();
     }
@@ -913,7 +901,7 @@ final class WorksController {
     private static Fluid fluid(String name) {
         if (name == null || name.trim().isEmpty()) return null;
         ResourceLocation id = name.indexOf(':') >= 0 ? new ResourceLocation(name)
-                : new ResourceLocation("poweradvantage", name);
+                : new ResourceLocation("basepower", name);
         Fluid value = Registry.FLUID.getOptional(id).orElse(null);
         if (value == null) {
             String migratedName = LegacyMigrationApi.fluidTarget(name);

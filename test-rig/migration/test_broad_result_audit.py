@@ -11,9 +11,12 @@ from contextlib import redirect_stdout
 import zipfile
 
 import broad_result_audit as audit
+from historical_test_inputs import POWER116, STATIONS, git_blob
 
 
-LINE = Path(__file__).resolve().parents[3].name.removeprefix("PA")
+# The 1.17 auditor has its own fixtures. Exercise the last supported legacy
+# dialect here without tying the test to the name of the checkout directory.
+LINE = "116"
 
 
 def write(path, data):
@@ -32,8 +35,7 @@ class BroadResultAuditTests(unittest.TestCase):
         self.root = Path(self.directory.name)
         self.runtime = self.root / "broad"
         self.runtime.mkdir()
-        source = Path(__file__).resolve().parents[1] / "src/main/resources" / audit.RESOURCE
-        definition = source.read_bytes()
+        definition = git_blob(POWER116, STATIONS)
         self.stations = json.loads(definition)["stations"]
         self.definitions = {s["id"]: s for s in self.stations}
         jars = []

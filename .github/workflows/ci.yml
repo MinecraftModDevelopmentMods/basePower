@@ -1,16 +1,16 @@
-name: Power Advantage 1.16 CI
+name: basePower 1.17 CI
 
 on:
   push:
-    branches: [master-1.16.5, 'feature/**']
+    branches: [master-1.17.1, 'feature/**']
   pull_request:
-    branches: [master-1.16.5]
+    branches: [master-1.17.1]
 
 permissions:
   contents: read
 
 concurrency:
-  group: poweradvantage-1.16-${{ github.workflow }}-${{ github.ref }}
+  group: poweradvantage-1.17-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -25,7 +25,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           repository: MinecraftModDevelopmentMods/OreSpawn
-          ref: a113e5d767169189f0e35ade1e173a12d550b00e
+          ref: b56e2b62a1a6ea4d1dd96f8646a87801a817dbdf
           path: .ci-dependencies/OreSpawn
       - name: Use canonical LF dependency inputs
         # Use the same source bytes on hosted and local dependency builds.
@@ -34,14 +34,19 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           repository: MinecraftModDevelopmentMods/BaseMetals
-          ref: 995f6cc4dd2d5eecc628a42e5c43fa5390c24bca
+          ref: 0deeeeecdbbc1fbcdecf910c59477de8efe164d7
           path: .ci-dependencies/BaseMetals
       - name: Install pinned Java 25 Mavenizer runtime
         uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
         with:
           distribution: temurin
           java-version: '25.0.3+9.0.LTS'
-      - name: Install Java 8 toolchain
+      - name: Install Java 16 production toolchain
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: '16.0.2+7'
+      - name: Install Java 8 renamer runtime
         uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
         with:
           distribution: temurin
@@ -55,7 +60,7 @@ jobs:
         # These are Gradle project properties, not JVM system properties.
         shell: bash
         run: >-
-          echo "MMD_GRADLE_TOOLCHAINS=-Porg.gradle.java.installations.paths=$JAVA_HOME,$JAVA_HOME_8_X64,$JAVA_HOME_25_X64
+          echo "MMD_GRADLE_TOOLCHAINS=-Porg.gradle.java.installations.paths=$JAVA_HOME,$JAVA_HOME_16_X64,$JAVA_HOME_8_X64,$JAVA_HOME_25_X64
           -Porg.gradle.java.installations.auto-detect=false
           -Porg.gradle.java.installations.auto-download=false" >> "$GITHUB_ENV"
       - name: Set up Gradle
@@ -70,8 +75,8 @@ jobs:
           chmod +x "$orespawn/gradlew" "$basemetals/gradlew"
           (cd "$orespawn" && ./gradlew $MMD_GRADLE_TOOLCHAINS jar --no-daemon --stacktrace)
           (cd "$basemetals" && ./gradlew $MMD_GRADLE_TOOLCHAINS jar --no-daemon --stacktrace)
-          osjar="$orespawn/build/libs-dev/OreSpawn-4.1.0.116051-deobf.jar"
-          bmjar="$basemetals/build/libs-dev/BaseMetals-3.1.1.116051-deobf.jar"
+          osjar="$orespawn/build/libs-dev/OreSpawn-4.1.0.117011-deobf.jar"
+          bmjar="$basemetals/build/libs-dev/BaseMetals-3.1.1.117011-deobf.jar"
           test -f "$osjar" && test -f "$bmjar"
           echo "orespawn=$osjar" >> "$GITHUB_OUTPUT"
           echo "basemetals=$bmjar" >> "$GITHUB_OUTPUT"
@@ -85,20 +90,20 @@ jobs:
       - name: Upload audited release candidate
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: PowerAdvantage-1.16.5-${{ github.sha }}
+          name: PowerAdvantage-1.17.1-${{ github.sha }}
           if-no-files-found: error
           retention-days: 30
           path: |
-            build/libs/PowerAdvantage-2.4.7.116051.jar
-            build/libs/PowerAdvantage-2.4.7.116051-sources.jar
-            build/libs/PowerAdvantage-2.4.7.116051-javadoc.jar
+            build/libs/basePower-2.4.9.117011.jar
+            build/libs/basePower-2.4.9.117011-sources.jar
+            build/libs/basePower-2.4.9.117011-javadoc.jar
             build/release/SHA256SUMS
             CHANGELOG.txt
       - name: Upload diagnostics on failure
         if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: PowerAdvantage-1.16.5-diagnostics-${{ github.sha }}
+          name: PowerAdvantage-1.17.1-diagnostics-${{ github.sha }}
           if-no-files-found: ignore
           retention-days: 14
           path: |

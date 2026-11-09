@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:smelting",
+  "ingredient": {
+    "item": "basepower:starch"
+  },
+  "result": "basepower:bioplastic_ingot",
+  "experience": 0.1,
+  "cookingtime": 200,
+  "conditions": [],
+  "group": "basepower:bioplastic_ingot"
+}

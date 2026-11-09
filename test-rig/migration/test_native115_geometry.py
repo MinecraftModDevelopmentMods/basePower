@@ -8,7 +8,7 @@ from pathlib import Path
 import unittest
 import tempfile
 
-from matrix import digest
+from historical_test_inputs import POWER116, oracle_bytes
 from native115 import RIG
 from native115_geometry import require_geometry
 from native115_campaign import ACCEPTED_POWER114, REQUIRED, require_routes, require_source114_receipt
@@ -138,9 +138,10 @@ class PortContracts(unittest.TestCase):
         for relative, checksum in ledger["hashes"].items():
             with self.subTest(path=relative):
                 if relative in records:
-                    verify((RIG / relative).read_bytes(), checksum, records[relative])
+                    verify(oracle_bytes(POWER116, relative), checksum, records[relative])
                 else:
-                    self.assertEqual(digest(RIG / relative), checksum)
+                    data = oracle_bytes(ledger["sourceCommit"], relative)
+                    self.assertEqual(hashlib.sha256(data).hexdigest().upper(), checksum)
 
         # Updating only a byte hash must not bless a lower threshold or unrelated oracle edit.
         source = (RIG / "migration/extended_lifecycle.py").read_bytes()

@@ -2,28 +2,28 @@ package zone.moddev.mc.advantageworks.client;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import net.minecraft.block.BlockState;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.BufferBuilder;
+import com.mojang.blaze3d.vertex.BufferBuilder;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.client.renderer.texture.AtlasTexture;
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
-import net.minecraft.client.renderer.vertex.VertexFormatElement;
-import net.minecraft.fluid.Fluid;
-import net.minecraft.fluid.FlowingFluid;
-import net.minecraft.fluid.FluidState;
-import net.minecraft.item.BucketItem;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.Direction;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.IBlockDisplayReader;
-import net.minecraft.world.LightType;
+import net.minecraft.client.renderer.texture.TextureAtlas;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.VertexFormatElement;
+import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.material.FlowingFluid;
+import net.minecraft.world.level.material.FluidState;
+import net.minecraft.world.item.BucketItem;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.core.Direction;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.BlockAndTintGetter;
+import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.ColorResolver;
-import net.minecraft.world.lighting.WorldLightManager;
-import net.minecraft.tileentity.TileEntity;
-import zone.moddev.mc.poweradvantage.init.Fluids;
-import zone.moddev.mc.poweradvantage.init.Items;
+import net.minecraft.world.level.lighting.LevelLightEngine;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import zone.moddev.mc.basepower.init.Fluids;
+import zone.moddev.mc.basepower.init.Items;
 
 import java.nio.ByteBuffer;
 import java.util.HashMap;
@@ -36,19 +36,23 @@ final class OilRenderProbe {
 
     static void verify(Minecraft minecraft, JsonObject result) {
         // Before a world/server is opened, vanilla's fluid tags have not been synchronized.
-        net.minecraft.tags.ITagCollectionSupplier previousTags = net.minecraft.tags.TagCollectionManager.getInstance();
-        net.minecraft.tags.ITagCollection<Fluid> previousFluids = net.minecraft.tags.FluidTags.getAllTags();
-        net.minecraft.tags.ITagCollectionSupplier restore = net.minecraft.tags.ITagCollectionSupplier.of(
-                previousTags.getBlocks(), previousTags.getItems(), previousFluids, previousTags.getEntityTypes());
-        net.minecraft.tags.TagRegistry<?> fluidRegistry = net.minecraft.tags.TagRegistryManager.get(new ResourceLocation("fluid"));
-        Map<ResourceLocation, net.minecraft.tags.ITag<Fluid>> tags = new HashMap<>(previousFluids.getAllTags());
-        tags.put(new ResourceLocation("minecraft", "water"), net.minecraft.tags.ITag.fromSet(
-                new java.util.HashSet<>(java.util.Arrays.asList(net.minecraft.fluid.Fluids.WATER, net.minecraft.fluid.Fluids.FLOWING_WATER))));
-        tags.put(new ResourceLocation("minecraft", "lava"), net.minecraft.tags.ITag.fromSet(
-                new java.util.HashSet<>(java.util.Arrays.asList(net.minecraft.fluid.Fluids.LAVA, net.minecraft.fluid.Fluids.FLOWING_LAVA))));
-        net.minecraft.tags.ITagCollectionSupplier temporary = net.minecraft.tags.ITagCollectionSupplier.of(
-                previousTags.getBlocks(), previousTags.getItems(), net.minecraft.tags.ITagCollection.of(tags), previousTags.getEntityTypes());
-        net.minecraft.tags.TagCollectionManager.bind(temporary);
+        net.minecraft.tags.TagContainer previousTags = net.minecraft.tags.SerializationTags.getInstance();
+        net.minecraft.tags.TagCollection<Fluid> previousFluids = net.minecraft.tags.FluidTags.getAllTags();
+        java.util.Map<net.minecraft.resources.ResourceKey<? extends net.minecraft.core.Registry<?>>,
+                net.minecraft.tags.TagCollection<?>> restoredCollections = new java.util.HashMap<>(previousTags.collections);
+        restoredCollections.put(net.minecraft.core.Registry.FLUID_REGISTRY, previousFluids);
+        net.minecraft.tags.TagContainer restore = new net.minecraft.tags.TagContainer(restoredCollections);
+        net.minecraft.tags.StaticTagHelper<?> fluidRegistry = net.minecraft.tags.StaticTags.get(new ResourceLocation("fluid"));
+        Map<ResourceLocation, net.minecraft.tags.Tag<Fluid>> tags = new HashMap<>(previousFluids.getAllTags());
+        tags.put(new ResourceLocation("minecraft", "water"), net.minecraft.tags.Tag.fromSet(
+                new java.util.HashSet<>(java.util.Arrays.asList(net.minecraft.world.level.material.Fluids.WATER, net.minecraft.world.level.material.Fluids.FLOWING_WATER))));
+        tags.put(new ResourceLocation("minecraft", "lava"), net.minecraft.tags.Tag.fromSet(
+                new java.util.HashSet<>(java.util.Arrays.asList(net.minecraft.world.level.material.Fluids.LAVA, net.minecraft.world.level.material.Fluids.FLOWING_LAVA))));
+        java.util.Map<net.minecraft.resources.ResourceKey<? extends net.minecraft.core.Registry<?>>,
+                net.minecraft.tags.TagCollection<?>> temporaryCollections = new java.util.HashMap<>(previousTags.collections);
+        temporaryCollections.put(net.minecraft.core.Registry.FLUID_REGISTRY, net.minecraft.tags.TagCollection.of(tags));
+        net.minecraft.tags.TagContainer temporary = new net.minecraft.tags.TagContainer(temporaryCollections);
+        net.minecraft.tags.SerializationTags.bind(temporary);
         // The initial manager contains named wrappers, not resolved collections. Resetting
         // every registry would bind those wrappers to themselves and recurse indefinitely.
         fluidRegistry.reset(temporary);
@@ -60,21 +64,21 @@ final class OilRenderProbe {
         JsonArray cases = new JsonArray();
         result.add("fluid_rendering", cases);
         boolean valid = true;
-        valid &= check(minecraft, Fluids.crude_oil.defaultFluidState(), "poweradvantage:blocks/crude_oil_still", false, cases);
-        valid &= check(minecraft, Fluids.flowing_crude_oil.getFlowing(5, false), "poweradvantage:blocks/crude_oil_flow", true, cases);
-        valid &= check(minecraft, Fluids.refined_oil.defaultFluidState(), "poweradvantage:blocks/refined_oil_still", false, cases);
-        valid &= check(minecraft, Fluids.flowing_refined_oil.getFlowing(5, false), "poweradvantage:blocks/refined_oil_flow", true, cases);
-        valid &= check(minecraft, net.minecraft.fluid.Fluids.WATER.defaultFluidState(), "minecraft:block/water_still", false, cases);
-        valid &= check(minecraft, net.minecraft.fluid.Fluids.LAVA.defaultFluidState(), "minecraft:block/lava_still", false, cases);
+        valid &= check(minecraft, Fluids.crude_oil.defaultFluidState(), "basepower:blocks/crude_oil_still", false, cases);
+        valid &= check(minecraft, Fluids.flowing_crude_oil.getFlowing(5, false), "basepower:blocks/crude_oil_flow", true, cases);
+        valid &= check(minecraft, Fluids.refined_oil.defaultFluidState(), "basepower:blocks/refined_oil_still", false, cases);
+        valid &= check(minecraft, Fluids.flowing_refined_oil.getFlowing(5, false), "basepower:blocks/refined_oil_flow", true, cases);
+        valid &= check(minecraft, net.minecraft.world.level.material.Fluids.WATER.defaultFluidState(), "minecraft:block/water_still", false, cases);
+        valid &= check(minecraft, net.minecraft.world.level.material.Fluids.LAVA.defaultFluidState(), "minecraft:block/lava_still", false, cases);
         if (!valid) throw new IllegalStateException("Native fluid renderer used the wrong sprite or tint: " + cases);
         } finally {
             fluidRegistry.reset(restore);
-            net.minecraft.tags.TagCollectionManager.bind(previousTags);
+            net.minecraft.tags.SerializationTags.bind(previousTags);
             require(net.minecraft.tags.FluidTags.getAllTags() == previousFluids, "Synthetic fluid tags were not restored");
         }
     }
 
-    private static void requireBucket(net.minecraft.item.Item bucket, Fluid expected) {
+    private static void requireBucket(net.minecraft.world.item.Item bucket, Fluid expected) {
         net.minecraftforge.fluids.FluidStack contents = net.minecraftforge.fluids.FluidUtil.getFluidContained(new ItemStack(bucket))
                 .orElseThrow(() -> new IllegalStateException("Bucket has no native fluid capability: " + bucket.getRegistryName()));
         if (!(bucket instanceof BucketItem) || ((BucketItem) bucket).getFluid() != expected
@@ -85,25 +89,27 @@ final class OilRenderProbe {
 
     private static boolean check(Minecraft minecraft, FluidState state, String texture, boolean flowing, JsonArray cases) {
         // A tiny read-only neighbourhood supplies a slope for flowing sprites; no save is opened.
-        IBlockDisplayReader world = new IBlockDisplayReader() {
+        BlockAndTintGetter world = new BlockAndTintGetter() {
+            @Override public int getHeight() { return 256; }
+            @Override public int getMinBuildHeight() { return 0; }
             @Override public float getShade(Direction side, boolean shade) { return 1.0F; }
-            @Override public TileEntity getBlockEntity(BlockPos pos) { return null; }
+            @Override public BlockEntity getBlockEntity(BlockPos pos) { return null; }
             @Override public BlockState getBlockState(BlockPos pos) { return blockAt(state, flowing, pos); }
             @Override public FluidState getFluidState(BlockPos pos) { return getBlockState(pos).getFluidState(); }
-            @Override public int getBrightness(LightType type, BlockPos pos) { return 15; }
-            @Override public WorldLightManager getLightEngine() { throw new UnsupportedOperationException("Synthetic light is supplied by getLightFor"); }
+            @Override public int getBrightness(LightLayer type, BlockPos pos) { return 15; }
+            @Override public LevelLightEngine getLightEngine() { throw new UnsupportedOperationException("Synthetic light is supplied by getLightFor"); }
             @Override public int getBlockTint(BlockPos pos, ColorResolver resolver) {
-                return resolver.getColor(net.minecraft.util.registry.WorldGenRegistries.BIOME.get(
-                        net.minecraft.world.biome.Biomes.PLAINS), pos.getX(), pos.getZ());
+                return resolver.getColor(net.minecraft.data.BuiltinRegistries.BIOME.get(
+                        net.minecraft.world.level.biome.Biomes.PLAINS), pos.getX(), pos.getZ());
             }
         };
         BufferBuilder buffer = new BufferBuilder(4096);
-        buffer.begin(7, DefaultVertexFormats.BLOCK);
+        buffer.begin(com.mojang.blaze3d.vertex.VertexFormat.Mode.QUADS, DefaultVertexFormat.BLOCK);
         boolean rendered = minecraft.getBlockRenderer().renderLiquid(BlockPos.ZERO, world, buffer, state);
         buffer.end();
         com.mojang.datafixers.util.Pair<BufferBuilder.DrawState, ByteBuffer> built = buffer.popNextBuffer();
         int vertices = built.getFirst().vertexCount();
-        TextureAtlasSprite sprite = minecraft.getTextureAtlas(AtlasTexture.LOCATION_BLOCKS).apply(new ResourceLocation(texture));
+        TextureAtlasSprite sprite = minecraft.getTextureAtlas(TextureAtlas.LOCATION_BLOCKS).apply(new ResourceLocation(texture));
         require(rendered && vertices >= 4, "Native fluid renderer emitted no top face for " + state);
         ByteBuffer data = built.getSecond();
         int uvOffset = elementOffset(VertexFormatElement.Usage.UV, 0);
@@ -126,9 +132,9 @@ final class OilRenderProbe {
     }
 
     private static int elementOffset(VertexFormatElement.Usage usage, int index) {
-        for (int i = 0; i < DefaultVertexFormats.BLOCK.getElements().size(); i++) {
-            VertexFormatElement element = DefaultVertexFormats.BLOCK.getElements().get(i);
-            if (element.getUsage() == usage && element.getIndex() == index) return DefaultVertexFormats.BLOCK.getOffset(i);
+        for (int i = 0; i < DefaultVertexFormat.BLOCK.getElements().size(); i++) {
+            VertexFormatElement element = DefaultVertexFormat.BLOCK.getElements().get(i);
+            if (element.getUsage() == usage && element.getIndex() == index) return DefaultVertexFormat.BLOCK.getOffset(i);
         }
         throw new IllegalStateException("Native block vertex format lacks " + usage + " " + index);
     }
@@ -138,7 +144,7 @@ final class OilRenderProbe {
         if (flowing && BlockPos.ZERO.east().equals(pos)) {
             return ((FlowingFluid) state.getType()).getFlowing(3, false).createLegacyBlock();
         }
-        return (pos.getY() < 0 ? net.minecraft.block.Blocks.STONE : net.minecraft.block.Blocks.AIR).defaultBlockState();
+        return (pos.getY() < 0 ? net.minecraft.world.level.block.Blocks.STONE : net.minecraft.world.level.block.Blocks.AIR).defaultBlockState();
     }
 
     private static void require(boolean condition, String message) {

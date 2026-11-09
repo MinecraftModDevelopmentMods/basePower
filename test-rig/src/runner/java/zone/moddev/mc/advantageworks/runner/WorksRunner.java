@@ -67,7 +67,7 @@ public final class WorksRunner {
 
     public static void main(String[] args) throws Exception {
         Arguments arguments = Arguments.parse(args);
-        Profile profile = readNative116Profile(arguments.profile);
+        Profile profile = readNative117Profile(arguments.profile);
         if (arguments.serverPort != null) profile.serverPort = arguments.serverPort;
         File testRig = findTestRig(arguments.profile);
         File powerRoot = testRig.getParentFile().getCanonicalFile();
@@ -76,7 +76,11 @@ public final class WorksRunner {
         profile.preparedSeed = preparedServerSeed(testRig, profile, arguments);
         if (arguments.validateOnly) {
             List<Map<String, Object>> inputs = stageMods(testRig, null, profile.mods);
-            System.out.println("Native 1.16.5 profile preflight only (no world opened): " + GSON.toJson(inputs));
+            if ("packaged".equals(profile.mode)) {
+                runtimeJavaHome(profile);
+                if (profile.preparedSeed != null) packagedCommand(profile, profile.preparedSeed.root.toFile());
+            }
+            System.out.println("Native 1.17.1 profile preflight only (no world opened): " + GSON.toJson(inputs));
             return;
         }
         String stamp = timestamp();
@@ -106,7 +110,7 @@ public final class WorksRunner {
 
         System.out.println("Advantage Works runtime: " + runtime);
         try {
-        Process first = launch(profile, powerRoot, runtime, results);
+        Process first = launch(profile, powerRoot, runtime, results, "first-run");
         File latestLog = new File(runtime, "logs/latest.log");
         waitForReady(first, latestLog, profile.startupTimeoutSeconds);
         if (profile.buildWorks) {
@@ -142,9 +146,8 @@ public final class WorksRunner {
             if (profile.worldgenSampleRadius > 0) requireExitUntil(first, firstShutdownDeadline);
             else requireExit(first, profile.shutdownTimeoutSeconds);
             auditPreparedServer(profile, runtime, "first-run-after");
-            requireNoCommandFailures(latestLog, "first-run");
+            archiveBoot(profile, "first-run");
             if (profile.buildWorks) requireAcceptableStations(results, lifecycleStations);
-            copyIfPresent(latestLog, new File(results, "first-run.log"));
             File firstWorldgen = new File(results, "worldgen-first-run.json");
             if (profile.worldgenSampleRadius > 0) {
                 copyIfPresent(new File(results, "worldgen-sample.json"), firstWorldgen);
@@ -154,11 +157,9 @@ public final class WorksRunner {
                     profile.firstProfileAssertions);
             requireFileAssertions(runtime, results, "first-run", profile.firstFileAssertions);
             applyProfileMutations(runtime, profile);
-            if (latestLog.exists() && !latestLog.delete()) {
-                throw new IllegalStateException("Cannot clear first-run log before restart: " + latestLog);
-            }
+            profile.boots.get(0).logs.clearLiveLogs();
 
-            Process second = launch(profile, powerRoot, runtime, results);
+            Process second = launch(profile, powerRoot, runtime, results, "restart-run");
             waitForReady(second, latestLog, profile.startupTimeoutSeconds);
             Thread.sleep(stationRunSeconds * 1000L);
             if (profile.buildWorks) {
@@ -178,8 +179,7 @@ public final class WorksRunner {
             if (profile.worldgenSampleRadius > 0) requireExitUntil(second, secondShutdownDeadline);
             else requireExit(second, profile.shutdownTimeoutSeconds);
             auditPreparedServer(profile, runtime, "restart-run-after");
-            requireNoCommandFailures(latestLog, "restart-run");
-            copyIfPresent(latestLog, new File(results, "restart-run.log"));
+            archiveBoot(profile, "restart-run");
             File restartWorldgen = new File(results, "worldgen-restart-run.json");
             if (profile.worldgenSampleRadius > 0) {
                 copyIfPresent(new File(results, "worldgen-sample.json"), restartWorldgen);
@@ -198,6 +198,7 @@ public final class WorksRunner {
                 }
                 requireAcceptableStations(results, lifecycleStations);
             }
+            for (Boot boot : profile.boots) boot.logs.requireArchiveUnchanged();
             System.out.println("Automated assertion checks complete; manual procedures remain unverified: " + results);
             return;
         }
@@ -209,15 +210,29 @@ public final class WorksRunner {
         input.start();
         requireExit(first, 0);
         auditPreparedServer(profile, runtime, "interactive-after");
+        archiveBoot(profile, "first-run");
+        for (Boot boot : profile.boots) boot.logs.requireArchiveUnchanged();
         } catch (Exception failure) {
             if (profile.preparedSeed != null) {
                 profile.preparedSeed.closeAfterFailure(profile, runtime, failure);
+            } else {
+                closeBootsAfterFailure(profile, failure);
+            }
+            for (Boot boot : profile.boots) {
+                if (!boot.logs.archived) {
+                    try {
+                        if (boot.process != null && boot.process.isAlive()) {
+                            throw new IllegalStateException("Cannot archive a running server's logs");
+                        }
+                        boot.logs.archive();
+                    } catch (Exception logFailure) { failure.addSuppressed(logFailure); }
+                }
             }
             throw failure;
         }
     }
 
-    private static Process launch(Profile profile, File powerRoot, File runtime, File results) throws Exception {
+    private static Process launch(Profile profile, File powerRoot, File runtime, File results, String phase) throws Exception {
         if (profile.preparedSeed != null) {
             auditPreparedServer(profile, runtime, "boot-" + (profile.preparedSeed.processes.size() + 1) + "-before");
         }
@@ -232,17 +247,19 @@ public final class WorksRunner {
             command.add("--no-daemon");
             workingDirectory = powerRoot;
         } else {
-            if (profile.launchCommand != null && !profile.launchCommand.isEmpty()) {
+            if ("1.17.1".equals(profile.minecraftVersion)) {
+                command.addAll(packagedCommand(profile, runtime));
+            } else if (profile.launchCommand != null && !profile.launchCommand.isEmpty()) {
                 for (String token : profile.launchCommand) {
                     command.add(expand(token).replace("${runtime}", runtime.getAbsolutePath())
                             .replace("${powerRoot}", powerRoot.getAbsolutePath()));
                 }
             } else {
-                command.add(javaExecutable(java8Home(profile)).getAbsolutePath());
+                command.add(javaExecutable(runtimeJavaHome(profile)).getAbsolutePath());
                 command.add("-Xms512M");
                 command.add("-Xmx2G");
                 command.add("-jar");
-                command.add("forge-" + profile.forge.version + ".jar");
+                command.add(serverLauncherPath(profile));
                 command.add("nogui");
             }
             workingDirectory = runtime;
@@ -251,14 +268,16 @@ public final class WorksRunner {
         ProcessBuilder builder = new ProcessBuilder(command);
         builder.directory(workingDirectory);
         builder.redirectErrorStream(true);
+        Boot boot = new Boot(new BootLogs(runtime, results, phase));
+        profile.boots.add(boot);
+        builder.redirectOutput(boot.logs.console);
         builder.environment().put("JAVA_HOME", "development".equals(profile.mode)
-                ? gradleJavaHome(profile).getAbsolutePath() : java8Home(profile).getAbsolutePath());
+                ? gradleJavaHome(profile).getAbsolutePath() : runtimeJavaHome(profile).getAbsolutePath());
         builder.environment().put("ADVANTAGE_WORKS_RUNTIME", runtime.getAbsolutePath());
         Process process = builder.start();
+        boot.process = process;
         if (profile.preparedSeed != null) profile.preparedSeed.processes.add(process);
-        Thread output = new Thread(() -> drainOutput(process), "advantage-works-server-output");
-        output.setDaemon(true);
-        output.start();
+        System.out.println("Server console: " + boot.logs.console);
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             if (process.isAlive()) {
                 try {
@@ -270,6 +289,221 @@ public final class WorksRunner {
             }
         }));
         return process;
+    }
+
+    static List<String> packagedCommand(Profile profile, File runtime) throws Exception {
+        if (profile.launchCommand != null && !profile.launchCommand.isEmpty()) {
+            throw new IllegalArgumentException("Native117 packaged launches cannot override the pinned command");
+        }
+        File java = javaExecutable(runtimeJavaHome(profile));
+        String launcher = serverLauncherPath(profile);
+        requireModularLauncher(runtime, launcher);
+        File loggingJar = new File(runtime, "libraries/net/minecraftforge/fmlloader/"
+                + profile.forge.version + "/fmlloader-" + profile.forge.version + ".jar");
+        PreparedServerSeed.requirePlain(loggingJar.toPath());
+        try (ZipFile jar = new ZipFile(loggingJar)) {
+            if (jar.getEntry("log4j2.xml") == null) throw new IllegalStateException("Forge logging configuration missing");
+        }
+        return Arrays.asList(java.getAbsolutePath(), "-Xms512M", "-Xmx2G", "--add-opens",
+                "java.base/java.lang.invoke=ALL-UNNAMED",
+                "-Dlog4j.configurationFile=jar:" + loggingJar.toURI().toASCIIString() + "!/log4j2.xml",
+                "-Dfml.queryResult=confirm", "@" + launcher, "nogui");
+    }
+
+    static void requireModularLauncher(File runtime, String launcher) throws Exception {
+        Path root = runtime.toPath().toAbsolutePath().normalize();
+        PreparedServerSeed.requirePlain(root);
+        Path args = root.resolve(launcher);
+        PreparedServerSeed.requirePlain(args);
+        Set<String> expected = new LinkedHashSet<>(Arrays.asList(
+                "--add-modules ALL-MODULE-PATH",
+                "--add-opens java.base/java.util.jar=cpw.mods.securejarhandler",
+                "--add-exports java.base/sun.security.util=cpw.mods.securejarhandler",
+                "-DlibraryDirectory=libraries", "cpw.mods.bootstraplauncher.BootstrapLauncher",
+                "--launchTarget forgeserver", "--fml.forgeVersion 37.1.1", "--fml.mcVersion 1.17.1",
+                "--fml.forgeGroup net.minecraftforge", "--fml.mcpVersion 20210706.113038"));
+        Set<String> seen = new LinkedHashSet<>();
+        for (String line : Files.readAllLines(args, StandardCharsets.UTF_8)) {
+            if (line.isEmpty()) continue;
+            String key = line;
+            String paths = null;
+            if (line.startsWith("-p ")) { key = "module-path"; paths = line.substring(3); }
+            else if (line.startsWith("-DlegacyClassPath=")) { key = "legacy-class-path"; paths = line.substring(18); }
+            else if (line.matches("-DignoreList=[A-Za-z0-9_.+-]+(?:,[A-Za-z0-9_.+-]+)*")) key = "ignore-list";
+            else if (!expected.contains(line)) throw new IllegalArgumentException("Unexpected Forge modular argument: " + line);
+            if (!seen.add(key)) throw new IllegalArgumentException("Duplicate Forge modular argument: " + key);
+            if (paths != null) {
+                String separator = launcher.endsWith("win_args.txt") ? ";" : ":";
+                for (String path : paths.split(separator, -1)) {
+                    if (!path.matches("libraries/[A-Za-z0-9_.+/-]+\\.jar")
+                            || Arrays.asList(path.split("/", -1)).stream().anyMatch(p -> p.isEmpty() || p.equals(".") || p.equals(".."))) {
+                        throw new IllegalArgumentException("Escaping or non-library Forge code path: " + path);
+                    }
+                    Path code = root.resolve(path);
+                    PreparedServerSeed.requirePlain(code);
+                    if (!Files.isRegularFile(code)) throw new IllegalArgumentException("Missing Forge code: " + path);
+                }
+            }
+        }
+        expected.addAll(Arrays.asList("module-path", "legacy-class-path", "ignore-list"));
+        if (!seen.equals(expected)) throw new IllegalArgumentException("Incomplete Forge 37 modular arguments");
+    }
+
+    private static void archiveBoot(Profile profile, String phase) throws Exception {
+        for (Boot boot : profile.boots) {
+            if (boot.logs.phase.equals(phase)) {
+                if (boot.process.isAlive()) throw new IllegalStateException("Cannot archive a running server's logs");
+                boot.logs.archive();
+                return;
+            }
+        }
+        throw new IllegalStateException("Missing boot record: " + phase);
+    }
+
+    private static void closeBootsAfterFailure(Profile profile, Exception primary) {
+        for (Boot boot : profile.boots) {
+            if (boot.process == null) continue;
+            try {
+                withWorldgenFailureCleanup(boot.process,
+                        System.nanoTime() + TimeUnit.SECONDS.toNanos(Math.max(1, Math.min(300, profile.shutdownTimeoutSeconds))),
+                        System::nanoTime, () -> { throw primary; });
+            } catch (Exception failure) {
+                if (failure != primary) primary.addSuppressed(failure);
+            }
+        }
+    }
+
+    static final class Boot {
+        final BootLogs logs;
+        Process process;
+        Boot(BootLogs logs) { this.logs = logs; }
+    }
+
+    /** Captures each process separately; no earlier boot can supply a later boot's evidence. */
+    static final class BootLogs {
+        static final Pattern ERROR = Pattern.compile("/(?:ERROR|FATAL)\\]|\\[(?:ERROR|FATAL)\\]|^(?:ERROR|FATAL) StatusLogger|"
+                + "\\b(?:[\\w$]+\\.)*[\\w$]*(?:Exception|Error)\\b|Exception in thread|Caused by:|"
+                + "Failed to reload data packs|Encountered an unexpected exception|Advantage Works command failed|"
+                + "^\\s+at\\s+\\S+\\([^\\r\\n]*\\)\\s*$|^\\s*\\.\\.\\.\\s+\\d+\\s+more\\s*$");
+        // Pinned Mixin 0.8.4 catches this cleanup IOException and logs only its message at DEBUG.
+        static final Pattern MIXIN_DEBUG_CLEANUP = Pattern.compile(
+                "^\\[(?:[0-9]{2}:[0-9]{2}:[0-9]{2}|[0-9]{2}[A-Za-z]{3}[0-9]{4} "
+                + "[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3})\\] "
+                + "\\[main/DEBUG\\] \\[mixin/\\]: Error cleaning class output directory: \\.mixin\\.out$");
+        static final String MIXIN_DEBUG_REASON = "Mixin 0.8.4 ExtensionClassExporter catches debug-export "
+                + "cleanup IOException and logs its message at DEBUG";
+        final File runtime, results, console;
+        final String phase;
+        final Map<String, String> archivedHashes = new LinkedHashMap<>();
+        String receiptSha256;
+        boolean archived, clean;
+
+        BootLogs(File runtime, File results, String phase) throws Exception {
+            if (!phase.matches("[a-z0-9-]+")) throw new IllegalArgumentException("Unsafe boot phase");
+            this.runtime = runtime;
+            this.results = results;
+            this.phase = phase;
+            PreparedServerSeed.requirePlain(runtime.toPath());
+            PreparedServerSeed.requirePlain(results.toPath());
+            Path logDirectory = new File(runtime, "logs").toPath();
+            if (Files.exists(logDirectory, java.nio.file.LinkOption.NOFOLLOW_LINKS)) PreparedServerSeed.requirePlain(logDirectory);
+            console = new File(results, phase + "-console.log");
+            for (String name : Arrays.asList("latest", "debug")) {
+                if (Files.exists(new File(runtime, "logs/" + name + ".log").toPath(), java.nio.file.LinkOption.NOFOLLOW_LINKS)) {
+                    throw new IllegalStateException("Stale live log before boot: " + name);
+                }
+                if (Files.exists(new File(results, phase + "-" + name + ".log").toPath())) {
+                    throw new IllegalStateException("Existing archived boot log: " + name);
+                }
+            }
+            if (new File(results, phase + "-logs.json").exists()) throw new IllegalStateException("Existing boot log receipt");
+            Files.createFile(console.toPath());
+        }
+
+        void archive() throws Exception {
+            if (archived) throw new IllegalStateException("Boot logs already archived: " + phase);
+            archived = true;
+            List<String> failures = new ArrayList<>();
+            List<Map<String, Object>> logs = new ArrayList<>();
+            for (String kind : Arrays.asList("console", "latest", "debug")) {
+                File source = kind.equals("console") ? console : new File(runtime, "logs/" + kind + ".log");
+                File target = new File(results, phase + "-" + kind + ".log");
+                Map<String, Object> row = new LinkedHashMap<>();
+                row.put("kind", kind);
+                row.put("file", target.getName());
+                try {
+                    PreparedServerSeed.requirePlain(source.toPath());
+                    if (!source.equals(target)) Files.copy(source.toPath(), target.toPath());
+                    row.put("size", Files.size(target.toPath()));
+                    String hash = sha256(target);
+                    row.put("sha256", hash);
+                    archivedHashes.put(kind, hash);
+                    boolean ready = false, stopped = false;
+                    int count = 0;
+                    List<Map<String, String>> nonFatalDiagnostics = new ArrayList<>();
+                    try (BufferedReader reader = Files.newBufferedReader(target.toPath(), StandardCharsets.UTF_8)) {
+                        String line;
+                        while ((line = reader.readLine()) != null) {
+                            ready |= line.contains("Done (");
+                            stopped |= line.contains("Stopping server");
+                            if (MIXIN_DEBUG_CLEANUP.matcher(line).matches()) {
+                                Map<String, String> diagnostic = new LinkedHashMap<>();
+                                diagnostic.put("line", line);
+                                diagnostic.put("reason", MIXIN_DEBUG_REASON);
+                                nonFatalDiagnostics.add(diagnostic);
+                            } else if (ERROR.matcher(line).find()) {
+                                if (count++ < 5) failures.add(kind + ": " + line);
+                            }
+                        }
+                    }
+                    if (!ready || !stopped) failures.add(kind + ": missing startup/shutdown markers");
+                    row.put("errorLines", count);
+                    row.put("nonFatalDiagnostics", nonFatalDiagnostics);
+                    row.put("ready", ready);
+                    row.put("stopped", stopped);
+                } catch (Exception failure) {
+                    row.put("failure", failure.toString());
+                    failures.add(kind + ": " + failure);
+                }
+                logs.add(row);
+            }
+            clean = failures.isEmpty();
+            Map<String, Object> receipt = new LinkedHashMap<>();
+            receipt.put("phase", phase);
+            receipt.put("status", clean ? "PASS" : "FAIL");
+            receipt.put("logs", logs);
+            receipt.put("failures", failures);
+            Files.write(new File(results, phase + "-logs.json").toPath(),
+                    GSON.toJson(receipt).getBytes(StandardCharsets.UTF_8), java.nio.file.StandardOpenOption.CREATE_NEW);
+            receiptSha256 = sha256(new File(results, phase + "-logs.json"));
+            if (!clean) throw new IllegalStateException("Boot log validation failed for " + phase + ": " + failures);
+        }
+
+        void requireArchiveUnchanged() throws Exception {
+            if (!archived || !clean) throw new IllegalStateException("Unverified boot logs");
+            for (String kind : Arrays.asList("console", "latest", "debug")) {
+                File archivedLog = new File(results, phase + "-" + kind + ".log");
+                PreparedServerSeed.requirePlain(archivedLog.toPath());
+                if (!archivedHashes.get(kind).equals(sha256(archivedLog))) {
+                    throw new IllegalStateException("Archived log changed: " + kind);
+                }
+            }
+            File receipt = new File(results, phase + "-logs.json");
+            PreparedServerSeed.requirePlain(receipt.toPath());
+            if (!receiptSha256.equals(sha256(receipt))) throw new IllegalStateException("Boot log receipt changed");
+        }
+
+        void clearLiveLogs() throws Exception {
+            requireArchiveUnchanged();
+            for (String name : Arrays.asList("latest", "debug")) {
+                File live = new File(runtime, "logs/" + name + ".log");
+                PreparedServerSeed.requirePlain(live.toPath());
+                if (!sha256(live).equals(archivedHashes.get(name))) {
+                    throw new IllegalStateException("Log changed after archive: " + name);
+                }
+            }
+            for (String name : Arrays.asList("latest", "debug")) Files.delete(new File(runtime, "logs/" + name + ".log").toPath());
+        }
     }
 
     private static void waitForReady(Process process, File log, int timeoutSeconds) throws Exception {
@@ -494,13 +728,6 @@ public final class WorksRunner {
         }
     }
 
-    private static void requireNoCommandFailures(File log, String phase) {
-        if (contains(log, "Advantage Works command failed")) {
-            throw new IllegalStateException("Advantage Works command failed during " + phase
-                    + "; inspect " + log);
-        }
-    }
-
     private static String tomlString(String section, String key) {
         Matcher matcher = Pattern.compile("(?m)^\\s*" + Pattern.quote(key)
                 + "\\s*=\\s*\"([^\"]*)\"\\s*(?:#.*)?$").matcher(section);
@@ -520,7 +747,9 @@ public final class WorksRunner {
         }
         return new PreparedServerSeed(preparedPath(testRig, arguments.preparedServerSeed),
                 preparedPath(testRig, arguments.preparedServerSeedInventory), arguments.preparedServerSeedSha256,
-                "forge-" + profile.forge.version + ".jar", "minecraft_server." + profile.minecraftVersion + ".jar");
+                serverLauncherPath(profile), "1.17.1".equals(profile.minecraftVersion)
+                        ? "libraries/net/minecraft/server/1.17.1-20210706.113038/server-1.17.1-20210706.113038-extra.jar"
+                        : "minecraft_server." + profile.minecraftVersion + ".jar");
     }
 
     private static Path preparedPath(File base, File path) {
@@ -551,7 +780,7 @@ public final class WorksRunner {
     }
 
     static final class PreparedServerSeed {
-        static final String INVENTORY = "native116-code-inventory.json";
+        static final String INVENTORY = "native117-runner-code-inventory.json";
         static final int MAX_INVENTORY_BYTES = 1024 * 1024;
         static final int MAX_FILES = 4096;
         static final long MAX_CODE_BYTES = 2L * 1024 * 1024 * 1024;
@@ -712,7 +941,8 @@ public final class WorksRunner {
             verifySource();
             Path target = runtime.toPath().toAbsolutePath().normalize();
             requirePlain(target);
-            if (Files.exists(target.resolve("libraries")) || Files.exists(target.resolve(INVENTORY))) {
+            if (Files.exists(target.resolve("libraries"), java.nio.file.LinkOption.NOFOLLOW_LINKS)
+                    || Files.exists(target.resolve(INVENTORY), java.nio.file.LinkOption.NOFOLLOW_LINKS)) {
                 throw new IllegalStateException("Prepared runtime already contains code or an inventory");
             }
             File[] existing = runtime.listFiles((dir, name) -> name.toLowerCase(Locale.ROOT).endsWith(".jar"));
@@ -793,11 +1023,11 @@ public final class WorksRunner {
         if (!profile.forge.sha256.equalsIgnoreCase(actual)) {
             throw new IllegalStateException("Forge installer SHA-256 mismatch: " + actual);
         }
-        File launcher = new File(runtime, "forge-" + profile.forge.version + ".jar");
+        File launcher = new File(runtime, serverLauncherPath(profile));
         if (launcher.isFile()) return;
 
         ProcessBuilder builder = new ProcessBuilder(
-                javaExecutable(java8Home(profile)).getAbsolutePath(),
+                javaExecutable(runtimeJavaHome(profile)).getAbsolutePath(),
                 "-jar", installer.getAbsolutePath(), "--installServer");
         builder.directory(runtime);
         builder.redirectErrorStream(true);
@@ -820,6 +1050,31 @@ public final class WorksRunner {
             int count;
             while ((count = input.read(buffer)) >= 0) output.write(buffer, 0, count);
         }
+    }
+
+    static String serverLauncherPath(Profile profile) {
+        if (!"1.17.1".equals(profile.minecraftVersion)) return "forge-" + profile.forge.version + ".jar";
+        boolean windows = System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("win");
+        return "libraries/net/minecraftforge/forge/" + profile.forge.version + "/"
+                + (windows ? "win_args.txt" : "unix_args.txt");
+    }
+
+    private static File runtimeJavaHome(Profile profile) throws Exception {
+        if (!"1.17.1".equals(profile.minecraftVersion)) return java8Home(profile);
+        String configured = profile.java16Home;
+        if (configured == null || configured.trim().isEmpty()) configured = System.getenv("ADVANTAGE_WORKS_JAVA16_HOME");
+        File home = configured == null || configured.trim().isEmpty()
+                ? new File(System.getProperty("java.home")) : new File(expand(configured));
+        File release = new File(home, "release");
+        java.util.Properties metadata = new java.util.Properties();
+        if (release.isFile()) {
+            try (InputStream input = Files.newInputStream(release.toPath())) { metadata.load(input); }
+        }
+        if (!javaExecutable(home).isFile() || !"\"16.0.2\"".equals(metadata.getProperty("JAVA_VERSION"))
+                || !"\"Temurin-16.0.2+7\"".equals(metadata.getProperty("IMPLEMENTOR_VERSION"))) {
+            throw new IllegalStateException("Set ADVANTAGE_WORKS_JAVA16_HOME to the pinned Temurin 16.0.2+7 runtime: " + home);
+        }
+        return home.getCanonicalFile();
     }
 
     private static File java8Home(Profile profile) throws Exception {
@@ -950,6 +1205,19 @@ public final class WorksRunner {
         return readProfile(file, "1.15.2", "1.15.2-31.2.57");
     }
 
+    static Profile readNative117Profile(File file) throws Exception {
+        Profile profile = readProfile(file, "1.17.1", "1.17.1-37.1.1");
+        if (!"UNQUALIFIED".equals(profile.qualificationStatus)) {
+            throw new IllegalArgumentException("Native117 destination must start UNQUALIFIED");
+        }
+        for (ModInput input : profile.mods) {
+            if (input.version == null || !input.version.endsWith(".117011")) {
+                throw new IllegalArgumentException("Non-native117 destination mod version: " + input.id);
+            }
+        }
+        return profile;
+    }
+
     static Profile readNative116Profile(File file) throws Exception {
         Profile profile = readProfile(file, "1.16.5", "1.16.5-36.2.34");
         if (!"UNQUALIFIED".equals(profile.qualificationStatus)) {
@@ -987,6 +1255,10 @@ public final class WorksRunner {
     }
 
     static void requireInputPins(Profile profile) {
+        if ("1.17.1".equals(profile.minecraftVersion) && "packaged".equals(profile.mode)
+                && profile.launchCommand != null && !profile.launchCommand.isEmpty()) {
+            throw new IllegalArgumentException("Native117 packaged launches cannot override the pinned command");
+        }
         for (ModInput input : profile.mods) {
             if (input.sha256 == null || !input.sha256.matches("[A-Fa-f0-9]{64}")) {
                 throw new IllegalStateException("Pending native destination SHA-256 pin: " + input.id);
@@ -1460,13 +1732,13 @@ public final class WorksRunner {
     static final class Profile {
         String name;
         String mode;
-        String runtimeBase = "build/works-native116";
+        String runtimeBase = "build/works-native117";
         int serverPort = 25565;
         int startupTimeoutSeconds = 120;
         int shutdownTimeoutSeconds = 60;
         int stationRunSeconds = 5;
         String levelName = "AdvantageWorks";
-        String levelSeed = "advantage-works-1.16.5-v1";
+        String levelSeed = "advantage-works-1.17.1-v1";
         String levelType = "advantageworkstest:test_flat";
         String generatorSettings = "";
         boolean buildWorks = true;
@@ -1474,6 +1746,7 @@ public final class WorksRunner {
         boolean requireStableWorldgenCounts = true;
         List<String> stableWorldgenCountExclusions = new ArrayList<>();
         String java8Home;
+        String java16Home;
         String gradleJavaHome;
         String recipeMode = "NORMAL";
         String sourceCommit;
@@ -1485,6 +1758,7 @@ public final class WorksRunner {
         String legacySourceProfile;
         ForgeInput forge;
         transient PreparedServerSeed preparedSeed;
+        transient List<Boot> boots = new ArrayList<>();
         List<String> launchCommand = new ArrayList<>();
         List<ModInput> mods = new ArrayList<>();
         List<ConfigFixture> configFixtures = new ArrayList<>();

@@ -8,13 +8,13 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import net.minecraft.block.BlockState;
-import net.minecraft.command.Commands;
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.state.Property;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.server.ServerWorld;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.commands.Commands;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.block.state.properties.Property;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.RegisterCommandsEvent;
@@ -22,18 +22,19 @@ import zone.moddev.mc.advantageworks.connected.ConnectedSession;
 
 /** The target adapter has no construction, inventory, energy or network-reset operation. */
 final class ConnectedProbe implements ConnectedSession.Port {
-    private ServerWorld world;
+    private ServerLevel world;
     private ConnectedSession session;
-    private final List<TileEntity> held = new ArrayList<>();
+    private final List<net.minecraft.world.level.block.entity.TickingBlockEntity> held = new ArrayList<>();
 
     static void register() {
         if (!new File("advantage-connected.allow").isFile()) return;
         ConnectedProbe probe = new ConnectedProbe();
         MinecraftForge.EVENT_BUS.addListener(probe::tick);
+        MinecraftForge.EVENT_BUS.addListener(probe::chunkLoaded);
         MinecraftForge.EVENT_BUS.addListener(probe::starting);
     }
 
-    private ConnectedSession get(ServerWorld current) throws Exception {
+    private ConnectedSession get(ServerLevel current) throws Exception {
         if (!current.getServer().getWorldData().getLevelName().equals("AdvantageWorksMigration")) throw new IllegalStateException("Unexpected connected world");
         if (world != current) {
             world = current;
@@ -43,11 +44,19 @@ final class ConnectedProbe implements ConnectedSession.Port {
     }
 
     private void tick(TickEvent.WorldTickEvent event) {
-        if (event.world.isClientSide || Native116Worlds.legacyId(event.world.dimension()) != 0) return;
+        if (event.world.isClientSide || Native117Worlds.legacyId(event.world.dimension()) != 0) return;
         try {
-            ConnectedSession current = get((ServerWorld) event.world);
+            ConnectedSession current = get((ServerLevel) event.world);
             if (event.phase == TickEvent.Phase.START) current.start(); else current.end();
         } catch (Exception ex) { throw new IllegalStateException("Connected probe failed", ex); }
+    }
+
+    private void chunkLoaded(net.minecraftforge.event.world.ChunkEvent.Load event) {
+        if (!(event.getWorld() instanceof ServerLevel)) return;
+        ServerLevel loaded = (ServerLevel) event.getWorld();
+        if (loaded.dimension() != net.minecraft.world.level.Level.OVERWORLD) return;
+        if (session == null) held.addAll(NativeBlockEntityTicks.drain(loaded));
+        else if (world == loaded) session.start();
     }
 
     private void starting(RegisterCommandsEvent event) {
@@ -61,7 +70,7 @@ final class ConnectedProbe implements ConnectedSession.Port {
                         })))));
     }
 
-    private void execute(ServerWorld current, String operation, String label, int ticks) {
+    private void execute(ServerLevel current, String operation, String label, int ticks) {
         try { get(current).execute(operation, label, ticks, false); }
         catch (Exception ex) { throw new IllegalStateException("Connected probe failed", ex); }
     }
@@ -80,8 +89,8 @@ final class ConnectedProbe implements ConnectedSession.Port {
     }
 
     @Override public void build(JsonObject definition) { throw new UnsupportedOperationException("Target construction is forbidden"); }
-    @Override public void hold() { held.addAll(world.tickableBlockEntities); world.tickableBlockEntities.clear(); }
-    @Override public void restore() { for (TileEntity tile : held) if (!tile.isRemoved() && !world.tickableBlockEntities.contains(tile)) world.tickableBlockEntities.add(tile); held.clear(); }
+    @Override public void hold() { held.addAll(NativeBlockEntityTicks.drain(world)); }
+    @Override public void restore() { NativeBlockEntityTicks.restore(world, held); }
     @Override public long time() { return world.getGameTime(); }
 
     @Override public JsonArray snapshot(JsonObject definition) throws Exception {
@@ -96,15 +105,15 @@ final class ConnectedProbe implements ConnectedSession.Port {
             JsonObject properties = new JsonObject();
             for (Property<?> p : state.getProperties()) properties.addProperty(p.getName(), state.getValue(p).toString().toLowerCase(java.util.Locale.ROOT));
             entry.add("properties", properties);
-            TileEntity tile = world.getBlockEntity(pos);
+            BlockEntity tile = world.getBlockEntity(pos);
             if (tile != null) {
-                CompoundNBT tag = tile.save(new CompoundNBT());
+                CompoundTag tag = tile.save(new CompoundTag());
                 java.io.ByteArrayOutputStream bytes = new java.io.ByteArrayOutputStream();
-                net.minecraft.nbt.CompressedStreamTools.writeCompressed(tag, bytes);
+                net.minecraft.nbt.NbtIo.writeCompressed(tag, bytes);
                 entry.addProperty("nbt", tag.toString());
                 entry.addProperty("nbtBase64", java.util.Base64.getEncoder().encodeToString(bytes.toByteArray()));
                 entry.addProperty("objectIdentity", System.identityHashCode(tile));
-                entry.addProperty("witness", tile.getTileData().getString("AdvConnectedWitness"));
+                entry.addProperty("witness", tag.getCompound("ForgeData").getString("AdvConnectedWitness"));
             }
             result.add(entry);
         }

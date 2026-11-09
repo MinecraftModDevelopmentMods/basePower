@@ -1,0 +1,40 @@
+package zone.moddev.mc.basepower.recipe;
+
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.storage.loot.LootTable;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+public class PartsLootTest {
+    @Test public void addsOnePoolPerLoadedModWithoutDuplicatingOnRepeat() {
+        LootTable table = LootTable.lootTable().build();
+        ResourceLocation chest = new ResourceLocation("minecraft", "chests/simple_dungeon");
+        PartsLoot.addPools(table, chest, true, mod -> true);
+        Object original = table.getPool("basesteam:legacy_parts");
+        assertNotNull(original);
+        PartsLoot.addPools(table, chest, true, mod -> true);
+        assertSame(original, table.getPool("basesteam:legacy_parts"));
+        assertNotNull(table.getPool("basepower:legacy_parts"));
+        assertNotNull(table.getPool("baseelectric:legacy_parts"));
+    }
+
+    @Test public void keepsEndCityExceptionAndAbsentMods() {
+        LootTable table = LootTable.lootTable().build();
+        PartsLoot.addPools(table, new ResourceLocation("minecraft", "chests/end_city_treasure"), true,
+                mod -> !mod.equals("basesteam"));
+        assertNull(table.getPool("basepower:legacy_parts"));
+        assertNull(table.getPool("basesteam:legacy_parts"));
+        assertNotNull(table.getPool("baseelectric:legacy_parts"));
+    }
+
+    @Test public void leavesUnrelatedTablesAndDisabledLootUnchanged() {
+        for (String id : new String[] {"minecraft:chests/desert_pyramid", "othermod:chests/simple_dungeon"}) {
+            LootTable table = LootTable.lootTable().build();
+            PartsLoot.addPools(table, new ResourceLocation(id), true, mod -> true);
+            assertNull(table.getPool("basepower:legacy_parts"));
+        }
+        LootTable table = LootTable.lootTable().build();
+        PartsLoot.addPools(table, new ResourceLocation("minecraft", "chests/simple_dungeon"), false, mod -> true);
+        assertNull(table.getPool("basepower:legacy_parts"));
+    }
+}

@@ -1,3 +1,21 @@
+basePower 2.4.9.117011 (Minecraft 1.17.1)
+
+- Bring basePower to Minecraft 1.17.1 with one shared tab for the three mods.
+- Keep existing base* machines and map legacy Advantage blocks, items, fluids and saved state.
+- Carry old Advantage mod and data pack names forward when opening an existing world with the replacement mods installed.
+- Fix Eclipse refreshes when ForgeGradle reuses an existing launch.
+
+Power Advantage 2.4.8.117011 (Minecraft 1.17.1)
+
+- Move to Forge 37.1.1 and Java 16, keeping the existing block, item, fluid and saved-state names.
+- Use native block-entity factories and tickers for machines and conveyors, retaining their saved position and facing.
+- Supply configured rubber and solder aliases through an additive server data pack instead of replacing vanilla tag readers.
+- Preserve legacy entity state in both terrain chunks and the separate 1.17 entity storage.
+- Use the 1.17 ingredient-predicate format so unrelated items do not unlock recipes.
+- Save machine timers, progress and externally supplied energy after an autosave, without sending extra comparator or client updates.
+- Remap old grass-path blocks/items and the berry-picking sound when loading older Forge registry snapshots.
+- Carry forward the finite-input, cold-restart, migration and rendered GUI checks; automated and manual acceptance remain separate.
+
 Power Advantage 2.4.7.116051 (Minecraft 1.16.5)
 
 - Charge energy sources only for what consumers accept, retaining rejected energy for the next machine.

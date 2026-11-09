@@ -1,24 +1,24 @@
 package cyano.poweradvantage.api.simple;
 
 
-import zone.moddev.mc.poweradvantage.PowerAdvantage;
-import zone.moddev.mc.poweradvantage.math.Integer2D;
-import zone.moddev.mc.poweradvantage.registry.ITileEntityGUI;
-import net.minecraft.client.gui.screen.inventory.ContainerScreen;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.player.PlayerInventory;
-import net.minecraft.inventory.IInventory;
-import net.minecraft.inventory.container.Slot;
-import net.minecraft.item.ItemStack;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.ResourceLocation;
+import zone.moddev.mc.basepower.PowerAdvantage;
+import zone.moddev.mc.basepower.math.Integer2D;
+import zone.moddev.mc.basepower.registry.ITileEntityGUI;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.player.Inventory;
+
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.systems.RenderSystem;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.StringTextComponent;
-import zone.moddev.mc.poweradvantage.registry.MachineGUIRegistry;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextComponent;
+import zone.moddev.mc.basepower.registry.MachineGUIRegistry;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -126,16 +126,16 @@ guiContainer.blit(x+79, y+35, 0, 0, arrowLength, 17); // x, y, textureOffsetX, t
 	 * @return An instance of net.minecraft.inventory.container.Container
 	 */
 	@Override
-	public net.minecraft.inventory.container.Container getContainer(TileEntity e, PlayerEntity player) {
-		return new Container(player.inventory,(IInventory)e);
+	public net.minecraft.world.inventory.AbstractContainerMenu getContainer(BlockEntity e, Player player) {
+		return new Container(player.getInventory(),(net.minecraft.world.Container)e);
 	}
 
-    public Container createMenu(int windowId, PlayerInventory player, IInventory inventory) {
+    public Container createMenu(int windowId, Inventory player, net.minecraft.world.Container inventory) {
         return new Container(windowId, player, inventory);
     }
 
     /** @deprecated Use the native menu factory name. */
-    @Deprecated public Container createContainer(int windowId, PlayerInventory player, IInventory inventory) {
+    @Deprecated public Container createContainer(int windowId, Inventory player, net.minecraft.world.Container inventory) {
         return createMenu(windowId, player, inventory);
     }
 
@@ -148,8 +148,8 @@ guiContainer.blit(x+79, y+35, 0, 0, arrowLength, 17); // x, y, textureOffsetX, t
 	 */
 	@Override
 	@OnlyIn(Dist.CLIENT)
-	public ContainerScreen getContainerGUI(TileEntity e, PlayerEntity player) {
-		return new GUIContainer(player.inventory,(IInventory)e);
+	public AbstractContainerScreen getContainerGUI(BlockEntity e, Player player) {
+		return new GUIContainer(player.getInventory(),(net.minecraft.world.Container)e);
 	}
 	
 	
@@ -158,14 +158,14 @@ guiContainer.blit(x+79, y+35, 0, 0, arrowLength, 17); // x, y, textureOffsetX, t
 	 * net.minecraft.inventory.container.Container to fulfill the requirements of the
 	 * interface ITileEntityGUI.
 	 */
-	public class Container extends net.minecraft.inventory.container.Container{
+	public class Container extends net.minecraft.world.inventory.AbstractContainerMenu{
 
-		private final IInventory entity;
-		public Container(PlayerInventory playerItems, IInventory entity){
+		private final net.minecraft.world.Container entity;
+		public Container(Inventory playerItems, net.minecraft.world.Container entity){
             this(0, playerItems, entity);
         }
 
-        public Container(int windowId, PlayerInventory playerItems, IInventory entity) {
+        public Container(int windowId, Inventory playerItems, net.minecraft.world.Container entity) {
             super(MachineGUIRegistry.TYPE, windowId);
 			this.entity = entity;
 			int index = 0;
@@ -182,16 +182,16 @@ guiContainer.blit(x+79, y+35, 0, 0, arrowLength, 17); // x, y, textureOffsetX, t
 		}
 
         @OnlyIn(Dist.CLIENT)
-        public GUIContainer createScreen(PlayerInventory inventory, ITextComponent title) {
+        public GUIContainer createScreen(Inventory inventory, Component title) {
             return new GUIContainer(this, inventory, title);
         }
 		
 		@Override
-		public boolean stillValid(PlayerEntity entityplayer) {
+		public boolean stillValid(Player entityplayer) {
 			return entity.stillValid(entityplayer);
 		}
 		
-		protected void bindPlayerInventory(PlayerInventory inventoryPlayer, int yOffset) {
+		protected void bindPlayerInventory(Inventory inventoryPlayer, int yOffset) {
 			for (int i = 0; i < 3; i++) {
 				for (int j = 0; j < 9; j++) {
 					addSlot(new Slot(inventoryPlayer, j + i * 9 + 9, 8 + j * 18, yOffset + i * 18));
@@ -203,7 +203,7 @@ guiContainer.blit(x+79, y+35, 0, 0, arrowLength, 17); // x, y, textureOffsetX, t
 		}
 		
 		@Override
-		public ItemStack quickMoveStack(PlayerEntity player, int slot) {
+		public ItemStack quickMoveStack(Player player, int slot) {
 			int hostSize = inventorySlotCoordinates.length;
 			ItemStack stack = ItemStack.EMPTY;
 			Slot slotObject = (Slot) slots.get(slot);
@@ -246,17 +246,19 @@ guiContainer.blit(x+79, y+35, 0, 0, arrowLength, 17); // x, y, textureOffsetX, t
 	 */
 
 	@OnlyIn(Dist.CLIENT)
-	public class GUIContainer extends net.minecraft.client.gui.screen.inventory.ContainerScreen<Container>{
+	public class GUIContainer extends net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<Container>{
 		private final Object entity;
-		private MatrixStack matrices = new MatrixStack();
+		private final Component playerInventoryLabel;
+		private PoseStack matrices = new PoseStack();
 
         public net.minecraft.client.Minecraft getMinecraft() { return minecraft; }
-		public GUIContainer(PlayerInventory playerItems, IInventory entity) {
-            this(new Container(playerItems, entity), playerItems, new StringTextComponent("Machine"));
+		public GUIContainer(Inventory playerItems, net.minecraft.world.Container entity) {
+            this(new Container(playerItems, entity), playerItems, new TextComponent("Machine"));
         }
 
-        public GUIContainer(Container container, PlayerInventory playerItems, ITextComponent title) {
+        public GUIContainer(Container container, Inventory playerItems, Component title) {
             super(container, playerItems, title);
+            this.playerInventoryLabel = playerItems.getDisplayName();
 //System.out.println("Size: "+this.xSize+"x"+this.ySize+" at coordinate ("+this.guiLeft+","+this.guiTop+")");
 			this.imageWidth = guiWidth;
 			this.imageHeight = guiHeight;
@@ -264,7 +266,7 @@ guiContainer.blit(x+79, y+35, 0, 0, arrowLength, 17); // x, y, textureOffsetX, t
 		}
 
 		@Override
-		public void render(MatrixStack matrices, int mouseX, int mouseY, float partialTicks) {
+		public void render(PoseStack matrices, int mouseX, int mouseY, float partialTicks) {
 			this.renderBackground(matrices);
 			super.render(matrices, mouseX, mouseY, partialTicks);
 			this.renderTooltip(matrices, mouseX, mouseY);
@@ -275,10 +277,10 @@ guiContainer.blit(x+79, y+35, 0, 0, arrowLength, 17); // x, y, textureOffsetX, t
 		}
 
 		@Override
-		protected void renderLabels(MatrixStack matrices, int mouseX, int mouseY) {
+		protected void renderLabels(PoseStack matrices, int mouseX, int mouseY) {
 			String machineName = fitLabel(title.getString(), width - 8);
 			font.drawShadow(matrices, machineName, (imageWidth - font.width(machineName)) / 2, 1, 0xFFFFFF);
-			font.drawShadow(matrices, fitLabel(inventory.getDisplayName().getString(), imageWidth - 16),
+			font.drawShadow(matrices, fitLabel(playerInventoryLabel.getString(), imageWidth - 16),
 					8, MACHINE_TOP + MACHINE_HEIGHT, 0xFFFFFF);
 		}
 
@@ -288,18 +290,18 @@ guiContainer.blit(x+79, y+35, 0, 0, arrowLength, 17); // x, y, textureOffsetX, t
 		}
 
 		@Override
-		protected void renderBg(MatrixStack matrices, float f, int i, int j) {
+		protected void renderBg(PoseStack matrices, float f, int i, int j) {
 			this.matrices = matrices;
 			RenderSystem.enableBlend();
 			RenderSystem.defaultBlendFunc();
-			RenderSystem.color4f(1.0F, 1.0F, 1.0F, 1.0F);
-			this.minecraft.getTextureManager().bind(playerInventoryBox);
+			RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+			com.mojang.blaze3d.systems.RenderSystem.setShaderTexture(0, playerInventoryBox);
 			int x = (width - imageWidth) / 2;
 			int y = (height - imageHeight) / 2;
 			final int playerInventoryWidth = 176;
 			final int playerInventoryHeight = 90;
 			this.blit(x, y + PLAYER_PANEL_TOP, 0, 132, playerInventoryWidth, playerInventoryHeight);
-			this.minecraft.getTextureManager().bind(guiDisplayImage);
+			com.mojang.blaze3d.systems.RenderSystem.setShaderTexture(0, guiDisplayImage);
 			this.blit(x, y + MACHINE_TOP, 0, 0, guiWidth, MACHINE_HEIGHT);
 			drawGUIDecorations(entity, this, x, y + MACHINE_TOP, this.getBlitOffset());
 			RenderSystem.disableBlend();
@@ -310,7 +312,7 @@ guiContainer.blit(x+79, y+35, 0, 0, arrowLength, 17); // x, y, textureOffsetX, t
 			super.blit(matrices, x, y, u, v, width, height);
 		}
 
-		public MatrixStack getMatrices() { return matrices; }
+		public PoseStack getMatrices() { return matrices; }
 		/**
 		 * Gets the z-coordinate of this GUI element
 		 * @return screen depth coordinate
@@ -356,8 +358,8 @@ guiContainer.blit(x+79, y+35, 0, 0, arrowLength, 17); // x, y, textureOffsetX, t
 	 * inventory slot
 	 */
 	public static class SlotContext {
-		public final PlayerInventory playerInventory;
-		public final IInventory machineInventory;
+		public final Inventory playerInventory;
+		public final net.minecraft.world.Container machineInventory;
 		public final int slotIndex;
 		public final int screenPositionX;
 		public final int screenPositionY;
@@ -372,8 +374,8 @@ guiContainer.blit(x+79, y+35, 0, 0, arrowLength, 17); // x, y, textureOffsetX, t
 		 * @param screenPositionY  coordinate position on screen
 		 */
 		public SlotContext(
-				final PlayerInventory playerInventory,
-				final IInventory machineInventory,
+				final Inventory playerInventory,
+				final net.minecraft.world.Container machineInventory,
 				final int slotIndex,
 				final int screenPositionX,
 				final int screenPositionY

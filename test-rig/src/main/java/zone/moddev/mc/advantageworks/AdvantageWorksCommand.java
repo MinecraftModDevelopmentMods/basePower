@@ -4,9 +4,9 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 
-import net.minecraft.command.CommandSource;
-import net.minecraft.command.Commands;
-import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.Commands;
+import net.minecraft.network.chat.TextComponent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -16,7 +16,7 @@ final class AdvantageWorksCommand {
 
     private AdvantageWorksCommand() {}
 
-    static void register(CommandDispatcher<CommandSource> dispatcher) {
+    static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(Commands.literal("advworks")
                 .requires(source -> source.hasPermission(2))
                 .then(targetCommand("build"))
@@ -37,7 +37,7 @@ final class AdvantageWorksCommand {
                                         IntegerArgumentType.getInteger(context, "radius"))))));
     }
 
-    private static com.mojang.brigadier.builder.LiteralArgumentBuilder<CommandSource> targetCommand(
+    private static com.mojang.brigadier.builder.LiteralArgumentBuilder<CommandSourceStack> targetCommand(
             String operation) {
         return Commands.literal(operation)
                 .executes(context -> execute(context.getSource(), operation, "all", null))
@@ -46,7 +46,7 @@ final class AdvantageWorksCommand {
                                 StringArgumentType.getString(context, "target"), null)));
     }
 
-    private static int execute(CommandSource source, String operation, String target, String name) {
+    private static int execute(CommandSourceStack source, String operation, String target, String name) {
         try {
             WorksController controller = WorksController.getInstance();
             controller.requireAuthorizedWorld(source.getServer());
@@ -61,7 +61,7 @@ final class AdvantageWorksCommand {
                 case "checkpoint": message = controller.checkpoint(source.getServer(), target, name); break;
                 default: throw new IllegalArgumentException("Unknown Advantage Works operation " + operation);
             }
-            source.sendSuccess(new StringTextComponent(message), false);
+            source.sendSuccess(new TextComponent(message), false);
             return 1;
         } catch (RuntimeException ex) {
             LOGGER.error("Advantage Works command failed: {} {}", operation, target, ex);
@@ -69,10 +69,10 @@ final class AdvantageWorksCommand {
         }
     }
 
-    private static int sampleWorldgen(CommandSource source, int radius) {
+    private static int sampleWorldgen(CommandSourceStack source, int radius) {
         WorksController controller = WorksController.getInstance();
         controller.requireAuthorizedWorld(source.getServer());
-        source.sendSuccess(new StringTextComponent(controller.sampleWorldgen(source.getServer(), radius)), false);
+        source.sendSuccess(new TextComponent(controller.sampleWorldgen(source.getServer(), radius)), false);
         return 1;
     }
 }

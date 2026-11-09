@@ -1,0 +1,58 @@
+{
+  "name": "dev-core-apocalyptic",
+  "mode": "development",
+  "runtimeBase": "build/works-native117",
+  "serverPort": 25565,
+  "startupTimeoutSeconds": 180,
+  "shutdownTimeoutSeconds": 60,
+  "stationRunSeconds": 5,
+  "recipeMode": "APOCALYPTIC",
+  "sourceCommit": "308d42a89483d56d0fad4805cdb65dac483d9e31",
+  "sourceVersion": "2.4.9.117011",
+  "lifecycleStations": [],
+  "mods": [
+    {
+      "id": "advantageworkstest",
+      "version": "1.1.1.117011",
+      "file": "AdvantageWorksTestHarness-1.1.1.117011-deobf.jar",
+      "path": "build/native117-artifacts/2BCDF517E5F5C41019194275511E7148186CFAA5C77CDB0930B08BB217F5143D/AdvantageWorksTestHarness-1.1.1.117011-deobf.jar",
+      "sha256": "2BCDF517E5F5C41019194275511E7148186CFAA5C77CDB0930B08BB217F5143D",
+      "sourceRef": "f2f6af74ab59aab7562d9af5936a1f17e2adb534",
+      "workspaceProduced": true,
+      "pinStatus": "PINNED_UNQUALIFIED"
+    },
+    {
+      "id": "basesteam",
+      "version": "2.2.10.117011",
+      "file": "baseSteam-2.2.10.117011-deobf.jar",
+      "path": "build/native117-artifacts/AC76E42ABA4B56F258BE0977A2A77777201D3C889F163C39BFBE1839897A427A/baseSteam-2.2.10.117011-deobf.jar",
+      "sha256": "AC76E42ABA4B56F258BE0977A2A77777201D3C889F163C39BFBE1839897A427A",
+      "sourceRef": "c8e3febcd11c6854d8073c9c053c7c162cdd6687",
+      "workspaceProduced": true,
+      "pinStatus": "PINNED_UNQUALIFIED"
+    },
+    {
+      "id": "baseelectric",
+      "version": "2.2.10.117011",
+      "file": "baseElectric-2.2.10.117011-deobf.jar",
+      "path": "build/native117-artifacts/37F787FBC04E5E93C5F123916690C788266E76C5E20534F66D4ADCF1CC07B3E6/baseElectric-2.2.10.117011-deobf.jar",
+      "sha256": "37F787FBC04E5E93C5F123916690C788266E76C5E20534F66D4ADCF1CC07B3E6",
+      "sourceRef": "cf3d4b0e2d1591b2ae8e5d638002ca016e46eac4",
+      "workspaceProduced": true,
+      "pinStatus": "PINNED_UNQUALIFIED"
+    }
+  ],
+  "minecraftVersion": "1.17.1",
+  "portStatus": "PORTED_UNQUALIFIED",
+  "qualificationStatus": "UNQUALIFIED",
+  "legacySourceProfile": "../../../PA113/PowerAdvantage/test-rig/profiles/dev-core-apocalyptic.json",
+  "forge": {
+    "version": "1.17.1-37.1.1",
+    "installerPath": "build/native117-artifacts/31F2319B1B9CA491AACCC020887240F8524A4FF2A8E0F8B795E17E889CBC043B/forge-1.17.1-37.1.1-installer.jar",
+    "url": "https://maven.minecraftforge.net/net/minecraftforge/forge/1.17.1-37.1.1/forge-1.17.1-37.1.1-installer.jar",
+    "sha256": "31F2319B1B9CA491AACCC020887240F8524A4FF2A8E0F8B795E17E889CBC043B"
+  },
+  "generatorSettings": "",
+  "inputStatus": "ARTIFACTS_AND_SOURCES_PINNED_QUALIFICATION_PENDING",
+  "powerDeobfSha256": "312FA3012CB57C91F5F22079DA4778D481BA45EF7B8A0587D9993899E1B6D08E"
+}

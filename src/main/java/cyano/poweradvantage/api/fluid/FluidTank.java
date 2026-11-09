@@ -2,8 +2,8 @@ package cyano.poweradvantage.api.fluid;
 
 import javax.annotation.Nullable;
 
-import net.minecraft.fluid.Fluid;
-import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.world.level.material.Fluid;
+import net.minecraft.nbt.CompoundTag;
 
 /** Millibucket tank retaining the Advantage fluid API and saved NBT format. */
 public class FluidTank {
@@ -71,13 +71,13 @@ public class FluidTank {
 
     public FluidTankInfo getInfo() { return new FluidTankInfo(fluid, capacity); }
 
-    public CompoundNBT writeToNBT(CompoundNBT nbt) {
+    public CompoundTag writeToNBT(CompoundTag nbt) {
         if (fluid == null) nbt.putBoolean("Empty", true);
         else fluid.writeToNBT(nbt);
         return nbt;
     }
 
-    public FluidTank readFromNBT(CompoundNBT nbt) {
+    public FluidTank readFromNBT(CompoundTag nbt) {
         setFluid(nbt.contains("Empty", 1) ? null : FluidStack.loadFluidStackFromNBT(nbt));
         return this;
     }

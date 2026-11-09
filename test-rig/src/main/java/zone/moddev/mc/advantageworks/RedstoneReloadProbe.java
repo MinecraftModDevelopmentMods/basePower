@@ -15,22 +15,22 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.command.Commands;
-import net.minecraft.inventory.IInventory;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.state.properties.BlockStateProperties;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.Direction;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.registry.Registry;
-import net.minecraft.world.World;
-import net.minecraft.world.server.ServerWorld;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.commands.Commands;
+import net.minecraft.world.Container;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.core.Direction;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Registry;
+import net.minecraft.world.level.Level;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.event.TickEvent;
@@ -46,12 +46,12 @@ final class RedstoneReloadProbe {
 
     private final String processToken = UUID.randomUUID().toString();
     private final List<Witness> witnesses = definitions();
-    private final List<TileEntity> suspended = new ArrayList<>();
+    private final List<net.minecraft.world.level.block.entity.TickingBlockEntity> suspended = new ArrayList<>();
     private final List<Map<String, Object>> seedTrace = new ArrayList<>();
     private final List<Map<String, Object>> ticks = new ArrayList<>();
     private final List<Map<String, Object>> readiness = new ArrayList<>();
     private Phase phase = Phase.FROZEN;
-    private ServerWorld world;
+    private ServerLevel world;
     private String label;
     private boolean used;
     private int preparationIndex;
@@ -84,7 +84,7 @@ final class RedstoneReloadProbe {
                 .then(Commands.argument("operation", StringArgumentType.word())
                         .then(Commands.argument("label", StringArgumentType.word()).executes(context -> {
                             if (!MARKER.isFile() || used) throw new IllegalStateException("Missing marker or reused probe");
-                            ServerWorld current = context.getSource().getLevel();
+                            ServerLevel current = context.getSource().getLevel();
                             if (!current.getServer().getWorldData().getLevelName().equals("AdvantageWorksMigration"))
                                 throw new IllegalStateException("Not an authorized disposable world");
                             String requested = StringArgumentType.getString(context, "label");
@@ -113,19 +113,16 @@ final class RedstoneReloadProbe {
     private boolean paused() { return phase != Phase.SEEDING && phase != Phase.OPERATING; }
 
     private void tick(TickEvent.WorldTickEvent event) {
-        if (!(event.world instanceof ServerWorld) || event.world.dimension() != World.OVERWORLD) return;
-        ServerWorld current = (ServerWorld) event.world;
+        if (!(event.world instanceof ServerLevel) || event.world.dimension() != Level.OVERWORLD) return;
+        ServerLevel current = (ServerLevel) event.world;
         if (event.phase == TickEvent.Phase.START) {
             tickStart = current.getGameTime();
             if (paused()) {
-                suspended.addAll(current.tickableBlockEntities);
-                current.tickableBlockEntities.clear();
+                suspended.addAll(NativeBlockEntityTicks.drain(current));
             }
             return;
         }
-        for (TileEntity tile : suspended)
-            if (!tile.isRemoved() && !current.tickableBlockEntities.contains(tile)) current.tickableBlockEntities.add(tile);
-        suspended.clear();
+        NativeBlockEntityTicks.restore(current, suspended);
         if (current != world || phase == Phase.DONE) return;
         try {
             if (phase == Phase.PREPARING) {
@@ -140,7 +137,7 @@ final class RedstoneReloadProbe {
                 seedTrace.add(observation);
                 boolean ready = true;
                 for (Witness witness : witnesses) {
-                    CompoundNBT tag = tile(witness).save(new CompoundNBT());
+                    CompoundTag tag = tile(witness).save(new CompoundTag());
                     ready &= tag.getShort("progress") > 0 && tag.contains("targetX", 99)
                             && ((PoweredEntity) tile(witness)).getEnergy(new ConduitType("electricity")) > 24;
                 }
@@ -186,16 +183,20 @@ final class RedstoneReloadProbe {
         boolean all = true;
         List<Map<String, Object>> rows = new ArrayList<>();
         for (Witness witness : witnesses) {
-            TileEntity tile = tile(witness);
-            boolean ticking = world.getChunkSource().isTickingChunk(witness.pos);
-            boolean listed = world.tickableBlockEntities.contains(tile) && !tile.isRemoved();
+            BlockEntity tile = tile(witness);
+            boolean ticking = world.getChunkSource().isPositionTicking(new net.minecraft.world.level.ChunkPos(witness.pos).toLong());
+            boolean listed = NativeBlockEntityTicks.contains(world, tile);
+            boolean blockAndEntitiesLoaded = world.isPositionTickingWithEntitiesLoaded(witness.pos);
+            boolean entityTicking = world.isPositionEntityTicking(new net.minecraft.world.level.ChunkPos(witness.pos));
             Map<String, Object> row = new LinkedHashMap<>();
             row.put("id", witness.id);
             row.put("pos", coordinates(witness.pos));
             row.put("blockTicking", ticking);
             row.put("tickableListed", listed);
+            row.put("blockAndEntitiesLoaded", blockAndEntitiesLoaded);
+            row.put("entityTicking", entityTicking);
             rows.add(row);
-            all &= ticking && listed;
+            all &= nativeReady(ticking, listed, blockAndEntitiesLoaded, entityTicking);
         }
         Map<String, Object> sample = new LinkedHashMap<>();
         sample.put("phase", stage);
@@ -203,8 +204,13 @@ final class RedstoneReloadProbe {
         sample.put("cases", rows);
         readiness.add(sample);
         if (!all && readiness.size() >= READINESS_TICKS)
-            throw new AssertionError("Native block-ticking/list readiness timed out after " + READINESS_TICKS + " paused ticks");
+            throw new AssertionError("Native block/list/entity readiness timed out after " + READINESS_TICKS + " paused ticks");
         return all;
+    }
+
+    static boolean nativeReady(boolean blockTicking, boolean tickableListed,
+            boolean blockAndEntitiesLoaded, boolean entityTicking) {
+        return blockTicking && tickableListed && blockAndEntitiesLoaded && entityTicking;
     }
 
     private void construct(Witness witness) {
@@ -212,24 +218,24 @@ final class RedstoneReloadProbe {
         force(witness);
         for (int dx = -1; dx <= 1; dx++) for (int dy = -1; dy <= 1; dy++) for (int dz = -1; dz <= 1; dz++)
             world.setBlock(witness.pos.offset(dx, dy, dz), Blocks.AIR.defaultBlockState(), 2);
-        Block block = Registry.BLOCK.get(new ResourceLocation("electricadvantage:electric_drill"));
+        Block block = Registry.BLOCK.get(new ResourceLocation("baseelectric:electric_drill"));
         if (block == Blocks.AIR) throw new IllegalStateException("Electric drill registry absent");
         world.setBlock(witness.pos, block.defaultBlockState().setValue(BlockStateProperties.FACING, Direction.NORTH), 2);
         for (int dx = -1; dx <= 1; dx++) for (int dy = -1; dy <= 1; dy++)
             world.setBlock(witness.pos.offset(dx, dy, -1), Blocks.OBSIDIAN.defaultBlockState(), 2);
-        TileEntity tile = tile(witness);
+        BlockEntity tile = tile(witness);
         ((PoweredEntity) tile).setEnergy(500, new ConduitType("electricity"));
         ItemStack dirt = new ItemStack(Items.DIRT, 7);
         dirt.getOrCreateTag().putString("AdvWorksWitness", witness.id);
-        ((IInventory) tile).setItem(0, dirt);
-        ((IInventory) tile).setItem(1, new ItemStack(Items.APPLE, 13));
+        ((Container) tile).setItem(0, dirt);
+        ((Container) tile).setItem(1, new ItemStack(Items.APPLE, 13));
         tile.setChanged();
         constructionCalls++;
     }
 
-    private TileEntity tile(Witness witness) {
-        TileEntity tile = world.getBlockEntity(witness.pos);
-        if (!(tile instanceof PoweredEntity) || !(tile instanceof IInventory))
+    private BlockEntity tile(Witness witness) {
+        BlockEntity tile = world.getBlockEntity(witness.pos);
+        if (!(tile instanceof PoweredEntity) || !(tile instanceof Container))
             throw new IllegalStateException("Missing powered inventory at " + witness.pos);
         return tile;
     }
@@ -266,8 +272,8 @@ final class RedstoneReloadProbe {
     private List<Map<String, Object>> snapshots() {
         List<Map<String, Object>> result = new ArrayList<>();
         for (Witness witness : witnesses) {
-            TileEntity tile = tile(witness);
-            CompoundNBT nbt = tile.save(new CompoundNBT());
+            BlockEntity tile = tile(witness);
+            CompoundTag nbt = tile.save(new CompoundTag());
             BlockState state = world.getBlockState(witness.pos);
             Map<String, Object> row = new LinkedHashMap<>();
             row.put("id", witness.id);
@@ -297,7 +303,7 @@ final class RedstoneReloadProbe {
     }
 
     private static boolean active(BlockState state) {
-        for (net.minecraft.state.Property<?> property : state.getProperties())
+        for (net.minecraft.world.level.block.state.properties.Property<?> property : state.getProperties())
             if (property.getName().equals("active")) return Boolean.TRUE.equals(state.getValue(property));
         throw new IllegalStateException("Drill has no ACTIVE property");
     }

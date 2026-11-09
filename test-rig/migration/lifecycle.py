@@ -86,8 +86,9 @@ def move_result(fixture, movement):
     check("facing=" + fixture["facing"] in after["state"], "facing changed")
     check(contents(before) == contents(after), "inventory or custom item NBT changed")
     check(counts([after]) == {"minecraft:dirt": 7, "minecraft:apple": 13}, "seeded inventory lost or duplicated")
-    check(movement["oldPosition"]["block"] == ("steamadvantage:steam_pipe" if fixture["energyType"] == "steam"
-                                               else "electricadvantage:electric_conduit"), "old position is not a conduit")
+    namespace = fixture["block"].split(":", 1)[0]
+    conduit = "steam_pipe" if fixture["energyType"] == "steam" else "electric_conduit"
+    check(movement["oldPosition"]["block"] == f"{namespace}:{conduit}", "old position is not a conduit")
     old_energy = before["energy"][fixture["energyType"]]
     new_energy = after["energy"][fixture["energyType"]]
     expected = 10 if fixture["energyType"] == "steam" else 250
@@ -129,10 +130,9 @@ class LifecycleRun:
         for f in self.definition:
             self.command("fill " + " ".join(map(str, f["min"] + f["max"])) + " minecraft:air replace")
             if "from" in f:
-                mod = f["block"].split(":")[0]
                 self.block(f["control"], "minecraft:redstone_block")
                 self.block(f["from"], f["block"] + "[facing=" + f["facing"] + "]")
-                self.block(f["to"], mod + (":steam_track" if mod == "steamadvantage" else ":electric_track"))
+                self.block(f["to"], f["block"].replace("_drill", "_track"))
                 self.block(offset(f["from"], f["direction"]), "minecraft:bedrock")
                 self.block(offset(f["to"], f["direction"]), "minecraft:bedrock")
                 self.inventory(f["from"], 0, 'minecraft:dirt{AdvWorksWitness:"' + f["id"] + '"}', 7)

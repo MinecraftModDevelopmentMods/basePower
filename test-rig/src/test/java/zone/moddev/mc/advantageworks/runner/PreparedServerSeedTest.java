@@ -22,20 +22,23 @@ import static org.junit.Assert.*;
 
 public class PreparedServerSeedTest {
     @Rule public TemporaryFolder temporary = new TemporaryFolder();
-    private static final String LAUNCHER = "forge-1.16.5-36.2.34.jar";
-    private static final String MINECRAFT = "minecraft_server.1.16.5.jar";
+    private static final String LAUNCHER = WorksRunner.serverLauncherPath(new Gson().fromJson(
+            "{\"minecraftVersion\":\"1.17.1\",\"forge\":{\"version\":\"1.17.1-37.1.1\"}}", WorksRunner.Profile.class));
+    private static final String MINECRAFT = "libraries/net/minecraft/server/1.17.1-20210706.113038/server-1.17.1-20210706.113038-extra.jar";
     private static final String LIBRARY = "libraries/native/runtime.jar";
 
     private WorksRunner.Profile profile() {
         return new Gson().fromJson("{\"name\":\"seed-test\",\"mode\":\"packaged\","
-                + "\"minecraftVersion\":\"1.16.5\",\"portStatus\":\"PORTED_UNQUALIFIED\","
+                + "\"minecraftVersion\":\"1.17.1\",\"portStatus\":\"PORTED_UNQUALIFIED\","
                 + "\"qualificationStatus\":\"UNQUALIFIED\",\"mods\":[],"
-                + "\"forge\":{\"version\":\"1.16.5-36.2.34\"}}", WorksRunner.Profile.class);
+                + "\"forge\":{\"version\":\"1.17.1-37.1.1\"}}", WorksRunner.Profile.class);
     }
 
     private Path seed() throws Exception {
         Path root = temporary.newFolder().toPath();
         Files.createDirectories(root.resolve("libraries/native"));
+        Files.createDirectories(root.resolve(LAUNCHER).getParent());
+        Files.createDirectories(root.resolve(MINECRAFT).getParent());
         Files.write(root.resolve(LAUNCHER), new byte[] {1, 2});
         Files.write(root.resolve(MINECRAFT), new byte[] {3, 4});
         Files.write(root.resolve(LIBRARY), new byte[] {5, 6});
@@ -79,6 +82,10 @@ public class PreparedServerSeedTest {
 
     private interface Action { void run() throws Exception; }
 
+    @Test public void runnerReceiptIsSeparateFromTheCanonicalPythonSeedInventory() {
+        assertEquals("native117-runner-code-inventory.json", WorksRunner.PreparedServerSeed.INVENTORY);
+    }
+
     private static Exception rejected(Action action) throws Exception {
         try { action.run(); }
         catch (Exception expected) { return expected; }
@@ -100,8 +107,9 @@ public class PreparedServerSeedTest {
         Path target = runtime();
         Path installer = rig.resolve("installer.jar");
         Files.write(installer, new byte[] {7});
+        Files.createDirectories(target.resolve(LAUNCHER).getParent());
         Files.write(target.resolve(LAUNCHER), new byte[] {8});
-        WorksRunner.Profile profile = new Gson().fromJson("{\"forge\":{\"version\":\"1.16.5-36.2.34\","
+        WorksRunner.Profile profile = new Gson().fromJson("{\"minecraftVersion\":\"1.17.1\",\"forge\":{\"version\":\"1.17.1-37.1.1\","
                 + "\"installerPath\":\"installer.jar\",\"sha256\":\"" + hash(installer) + "\"}}", WorksRunner.Profile.class);
         assertNull(WorksRunner.preparedServerSeed(rig.toFile(), profile,
                 WorksRunner.Arguments.parse(new String[] {"--profile", "p"})));
@@ -121,6 +129,30 @@ public class PreparedServerSeedTest {
             assertArrayEquals(Files.readAllBytes(source.resolve(name)), Files.readAllBytes(target.resolve(name)));
         }
         profile.preparedSeed.verifySource();
+    }
+
+    @Test public void publicSeedOptionsSelectModularForgeAndTheLibraryServerJar() throws Exception {
+        Path source = seed();
+        Path receipt = source.resolve(WorksRunner.PreparedServerSeed.INVENTORY);
+        WorksRunner.PreparedServerSeed prepared = WorksRunner.preparedServerSeed(temporary.getRoot(), profile(),
+                WorksRunner.Arguments.parse(new String[] {"--profile", "p", "--prepared-server-seed", source.toString(),
+                        "--prepared-server-seed-inventory", receipt.toString(), "--prepared-server-seed-sha256", hash(receipt)}));
+        assertTrue(prepared.files.containsKey(LAUNCHER));
+        assertTrue(prepared.files.containsKey(MINECRAFT));
+        assertFalse(prepared.files.containsKey("forge-1.17.1-37.1.1.jar"));
+    }
+
+    @Test public void canonicalHeaderedPythonReceiptMustNotBeSilentlyReinterpretedOrRewritten() throws Exception {
+        Path source = seed();
+        JsonObject canonical = new Gson().fromJson(Files.readString(source.resolve(WorksRunner.PreparedServerSeed.INVENTORY)), JsonObject.class);
+        canonical.addProperty("format", 1);
+        canonical.addProperty("minecraft", "1.17.1");
+        canonical.addProperty("forge", "37.1.1");
+        Path receipt = temporary.newFile().toPath();
+        Files.writeString(receipt, canonical.toString());
+        byte[] original = Files.readAllBytes(receipt);
+        rejected(() -> new WorksRunner.PreparedServerSeed(source, receipt, hash(receipt), LAUNCHER, MINECRAFT));
+        assertArrayEquals(original, Files.readAllBytes(receipt));
     }
 
     @Test public void missingCorruptAndUnexpectedCodeNeverFallBackToInstaller() throws Exception {
@@ -238,6 +270,7 @@ public class PreparedServerSeedTest {
         rejected(() -> seal.stage(source.toFile()));
         rejected(() -> seal.stage(source.resolve("destination").toFile()));
         Path target = runtime();
+        Files.createDirectories(target.resolve(LAUNCHER).getParent());
         Files.write(target.resolve(LAUNCHER), new byte[] {99});
         rejected(() -> seal.stage(target.toFile()));
         assertArrayEquals(new byte[] {99}, Files.readAllBytes(target.resolve(LAUNCHER)));
@@ -275,7 +308,7 @@ public class PreparedServerSeedTest {
         rejected(() -> WorksRunner.main(new String[] {"--profile", profileFile.toString(), "--validate-only",
                 "--prepared-server-seed", source.toString(), "--prepared-server-seed-inventory", receipt.toString(),
                 "--prepared-server-seed-sha256", pin}));
-        assertFalse(Files.exists(rig.resolve("build/works-native116")));
+        assertFalse(Files.exists(rig.resolve("build/works-native117")));
     }
 
     private void writeInventory(Path source, String content) throws Exception {

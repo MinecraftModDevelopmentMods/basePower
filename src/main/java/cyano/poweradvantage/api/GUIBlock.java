@@ -1,24 +1,26 @@
 package cyano.poweradvantage.api;
 
-import net.minecraft.block.material.Material;
-import net.minecraft.block.Block;
-import net.minecraft.block.SoundType;
-import net.minecraft.block.BlockState;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.player.ServerPlayerEntity;
-import net.minecraft.inventory.IInventory;
-import net.minecraft.inventory.InventoryHelper;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.block.BlockRenderType;
-import net.minecraft.util.Direction;
-import net.minecraft.util.Hand;
-import net.minecraft.util.ActionResultType;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
-import net.minecraft.world.IBlockReader;
-import zone.moddev.mc.poweradvantage.registry.MachineGUIRegistry;
+import net.minecraft.world.level.material.Material;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.SoundType;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.Container;
+import net.minecraft.world.Containers;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.block.entity.BlockEntityTicker;
+import net.minecraft.world.level.block.RenderShape;
+import net.minecraft.core.Direction;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.BlockGetter;
+import zone.moddev.mc.basepower.registry.MachineGUIRegistry;
 import cyano.poweradvantage.api.fluid.IAdvantageFluidHandler;
-import zone.moddev.mc.poweradvantage.util.FluidContainerHelper;
+import zone.moddev.mc.basepower.util.FluidContainerHelper;
 
 /**
  * <p>
@@ -33,7 +35,7 @@ import zone.moddev.mc.poweradvantage.util.FluidContainerHelper;
  * @author DrCyano
  *
  */
-public abstract class GUIBlock extends net.minecraft.block.ContainerBlock{
+public abstract class GUIBlock extends net.minecraft.world.level.block.BaseEntityBlock{
 
 	/**
 	 * Constructor for GUI block
@@ -51,6 +53,20 @@ public abstract class GUIBlock extends net.minecraft.block.ContainerBlock{
 	protected GUIBlock(Block.Properties properties) {
 		super(properties);
 	}
+
+    @Override
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state,
+            BlockEntityType<T> type) {
+        if (!type.isValid(state)) return null;
+        return (world, pos, currentState, tile) -> {
+            if (tile.isRemoved() || tile.getType() != type || tile.getLevel() != world) return;
+            if (tile instanceof PoweredEntity) {
+                ((PoweredEntity) tile).tick();
+            } else if (tile instanceof zone.moddev.mc.basepower.machines.conveyors.TileEntityConveyor) {
+                ((zone.moddev.mc.basepower.machines.conveyors.TileEntityConveyor) tile).tick();
+            }
+        };
+    }
 
 	@Deprecated
 	protected void setPowerAdvantageHardness(float hardness) {
@@ -114,8 +130,8 @@ public abstract class GUIBlock extends net.minecraft.block.ContainerBlock{
 	 * -1 = special renderer
 	 */
 	@Override
-    public BlockRenderType getRenderShape(BlockState bs) {
-        return BlockRenderType.MODEL;
+    public RenderShape getRenderShape(BlockState bs) {
+        return RenderShape.MODEL;
     }
 	
 	/**
@@ -127,43 +143,43 @@ public abstract class GUIBlock extends net.minecraft.block.ContainerBlock{
      */
 	@SuppressWarnings("deprecation")
     @Override
-    public ActionResultType use(BlockState bs, World w, BlockPos coord,
-                                    PlayerEntity player, Hand hand, net.minecraft.util.math.BlockRayTraceResult hit) {
+    public InteractionResult use(BlockState bs, Level w, BlockPos coord,
+                                    Player player, InteractionHand hand, net.minecraft.world.phys.BlockHitResult hit) {
         Direction facing = hit.getDirection();
         if (w.isClientSide) {
-            return ActionResultType.SUCCESS;
+            return InteractionResult.SUCCESS;
         }
-        final TileEntity tileEntity = w.getBlockEntity(coord);
+        final BlockEntity tileEntity = w.getBlockEntity(coord);
         if (tileEntity == null || player.isShiftKeyDown()) {
-            return ActionResultType.PASS;
+            return InteractionResult.PASS;
         }
         // handle buckets and fluid containers
-		net.minecraft.item.ItemStack item = player.getItemInHand(hand);
+		net.minecraft.world.item.ItemStack item = player.getItemInHand(hand);
 		if(item != null && !item.isEmpty() && tileEntity instanceof IAdvantageFluidHandler
 				&& FluidContainerHelper.interact(player, hand, (IAdvantageFluidHandler) tileEntity, facing)) {
-			return ActionResultType.SUCCESS;
+			return InteractionResult.SUCCESS;
 		}
 
         // open GUI
-        if(this.getGuiOwner() == null) return ActionResultType.PASS;
-		if(tileEntity instanceof PoweredEntity && player instanceof ServerPlayerEntity){
-			((PoweredEntity)tileEntity).syncPowerAdvantageDataTo((ServerPlayerEntity)player);
+        if(this.getGuiOwner() == null) return InteractionResult.PASS;
+		if(tileEntity instanceof PoweredEntity && player instanceof ServerPlayer){
+			((PoweredEntity)tileEntity).syncPowerAdvantageDataTo((ServerPlayer)player);
 		}
-		if (!(player instanceof ServerPlayerEntity)) return ActionResultType.PASS;
-		MachineGUIRegistry.open((ServerPlayerEntity) player, w, coord, this.getGuiID());
-        return ActionResultType.SUCCESS;
+		if (!(player instanceof ServerPlayer)) return InteractionResult.PASS;
+		MachineGUIRegistry.open((ServerPlayer) player, w, coord, this.getGuiID());
+        return InteractionResult.SUCCESS;
     }
 
     
    
 	@Override
-	public void onRemove(BlockState state, World world, BlockPos pos, BlockState newState,
+	public void onRemove(BlockState state, Level world, BlockPos pos, BlockState newState,
 			boolean isMoving) {
 		if (state.getBlock() != newState.getBlock()) {
-			TileEntity te = world.getBlockEntity(pos);
-			if (te instanceof IInventory) {
-				InventoryHelper.dropContents(world, pos, (IInventory) te);
-				((IInventory) te).clearContent();
+			BlockEntity te = world.getBlockEntity(pos);
+			if (te instanceof Container) {
+				Containers.dropContents(world, pos, (Container) te);
+				((Container) te).clearContent();
 				world .updateNeighbourForOutputSignal(pos, this);
 			}
 			super.onRemove(state, world, pos, newState, isMoving);

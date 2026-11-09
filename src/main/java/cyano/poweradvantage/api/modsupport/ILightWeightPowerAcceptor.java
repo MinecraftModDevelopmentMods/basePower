@@ -1,8 +1,8 @@
 package cyano.poweradvantage.api.modsupport;
 
 import cyano.poweradvantage.api.ConduitType;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.Direction;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.core.Direction;
 
 /**
  * This interface is used in the LightWeightPowerRegistry to allow established mods to optionally 
@@ -46,7 +46,7 @@ public interface ILightWeightPowerAcceptor {
 	 * @param powerType   The type of power being offered
 	 * @return How much energy of the provided type your TileEntity is willing to accept.
 	 */
-	public abstract float getEnergyDemand(TileEntity yourMachine, ConduitType powerType);
+	public abstract float getEnergyDemand(BlockEntity yourMachine, ConduitType powerType);
 
 	/**
 	 * This method is called when energy it being provided to your TileEntity. The implementation of
@@ -58,6 +58,6 @@ public interface ILightWeightPowerAcceptor {
 	 * @param powerType   The type of power provided
 	 * @return The actual amount of power taken
 	 */
-	public abstract float addEnergy(TileEntity yourMachine, float amountAdded, ConduitType powerType);
+	public abstract float addEnergy(BlockEntity yourMachine, float amountAdded, ConduitType powerType);
 
 }

@@ -7,6 +7,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -182,10 +183,10 @@ public class WorldgenSamplingJobTest {
         for (long packed : chunks) square(halo, (int) (packed >> 32), (int) packed, 2);
         for (long packed : halo) world.populateChunk((int) (packed >> 32), (int) packed);
         Map<String, String> expected = new LinkedHashMap<>();
-        expected.put("poweradvantage:crude_oil", "DESERT");
+        expected.put("basepower:crude_oil", "DESERT");
         expected.put("mineralogy:crude_oil", "OCEAN");
-        expected.put("electricadvantage:li_ore", null);
-        expected.put("electricadvantage:sulfur_ore", null);
+        expected.put("baseelectric:li_ore", null);
+        expected.put("baseelectric:sulfur_ore", null);
         expected.put("mineralogy:sulfur_ore", null);
         Map<String, Long> counts = new LinkedHashMap<>(), violations = new LinkedHashMap<>(), boundaries = new LinkedHashMap<>();
         for (String id : expected.keySet()) {
@@ -243,12 +244,24 @@ public class WorldgenSamplingJobTest {
             return region && (y == 64 || ((x + z) & 1) != 0);
         }
 
-        @Override public void populateChunk(int x, int z) {
+        @Override public CompletableFuture<WorldgenSamplingJob.SampleChunk> requestChunk(int x, int z, boolean counting) {
+            if (counting) return CompletableFuture.completedFuture(sampleChunk(x, z));
+            populateChunk(x, z);
+            return CompletableFuture.completedFuture(new WorldgenSamplingJob.SampleChunk() {
+                @Override public boolean centerMatches(String expected) { throw new AssertionError("Population was counted"); }
+                @Override public String blockName(int bx, int y, int bz) { throw new AssertionError("Population was counted"); }
+            });
+        }
+
+        @Override public void releaseChunk(int x, int z) { }
+        @Override public void close() { }
+
+        public void populateChunk(int x, int z) {
             if (failPopulation) throw new IllegalStateException("population failed");
             populated.add(pack(x, z));
         }
 
-        @Override public WorldgenSamplingJob.SampleChunk sampleChunk(int chunkX, int chunkZ) {
+        public WorldgenSamplingJob.SampleChunk sampleChunk(int chunkX, int chunkZ) {
             sampled.add(pack(chunkX, chunkZ));
             return new WorldgenSamplingJob.SampleChunk() {
                 @Override public boolean centerMatches(String expected) {
@@ -263,10 +276,10 @@ public class WorldgenSamplingJobTest {
                     minY = Math.min(minY, y);
                     maxY = Math.max(maxY, y);
                     if ((z & 15) != 0) return null;
-                    if ((x & 15) == 0 && y == 0) return "poweradvantage:crude_oil";
+                    if ((x & 15) == 0 && y == 0) return "basepower:crude_oil";
                     if ((x & 15) == 1 && y == 96) return "mineralogy:crude_oil";
-                    if ((x & 15) == 2 && y == 48) return "electricadvantage:li_ore";
-                    if ((x & 15) == 3 && y == 49) return "electricadvantage:sulfur_ore";
+                    if ((x & 15) == 2 && y == 48) return "baseelectric:li_ore";
+                    if ((x & 15) == 3 && y == 49) return "baseelectric:sulfur_ore";
                     if ((x & 15) == 4 && y == 50) return "mineralogy:sulfur_ore";
                     return "minecraft:stone";
                 }

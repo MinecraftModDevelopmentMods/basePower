@@ -7,10 +7,10 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.resources.ResourceLocation;
 
 /**
  * Registration surface for Advantage add-ons that need pre-flattening world
@@ -25,10 +25,11 @@ public final class LegacyMigrationApi {
 
     @FunctionalInterface
     public interface NbtMigration {
-        boolean migrate(CompoundNBT compound);
+        boolean migrate(CompoundTag compound);
     }
 
     private static final Set<String> NAMESPACES = new LinkedHashSet<>();
+    private static final Map<String, String> NAMESPACE_ALIASES = new LinkedHashMap<>();
     private static final Map<ResourceLocation, ResourceLocation> BLOCK_ALIASES = new LinkedHashMap<>();
     private static final Map<ResourceLocation, ResourceLocation> ITEM_ALIASES = new LinkedHashMap<>();
     private static final Map<ResourceLocation, BlockStateCodec> BLOCK_CODECS = new LinkedHashMap<>();
@@ -43,6 +44,20 @@ public final class LegacyMigrationApi {
 
     public static synchronized void registerNamespace(String namespace) {
         NAMESPACES.add(normalize(namespace));
+    }
+
+    /** Only installed mods contribute aliases. Explicit path aliases still take precedence. */
+    public static synchronized void registerNamespaceAlias(String legacyNamespace, String currentNamespace) {
+        String legacy = normalize(legacyNamespace);
+        String current = normalize(currentNamespace);
+        registerNamespace(legacy);
+        registerNamespace(current);
+        NAMESPACE_ALIASES.put(legacy, current);
+    }
+
+    public static synchronized ResourceLocation registryTarget(ResourceLocation id) {
+        String current = NAMESPACE_ALIASES.get(id.getNamespace());
+        return current == null ? id : new ResourceLocation(current, id.getPath());
     }
 
     public static synchronized void registerBlockAlias(ResourceLocation legacyId, ResourceLocation currentId) {
@@ -63,6 +78,22 @@ public final class LegacyMigrationApi {
 
     public static synchronized void registerTileEntityAlias(String legacyId, String currentId) {
         TILE_ALIASES.put(normalizeIdentity(legacyId), normalizeIdentity(currentId));
+    }
+
+    public static synchronized void registerTileEntityAliases(ResourceLocation current) {
+        String path = current.getPath();
+        registerTileVariants(current.getNamespace(), path, current.toString());
+        for (Map.Entry<String, String> alias : NAMESPACE_ALIASES.entrySet()) {
+            if (alias.getValue().equals(current.getNamespace())) {
+                registerTileVariants(alias.getKey(), path, current.toString());
+            }
+        }
+    }
+
+    private static void registerTileVariants(String namespace, String path, String target) {
+        registerTileEntityAlias(namespace + ":" + path, target);
+        registerTileEntityAlias(namespace + "." + path, target);
+        registerTileEntityAlias("minecraft:" + namespace + "." + path, target);
     }
 
     public static synchronized void registerEntityAlias(String legacyId, String currentId) {
@@ -92,16 +123,17 @@ public final class LegacyMigrationApi {
 
     public static synchronized ResourceLocation blockTarget(ResourceLocation legacyId) {
         ResourceLocation target = BLOCK_ALIASES.get(legacyId);
-        return target == null ? legacyId : target;
+        return target == null ? registryTarget(legacyId) : target;
     }
 
     public static synchronized ResourceLocation itemTarget(ResourceLocation legacyId) {
         ResourceLocation target = ITEM_ALIASES.get(legacyId);
-        return target == null ? legacyId : target;
+        return target == null ? registryTarget(legacyId) : target;
     }
 
     public static synchronized BlockState decodeBlockState(ResourceLocation legacyId, Block block, int metadata) {
         BlockStateCodec codec = BLOCK_CODECS.get(legacyId);
+        if (codec == null) codec = BLOCK_CODECS.get(blockTarget(legacyId));
         return codec == null ? block.defaultBlockState() : codec.decode(block, metadata & 15);
     }
 
@@ -129,7 +161,7 @@ public final class LegacyMigrationApi {
         return DURABLE_ITEMS.contains(id) || DURABLE_ITEMS.contains(itemTarget(id));
     }
 
-    public static synchronized boolean migrateRegisteredNbt(CompoundNBT compound) {
+    public static synchronized boolean migrateRegisteredNbt(CompoundTag compound) {
         boolean changed = false;
         for (NbtMigration migration : NBT_MIGRATIONS.values()) changed |= migration.migrate(compound);
         return changed;

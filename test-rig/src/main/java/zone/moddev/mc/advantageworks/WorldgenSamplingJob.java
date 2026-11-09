@@ -4,7 +4,9 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 
 /** The original sample order, with a bounded batch and a return to the server between phases. */
 final class WorldgenSamplingJob {
@@ -12,12 +14,15 @@ final class WorldgenSamplingJob {
     static final int PLAN_BATCH = 64;
     static final int POPULATION_BATCH = 4;
     static final int COUNT_BATCH = 2;
+    static final int MAX_IN_FLIGHT = 4;
     private static final int SEARCH_SIDE = 129;
 
     interface WorldAccess {
         boolean matchesBiome(String expected, int x, int y, int z);
-        void populateChunk(int chunkX, int chunkZ);
-        SampleChunk sampleChunk(int chunkX, int chunkZ);
+        CompletableFuture<SampleChunk> requestChunk(int chunkX, int chunkZ, boolean counting);
+        void releaseChunk(int chunkX, int chunkZ);
+        void close();
+        default Map<String, Object> diagnostics() { return java.util.Collections.emptyMap(); }
     }
 
     interface SampleChunk {
@@ -34,7 +39,10 @@ final class WorldgenSamplingJob {
             active = job;
         }
         WorldgenSamplingJob current() { return active; }
-        void release() { active = null; }
+        void release() {
+            try { if (active != null) active.close(); }
+            finally { active = null; }
+        }
     }
 
     private final WorldAccess world;
@@ -46,6 +54,7 @@ final class WorldgenSamplingJob {
     private final Map<String, Long> counts = new LinkedHashMap<>();
     private final Map<String, Long> violations = new LinkedHashMap<>();
     private final Map<String, Long> boundaryBlocks = new LinkedHashMap<>();
+    private final Map<Long, CompletableFuture<SampleChunk>> pending = new LinkedHashMap<>();
     private Phase phase = Phase.SPAWN;
     private int squareX, squareZ, squareIndex, searchIndex;
     private int locatedX, locatedZ;
@@ -53,6 +62,7 @@ final class WorldgenSamplingJob {
     private double bestDistance = Double.POSITIVE_INFINITY;
     private Iterator<Long> iterator;
     private RuntimeException failure;
+    private boolean closed;
 
     WorldgenSamplingJob(WorldAccess world, int spawnX, int spawnY, int spawnZ, int seaLevel, int radius) {
         if (radius < 1 || radius > 16) throw new IllegalArgumentException("Worldgen radius must be 1..16");
@@ -65,10 +75,10 @@ final class WorldgenSamplingJob {
         squareX = spawnX >> 4;
         squareZ = spawnZ >> 4;
         centers.put("spawn", squareX + "," + squareZ);
-        expectedBiomes.put("poweradvantage:crude_oil", "DESERT");
+        expectedBiomes.put("basepower:crude_oil", "DESERT");
         expectedBiomes.put("mineralogy:crude_oil", "OCEAN");
-        expectedBiomes.put("electricadvantage:li_ore", null);
-        expectedBiomes.put("electricadvantage:sulfur_ore", null);
+        expectedBiomes.put("baseelectric:li_ore", null);
+        expectedBiomes.put("baseelectric:sulfur_ore", null);
         expectedBiomes.put("mineralogy:sulfur_ore", null);
         for (String id : expectedBiomes.keySet()) {
             counts.put(id, 0L);
@@ -97,11 +107,34 @@ final class WorldgenSamplingJob {
             failure = exception;
             phase = Phase.FAILED;
         }
+        if (finished()) cleanup();
     }
 
     Phase phase() { return phase; }
     boolean finished() { return phase == Phase.DONE || phase == Phase.FAILED; }
     RuntimeException failure() { return failure; }
+    Map<String, Object> diagnostics() { return world.diagnostics(); }
+
+    void close() {
+        if (!finished()) {
+            failure = new IllegalStateException("Worldgen sample cancelled before completion");
+            phase = Phase.FAILED;
+        }
+        cleanup();
+    }
+
+    private void cleanup() {
+        if (closed) return;
+        closed = true;
+        for (CompletableFuture<SampleChunk> future : pending.values()) future.cancel(false);
+        pending.clear();
+        try { world.close(); }
+        catch (RuntimeException exception) {
+            if (failure == null) failure = exception;
+            else if (failure != exception) failure.addSuppressed(exception);
+            phase = Phase.FAILED;
+        }
+    }
 
     Map<String, Object> result() {
         if (phase != Phase.DONE) throw new IllegalStateException("Worldgen sample is not complete", failure);
@@ -171,40 +204,61 @@ final class WorldgenSamplingJob {
     }
 
     private void populate() {
-        for (int work = 0; work < POPULATION_BATCH && iterator.hasNext(); work++) {
-            long packed = iterator.next();
-            world.populateChunk((int) (packed >> 32), (int) packed);
-        }
-        if (!iterator.hasNext()) {
+        advanceChunks(false);
+        if (!iterator.hasNext() && pending.isEmpty()) {
             iterator = chunks.iterator();
             phase = Phase.COUNT;
         }
     }
 
     private void count() {
-        for (int work = 0; work < COUNT_BATCH && iterator.hasNext(); work++) {
-            long packed = iterator.next();
+        advanceChunks(true);
+        if (!iterator.hasNext() && pending.isEmpty()) phase = Phase.DONE;
+    }
+
+    private void advanceChunks(boolean counting) {
+        // Inspect only completed futures; the server tick must never wait for native lighting.
+        for (CompletableFuture<SampleChunk> future : pending.values()) {
+            if (future.isDone()) Objects.requireNonNull(future.getNow(null), "Native FULL chunk was lost");
+        }
+        int budget = counting ? COUNT_BATCH : POPULATION_BATCH;
+        Iterator<Map.Entry<Long, CompletableFuture<SampleChunk>>> completed = pending.entrySet().iterator();
+        for (int work = 0; work < budget && completed.hasNext(); work++) {
+            Map.Entry<Long, CompletableFuture<SampleChunk>> entry = completed.next();
+            if (!entry.getValue().isDone()) break;
+            long packed = entry.getKey();
             int chunkX = (int) (packed >> 32), chunkZ = (int) packed;
-            SampleChunk chunk = world.sampleChunk(chunkX, chunkZ);
-            int minX = chunkX << 4, minZ = chunkZ << 4;
-            for (int localX = 0; localX < 16; localX++) {
-                for (int localZ = 0; localZ < 16; localZ++) {
-                    for (int y = 0; y <= 96; y++) {
-                        int x = minX + localX, z = minZ + localZ;
-                        String name = chunk.blockName(x, y, z);
-                        if (name == null || !counts.containsKey(name)) continue;
-                        counts.put(name, counts.get(name) + 1L);
-                        String expected = expectedBiomes.get(name);
-                        if (expected != null && !chunk.centerMatches(expected)) {
-                            violations.put(name, violations.get(name) + 1L);
-                        } else if (expected != null && !world.matchesBiome(expected, x, y, z)) {
-                            boundaryBlocks.put(name, boundaryBlocks.get(name) + 1L);
-                        }
+            SampleChunk chunk = Objects.requireNonNull(entry.getValue().getNow(null), "Native FULL chunk was lost");
+            if (counting) countChunk(chunk, chunkX, chunkZ);
+            completed.remove();
+            world.releaseChunk(chunkX, chunkZ);
+        }
+        for (int work = 0; work < budget && pending.size() < MAX_IN_FLIGHT && iterator.hasNext(); work++) {
+            long packed = iterator.next();
+            CompletableFuture<SampleChunk> future = Objects.requireNonNull(
+                    world.requestChunk((int) (packed >> 32), (int) packed, counting), "Native chunk request was null");
+            pending.put(packed, future);
+        }
+    }
+
+    private void countChunk(SampleChunk chunk, int chunkX, int chunkZ) {
+        int minX = chunkX << 4, minZ = chunkZ << 4;
+        for (int localX = 0; localX < 16; localX++) {
+            for (int localZ = 0; localZ < 16; localZ++) {
+                for (int y = 0; y <= 96; y++) {
+                    int x = minX + localX, z = minZ + localZ;
+                    String name = chunk.blockName(x, y, z);
+                    if (name == null || !counts.containsKey(name)) continue;
+                    counts.put(name, counts.get(name) + 1L);
+                    String expected = expectedBiomes.get(name);
+                    if (expected != null && !chunk.centerMatches(expected)) {
+                        violations.put(name, violations.get(name) + 1L);
+                    } else if (expected != null && !world.matchesBiome(expected, x, y, z)) {
+                        boundaryBlocks.put(name, boundaryBlocks.get(name) + 1L);
                     }
                 }
             }
         }
-        if (!iterator.hasNext()) phase = Phase.DONE;
     }
 
     private static long pack(int x, int z) { return ((long) x << 32) ^ (z & 0xffffffffL); }
