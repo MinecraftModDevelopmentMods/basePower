@@ -44,13 +44,13 @@ def verify_engine_sources(archive):
                 sources=dict(ENGINE_SOURCES))
 
 
-def require_geometry(snapshot, forced=False):
+def require_geometry(snapshot, forced=False, *, max_distance=MAX_DISTANCE):
     geometry = snapshot.get("ticketGeometry", {})
     expected = dict(fullLevel=FULL_LEVEL, entityTickingLevel=FORCED_LEVEL,
-                    maxDistance=MAX_DISTANCE, lastHolderLevel=LAST_HOLDER_LEVEL,
-                    holderRadius=HOLDER_RADIUS)
+                    maxDistance=max_distance, lastHolderLevel=FULL_LEVEL + max_distance,
+                    holderRadius=FULL_LEVEL + max_distance - FORCED_LEVEL)
     if any(geometry.get(key) != value for key, value in expected.items()):
-        raise AssertionError("Live native117 ticket geometry differs from the verified engine: " + str(geometry))
+        raise AssertionError("Live ticket geometry differs from the verified engine: " + str(geometry))
     levels = geometry.get("observedForcedLevels")
     if levels not in ([], [FORCED_LEVEL]) or forced and levels != [FORCED_LEVEL]:
         raise AssertionError("Actual native forced-ticket level was not verified: " + str(levels))

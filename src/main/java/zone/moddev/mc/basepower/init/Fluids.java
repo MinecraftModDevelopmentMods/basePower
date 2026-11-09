@@ -47,7 +47,11 @@ public final class Fluids {
         if (initialized) return;
         fluidConduit_water = registerNewFluid(net.minecraft.world.level.material.Fluids.WATER);
         fluidConduit_lava = registerNewFluid(net.minecraft.world.level.material.Fluids.LAVA);
+        initialized = true;
+    }
 
+    @SubscribeEvent
+    public static void registerFluids(RegistryEvent.Register<Fluid> event) {
         flowing_crude_oil = new PowerFluid.Flowing(Kind.CRUDE);
         crude_oil = new PowerFluid.Source(Kind.CRUDE);
         flowing_refined_oil = new PowerFluid.Flowing(Kind.REFINED);
@@ -61,16 +65,11 @@ public final class Fluids {
         registerNewFluid(flowing_crude_oil);
         registerNewFluid(refined_oil);
         registerNewFluid(flowing_refined_oil);
-        initialized = true;
+        event.getRegistry().registerAll(crude_oil, flowing_crude_oil, refined_oil, flowing_refined_oil);
     }
 
     private static void register(String name, Fluid fluid) {
         fluid.setRegistryName(PowerAdvantage.MODID, name);
-    }
-
-    @SubscribeEvent
-    public static void registerFluids(RegistryEvent.Register<Fluid> event) {
-        event.getRegistry().registerAll(crude_oil, flowing_crude_oil, refined_oil, flowing_refined_oil);
     }
 
     public static ConduitType registerNewFluid(Fluid fluid) {

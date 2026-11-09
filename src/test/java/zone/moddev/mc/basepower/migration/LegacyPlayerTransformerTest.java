@@ -171,8 +171,7 @@ public class LegacyPlayerTransformerTest {
     }
 
     private static Object embeddedInfo(Class<?> type, CompoundTag source, int version) throws Exception {
-        // The real private constructor only assigns fields. The getter needs its
-        // fixer/version/player arguments, not a world, generator, or live server.
+        // The native constructor also uses LevelSettings to attach the lifecycle.
         for (Constructor<?> constructor : type.getDeclaredConstructors()) {
             if (!Modifier.isPrivate(constructor.getModifiers())) continue;
             Class<?>[] types = constructor.getParameterTypes();
@@ -182,6 +181,12 @@ public class LegacyPlayerTransformerTest {
                 if (types[i] == boolean.class) args[i] = false;
                 if (types[i] == long.class) args[i] = 0L;
                 if (types[i] == float.class) args[i] = 0F;
+                if (types[i] == com.mojang.serialization.Lifecycle.class) args[i] = com.mojang.serialization.Lifecycle.stable();
+                if (types[i] == net.minecraft.world.level.LevelSettings.class) {
+                    args[i] = new net.minecraft.world.level.LevelSettings("Test", net.minecraft.world.level.GameType.SURVIVAL,
+                            false, net.minecraft.world.Difficulty.NORMAL, false, new net.minecraft.world.level.GameRules(),
+                            net.minecraft.world.level.DataPackConfig.DEFAULT);
+                }
             }
             args[0] = DataFixers.getDataFixer();
             args[1] = version;
@@ -200,7 +205,7 @@ public class LegacyPlayerTransformerTest {
     private static void transform(ClassNode node, String target) throws Exception {
         ScriptEngine engine = new ScriptEngineManager().getEngineByName("nashorn");
         assertNotNull("Use the Java 8 test toolchain", engine);
-        try (InputStreamReader reader = new InputStreamReader(resource("/coremods/poweradvantage_116_migration.js"), StandardCharsets.UTF_8)) {
+        try (InputStreamReader reader = new InputStreamReader(resource("/coremods/poweradvantage_118_migration.js"), StandardCharsets.UTF_8)) {
             engine.eval(reader);
         }
         engine.put("targetClass", node);

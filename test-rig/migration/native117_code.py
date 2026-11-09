@@ -52,6 +52,8 @@ class CodeCustody:
 
 
 class NativeLaunch(HistoricalServer):
+    forge_version = "1.17.1-37.1.1"
+
     def validate_native_log(self, path):
         from native117 import require_clean_log
         require_clean_log(path)
@@ -60,7 +62,7 @@ class NativeLaunch(HistoricalServer):
         runtime = Path(runtime)
         self.native_label = label
         self.native_runtime = runtime
-        logging_jar = runtime / "libraries/net/minecraftforge/fmlloader/1.17.1-37.1.1/fmlloader-1.17.1-37.1.1.jar"
+        logging_jar = runtime / f"libraries/net/minecraftforge/fmlloader/{self.forge_version}/fmlloader-{self.forge_version}.jar"
         if not logging_jar.is_file(): raise FileNotFoundError("Missing pinned Forge logging configuration")
         logging_configuration = "jar:" + logging_jar.resolve().as_uri() + "!/log4j2.xml"
         self.lines = queue.Queue()

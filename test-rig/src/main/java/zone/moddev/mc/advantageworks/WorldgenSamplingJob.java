@@ -18,6 +18,7 @@ final class WorldgenSamplingJob {
     private static final int SEARCH_SIDE = 129;
 
     interface WorldAccess {
+        default int minBuildHeight() { return 0; }
         boolean matchesBiome(String expected, int x, int y, int z);
         CompletableFuture<SampleChunk> requestChunk(int chunkX, int chunkZ, boolean counting);
         void releaseChunk(int chunkX, int chunkZ);
@@ -46,7 +47,7 @@ final class WorldgenSamplingJob {
     }
 
     private final WorldAccess world;
-    private final int spawnX, spawnY, spawnZ, seaLevel, radius;
+    private final int spawnX, spawnY, spawnZ, seaLevel, radius, minBuildHeight;
     private final Set<Long> chunks = new LinkedHashSet<>();
     private final Set<Long> populationChunks = new LinkedHashSet<>();
     private final Map<String, String> expectedBiomes = new LinkedHashMap<>();
@@ -72,6 +73,7 @@ final class WorldgenSamplingJob {
         this.spawnZ = spawnZ;
         this.seaLevel = seaLevel;
         this.radius = radius;
+        minBuildHeight = world.minBuildHeight();
         squareX = spawnX >> 4;
         squareZ = spawnZ >> 4;
         centers.put("spawn", squareX + "," + squareZ);
@@ -245,7 +247,7 @@ final class WorldgenSamplingJob {
         int minX = chunkX << 4, minZ = chunkZ << 4;
         for (int localX = 0; localX < 16; localX++) {
             for (int localZ = 0; localZ < 16; localZ++) {
-                for (int y = 0; y <= 96; y++) {
+                for (int y = minBuildHeight; y <= 96; y++) {
                     int x = minX + localX, z = minZ + localZ;
                     String name = chunk.blockName(x, y, z);
                     if (name == null || !counts.containsKey(name)) continue;

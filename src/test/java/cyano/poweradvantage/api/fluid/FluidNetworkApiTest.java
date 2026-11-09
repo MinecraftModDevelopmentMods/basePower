@@ -10,7 +10,6 @@ import cyano.poweradvantage.api.ConduitType;
 import cyano.poweradvantage.api.IPowerMachine;
 import cyano.poweradvantage.api.PowerConnectorContext;
 import cyano.poweradvantage.api.PowerRequest;
-import net.minecraft.world.level.material.EmptyFluid;
 import net.minecraft.world.level.material.Fluid;
 
 public class FluidNetworkApiTest {
@@ -19,7 +18,7 @@ public class FluidNetworkApiTest {
 
     private static Fluid testFluid() {
         net.minecraft.SharedConstants.tryDetectVersion(); net.minecraft.server.Bootstrap.bootStrap();
-        return new EmptyFluid();
+        return net.minecraft.world.level.material.Fluids.WATER;
     }
 
     @Test

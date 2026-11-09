@@ -8,14 +8,16 @@ import java.nio.charset.StandardCharsets;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
-public class Native117PackMetadataTest {
-    @Test public void harnessResourcesDeclareTheNative117PackFormat() throws Exception {
+public class Native118PackMetadataTest {
+    @Test public void harnessResourcesDeclareTheNative118PackFormats() throws Exception {
         try (InputStream input = getClass().getResourceAsStream("/pack.mcmeta")) {
             assertNotNull(input);
             JsonObject pack = new JsonParser().parse(new InputStreamReader(input, StandardCharsets.UTF_8))
                     .getAsJsonObject().getAsJsonObject("pack");
             assertTrue(pack.getAsJsonPrimitive("pack_format").isNumber());
-            assertEquals(7, pack.get("pack_format").getAsInt());
+            assertEquals(9, pack.get("pack_format").getAsInt());
+            assertEquals(8, pack.get("forge:resource_pack_format").getAsInt());
+            assertEquals(9, pack.get("forge:data_pack_format").getAsInt());
         }
     }
 }

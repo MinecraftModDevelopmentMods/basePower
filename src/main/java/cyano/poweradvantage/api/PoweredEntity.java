@@ -296,14 +296,18 @@ public abstract class PoweredEntity extends BlockEntity implements IPowerMachine
 	 * the network.
 	 */
 	@Override
-	public CompoundTag save(final CompoundTag tagRoot) {
-		super.save(tagRoot);
+	protected void saveAdditional(final CompoundTag tagRoot) {
+		super.saveAdditional(tagRoot);
 		int[] data = new int[this.getTypes().length];
 		for (int i = 0; i < data.length; i++) {
 			data[i] = Float.floatToIntBits(this.getEnergy(this.getTypes()[i]));
 		}
 		tagRoot.putIntArray("Energy", data);
-		return tagRoot;
+	}
+
+	/** @deprecated Minecraft now serializes through {@link #saveWithFullMetadata()}. */
+	@Deprecated public CompoundTag save(CompoundTag tag) {
+		return tag.merge(saveWithFullMetadata());
 	}
 
 	/** @deprecated Minecraft now calls {@link #load(CompoundTag)}. */

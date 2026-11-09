@@ -127,13 +127,13 @@ def restarted_state(before, after):
     return dict(status="PASS", drills=len(after), exactEnergy=True)
 
 
-def assertions_state(records, stations):
+def assertions_state(records, stations, minecraft="1.17.1"):
     if set(records) != {station["id"] for station in stations}:
         raise AssertionError("The broad sweep omitted a bay")
     counts = Counter()
     manual = []
     for key, document in records.items():
-        if document["station"] != key or document["minecraft"] != "1.17.1":
+        if document["station"] != key or document["minecraft"] != minecraft:
             raise AssertionError("Wrong bay/target report")
         if document["status"] not in ("PASS", "MANUAL_REQUIRED"):
             raise AssertionError(key + ": " + document["status"])
@@ -179,7 +179,7 @@ def configure_broad(runtime, port):
     path.write_text("\n".join(lines) + "\n" + "".join(f"{key}={value}\n" for key, value in overrides.items()))
 
 
-class BroadServer(Server):
+class BroadCommands:
     def command(self, command, token):
         self.send(command)
         self.wait(token, 150)
@@ -196,23 +196,47 @@ class BroadServer(Server):
         return records
 
 
-def run_profile(args, profile, output, name, port, stations):
-    if name == "packaged-decoupled":
-        profile = (profile[0], profile[1], [p for p in profile[2] if not p.name.startswith("BaseMetals-")])
+class BroadServer(BroadCommands, Server):
+    pass
+
+
+def run_profile(args, profile, output, name, port, stations, *, native118_target=None):
     runtime = output / name
-    launcher = stage(runtime, profile)
+    if native118_target is None:
+        if name == "packaged-decoupled":
+            profile = (profile[0], profile[1], [p for p in profile[2] if not p.name.startswith("BaseMetals-")])
+        launcher = stage(runtime, profile)
+        pins = read_json(args.target_manifest)["target117"]["jars"]
+        verify = lambda: verify_staged(runtime, profile)
+        require_boot = require_native_boot
+        server_type, java = BroadServer, args.java8
+        versions = dict(minecraft="1.17.1", forge="37.1.1")
+    else:
+        import native118
+
+        class NativeBroadServer(BroadCommands, native118.Server):
+            pass
+
+        seed, code, entries = native118_target
+        if name == "packaged-decoupled":
+            entries = {key: value for key, value in entries.items() if key != "basemetals"}
+        launcher = native118.stage(runtime, (seed, code, entries), port)
+        pins = entries.values()
+        verify = lambda: native118.verify_runtime(runtime)
+        require_boot = native118.require_clean_log
+        server_type, java = NativeBroadServer, args.java17
+        versions = dict(minecraft=native118.MINECRAFT, forge=native118.FORGE)
     configure_broad(runtime, port)
     authorize_broad(runtime)
     result = dict(status="FAIL", profile=name, port=port, phases={})
-    pins = read_json(args.target_manifest)["target117"]["jars"]
     expected_mods = {pin["id"]: pin["version"] for pin in pins
                      if name != "packaged-decoupled" or pin["id"] != "basemetals"}
-    expected_mods.update(minecraft="1.17.1", forge="37.1.1")
+    expected_mods.update(versions)
     result["expectedMods"] = expected_mods
     server = None
     try:
-        verify_staged(runtime, profile)
-        server = BroadServer(runtime, args.java8, launcher, "first")
+        verify()
+        server = server_type(runtime, java, launcher, "first")
         server.command("advworks build all", "Advantage Works built 21 station(s)")
         # Named finite stock and tile data are commissioning witnesses, not repairs
         # performed after operation or restart. Every destination is unchanged later.
@@ -239,7 +263,7 @@ def run_profile(args, profile, output, name, port, stations):
             server.command("advworks stop " + sid, "Stopped " + sid)
         first = server.check_all(stations, "first")
         loaded_mods(first, expected_mods)
-        result["phases"]["first"] = assertions_state(first, stations)
+        result["phases"]["first"] = assertions_state(first, stations, versions["minecraft"])
         before = {}
         for station in stations:
             if station["id"] in DRILL_BAYS:
@@ -248,14 +272,14 @@ def run_profile(args, profile, output, name, port, stations):
         result["beforeRestart"] = before
         server.close()
         server = None
-        require_native_boot(runtime / "console-first.log")
-        verify_staged(runtime, profile)
-        server = BroadServer(runtime, args.java8, launcher, "restarted")
+        require_boot(runtime / "console-first.log")
+        verify()
+        server = server_type(runtime, java, launcher, "restarted")
         # No start, reset, data merge, replacement, or refill on the second boot.
         time.sleep(args.run_seconds)
         second = server.check_all(stations, "restarted")
         loaded_mods(second, expected_mods)
-        result["phases"]["restarted"] = assertions_state(second, stations)
+        result["phases"]["restarted"] = assertions_state(second, stations, versions["minecraft"])
         after = {}
         for station in stations:
             if station["id"] in DRILL_BAYS:
@@ -264,8 +288,8 @@ def run_profile(args, profile, output, name, port, stations):
         result["phases"]["persistence"] = restarted_state(before, after)
         server.close()
         server = None
-        require_native_boot(runtime / "console-restarted.log")
-        verify_staged(runtime, profile)
+        require_boot(runtime / "console-restarted.log")
+        verify()
         result["status"] = "PASS"
     except Exception:
         result["error"] = traceback.format_exc()

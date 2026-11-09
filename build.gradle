@@ -45,7 +45,7 @@ ext.release_tag = project.mod_version
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(16)
+        languageVersion = JavaLanguageVersion.of(17)
         vendor = JvmVendorSpec.ADOPTIUM
     }
     withSourcesJar()
@@ -54,11 +54,11 @@ java {
 
 tasks.withType(JavaCompile).configureEach {
     javaCompiler = javaToolchains.compilerFor {
-        languageVersion = JavaLanguageVersion.of(16)
+        languageVersion = JavaLanguageVersion.of(17)
         vendor = JvmVendorSpec.ADOPTIUM
     }
-    sourceCompatibility = JavaVersion.VERSION_16
-    targetCompatibility = JavaVersion.VERSION_16
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
     options.encoding = 'UTF-8'
     options.compilerArgs.addAll(['-Xmaxerrs', '1000'])
 }
@@ -132,7 +132,7 @@ sourceSets.main.resources {
 def forgeRunModClassesDirectory = layout.buildDirectory.dir('forge-run-mod-classes/main')
 def prepareForgeRunModClasses = tasks.register('prepareForgeRunModClasses', Sync) {
     group = 'ide'
-    description = 'Merges classes and processed resources for Forge 1.17 launches.'
+    description = 'Merges classes and processed resources for Forge 1.18 launches.'
     dependsOn tasks.named('classes')
     from sourceSets.main.output
     into forgeRunModClassesDirectory
@@ -167,11 +167,11 @@ repositories {
 // The default paths mirror the local MMD checkout layout without tying the
 // build to a drive letter. CI and other layouts can override either path.
 def baseMetalsDeobfJar = file(providers.gradleProperty('baseMetalsDeobfJar')
-        .getOrElse('../../../BaseMetals/BaseMetals 117/BaseMetals/build/libs-dev/'
+        .getOrElse('../../../BaseMetals/BaseMetals 118/BaseMetals/build/libs-dev/'
                 + "BaseMetals-${project.basemetals_version}-deobf.jar"))
 def oreSpawnDeobfJar = file(providers.gradleProperty('oreSpawnDeobfJar')
-        .getOrElse('../../../MinecraftMineralogy/OS117/OreSpawn/build/libs-dev/'
-                + 'OreSpawn-4.1.0.117011-deobf.jar'))
+        .getOrElse('../../../MinecraftMineralogy/OS118/OreSpawn/build/libs-dev/'
+                + "OreSpawn-${project.orespawn_version}-deobf.jar"))
 
 dependencies {
     implementation minecraft.dependency(
@@ -333,22 +333,23 @@ tasks.register('verifyReleaseConfiguration') {
     group = 'verification'
     description = 'Validates release identity, target metadata, and optional integration policy.'
     doLast {
-        if (new JsonSlurper().parse(file('src/main/resources/pack.mcmeta')).pack.pack_format != 7) {
-            throw new GradleException('Minecraft 1.17.1 resources must use pack format 7')
+        def pack = new JsonSlurper().parse(file('src/main/resources/pack.mcmeta')).pack
+        if (pack.pack_format != 9 || pack['forge:resource_pack_format'] != 8 || pack['forge:data_pack_format'] != 9) {
+            throw new GradleException('Minecraft 1.18.2 requires resource pack format 8 and data pack format 9')
         }
-        if (project.mod_version != '2.4.9.117011') {
+        if (project.mod_version != '2.4.10.118021') {
             throw new GradleException("Unexpected PowerAdvantage release version: ${project.mod_version}")
         }
-        if (project.minecraft_version != '1.17.1'
-                || project.forge_version != '37.1.1'
+        if (project.minecraft_version != '1.18.2'
+                || project.forge_version != '40.3.0'
                 || project.mapping_channel != 'official'
-                || project.mapping_version != '1.17.1'
-                || project.mcp_version != '20210706.113038') {
+                || project.mapping_version != '1.18.2'
+                || project.mcp_version != '20220404.173914') {
             throw new GradleException('Unexpected Minecraft, Forge, or mappings target')
         }
         if (project.loader_name != 'forge' || project.loader_code != '1'
-                || project.java_version != '16'
-                || project.java_toolchain_version != '16.0.2+7'
+                || project.java_version != '17'
+                || project.java_toolchain_version != '17.0.1+12'
                 || project.gradle_java_version != '17') {
             throw new GradleException('Unexpected release dispatcher target metadata')
         }
@@ -360,19 +361,19 @@ tasks.register('verifyReleaseConfiguration') {
         }
         if (project.cf_requirements != 'base-metals,mmd-orespawn'
                 || project.cf_optionals != 'additional-loot-tables'
-                || project.cf_versions != '1.17.1') {
+                || project.cf_versions != '1.18.2') {
             throw new GradleException('Unexpected CurseForge dependency or game-version metadata')
         }
-        if (project.basemetals_version != '3.1.1.117011'
-                || project.orespawn_version != '4.1.0.117011'
-                || project.basemetals_source_commit != '0deeeeecdbbc1fbcdecf910c59477de8efe164d7'
-                || project.orespawn_source_commit != 'b56e2b62a1a6ea4d1dd96f8646a87801a817dbdf') {
+        if (project.basemetals_version != '3.1.2.118021'
+                || project.orespawn_version != '4.1.0.118021'
+                || project.basemetals_source_commit != '3488ed58403722ac3ff203cff7680dfc16e0fd3f'
+                || project.orespawn_source_commit != 'd31f52f296739f34a0c13f554abf3e1ac071ae25') {
             throw new GradleException('Unexpected Base Metals or OreSpawn dependency identity')
         }
         String mainSource = file(
                 'src/main/java/zone/moddev/mc/basepower/PowerAdvantage.java').getText('UTF-8')
         if (!mainSource.contains('MODID = "basepower"')
-                || !mainSource.contains('VERSION = "2.4.9.117011"')
+                || !mainSource.contains('VERSION = "2.4.10.118021"')
                 || !mainSource.contains('@Mod(PowerAdvantage.MODID)')) {
             throw new GradleException('PowerAdvantage source identity changed')
         }
@@ -560,7 +561,7 @@ tasks.register('verifyReleaseArtifacts') {
         new ZipFile(mainJar).withCloseable { zip ->
             List<String> names = zip.entries().collect { it.name }
             ['META-INF/mods.toml', 'META-INF/accesstransformer.cfg', 'pack.mcmeta',
-             'coremods/poweradvantage_116_migration.js',
+             'coremods/poweradvantage_118_migration.js',
              'zone/moddev/mc/basepower/PowerAdvantage.class',
              'cyano/poweradvantage/api/PoweredEntity.class',
              'cyano/poweradvantage/api/fluid/FluidNetworkApi.class',
@@ -609,8 +610,8 @@ tasks.register('verifyReleaseArtifacts') {
                     }
                 }
                 int major = ((header[6] & 0xff) << 8) | (header[7] & 0xff)
-                if (major != 60) {
-                    throw new GradleException("${entry.name} uses Java class major ${major}, expected 60")
+                if (major != 61) {
+                    throw new GradleException("${entry.name} uses Java class major ${major}, expected 61")
                 }
             }
         }
@@ -1201,9 +1202,9 @@ tasks.register('clientResourceProbeJar', Jar) {
 // these deobf jars are runtime inputs, never release contents or compile dependencies.
 def advantageExtensionJars = [
         basesteam: file(providers.gradleProperty('steamAdvantageDeobfJar').getOrElse(
-                '../SteamAdvantage/SteamAdvantage/build/libs-dev/baseSteam-2.2.10.117011-deobf.jar')),
+                '../SteamAdvantage/SteamAdvantage/build/libs-dev/baseSteam-2.2.11.118021-deobf.jar')),
         baseelectric: file(providers.gradleProperty('electricAdvantageDeobfJar').getOrElse(
-                '../ElectricAdvantage/ElectricAdvantage/build/libs-dev/baseElectric-2.2.10.117011-deobf.jar'))
+                '../ElectricAdvantage/ElectricAdvantage/build/libs-dev/baseElectric-2.2.11.118021-deobf.jar'))
 ]
 
 tasks.register('prepareCombinedEclipseLaunch') {
@@ -1213,7 +1214,7 @@ tasks.register('prepareCombinedEclipseLaunch') {
     dependsOn tasks.named('deobfJar')
     doLast {
         File inputProfile = file(providers.gradleProperty('advantageDevelopmentProfile').getOrElse(
-                'test-rig/profiles/native117/dev-core.json'))
+                'test-rig/profiles/native118/dev-core.json'))
         def profile = new JsonSlurper().parse(inputProfile)
         if (profile.powerDeobfSha256) {
             File powerJar = tasks.named('jar', Jar).get().archiveFile.get().asFile

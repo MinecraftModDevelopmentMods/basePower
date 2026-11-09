@@ -1,0 +1,43 @@
+{
+  "name": "dev-core",
+  "mode": "development",
+  "runtimeBase": "build/works-native118",
+  "minecraftVersion": "1.18.2",
+  "portStatus": "PORTED_UNQUALIFIED",
+  "qualificationStatus": "UNQUALIFIED",
+  "sourceCommit": "bab9971cc2d593eee1f4a3de6dafc7ec268d25c2",
+  "sourceVersion": "2.4.10.118021",
+  "powerDeobfSha256": "C00F835A7A80BAF332355EF1F181F252B603A017A979D2F41EA3BBEAE314E280",
+  "levelType": "advantageworkstest:test_flat",
+  "levelSeed": "advantage-works-1.18.2-v1",
+  "startupTimeoutSeconds": 180,
+  "forge": {
+    "version": "1.18.2-40.3.0",
+    "installerPath": "../../../../BaseMetals/.runtime-cache/forge-1.18.2-40.3.0-installer.jar",
+    "url": "https://maven.minecraftforge.net/net/minecraftforge/forge/1.18.2-40.3.0/forge-1.18.2-40.3.0-installer.jar",
+    "sha256": "9434C29790504DCD11CE97CB30DD8891B4B18848982357BC1B5ABFA79FB95103"
+  },
+  "mods": [
+    {
+      "id": "basesteam",
+      "version": "2.2.11.118021",
+      "file": "baseSteam-2.2.11.118021-deobf.jar",
+      "path": "../../SteamAdvantage/SteamAdvantage/build/libs-dev/baseSteam-2.2.11.118021-deobf.jar",
+      "sha256": "EAE2ED139593F831AC29791C9C4310988974ABB6B44C32377FC4740A452BD6EE"
+    },
+    {
+      "id": "baseelectric",
+      "version": "2.2.11.118021",
+      "file": "baseElectric-2.2.11.118021-deobf.jar",
+      "path": "../../ElectricAdvantage/ElectricAdvantage/build/libs-dev/baseElectric-2.2.11.118021-deobf.jar",
+      "sha256": "217066658A128190379BE4518E862C7A099D85593A24B1878DECC10924FFE17A"
+    },
+    {
+      "id": "advantageworkstest",
+      "version": "1.1.2.118021",
+      "file": "AdvantageWorksTestHarness-1.1.2.118021-deobf.jar",
+      "path": "build/gradle/libs-dev/AdvantageWorksTestHarness-1.1.2.118021-deobf.jar",
+      "sha256": "0FCE6394EE385B218F2C8E2B262790D7358DD05643EF204912AFE4896271CB8E"
+    }
+  ]
+}

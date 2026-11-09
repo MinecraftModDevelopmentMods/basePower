@@ -1,6 +1,7 @@
 package cyano.poweradvantage.api.fluid;
 
 import java.util.function.BiConsumer;
+import java.util.function.Supplier;
 
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.LiquidBlock;
@@ -20,6 +21,11 @@ public class InteractiveFluidBlock extends LiquidBlock {
 
     public InteractiveFluidBlock(FlowingFluid fluid, Block.Properties properties, boolean flammable,
             BiConsumer<Level, LivingEntity> immersionEffect) {
+        this(() -> fluid, properties, flammable, immersionEffect);
+    }
+
+    public InteractiveFluidBlock(Supplier<? extends FlowingFluid> fluid, Block.Properties properties,
+            boolean flammable, BiConsumer<Level, LivingEntity> immersionEffect) {
         super(fluid, properties);
         this.flammable = flammable;
         this.immersionEffect = immersionEffect;

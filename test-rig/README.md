@@ -1,11 +1,24 @@
-# Advantage Works 1.16.5 Native Test Rig
+# Advantage Works 1.18.2 Test Rig
 
-The native target is Minecraft 1.16.5 / Forge 36.2.34, official mappings
+Use Java 17, Forge 40.3.0 and the exact jars in
+[`profiles/native118/`](profiles/native118/). These profiles exercise
+the 21 Works stations in a disposable world. The current profile uses
+the local Base Metals 3.1.2 build for old-world upgrades; the decoupled
+profile exercises the same machines without Base Metals.
+
+Start with the [1.18.2 port and test guide](../docs/1.18/PORT-STATUS.md).
+It lists the runners for migration, recipe progression, real machine
+operation, network unloading, mining, oil, and the 30-minute test.
+The automated results do not replace the manual gameplay checklist.
+
+## Retained 1.16.5 Reference
+
+The earlier target is Minecraft 1.16.5 / Forge 36.2.34, official mappings
 1.16.5, MCP 20210115.111550, Java 8 bytecode and harness
 `1.1.0.116051`. Read [the native116 runner and qualification limits](NATIVE116.md)
 before using this checkout. Build success is not runtime or migration acceptance.
 
-Default destination profiles live only in `profiles/native116/`. The original
+The 1.16.5 destination profiles live only in `profiles/native116/`. The original
 profiles, station specification and legacy migration source adapters remain
 unchanged. New profiles explicitly reference the historical PA113 source root;
 the native runner refuses to launch an old profile as a native116 destination.

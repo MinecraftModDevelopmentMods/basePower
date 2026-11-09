@@ -32,8 +32,8 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.storage.LevelResource;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.EventPriority;
-import net.minecraftforge.fmlserverevents.FMLServerStartingEvent;
-import net.minecraftforge.fmlserverevents.FMLServerStoppingEvent;
+import net.minecraftforge.event.server.ServerStartingEvent;
+import net.minecraftforge.event.server.ServerStoppingEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -68,13 +68,13 @@ final class Native117StoppedEntitiesSnapshot {
         return result;
     }
 
-    private static void starting(FMLServerStartingEvent event) {
+    private static void starting(ServerStartingEvent event) {
         MinecraftServer server = event.getServer();
         Path runtime = Paths.get("").toAbsolutePath().normalize();
         if (!marked(runtime, server.getWorldData().getLevelName())) return;
         String boot = UUID.randomUUID().toString();
         BOOTS.put(server, boot);
-        JsonObject pending = header(server, boot, "FMLServerStartingEvent");
+        JsonObject pending = header(server, boot, "ServerStartingEvent");
         pending.addProperty("status", "PENDING_STOP");
         try {
             write(runtime, pending);
@@ -83,12 +83,12 @@ final class Native117StoppedEntitiesSnapshot {
         }
     }
 
-    private static void stopping(FMLServerStoppingEvent event) {
+    private static void stopping(ServerStoppingEvent event) {
         MinecraftServer server = event.getServer();
         Path runtime = Paths.get("").toAbsolutePath().normalize();
         if (!marked(runtime, server.getWorldData().getLevelName())) return;
         String boot = BOOTS.remove(server);
-        JsonObject result = header(server, boot, "FMLServerStoppingEvent");
+        JsonObject result = header(server, boot, "ServerStoppingEvent");
         try {
             if (boot == null) throw new IllegalStateException("No marked startup was observed for this server");
             JsonObject dimensions = new JsonObject();

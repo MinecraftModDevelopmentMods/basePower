@@ -81,12 +81,11 @@ public abstract class FluidPoweredEntity extends PoweredEntity implements IAdvan
 	 * @param tagRoot An NBT tag
 	 */
 	@Override
-	public CompoundTag save(final CompoundTag tagRoot) {
-		super.save(tagRoot);
+	protected void saveAdditional(final CompoundTag tagRoot) {
+		super.saveAdditional(tagRoot);
 		CompoundTag tankTag = new CompoundTag();
 		this.getTank().writeToNBT(tankTag);
 		tagRoot.put("Tank", tankTag);
-		return tagRoot;
 	}
 
 	/**

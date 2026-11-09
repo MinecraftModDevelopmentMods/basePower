@@ -247,14 +247,13 @@ public class StillTileEntity extends TileEntitySimpleFluidMachine {
 	 * @param tagRoot An NBT tag
 	 */
 	@Override
-	public CompoundTag save(final CompoundTag tagRoot) {
-		super .save(tagRoot);
+	protected void saveAdditional(final CompoundTag tagRoot) {
+		super.saveAdditional(tagRoot);
 		CompoundTag tankTag2 = new CompoundTag();
 		inputTank.writeToNBT(tankTag2);
 		tagRoot.put("InputTank", tankTag2);
 		tagRoot.putShort("burnTime", this.burnTime);
 		tagRoot.putShort("totalBurnTime", this.totalBurnTime);
-		return tagRoot;
 	}
 
 	/**

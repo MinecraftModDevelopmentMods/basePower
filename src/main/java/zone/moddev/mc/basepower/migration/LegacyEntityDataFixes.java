@@ -33,9 +33,10 @@ final class LegacyEntityDataFixes {
         if (version >= current) return;
         CompoundTag level = entityOwner(root);
         if (level == null) return;
-        if (!level.contains("Entities")) return;
-        requireCompoundList(level, "Entities");
-        ListTag entities = level.getList("Entities", 10);
+        String key = entityKey(root, level);
+        if (!level.contains(key)) return;
+        requireCompoundList(level, key);
+        ListTag entities = level.getList(key, 10);
         if (entities.isEmpty()) return;
         DataFixer fixer = DataFixers.getDataFixer();
         Set<?> vanillaIds = fixer.getSchema(DataFixUtils.makeKey(version))
@@ -46,7 +47,7 @@ final class LegacyEntityDataFixes {
         }
         // Keep these out of vanilla's mixed-choice traversal and avoid fixing them twice.
         root.put(STAGED, fixed);
-        level.put("Entities", new ListTag());
+        level.put(key, new ListTag());
     }
 
     private static CompoundTag upgrade(CompoundTag source, int version, int current,
@@ -132,21 +133,29 @@ final class LegacyEntityDataFixes {
         }
         requireCompoundList(root, STAGED);
         CompoundTag level = entityOwner(root);
-        if (level.contains("Entities")) requireCompoundList(level, "Entities");
-        if (!level.getList("Entities", 10).isEmpty()) {
+        String key = entityKey(root, level);
+        if (level.contains(key)) requireCompoundList(level, key);
+        if (!level.getList(key, 10).isEmpty()) {
             throw new IllegalStateException("Entity data appeared during isolated Advantage migration");
         }
-        level.put("Entities", root.getList(STAGED, 10));
+        level.put(key, root.getList(STAGED, 10));
         root.remove(STAGED);
     }
 
     private static CompoundTag entityOwner(CompoundTag root) {
         if (root.contains("Level", 10)) return root.getCompound("Level");
-        if (!root.contains("Position", 11)) return null;
+        if (!root.contains("Position")) {
+            return root.contains("xPos", 99) && root.contains("zPos", 99) ? root : null;
+        }
         if (root.getIntArray("Position").length != 2) {
             throw new IllegalStateException("Saved entity chunk has no containing chunk coordinates");
         }
         return root;
+    }
+
+    private static String entityKey(CompoundTag root, CompoundTag owner) {
+        // Terrain NBT was flattened in 1.18; separate entity region files were not.
+        return owner == root && !root.contains("Position") ? "entities" : "Entities";
     }
 
     private static void requireCompoundList(CompoundTag owner, String key) {

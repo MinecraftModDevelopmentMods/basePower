@@ -85,7 +85,7 @@ final class MachineContext {
         for (int x = origin.getX() >> 4; x <= (origin.getX() + 31) >> 4; x++) {
             for (int z = origin.getZ() >> 4; z <= (origin.getZ() + 31) >> 4; z++) {
                 BlockPos position = new BlockPos(x * 16 + 8, origin.getY(), z * 16 + 8);
-                require(world.isPositionTickingWithEntitiesLoaded(position) && world.isPositionEntityTicking(position),
+                require(Native118ChunkTicking.withEntitiesLoaded(world, position) && world.isPositionEntityTicking(position),
                         "Native block and entity sections are ticking before fixture construction: " + x + "," + z);
             }
         }
@@ -195,12 +195,12 @@ final class MachineContext {
         return amount;
     }
 
-    CompoundTag nbt(int x, int y, int z) { return tile(x, y, z).save(new CompoundTag()); }
+    CompoundTag nbt(int x, int y, int z) { return tile(x, y, z).saveWithFullMetadata(); }
 
     void seed(int x, int y, int z, CompoundTag patch) {
         mutation("nbt", at(x, y, z), patch.toString());
         BlockEntity tile = tile(x, y, z);
-        CompoundTag nbt = tile.save(new CompoundTag());
+        CompoundTag nbt = tile.saveWithFullMetadata();
         nbt.merge(patch.copy());
         tile.load(nbt);
         tile.setChanged();
@@ -234,7 +234,7 @@ final class MachineContext {
             row.addProperty("block", state.getBlock().getRegistryName().toString());
             row.addProperty("state", state.toString());
             BlockEntity tile = world.getBlockEntity(pos);
-            if (tile != null) row.addProperty("nbt", tile.save(new CompoundTag()).toString());
+            if (tile != null) row.addProperty("nbt", tile.saveWithFullMetadata().toString());
             rows.add(row);
         }
         return rows;

@@ -75,7 +75,7 @@ public class Native117AsyncWorldgenSourceTest {
     @Test public void serverStopClosesTheOwnedJobAndDispatchExecutor() throws Exception {
         String controller = source("WorksController.java");
         assertTrue(controller.contains("addListener(this::worldgenStopping)"));
-        int start = controller.indexOf("void worldgenStopping(FMLServerStoppingEvent");
+        int start = controller.indexOf("void worldgenStopping(ServerStoppingEvent");
         int end = controller.indexOf("static boolean matchesExpectedBiome", start);
         assertTrue(start >= 0 && end > start);
         assertTrue(controller.substring(start, end).contains("worldgenJob.release()"));

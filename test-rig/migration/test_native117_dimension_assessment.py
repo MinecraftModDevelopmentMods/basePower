@@ -187,7 +187,7 @@ class NativeDifferenceAssessmentTest(unittest.TestCase):
     def test_invalid_proof_preflight_happens_before_any_boot(self):
         with tempfile.TemporaryDirectory() as temp:
             proof = Path(temp) / "wrong.log"; proof.write_text("wrong")
-            with patch.object(native117_actors, "boot") as boot:
+            with patch("native117.boot") as boot:
                 with self.assertRaises(AssertionError): native117_actors.run(SimpleNamespace(kind="dimensions", native_wolf_proof=proof))
                 boot.assert_not_called()
 

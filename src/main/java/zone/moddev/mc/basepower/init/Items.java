@@ -29,14 +29,14 @@ public final class Items {
 
     public static synchronized void init() {
         if (initialized) return;
-        Blocks.init();
+        ItemGroups.init();
         starch = add("starch", new Item(properties()));
         bioplastic_ingot = add("bioplastic_ingot", new Item(properties()));
         sprocket = add("sprocket", new Item(properties()));
         rotator_tool = add("rotator_tool", new RotationTool(properties().stacksTo(1)));
-        crude_oil_bucket = add("crude_oil_bucket", new BucketItem(Fluids.crude_oil,
+        crude_oil_bucket = add("crude_oil_bucket", new BucketItem(() -> Fluids.crude_oil,
                 new Item.Properties().tab(ItemGroups.tab_powerAdvantage).stacksTo(1).craftRemainder(net.minecraft.world.item.Items.BUCKET)));
-        refined_oil_bucket = add("refined_oil_bucket", new BucketItem(Fluids.refined_oil,
+        refined_oil_bucket = add("refined_oil_bucket", new BucketItem(() -> Fluids.refined_oil,
                 new Item.Properties().tab(ItemGroups.tab_powerAdvantage).stacksTo(1).craftRemainder(net.minecraft.world.item.Items.BUCKET)));
         initialized = true;
     }

@@ -36,7 +36,7 @@ public final class ClientOilRenderer {
     }
 
     private static void stitch(TextureStitchEvent.Pre event) {
-        if (!TextureAtlas.LOCATION_BLOCKS.equals(event.getMap().location())) return;
+        if (!TextureAtlas.LOCATION_BLOCKS.equals(event.getAtlas().location())) return;
         for (String name : new String[] {"crude_oil_still", "crude_oil_flow", "refined_oil_still", "refined_oil_flow"}) {
             event.addSprite(new ResourceLocation(PowerAdvantage.MODID, "blocks/" + name));
         }

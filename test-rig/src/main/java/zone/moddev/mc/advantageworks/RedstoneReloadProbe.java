@@ -137,7 +137,7 @@ final class RedstoneReloadProbe {
                 seedTrace.add(observation);
                 boolean ready = true;
                 for (Witness witness : witnesses) {
-                    CompoundTag tag = tile(witness).save(new CompoundTag());
+                    CompoundTag tag = tile(witness).saveWithFullMetadata();
                     ready &= tag.getShort("progress") > 0 && tag.contains("targetX", 99)
                             && ((PoweredEntity) tile(witness)).getEnergy(new ConduitType("electricity")) > 24;
                 }
@@ -186,8 +186,8 @@ final class RedstoneReloadProbe {
             BlockEntity tile = tile(witness);
             boolean ticking = world.getChunkSource().isPositionTicking(new net.minecraft.world.level.ChunkPos(witness.pos).toLong());
             boolean listed = NativeBlockEntityTicks.contains(world, tile);
-            boolean blockAndEntitiesLoaded = world.isPositionTickingWithEntitiesLoaded(witness.pos);
-            boolean entityTicking = world.isPositionEntityTicking(new net.minecraft.world.level.ChunkPos(witness.pos));
+            boolean blockAndEntitiesLoaded = Native118ChunkTicking.withEntitiesLoaded(world, witness.pos);
+            boolean entityTicking = world.isPositionEntityTicking(witness.pos);
             Map<String, Object> row = new LinkedHashMap<>();
             row.put("id", witness.id);
             row.put("pos", coordinates(witness.pos));
@@ -273,7 +273,7 @@ final class RedstoneReloadProbe {
         List<Map<String, Object>> result = new ArrayList<>();
         for (Witness witness : witnesses) {
             BlockEntity tile = tile(witness);
-            CompoundTag nbt = tile.save(new CompoundTag());
+            CompoundTag nbt = tile.saveWithFullMetadata();
             BlockState state = world.getBlockState(witness.pos);
             Map<String, Object> row = new LinkedHashMap<>();
             row.put("id", witness.id);

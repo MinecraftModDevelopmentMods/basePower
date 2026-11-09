@@ -21,10 +21,10 @@ def chunk_set(bounds):
     return {(x, z) for x in range(min_x, max_x + 1) for z in range(min_z, max_z + 1)}
 
 
-def require_ready(document, bounds, label, dimension="minecraft:overworld"):
+def require_ready(document, bounds, label, dimension="minecraft:overworld", minecraft="1.17.1"):
     expected = chunk_set(bounds)
     if (document.get("protocol") != PROTOCOL or document.get("status") != "PASS"
-            or document.get("label") != label or document.get("minecraft") != "1.17.1"
+            or document.get("label") != label or document.get("minecraft") != minecraft
             or document.get("dimension") != dimension):
         raise AssertionError("Missing or failed native readiness receipt")
     if document.get("bounds") != dict(zip(("minX", "minZ", "maxX", "maxZ"), bounds)):
@@ -78,7 +78,7 @@ def require_ready(document, bounds, label, dimension="minecraft:overworld"):
     return document
 
 
-def await_ready(server, runtime, bounds, label, dimension="minecraft:overworld"):
+def await_ready(server, runtime, bounds, label, dimension="minecraft:overworld", minecraft="1.17.1"):
     chunk_set(bounds)
     if not re.fullmatch(r"[A-Za-z0-9_-]{1,64}", label):
         raise AssertionError("Unsafe native readiness label")
@@ -87,6 +87,6 @@ def await_ready(server, runtime, bounds, label, dimension="minecraft:overworld")
     server.send("advreadiness chunks " + " ".join(map(str, bounds)) + " " + label)
     server.wait("ADVREADINESS RESULT " + label + " status=", 150)
     document = json.loads(path.read_text(encoding="utf-8"))
-    require_ready(document, bounds, label, dimension)
+    require_ready(document, bounds, label, dimension, minecraft)
     server.wait("ADVREADINESS COMPLETE " + label, 10)
     return document

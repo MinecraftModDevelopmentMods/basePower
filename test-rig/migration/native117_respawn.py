@@ -132,11 +132,15 @@ def native_respawn_verdict(record, registry, world_spawn):
     return respawn_verdict(value, registry, world_spawn)
 
 
-def run(args):
+def run(args, *, target=None, stage=None, server_type=None, check_log=None, approved_sources=None):
     from native117 import boot
+    server_type = server_type or Server
+    check_log = check_log or require_clean_log
+    java = getattr(args, "java17", None) or args.java8
     root = output_path(args.output)
     require_disjoint(root, args.fixtures)
-    target = pinned_profile(args.target_manifest.resolve(), "target117")
+    if target is None:
+        target = pinned_profile(args.target_manifest.resolve(), "target117")
     with socket.socket() as port:
         port.bind(("127.0.0.1", args.port))
     root.mkdir(parents=True)
@@ -147,11 +151,13 @@ def run(args):
     for route in args.routes:
         source = args.fixtures / route
         before = fingerprint(source)
+        if approved_sources is not None and before != approved_sources[route]:
+            raise AssertionError("Protected respawn source differs from its prior receipt")
         sources[route] = {"path": str(source.resolve()), "fingerprint": before,
                           "baseFixtureSha256": digest(source / "dimension-fixture.json")}
         write_json(root / "source-fingerprints.json", sources)
         runtime = root / route
-        launcher = boot(runtime, target, args.java8, args.port)
+        launcher = stage(runtime, target, args.port) if stage else boot(runtime, target, java, args.port)
         copy_fixture(source, runtime)
         shutil.copy2(source / "dimension-fixture.json", runtime / "dimension-fixture.json")
         props = runtime / "server.properties"
@@ -166,7 +172,7 @@ def run(args):
         migrated_player = None
         try:
             for boot_label in ("respawn", "respawn-restart"):
-                server = Server(runtime, args.java8, launcher, boot_label)
+                server = server_type(runtime, java, launcher, boot_label)
                 try:
                     if migrated_player is None:
                         # Let the real pre-datafix world hook migrate the copy once.
@@ -227,7 +233,7 @@ def run(args):
                         print(route + "/" + label + "=" + verdict["status"], flush=True)
                 finally:
                     server.close()
-                require_clean_log(runtime / ("console-" + boot_label + ".log"))
+                check_log(runtime / ("console-" + boot_label + ".log"))
             verify_request_files(runtime, CASE_LABELS)
         finally:
             unchanged = fingerprint(source) == before

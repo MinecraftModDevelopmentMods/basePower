@@ -16,7 +16,12 @@ import zone.moddev.mc.basepower.machines.conveyors.TileEntityConveyor;
 import static org.junit.Assert.*;
 
 public class NativeMachinePropertyTest {
-    @BeforeClass public static void bootstrapNativeRegistries() { Bootstrap.bootStrap(); }
+    @BeforeClass public static void bootstrapNativeRegistries() {
+        net.minecraft.SharedConstants.tryDetectVersion();
+        Bootstrap.bootStrap();
+        // Plain JUnit does not open the registry event that allows block construction.
+        net.minecraftforge.registries.GameData.unfreezeData();
+    }
 
     @Test public void materialConstructorsKeepTheLegacyNonSolidDefault() {
         assertFalse(new MaterialMachine().defaultBlockState().canOcclude());

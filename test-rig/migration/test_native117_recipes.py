@@ -27,7 +27,7 @@ class NativeRecipeTests(unittest.TestCase):
             call.send("forceload add 16384 16384 16415 16415"),
         ], server.mock_calls)
         ready.assert_called_once_with(server, self.root, (1024, 1024, 1025, 1025),
-                                      "progression-normal-initial-reload")
+                                      "progression-normal-initial-reload", minecraft="1.17.1")
 
     def packaged(self, counts=None, bad_predicate=False, legacy_predicate=False):
         jars = []

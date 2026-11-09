@@ -37,10 +37,10 @@ ISOLATION_PROTOCOL = "native117-live-drops-v1"
 HARVEST_CHUNKS = (74, 63, 75, 64)
 
 
-def require_checks(document, label):
+def require_checks(document, label, *, minecraft="1.17.1"):
     rows = document.get("checks", [])
     actual = {row["id"]: row for row in rows}
-    if (document.get("label") != label or document.get("minecraft") != "1.17.1"
+    if (document.get("label") != label or document.get("minecraft") != minecraft
             or actual.keys() != EXPECTED.keys() | {"solar/native-solidity"}
             or len(rows) != len(EXPECTED) + 1):
         raise AssertionError("Incomplete native117 harvest witness set")

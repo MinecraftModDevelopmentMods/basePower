@@ -54,15 +54,15 @@ final class RecipeBookGroupingProbe {
             net.minecraft.nbt.CompoundTag saved;
             try (java.io.InputStream input = Files.newInputStream(root.resolve("server-registries.dat"))) {
                 net.minecraft.nbt.CompoundTag level = net.minecraft.nbt.NbtIo.readCompressed(input);
-                require("1.17.1".equals(level.getCompound("Data").getCompound("Version").getString("Name")),
-                        "Recipe fixture is not a native 1.17.1 server export");
+                require("1.18.2".equals(level.getCompound("Data").getCompound("Version").getString("Name")),
+                        "Recipe fixture is not a native 1.18.2 server export");
                 net.minecraft.nbt.ListTag mods = level.getCompound("fml").getList("LoadingModList", 10);
                 boolean nativeForge = false;
                 for (int i = 0; i < mods.size(); i++) {
                     net.minecraft.nbt.CompoundTag mod = mods.getCompound(i);
-                    if ("forge".equals(mod.getString("ModId"))) nativeForge = "37.1.1".equals(mod.getString("ModVersion"));
+                    if ("forge".equals(mod.getString("ModId"))) nativeForge = "40.3.0".equals(mod.getString("ModVersion"));
                 }
-                require(nativeForge, "Recipe fixture was not saved by Forge 37.1.1");
+                require(nativeForge, "Recipe fixture was not saved by Forge 40.3.0");
                 saved = level.getCompound("fml").getCompound("Registries");
             }
             String itemRegistry = net.minecraftforge.registries.ForgeRegistries.ITEMS.getRegistryName().toString();

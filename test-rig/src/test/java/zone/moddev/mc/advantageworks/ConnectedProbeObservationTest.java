@@ -47,7 +47,7 @@ public class ConnectedProbeObservationTest {
         Field persistent = BlockEntity.class.getDeclaredField("customTileData");
         persistent.setAccessible(true);
         persistent.set(tile, data);
-        CompoundTag before = tile.save(new CompoundTag()).copy();
+        CompoundTag before = tile.saveWithFullMetadata().copy();
         ObservationWorld world = allocate(ObservationWorld.class);
         world.tile = tile;
         ConnectedProbe probe = new ConnectedProbe();
@@ -65,7 +65,7 @@ public class ConnectedProbeObservationTest {
             JsonObject row = probe.snapshot(definition).get(0).getAsJsonObject();
             assertSame("Observation must not allocate or replace live persistent data", data, persistent.get(tile));
             assertEquals("Observation must not call the allocating getter", 0, tile.persistentReads);
-            assertEquals(before, tile.save(new CompoundTag()));
+            assertEquals(before, tile.saveWithFullMetadata());
             assertEquals(before.toString(), row.get("nbt").getAsString());
             assertEquals(before, NbtIo.readCompressed(new ByteArrayInputStream(
                     Base64.getDecoder().decode(row.get("nbtBase64").getAsString()))));

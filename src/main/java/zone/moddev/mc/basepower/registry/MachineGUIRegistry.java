@@ -19,11 +19,11 @@ import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.common.extensions.IForgeContainerType;
+import net.minecraftforge.common.extensions.IForgeMenuType;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fmllegacy.network.NetworkHooks;
+import net.minecraftforge.network.NetworkHooks;
 import zone.moddev.mc.basepower.PowerAdvantage;
 
 import java.util.Map;
@@ -52,7 +52,7 @@ public final class MachineGUIRegistry {
 
     @SubscribeEvent
     public static void registerTypes(RegistryEvent.Register<MenuType<?>> event) {
-        TYPE = IForgeContainerType.create(MachineGUIRegistry::createClientContainer);
+        TYPE = IForgeMenuType.create(MachineGUIRegistry::createClientContainer);
         TYPE.setRegistryName(PowerAdvantage.MODID, "machine");
         event.getRegistry().register(TYPE);
     }

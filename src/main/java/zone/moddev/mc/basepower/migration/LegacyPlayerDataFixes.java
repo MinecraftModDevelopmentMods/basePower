@@ -28,7 +28,7 @@ public final class LegacyPlayerDataFixes {
         return result;
     }
 
-    private static void preserveNames(Tag original, Tag result) {
+    static void preserveNames(Tag original, Tag result) {
         if (original instanceof CompoundTag && result instanceof CompoundTag) {
             CompoundTag before = (CompoundTag) original, after = (CompoundTag) result;
             if (isStack(before)) {

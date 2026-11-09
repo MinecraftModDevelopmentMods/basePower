@@ -16,7 +16,7 @@ public class Native117CommandRegistrationTest {
             assertTrue(name, source.contains("import net.minecraftforge.event.RegisterCommandsEvent;"));
             assertTrue(name, source.contains("(RegisterCommandsEvent event)"));
             assertTrue(name, source.contains("event.getDispatcher()"));
-            assertFalse(name, source.contains("FMLServerStartingEvent"));
+            assertFalse(name, source.contains("ServerStartingEvent"));
         }
     }
 }

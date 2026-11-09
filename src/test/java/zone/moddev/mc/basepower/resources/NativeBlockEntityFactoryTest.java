@@ -22,6 +22,7 @@ public class NativeBlockEntityFactoryTest {
     @BeforeClass public static void bootstrap() {
         net.minecraft.SharedConstants.tryDetectVersion();
         net.minecraft.server.Bootstrap.bootStrap();
+        net.minecraftforge.registries.GameData.unfreezeData();
     }
 
     @Test public void nativeFactoriesKeepTheActualPositionAndFacing() {

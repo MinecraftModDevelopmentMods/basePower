@@ -15,13 +15,13 @@ from native117_geometry import FORCED_LEVEL, LAST_HOLDER_LEVEL, HOLDER_RADIUS
 ANCHOR_DISTANCE = 32
 
 
-def holder_halo(fixture, group):
+def holder_halo(fixture, group, radius=HOLDER_RADIUS):
     return [[x, z] for x in range(fixture["min"][0] >> 4, (fixture["max"][0] >> 4) + 1)
             for z in range(fixture["min"][2] >> 4, (fixture["max"][2] >> 4) + 1)
-            if any(max(abs(x-a), abs(z-b)) <= HOLDER_RADIUS for a, b in fixture["groups"][group])]
+            if any(max(abs(x-a), abs(z-b)) <= radius for a, b in fixture["groups"][group])]
 
 
-def linear_fixtures():
+def linear_fixtures(radius=HOLDER_RADIUS):
     result = []
     for index, name in enumerate(("C-STEAM", "C-ELECTRIC", "C-FLUID")):
         base = 32768 + index * 1024
@@ -31,12 +31,12 @@ def linear_fixtures():
                  witnesses=[origin, *pipes[:3], sink, *pipes[3:]], pipes=pipes,
                  groups=dict(supply=[[base >> 4, 128]], machine=[[(base >> 4) + ANCHOR_DISTANCE, 128]]))
         for group in ("supply", "machine"):
-            f["groups"][group + "halo"] = holder_halo(f, group)
+            f["groups"][group + "halo"] = holder_halo(f, group, radius)
         result.append(f)
     return result
 
 
-def bridge_fixtures():
+def bridge_fixtures(radius=HOLDER_RADIUS):
     result = []
     for index, name in enumerate(("C-STEAM", "C-ELECTRIC", "C-FLUID")):
         base = 36864 + index * 1024
@@ -47,13 +47,13 @@ def bridge_fixtures():
         f = dict(id=name, nativeTicketNetwork=True, min=[base, 72, 2048], max=[base + 31, 90, 2591],
                  witnesses=[origin, sink, *path], pipes=path,
                  groups=dict(bridge=[[base >> 4, 160]], endpoints=[[base >> 4, 128]]))
-        f["groups"]["bridgehalo"] = holder_halo(f, "bridge")
+        f["groups"]["bridgehalo"] = holder_halo(f, "bridge", radius)
         result.append(f)
     return result
 
 
-def extended_fixtures():
-    return [f for f in fixture_ids(historical.fixtures()) if "route" in f] + linear_fixtures()
+def extended_fixtures(radius=HOLDER_RADIUS):
+    return [f for f in fixture_ids(historical.fixtures()) if "route" in f] + linear_fixtures(radius)
 
 
 def main():

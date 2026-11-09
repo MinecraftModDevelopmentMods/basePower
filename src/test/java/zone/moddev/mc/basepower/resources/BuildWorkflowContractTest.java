@@ -6,6 +6,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Properties;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
@@ -27,20 +28,24 @@ public class BuildWorkflowContractTest {
     }
 
     @Test public void pinnedDependencyCheckoutPolicyPrecedesCheckout() throws Exception {
+        Properties pins = new Properties();
+        try (var input = Files.newBufferedReader(Paths.get("gradle.properties"), StandardCharsets.UTF_8)) {
+            pins.load(input);
+        }
         for (String name : new String[] {"ci.yml", "codeql-analysis.yml"}) {
             String workflow = new String(Files.readAllBytes(Paths.get(".github/workflows", name)),
                     StandardCharsets.UTF_8);
             int policy = workflow.indexOf("run: git config --global core.autocrlf false");
             int checkout = workflow.indexOf("- name: Check out pinned Base Metals");
             assertTrue(name, policy >= 0 && checkout > policy);
-            assertTrue(name, workflow.contains("ref: 0deeeeecdbbc1fbcdecf910c59477de8efe164d7"));
-            assertTrue(name, workflow.contains("BaseMetals-3.1.1.117011-deobf.jar"));
-            assertTrue(name, workflow.contains("ref: b56e2b62a1a6ea4d1dd96f8646a87801a817dbdf"));
-            assertTrue(name, workflow.contains("master-1.17.1"));
+            assertTrue(name, workflow.contains("ref: " + pins.getProperty("basemetals_source_commit")));
+            assertTrue(name, workflow.contains("BaseMetals-" + pins.getProperty("basemetals_version") + "-deobf.jar"));
+            assertTrue(name, workflow.contains("ref: d31f52f296739f34a0c13f554abf3e1ac071ae25"));
+            assertTrue(name, workflow.contains("master-1.18.2"));
             assertTrue(name, workflow.contains("java-version: '25.0.3+9.0.LTS'"));
             assertTrue(name, workflow.contains("java-version: '17.0.1+12'"));
             assertTrue(name, workflow.contains("java-version: '8.0.502+7'"));
-            assertTrue(name, workflow.contains("java-version: '16.0.2+7'"));
+            assertFalse(name, workflow.contains("JAVA_HOME_16_X64"));
             assertTrue(name, workflow.contains("-Porg.gradle.java.installations.paths="));
             assertTrue(name, workflow.contains("-Porg.gradle.java.installations.auto-detect=false"));
             assertTrue(name, workflow.contains("-Porg.gradle.java.installations.auto-download=false"));

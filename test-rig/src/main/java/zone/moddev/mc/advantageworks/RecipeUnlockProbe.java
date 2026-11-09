@@ -60,7 +60,7 @@ final class RecipeUnlockProbe {
         return connection;
     }
 
-    private void stopped(net.minecraftforge.fmlserverevents.FMLServerStoppedEvent event) {
+    private void stopped(net.minecraftforge.event.server.ServerStoppedEvent event) {
         if (transport != null) ((io.netty.channel.embedded.EmbeddedChannel) transport.channel()).finishAndReleaseAll();
     }
 
@@ -191,7 +191,7 @@ final class RecipeUnlockProbe {
         } else if (operation.equals("restore")) {
             require(server.getPlayerList().load(player) != null, "No saved test player");
             require(transport.channel().isActive(), "Native recipe-login channel is not active");
-            require(net.minecraftforge.fmllegacy.network.NetworkHooks.getConnectionData(transport) == null,
+            require(net.minecraftforge.network.NetworkHooks.getConnectionData(transport) == null,
                     "Server-only probe must not impersonate a remote modded-client handshake");
             // Dispatch the real Forge event to exercise all three namespaces' restoration.
             MinecraftForge.EVENT_BUS.post(new PlayerEvent.PlayerLoggedInEvent(player));
@@ -257,8 +257,9 @@ final class RecipeUnlockProbe {
 
     private static List<Item> choices(JsonObject predicate) {
         if (predicate.has("item")) return Collections.singletonList(item(predicate.get("item").getAsString()));
-        List<Item> items = new ArrayList<>(ItemTags.getAllTags().getTagOrEmpty(
-                new ResourceLocation(predicate.get("tag").getAsString())).getValues());
+        List<Item> items = new ArrayList<>();
+        for (var holder : net.minecraft.core.Registry.ITEM.getTagOrEmpty(
+                ItemTags.create(new ResourceLocation(predicate.get("tag").getAsString())))) items.add(holder.value());
         items.sort(Comparator.comparing(candidate -> candidate.getRegistryName().toString()));
         return items;
     }

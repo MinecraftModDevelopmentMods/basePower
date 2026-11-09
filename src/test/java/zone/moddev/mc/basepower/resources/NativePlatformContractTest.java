@@ -20,21 +20,28 @@ public class NativePlatformContractTest {
         String json = new String(Files.readAllBytes(Paths.get("src/main/resources/META-INF/coremods.json")), StandardCharsets.UTF_8);
         JsonObject coremods = new JsonParser().parse(json).getAsJsonObject();
         assertEquals(1, coremods.size());
-        assertEquals("coremods/poweradvantage_116_migration.js", coremods.get("poweradvantage_116_migration").getAsString());
+        assertEquals("coremods/poweradvantage_118_migration.js", coremods.get("poweradvantage_118_migration").getAsString());
         for (String removed : new String[] {"oil_renderer", "material_tags", "parts_loot"})
             assertFalse(Files.exists(Paths.get("src/main/resources/coremods/poweradvantage_" + removed + ".js")));
     }
 
     @Test public void pinnedForgeFiresTagEventAfterBindingNativeCollections() throws Exception {
-        ClassNode node = read("net/minecraft/tags/TagContainer");
+        ClassNode node = read("net/minecraft/server/ReloadableServerResources");
+        MethodNode bind = node.methods.stream().filter(method -> method.name.equals("updateRegistryTags")
+                        && method.desc.contains("TagManager$LoadResult"))
+                .findFirst().orElseThrow();
+        assertTrue(java.util.Arrays.stream(bind.instructions.toArray()).anyMatch(instruction ->
+                instruction instanceof MethodInsnNode call && call.owner.equals("net/minecraft/core/Registry")
+                        && call.name.equals("bindTags")));
         int events = 0;
         for (MethodNode method : node.methods) {
             boolean installed = false;
             for (AbstractInsnNode instruction : method.instructions.toArray()) {
                 if (instruction instanceof MethodInsnNode) {
                     MethodInsnNode call = (MethodInsnNode) instruction;
-                    if (call.owner.equals("net/minecraft/tags/StaticTags")
-                            && call.name.equals("resetAll")) installed = true;
+                    if (call.owner.equals("java/lang/Iterable") || call.owner.equals("java/util/List")) {
+                        if (call.name.equals("forEach")) installed = true;
+                    }
                 }
                 if (instruction instanceof TypeInsnNode
                         && ((TypeInsnNode) instruction).desc.equals("net/minecraftforge/event/TagsUpdatedEvent")) {

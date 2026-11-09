@@ -344,7 +344,7 @@ final class DimensionEntityProbe {
         result.add("entities", entities);
         BlockPos pos = new BlockPos(176, 101, 8); JsonObject generator = new JsonObject();
         generator.addProperty("actualName", world.getBlockState(pos).getBlock().getRegistryName().toString());
-        BlockEntity tile = world.getBlockEntity(pos); if (tile != null) generator.add("tile", encode(tile.save(new CompoundTag())));
+        BlockEntity tile = world.getBlockEntity(pos); if (tile != null) generator.add("tile", encode(tile.saveWithFullMetadata()));
         result.add("generator", generator);
         return result;
     }

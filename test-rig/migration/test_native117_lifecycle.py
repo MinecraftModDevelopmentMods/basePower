@@ -82,12 +82,12 @@ class NativeLifecycleTests(unittest.TestCase):
     def test_optional_load_tracing_precedes_build_and_does_not_replace_runner(self):
         runner = Mock(runtime=self.root, definition=lifecycle.fixtures())
         runner.build.side_effect = RuntimeError("stop before any real fixture")
-        with patch.object(native, "require_native_boot"):
-            with self.assertRaisesRegex(RuntimeError, "stop before"):
-                native.exercise(runner, "unit", lambda result: None, trace_loads=True)
+        with self.assertRaisesRegex(RuntimeError, "stop before"):
+            native.exercise(runner, "unit", lambda result: None, trace_loads=True)
         runner.boot.assert_called_once_with("lifecycle")
+        runner.require_boot.assert_called_once_with(self.root / "console-lifecycle.log")
         runner.probe.assert_called_once_with("trace-loads", "tracing-loads")
-        self.assertEqual([call[0] for call in runner.mock_calls], ["boot", "probe", "build"])
+        self.assertEqual([call[0] for call in runner.mock_calls], ["boot", "require_boot", "probe", "build"])
 
     def test_source_preflight_is_read_only(self):
         args = self.source_args()
@@ -228,7 +228,7 @@ class NativeReadinessTests(unittest.TestCase):
         runner.server = Mock()
         with patch.object(native, "await_ready", return_value={"label": "first-chunks-0"}) as ready:
             self.assertEqual(["first-chunks-0"], runner._round_trip_ready("first"))
-        ready.assert_called_once_with(runner.server, self.root, (0, 0, 0, 0), "first-chunks-0")
+        ready.assert_called_once_with(runner.server, self.root, (0, 0, 0, 0), "first-chunks-0", minecraft="1.17.1")
         runner.server.send.assert_not_called()
 
     def test_readiness_does_not_inspect_machine_nbt_block_or_progress(self):
@@ -439,10 +439,11 @@ class NativeReadinessTests(unittest.TestCase):
     def test_native_restart_only_restores_tickets_not_fixtures(self):
         absent, loaded, ready = self.snapshot(loaded=False, loads=0), self.snapshot(), self.snapshot(101)
         runner = self.runner([absent, loaded, ready])
-        with patch("native117_code.Server") as boot, patch.object(native, "require_native_boot"), \
+        with patch("native117_code.Server") as boot, patch.object(runner, "require_boot") as require_boot, \
                 patch.object(native.time, "sleep"):
             runner.boot("midblock-restart")
         boot.assert_called_once_with(runner.runtime, runner.java, runner.launcher, "midblock-restart")
+        require_boot.assert_called_once_with(runner.runtime / "console-midblock-restart.log")
         self.assertEqual([call.args[0] for call in runner._raw_probe.call_args_list], ["snapshot", "load", "snapshot"])
         self.assertEqual(runner.observations[-1]["reload_before_label"], "midblock-restart-native-unrestored")
 

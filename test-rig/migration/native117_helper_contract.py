@@ -103,14 +103,14 @@ def validate(document, contract, lifecycle=None):
                 observationGameTime=lifecycle['gameTime'])
 
 
-def raw_helpers_absent(files, helpers):
+def raw_helpers_absent(files, helpers, *, data_version=native.DATA_VERSION):
     """Reparse retained regions; no no-save helper may masquerade as saved proof."""
     for name, data in files.items():
         if '/regions/' not in name:
             continue
         rx, rz = map(int, native.REGION_NAME.fullmatch(name.rsplit('/', 1)[1]).groups())
         for coordinates, payload in native._payloads(data, rx, rz):
-            for root in native._entity_chunk(payload, coordinates):
+            for root in native._entity_chunk(payload, coordinates, data_version):
                 for identity, tag, _ in native._tree(root):
                     if identity in helpers or str(tag['id']) == ID:
                         raise AssertionError('Native no-save helper unexpectedly appears in saved entity storage')

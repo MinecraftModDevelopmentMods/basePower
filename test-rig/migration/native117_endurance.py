@@ -96,6 +96,8 @@ def prove_fresh_fixture_before_build(rig, configuration):
 
 
 class NativeEnduranceRig(endurance.Rig):
+    server_type = Server
+
     def command(self, command, response=None):
         return super().command(native117_commands.native(command_ids(command)), response)
 
@@ -112,7 +114,7 @@ class NativeEnduranceRig(endurance.Rig):
     def boot(self, phase):
         from native117_code import verify_if_sealed
         verify_if_sealed(self.runtime)
-        self.server = Server(self.runtime, self.java, self.launcher, phase)
+        self.server = self.server_type(self.runtime, self.java, self.launcher, phase)
         if phase != "endurance-restart":
             return
         # Restore only chunk tickets, never station actions or machine NBT.

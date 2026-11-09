@@ -13,6 +13,7 @@ import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
+import net.minecraft.util.datafix.fixes.CavesAndCliffsRenames;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegistryEvent;
@@ -23,6 +24,8 @@ import zone.moddev.mc.basepower.PowerAdvantage;
 
 /** Vanilla's data fixers rename saved data, but not Forge's registry snapshot. */
 public final class VanillaRegistryRemaps {
+    private static final ResourceLocation BIOME_REGISTRY = new ResourceLocation("minecraft:worldgen/biome");
+
     private VanillaRegistryRemaps() {}
 
     public static void register() {
@@ -96,6 +99,15 @@ public final class VanillaRegistryRemaps {
                 PowerAdvantage.LOGGER.info("Retired non-serialized vanilla AI registry index {}", mapping.key);
                 continue;
             }
+            ResourceLocation updatedBiome = vanillaBiomeFixTarget(event.getName(), mapping.key);
+            if (updatedBiome != null && active.containsKey(updatedBiome)) {
+                // Vanilla fixes biome names in chunks and world settings. Several
+                // old entries share one target; do not assign it multiple numeric IDs.
+                mapping.ignore();
+                PowerAdvantage.LOGGER.info("Retired vanilla biome registry index {} (data fixer: {})",
+                        mapping.key, updatedBiome);
+                continue;
+            }
             ResourceLocation replacement = replacement(event.getName(), mapping.key);
             if (replacement == null) continue;
             // The event's registry is STAGING: new entries need not be present there yet.
@@ -112,6 +124,14 @@ public final class VanillaRegistryRemaps {
         return registry.equals(new ResourceLocation("minecraft:memory_module_type"))
                 && old.getNamespace().equals("minecraft")
                 && (old.getPath().equals("golem_last_seen_time") || old.getPath().equals("opened_doors"));
+    }
+
+    static ResourceLocation vanillaBiomeFixTarget(ResourceLocation registry, ResourceLocation old) {
+        if (!BIOME_REGISTRY.equals(registry) || !"minecraft".equals(old.getNamespace())) return null;
+        String name = old.toString();
+        String updated = name.equals("minecraft:deep_warm_ocean") ? "minecraft:warm_ocean"
+                : CavesAndCliffsRenames.RENAMES.get(name);
+        return updated == null ? null : new ResourceLocation(updated);
     }
 
     static ResourceLocation replacement(ResourceLocation registry, ResourceLocation old) {

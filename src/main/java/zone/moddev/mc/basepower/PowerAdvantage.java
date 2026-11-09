@@ -16,6 +16,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.DistExecutor;
 
+import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
@@ -24,25 +25,24 @@ import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.fml.loading.FMLPaths;
 import zone.moddev.mc.basepower.config.PowerAdvantageConfig;
 import zone.moddev.mc.basepower.conduitnetwork.ConduitRegistry;
-import zone.moddev.mc.basepower.init.Blocks;
 import zone.moddev.mc.basepower.init.Fluids;
 import zone.moddev.mc.basepower.init.GUI;
 import zone.moddev.mc.basepower.init.Fuels;
-import zone.moddev.mc.basepower.init.Items;
+import zone.moddev.mc.basepower.init.ItemGroups;
 import zone.moddev.mc.basepower.init.ModSupport;
 import zone.moddev.mc.basepower.init.Recipes;
 import zone.moddev.mc.basepower.registry.MachineGUIRegistry;
 import zone.moddev.mc.basepower.recipe.RecipeConditions;
 import zone.moddev.mc.basepower.recipe.RecipeDiscovery;
 import zone.moddev.mc.basepower.migration.AdvantageLegacyMigrations;
-import zone.moddev.mc.basepower.migration.LegacyWorldDataHook;
+import zone.moddev.mc.basepower.migration.BaseMetalsLegacyMigration;
 
-/** Forge 1.16 entry point for Power Advantage. */
+/** Forge entry point for basePower. */
 @Mod(PowerAdvantage.MODID)
 public final class PowerAdvantage {
     public static final String MODID = "basepower";
     public static final String NAME = "basePower";
-    public static final String VERSION = "2.4.9.117011";
+    public static final String VERSION = "2.4.10.118021";
     public static final Logger LOGGER = LogManager.getLogger(MODID);
 
     private static PowerAdvantage instance;
@@ -84,11 +84,8 @@ public final class PowerAdvantage {
         FMLJavaModLoadingContext.get().getModEventBus().addListener(
                 zone.moddev.mc.basepower.recipe.MaterialTags::registerPack);
 
+        ItemGroups.init();
         Fluids.init();
-        Blocks.init();
-        Items.init();
-        Fuels.init();
-        GUI.init();
 
         migrateLegacyOreSpawnConfiguration();
         migrateLegacyConfiguration();
@@ -141,10 +138,14 @@ public final class PowerAdvantage {
     }
 
     private void commonSetup(FMLCommonSetupEvent event) {
+        Fuels.init();
+        GUI.init();
         // CraftingHelper's shared condition map is not safe during parallel loading.
         event.enqueueWork(RecipeConditions::register);
+        if (ModList.get().isLoaded("basemetals")) {
+            event.enqueueWork(() -> BaseMetalsLegacyMigration.register());
+        }
         // Forge's shared hook list is not safe to mutate during parallel mod construction.
-        event.enqueueWork(LegacyWorldDataHook::register);
         PowerAdvantageConfig.apply();
         ModSupport.configureForgeEnergyConversions();
         Recipes.initDistillationRecipes(PowerAdvantageConfig.distillationRecipes());

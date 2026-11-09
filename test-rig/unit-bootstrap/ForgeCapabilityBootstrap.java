@@ -28,7 +28,7 @@ public final class ForgeCapabilityBootstrap {
                             "cpw.mods.modlauncher.serviceapi.ILaunchPluginService$Phase", true, loader);
                     Object phase = phaseType.getField("BEFORE").get(null);
                     Class<?> pluginType = Class.forName(
-                            "net.minecraftforge.common.asm.CapabilityTokenSubclass", true, loader);
+                            "net.minecraftforge.fml.common.asm.CapabilityTokenSubclass", true, loader);
                     pluginType.getMethod("processClassWithFlags", phaseType, nodeType, asmType, String.class)
                             .invoke(pluginType.getConstructor().newInstance(), phase, node, asmName, "junit");
                     Class<?> writerType = Class.forName("org.objectweb.asm.ClassWriter", true, loader);

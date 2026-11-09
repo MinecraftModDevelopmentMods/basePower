@@ -10,10 +10,8 @@ public class TileEntityOreFilter extends TileEntityConveyorFilter {
 	@Override
 	public boolean matchesFilter(ItemStack item) {
 		if (item == null || item.isEmpty()) return false;
-		return Tags.Items.INGOTS.contains(item.getItem())
-				|| Tags.Items.ORES.contains(item.getItem())
-				|| Tags.Items.DUSTS.contains(item.getItem())
-				|| Tags.Items.NUGGETS.contains(item.getItem());
+		return item.is(Tags.Items.INGOTS) || item.is(Tags.Items.ORES)
+				|| item.is(Tags.Items.DUSTS) || item.is(Tags.Items.NUGGETS);
 	}
 
 }
