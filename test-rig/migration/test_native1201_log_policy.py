@@ -30,12 +30,12 @@ class Native1201LogPolicyTests(unittest.TestCase):
         errors, _ = log_findings("\n".join((DEBUG + PROBE, DETAIL, FRAME, error)))
         self.assertEqual([error], errors)
 
-    def test_disposable_first_start_uses_forge_defaults_but_preserves_existing_config(self):
+    def test_disposable_first_start_uses_forge_defaults_except_the_external_check(self):
         with tempfile.TemporaryDirectory() as directory:
             runtime = Path(directory)
             prepare_fml_defaults(runtime)
             config = runtime / "config/fml.toml"
-            self.assertEqual({"versionCheck": True, "disableOptimizedDFU": True,
+            self.assertEqual({"versionCheck": False, "disableOptimizedDFU": True,
                               "defaultConfigPath": "defaultconfigs", "maxThreads": -1,
                               "earlyWindowHeight": 480, "earlyWindowWidth": 854,
                               "earlyWindowControl": True, "earlyWindowFBScale": 1,
@@ -43,7 +43,24 @@ class Native1201LogPolicyTests(unittest.TestCase):
                               "earlyWindowSkipGLVersions": [], "earlyWindowLogHelpMessage": True,
                               "earlyWindowSquir": False, "earlyWindowShowCPU": False},
                              tomllib.loads(config.read_text(encoding="utf-8")))
-            original = b'maxThreads = 2\n'
-            config.write_bytes(original)
-            prepare_fml_defaults(runtime)
-            self.assertEqual(original, config.read_bytes())
+    def test_copied_forge_configuration_changes_only_the_external_check(self):
+        for original in (b'maxThreads = 2\n', b'versionCheck = true # preserve comment\r\nmaxThreads = 2\r\n'):
+            with self.subTest(original=original), tempfile.TemporaryDirectory() as directory:
+                runtime = Path(directory)
+                config = runtime / "config/fml.toml"
+                config.parent.mkdir()
+                config.write_bytes(original)
+                prepare_fml_defaults(runtime)
+                self.assertEqual({"versionCheck": False, "maxThreads": 2},
+                                 tomllib.loads(config.read_text(encoding="utf-8")))
+                self.assertEqual(original, (runtime / "fml-pre-qualification.toml").read_bytes())
+                disabled = config.read_bytes()
+                if b"#" in original:
+                    self.assertEqual(original.replace(b"true", b"false"), disabled)
+                prepare_fml_defaults(runtime)
+                self.assertEqual(disabled, config.read_bytes())
+
+    def test_update_check_errors_still_fail_if_they_appear(self):
+        error = "com.google.gson.JsonSyntaxException: Expected BEGIN_OBJECT but was NUMBER"
+        errors, _ = log_findings("[Forge Version Check/WARN] Failed to process update information\n" + error)
+        self.assertEqual([error], errors)

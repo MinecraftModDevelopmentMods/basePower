@@ -1,5 +1,5 @@
-# Forge 47.4.10 defaults for a new disposable launch.
-versionCheck = true
+# Forge 47.4.10 defaults except for the external update check in disposable tests.
+versionCheck = false
 disableOptimizedDFU = true
 defaultConfigPath = "defaultconfigs"
 maxThreads = -1

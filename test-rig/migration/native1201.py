@@ -4,6 +4,7 @@ import argparse
 import json
 import os
 import re
+import tomllib
 from pathlib import Path
 
 from matrix import digest, stage as stage_server, write_json
@@ -140,15 +141,37 @@ def verify_runtime(runtime):
 
 
 def prepare_fml_defaults(runtime):
-    # Avoid Forge's first-write/file-watcher race without touching imported settings.
+    # Avoid Forge's first-write race and keep external update services out of the test.
     config = runtime / "config/fml.toml"
     config.parent.mkdir(exist_ok=True)
     try:
         with config.open("xb") as output:
             output.write(FML_DEFAULTS.read_bytes())
     except FileExistsError:
+        original = config.read_bytes()
+        text = original.decode("utf-8")
+        settings = tomllib.loads(text)
+        if settings.get("versionCheck") is False:
+            return
+        if "versionCheck" in settings:
+            updated, count = re.subn(r"(?m)^([ \t]*versionCheck[ \t]*=[ \t]*)true(?=[ \t]*(?:#|\r?$))",
+                                     r"\g<1>false", text, count=1)
+            if count != 1:
+                raise ValueError("Cannot isolate the update check in the copied Forge configuration")
+        else:
+            updated = "versionCheck = false\n" + text
+        if tomllib.loads(updated) != dict(settings, versionCheck=False):
+            raise AssertionError("A setting other than the external Forge update check would change")
+        backup = runtime / "fml-pre-qualification.toml"
+        with backup.open("xb") as output:
+            output.write(original)
+        config.write_bytes(updated.encode("utf-8"))
+        write_json(runtime / "native1201-fml-defaults.json",
+                   {"sha256": digest(config), "originalSha256": digest(backup), "forge": FORGE_VERSION,
+                    "versionCheck": False})
         return
-    write_json(runtime / "native1201-fml-defaults.json", {"sha256": digest(FML_DEFAULTS), "forge": FORGE_VERSION})
+    write_json(runtime / "native1201-fml-defaults.json",
+               {"sha256": digest(FML_DEFAULTS), "forge": FORGE_VERSION, "versionCheck": False})
 
 
 class Server(NativeLaunch):
