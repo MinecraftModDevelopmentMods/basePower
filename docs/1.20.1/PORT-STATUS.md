@@ -9,6 +9,25 @@ The port uses the current block properties, creative-tab registry and screen
 drawing APIs. Saved registry names and machine data stay the same. The shared
 Base Metals migration hook is still needed when upgrading legacy saves with
 both mods installed. Use the pinned local Base Metals build for those tests.
+The port also maps the old vanilla pottery and sound IDs in Forge's 1.19.4
+registry snapshot. Minecraft itself converts the saved pottery stacks.
+
+## What the tests check
+
+The broad Works sweep has 21 stations in each of two profiles, with and without
+Base Metals. It checks machine output and saved state, including drill movement
+and state after a full server restart. Its independent audit reads the raw
+station results and fails if a profile or required checkpoint is missing.
+
+The migration checks use copies of original 1.10.2 Advantage saves, released
+1.10.2 and 1.12.2 base* saves, and a 1.19.4 save. They compare saved state and
+then operate the existing machines without replacing them. Keep the original
+save and all its other mods safe before trying an upgrade yourself.
+
+The combined client check renders all 39 machine screens and checks both the
+machine name and inventory caption. Deliberately missing and overlapping
+labels must fail. It also checks the creative tab, models, textures and
+recipe-book grouping with data from the server.
 
 Manual checks should use the combined Eclipse launch or exact packaged
 candidates: inspect models, recipe discovery and menus, then open a
