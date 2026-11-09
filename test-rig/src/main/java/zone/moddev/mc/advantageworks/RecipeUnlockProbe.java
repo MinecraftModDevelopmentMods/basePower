@@ -132,7 +132,7 @@ final class RecipeUnlockProbe {
                     if (choices.isEmpty()) { emptyTags++; continue; }
                     for (Item candidate : choices) {
                         player.getInventory().setItem(0, new ItemStack(candidate));
-                        require(matchesInventory(condition, player.getInventory()), "Tag member rejected: " + id + " / " + candidate.getRegistryName());
+                        require(matchesInventory(condition, player.getInventory()), "Tag member rejected: " + id + " / " + net.minecraftforge.registries.ForgeRegistries.ITEMS.getKey(candidate));
                         members++;
                     }
                     reset(advancement, recipe);
@@ -176,7 +176,7 @@ final class RecipeUnlockProbe {
                         if (!choices.isEmpty()) {
                             Item candidate = choices.get(0);
                             discover(candidate);
-                            additions.add(candidate.getRegistryName().toString());
+                            additions.add(net.minecraftforge.registries.ForgeRegistries.ITEMS.getKey(candidate).toString());
                             break;
                         }
                     }
@@ -258,9 +258,9 @@ final class RecipeUnlockProbe {
     private static List<Item> choices(JsonObject predicate) {
         if (predicate.has("item")) return Collections.singletonList(item(predicate.get("item").getAsString()));
         List<Item> items = new ArrayList<>();
-        for (var holder : net.minecraft.core.Registry.ITEM.getTagOrEmpty(
+        for (var holder : net.minecraft.core.registries.BuiltInRegistries.ITEM.getTagOrEmpty(
                 ItemTags.create(new ResourceLocation(predicate.get("tag").getAsString())))) items.add(holder.value());
-        items.sort(Comparator.comparing(candidate -> candidate.getRegistryName().toString()));
+        items.sort(Comparator.comparing(candidate -> net.minecraftforge.registries.ForgeRegistries.ITEMS.getKey(candidate).toString()));
         return items;
     }
 

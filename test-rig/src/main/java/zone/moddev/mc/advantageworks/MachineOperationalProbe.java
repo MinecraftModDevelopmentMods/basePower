@@ -56,18 +56,18 @@ final class MachineOperationalProbe {
         MinecraftForge.EVENT_BUS.addListener(probe::entityJoining);
     }
 
-    private void chunkLoaded(net.minecraftforge.event.world.ChunkEvent.Load event) {
-        if (paused && event.getWorld() instanceof ServerLevel) {
-            ServerLevel loaded = (ServerLevel) event.getWorld();
+    private void chunkLoaded(net.minecraftforge.event.level.ChunkEvent.Load event) {
+        if (paused && event.getLevel() instanceof ServerLevel) {
+            ServerLevel loaded = (ServerLevel) event.getLevel();
             if (loaded.dimension() == net.minecraft.world.level.Level.OVERWORLD) {
                 held.addAll(NativeBlockEntityTicks.drain(loaded));
             }
         }
     }
 
-    private void entityJoining(net.minecraftforge.event.entity.EntityJoinWorldEvent event) {
-        if (paused && event.getWorld() instanceof ServerLevel
-                && event.getWorld().dimension() == net.minecraft.world.level.Level.OVERWORLD
+    private void entityJoining(net.minecraftforge.event.entity.EntityJoinLevelEvent event) {
+        if (paused && event.getLevel() instanceof ServerLevel
+                && event.getLevel().dimension() == net.minecraft.world.level.Level.OVERWORLD
                 && !(event.getEntity() instanceof net.minecraft.world.entity.player.Player)) {
             heldEntities.hold(event.getEntity());
         }
@@ -154,10 +154,10 @@ final class MachineOperationalProbe {
         } catch (Throwable failure) { fail(run, "setup", failure); }
     }
 
-    private void tick(TickEvent.WorldTickEvent event) {
-        if (event.world.isClientSide || !(event.world instanceof ServerLevel)
-                || event.world.dimension() != net.minecraft.world.level.Level.OVERWORLD) return;
-        ServerLevel current = (ServerLevel) event.world;
+    private void tick(TickEvent.LevelTickEvent event) {
+        if (event.level.isClientSide || !(event.level instanceof ServerLevel)
+                || event.level.dimension() != net.minecraft.world.level.Level.OVERWORLD) return;
+        ServerLevel current = (ServerLevel) event.level;
         if (event.phase == TickEvent.Phase.START && paused) {
             held.addAll(NativeBlockEntityTicks.drain(current));
             for (Entity entity : current.getAllEntities()) if (!(entity instanceof net.minecraft.world.entity.player.Player)) heldEntities.hold(entity);
@@ -278,7 +278,7 @@ final class MachineOperationalProbe {
                     if (pos.getX() < 50000 || pos.getX() > 100000 || pos.getY() < 79 || pos.getY() > 111
                             || pos.getZ() < 50000 || pos.getZ() > 50031) throw new IllegalArgumentException("Saved position escaped proving ground");
                     actual.addProperty("x", pos.getX()); actual.addProperty("y", pos.getY()); actual.addProperty("z", pos.getZ());
-                    actual.addProperty("block", world.getBlockState(pos).getBlock().getRegistryName().toString());
+                    actual.addProperty("block", net.minecraftforge.registries.ForgeRegistries.BLOCKS.getKey(world.getBlockState(pos).getBlock()).toString());
                     actual.addProperty("state", world.getBlockState(pos).toString());
                     BlockEntity tile = world.getBlockEntity(pos);
                     if (tile != null) actual.addProperty("nbt", tile.saveWithFullMetadata().toString());

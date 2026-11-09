@@ -15,7 +15,7 @@ import native117_broad_result_audit as audit
 
 LINE = Path(__file__).resolve().parents[3].name.removeprefix("PA")
 # This is a historical audit fixture, not an attestation about the active port.
-if LINE == "118":
+if LINE in ("118", "119"):
     LINE = "117"
 
 

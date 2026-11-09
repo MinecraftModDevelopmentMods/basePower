@@ -43,17 +43,17 @@ final class ConnectedProbe implements ConnectedSession.Port {
         return session;
     }
 
-    private void tick(TickEvent.WorldTickEvent event) {
-        if (event.world.isClientSide || Native117Worlds.legacyId(event.world.dimension()) != 0) return;
+    private void tick(TickEvent.LevelTickEvent event) {
+        if (event.level.isClientSide || Native117Worlds.legacyId(event.level.dimension()) != 0) return;
         try {
-            ConnectedSession current = get((ServerLevel) event.world);
+            ConnectedSession current = get((ServerLevel) event.level);
             if (event.phase == TickEvent.Phase.START) current.start(); else current.end();
         } catch (Exception ex) { throw new IllegalStateException("Connected probe failed", ex); }
     }
 
-    private void chunkLoaded(net.minecraftforge.event.world.ChunkEvent.Load event) {
-        if (!(event.getWorld() instanceof ServerLevel)) return;
-        ServerLevel loaded = (ServerLevel) event.getWorld();
+    private void chunkLoaded(net.minecraftforge.event.level.ChunkEvent.Load event) {
+        if (!(event.getLevel() instanceof ServerLevel)) return;
+        ServerLevel loaded = (ServerLevel) event.getLevel();
         if (loaded.dimension() != net.minecraft.world.level.Level.OVERWORLD) return;
         if (session == null) held.addAll(NativeBlockEntityTicks.drain(loaded));
         else if (world == loaded) session.start();
@@ -101,7 +101,7 @@ final class ConnectedProbe implements ConnectedSession.Port {
             entry.remove("seed");
             BlockPos pos = new BlockPos(e.get("x").getAsInt(), e.get("y").getAsInt(), e.get("z").getAsInt());
             BlockState state = world.getBlockState(pos);
-            entry.addProperty("actualName", state.getBlock().getRegistryName().toString());
+            entry.addProperty("actualName", net.minecraftforge.registries.ForgeRegistries.BLOCKS.getKey(state.getBlock()).toString());
             JsonObject properties = new JsonObject();
             for (Property<?> p : state.getProperties()) properties.addProperty(p.getName(), state.getValue(p).toString().toLowerCase(java.util.Locale.ROOT));
             entry.add("properties", properties);

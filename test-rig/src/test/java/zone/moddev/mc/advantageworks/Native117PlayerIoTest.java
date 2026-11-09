@@ -107,7 +107,7 @@ public class Native117PlayerIoTest {
     }
 
     private static void assertSaved(CompoundTag saved, HeadlessPlayer player, int count, int slot) throws Exception {
-        assertEquals(SharedConstants.getCurrentVersion().getWorldVersion(), saved.getInt("DataVersion"));
+        assertEquals(SharedConstants.getCurrentVersion().getDataVersion().getVersion(), saved.getInt("DataVersion"));
         assertEquals(ID, saved.getUUID("UUID"));
         assertFalse(saved.contains("UUIDMost"));
         assertFalse(saved.contains("UUIDLeast"));
@@ -187,7 +187,7 @@ public class Native117PlayerIoTest {
         Inventory items;
         private HeadlessPlayer() { super(null, null, new GameProfile(ID, "Headless")); }
         @Override public CompoundTag saveWithoutId(CompoundTag root) {
-            root.putInt("DataVersion", SharedConstants.getCurrentVersion().getWorldVersion());
+            root.putInt("DataVersion", SharedConstants.getCurrentVersion().getDataVersion().getVersion());
             root.putUUID("UUID", getUUID());
             root.put("Inventory", items.save(new ListTag()));
             return root;

@@ -18,7 +18,7 @@ JAVA_TESTS = "src/test/java/zone/moddev/mc/advantageworks/"
 # These named files now serve the active port. All other ledger entries still
 # check the worktree directly, so an unrelated edit cannot hide in the archive.
 ACTIVE_ADAPTERS = frozenset({
-    STATIONS, "client-resources/resources/gui-label-expectations.json",
+    STATIONS, "README.md", "client-resources/resources/gui-label-expectations.json",
     *("migration/" + name + ".py" for name in (
         "endurance", "extended_lifecycle", "lifecycle", "oil_transfer",
         "progression", "semantic_machine_audit",

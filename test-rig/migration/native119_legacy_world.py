@@ -1,4 +1,4 @@
-"""Compare original and released legacy fixtures against live and saved 1.18.2 state."""
+"""Compare original and released legacy fixtures against live and saved 1.19.4 state."""
 
 import argparse
 from pathlib import Path
@@ -11,8 +11,8 @@ from native117 import native_normalized, output_path, require_disjoint
 from native117_broad import read_json
 from native117_commands import native
 from native117_legacy_world import turbine
-import native118
-import native118_saved
+import native119
+import native119_saved
 
 
 def portable(hashes):
@@ -20,7 +20,7 @@ def portable(hashes):
 
 
 def operate(runtime, frozen, target, java, port, positions, expected):
-    launcher = native118.stage(runtime, target, port)
+    launcher = native119.stage(runtime, target, port)
     for path in (WORLD, "config"):
         shutil.copytree(frozen / path, runtime / path)
     shutil.copy2(frozen / "migration-fixture.json", runtime / "migration-fixture.json")
@@ -28,7 +28,7 @@ def operate(runtime, frozen, target, java, port, positions, expected):
     jobs = (("sourceChest", "destination", "dirt", "dirt", 8),
             ("steamCrusher", "steamCrusher", "stone", "cobblestone", 1),
             ("electricFurnace", "electricFurnace", "iron_ore", "iron_ingot", 1))
-    server = native118.Server(runtime, java, launcher, "operation")
+    server = native119.Server(runtime, java, launcher, "operation")
     try:
         for source, _, item, _, count in jobs:
             x, y, z = positions[source]
@@ -79,10 +79,10 @@ def main():
     if before != portable(previous["sourceFingerprint"]):
         raise AssertionError("Legacy source changed since the previous run")
     output = output_path(args.output)
-    target = native118.read_target(args.profile, args.seed, args.inventory, args.inventory_sha256)
+    target = native119.read_target(args.profile, args.seed, args.inventory, args.inventory_sha256)
     for protected in (source, args.profile, args.fixture, args.seed, args.inventory):
         require_disjoint(output, protected)
-    launcher = native118.stage(output, target, args.port)
+    launcher = native119.stage(output, target, args.port)
     shutil.copytree(source / WORLD, output / WORLD)
     shutil.copytree(source / "config", output / "config")
     if fingerprint(source / WORLD) != fingerprint(output / WORLD):
@@ -92,11 +92,11 @@ def main():
     result = dict(status="RUNNING", source=str(source), sourceFingerprint=before,
                   priorReceiptSha256=digest(args.prior_run), profileSha256=digest(args.profile),
                   inventorySha256=digest(args.inventory), phases={})
-    report = output / "native118-legacy-world-results.json"
+    report = output / "native119-legacy-world-results.json"
     try:
         saves = {}
         for phase in ("converted", "restarted"):
-            server = native118.Server(output, args.java17, launcher, phase)
+            server = native119.Server(output, args.java17, launcher, phase)
             try:
                 server.snapshot(phase)
                 server.send("save-all flush")
@@ -106,8 +106,8 @@ def main():
             snapshot = output / f"migration-{phase}.json"
             rows = read_json(snapshot)
             verify_snapshot(expected, rows)
-            saves[phase] = native118_saved.capture(output, phase, rows)
-            observed = turbine(output / WORLD, positions["hydroGenerator"], data_version=native118_saved.DATA_VERSION)
+            saves[phase] = native119_saved.capture(output, phase, rows)
+            observed = turbine(output / WORLD, positions["hydroGenerator"], data_version=native119_saved.DATA_VERSION)
             if observed != dict(expected["turbine"], id="baseelectric:hydroturbine"):
                 raise AssertionError("Saved turbine identity, position or parent changed")
             result["phases"][phase] = dict(status="PASS", witnesses=len(rows), turbine=observed,

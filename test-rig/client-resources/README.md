@@ -4,7 +4,7 @@ This disposable Minecraft 1.19.4 / Forge 45.4.0 client checks models, textures,
 translations, recipe-book cells and machine screens after Minecraft loads them.
 It registers no gameplay content, opens no world and closes when finished.
 The probe is excluded from release jars and ordinary Eclipse launches.
-See [port status](../../docs/1.18/PORT-STATUS.md) for current qualification.
+See [port status](../../docs/1.19/PORT-STATUS.md) for current qualification.
 Earlier-version results do not qualify this version.
 
 Use Java 17 for Gradle, compilation and the client and server runners. The

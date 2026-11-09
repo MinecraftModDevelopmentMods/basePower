@@ -48,7 +48,7 @@ import net.minecraft.network.protocol.game.ServerboundClientCommandPacket;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayerGameMode;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.network.PacketSendListener;
 import net.minecraft.core.Direction;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
@@ -56,7 +56,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.util.FakePlayer;
 import net.minecraftforge.common.util.FakePlayerFactory;
-import net.minecraftforge.event.world.WorldEvent;
+import net.minecraftforge.event.level.LevelEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.RegisterCommandsEvent;
 
@@ -98,9 +98,9 @@ final class DimensionEntityProbe {
 
     private static boolean witnessed(Entity entity) { return NativeEntityData.containsString(entity, WITNESS); }
 
-    private void load(WorldEvent.Load event) {
-        if (!(event.getWorld() instanceof ServerLevel)) return;
-        ServerLevel world = (ServerLevel) event.getWorld();
+    private void load(LevelEvent.Load event) {
+        if (!(event.getLevel() instanceof ServerLevel)) return;
+        ServerLevel world = (ServerLevel) event.getLevel();
         if (!marked(world) || !DEFINITION.isFile()) return;
         try {
             JsonObject definition = definition();
@@ -108,37 +108,37 @@ final class DimensionEntityProbe {
         } catch (Exception ex) { throw new IllegalStateException("Dimension load preparation failed", ex); }
     }
 
-    private void tick(TickEvent.WorldTickEvent event) {
-        if (!marked(event.world) || !DEFINITION.isFile()) return;
+    private void tick(TickEvent.LevelTickEvent event) {
+        if (!marked(event.level) || !DEFINITION.isFile()) return;
         if (event.phase == TickEvent.Phase.START) {
             try {
                 JsonObject definition = definition();
                 int selected = dimension(definition);
-                if (event.world.dimension().equals(Level.OVERWORLD) && nativeOnLoad(definition)) {
-                    ServerLevel selectedWorld = event.world.getServer().getLevel(Native117Worlds.key(selected));
+                if (event.level.dimension().equals(Level.OVERWORLD) && nativeOnLoad(definition)) {
+                    ServerLevel selectedWorld = event.level.getServer().getLevel(Native117Worlds.key(selected));
                     if (selectedWorld == null || !marked(selectedWorld)) throw new IllegalStateException("Dimension unavailable");
                     prepare(selectedWorld);
                 }
-                if (Native117Worlds.legacyId(event.world.dimension()) != selected) return;
+                if (Native117Worlds.legacyId(event.level.dimension()) != selected) return;
                 // Pin/load before either frozen observation or normal native initialization.
-                prepare((ServerLevel) event.world);
-                if (!frozen(event.world, definition)) return;
-                NativeEntityHold hold = held.computeIfAbsent(event.world, key -> new NativeEntityHold());
-                for (Entity entity : witnesses((ServerLevel) event.world)) hold.hold(entity);
-                held.put(event.world, hold);
+                prepare((ServerLevel) event.level);
+                if (!frozen(event.level, definition)) return;
+                NativeEntityHold hold = held.computeIfAbsent(event.level, key -> new NativeEntityHold());
+                for (Entity entity : witnesses((ServerLevel) event.level)) hold.hold(entity);
+                held.put(event.level, hold);
             } catch (Exception ex) { throw new IllegalStateException("Dimension tick preparation failed", ex); }
         } else if (event.phase == TickEvent.Phase.END) {
-            NativeEntityHold hold = held.remove(event.world);
+            NativeEntityHold hold = held.remove(event.level);
             if (hold != null) hold.restore();
         }
     }
 
-    private void entityJoining(net.minecraftforge.event.entity.EntityJoinWorldEvent event) {
-        if (!(event.getWorld() instanceof ServerLevel) || !marked(event.getWorld())
+    private void entityJoining(net.minecraftforge.event.entity.EntityJoinLevelEvent event) {
+        if (!(event.getLevel() instanceof ServerLevel) || !marked(event.getLevel())
                 || !DEFINITION.isFile() || !witnessed(event.getEntity())) return;
         try {
-            if (frozen(event.getWorld(), definition())) {
-                held.computeIfAbsent(event.getWorld(), key -> new NativeEntityHold()).hold(event.getEntity());
+            if (frozen(event.getLevel(), definition())) {
+                held.computeIfAbsent(event.getLevel(), key -> new NativeEntityHold()).hold(event.getEntity());
             }
         } catch (Exception error) { throw new IllegalStateException("Dimension join hold failed", error); }
     }
@@ -335,7 +335,7 @@ final class DimensionEntityProbe {
             entry.add("passengerUuids", passengers);
             Entity leash = entity instanceof Mob ? ((Mob) entity).getLeashHolder() : null;
             entry.add("leashHolderUuid", leash == null ? JsonNull.INSTANCE : JSON.toJsonTree(leash.getUUID().toString()));
-            entry.add("leashHolderType", leash == null ? JsonNull.INSTANCE : JSON.toJsonTree(leash.getType().getRegistryName().toString()));
+            entry.add("leashHolderType", leash == null ? JsonNull.INSTANCE : JSON.toJsonTree(net.minecraftforge.registries.ForgeRegistries.ENTITY_TYPES.getKey(leash.getType()).toString()));
             BlockPos leashPos = leash instanceof HangingEntity ? ((HangingEntity) leash).getPos() : null;
             entry.add("leashHolderPosition", leashPos == null ? JsonNull.INSTANCE
                     : JSON.toJsonTree(new int[] {leashPos.getX(), leashPos.getY(), leashPos.getZ()}));
@@ -343,7 +343,7 @@ final class DimensionEntityProbe {
         }
         result.add("entities", entities);
         BlockPos pos = new BlockPos(176, 101, 8); JsonObject generator = new JsonObject();
-        generator.addProperty("actualName", world.getBlockState(pos).getBlock().getRegistryName().toString());
+        generator.addProperty("actualName", net.minecraftforge.registries.ForgeRegistries.BLOCKS.getKey(world.getBlockState(pos).getBlock()).toString());
         BlockEntity tile = world.getBlockEntity(pos); if (tile != null) generator.add("tile", encode(tile.saveWithFullMetadata()));
         result.add("generator", generator);
         return result;
@@ -387,7 +387,7 @@ final class DimensionEntityProbe {
             world.getGameRules().getRule(net.minecraft.world.level.GameRules.RULE_KEEPINVENTORY).set(keep, server);
             destination.getGameRules().getRule(net.minecraft.world.level.GameRules.RULE_KEEPINVENTORY).set(keep, server);
             OfflineConnection connection = new OfflineConnection(server, player);
-            player.setHealth(0); player.die(DamageSource.GENERIC);
+            player.setHealth(0); player.die(player.damageSources().generic());
             CompoundTag afterDeath = player.saveWithoutId(new CompoundTag());
             result.add("afterDeath", encode(afterDeath));
             diagnostics.add("afterDeath", spawnDiagnostics(player, afterDeath));
@@ -440,7 +440,7 @@ final class DimensionEntityProbe {
     private static final class OfflineConnection extends ServerGamePacketListenerImpl {
         OfflineConnection(MinecraftServer server, ServerPlayer player) { super(server, new Connection(PacketFlow.SERVERBOUND), player); }
         @Override public void send(Packet<?> packet) { /* Deliberately no socket or client login. */ }
-        @Override public void send(Packet<?> packet, GenericFutureListener<? extends Future<? super Void>> listener) {
+        @Override public void send(Packet<?> packet, PacketSendListener listener) {
             // Death-message packets use this overload; no native network work is queued.
         }
     }
@@ -448,7 +448,7 @@ final class DimensionEntityProbe {
     private static CompoundTag entityNbt(Entity entity) {
         if (entity instanceof LeashFenceKnotEntity) {
             CompoundTag nbt = entity.saveWithoutId(new CompoundTag());
-            nbt.putString("id", entity.getType().getRegistryName().toString());
+            nbt.putString("id", net.minecraftforge.registries.ForgeRegistries.ENTITY_TYPES.getKey(entity.getType()).toString());
             return nbt;
         }
         CompoundTag nbt = new CompoundTag();

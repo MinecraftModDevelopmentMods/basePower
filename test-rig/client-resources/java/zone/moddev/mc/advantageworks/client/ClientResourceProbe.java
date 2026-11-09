@@ -75,6 +75,10 @@ public final class ClientResourceProbe {
             require(minecraft.getOverlay() == null, "Timed out before native resource loading completed");
             int items = 0;
             int states = 0;
+            var expectedCreative = new java.util.HashSet<ResourceLocation>();
+            var hidden = java.util.Set.of("basepower:fluid_pipe_terminal", "basepower:crude_oil", "basepower:refined_oil",
+                    "basesteam:pump_pipe_steam", "basesteam:drillbit",
+                    "baseelectric:pump_pipe_electric", "baseelectric:laser_turret_evil");
             BakedModel missing = minecraft.getModelManager().getMissingModel();
             for (Item item : ForgeRegistries.ITEMS) {
                 ResourceLocation id = ForgeRegistries.ITEMS.getKey(item);
@@ -84,6 +88,7 @@ public final class ClientResourceProbe {
                 require(!I18n.get(key).equals(key), "Untranslated item: " + id + " -> " + key);
                 BakedModel model = minecraft.getItemRenderer().getModel(stack, null, null, 0);
                 verifyModel(model, missing, null, id.toString(), true);
+                if (!hidden.contains(id.toString())) expectedCreative.add(id);
                 items++;
             }
             for (Block block : ForgeRegistries.BLOCKS) {
@@ -106,15 +111,16 @@ public final class ClientResourceProbe {
             require(I18n.exists("itemGroup.basepower") && tab.getDisplayName().getString().equals(I18n.get("itemGroup.basepower")),
                     "The shared creative tab title is not translated");
             var creativeIds = new java.util.HashSet<ResourceLocation>();
-            var creativeNamespaces = new java.util.HashSet<String>();
             for (ItemStack stack : contents) {
                 ResourceLocation id = ForgeRegistries.ITEMS.getKey(stack.getItem());
                 require(id != null && creativeIds.add(id), "Duplicate or unregistered creative entry: " + id);
-                creativeNamespaces.add(id.getNamespace());
             }
-            for (String id : new String[] {"basepower", "basesteam", "baseelectric"}) {
-                if (included(id)) require(creativeNamespaces.contains(id), "Missing creative tab entries for " + id);
-            }
+            var missingCreative = new java.util.HashSet<>(expectedCreative);
+            missingCreative.removeAll(creativeIds);
+            var extraCreative = new java.util.HashSet<>(creativeIds);
+            extraCreative.removeAll(expectedCreative);
+            require(missingCreative.isEmpty() && extraCreative.isEmpty(),
+                    "Wrong creative tab contents. Missing: " + missingCreative + "; unexpected: " + extraCreative);
             require(I18n.get("block.basepower.still").equals(I18n.get("tile.basepower.still.name")),
                     "Legacy GUI translation differs from modern block name");
             TankVisualProbe.verify(minecraft, result);

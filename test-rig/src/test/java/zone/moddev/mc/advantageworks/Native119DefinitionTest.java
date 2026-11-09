@@ -6,16 +6,16 @@ import java.nio.charset.StandardCharsets;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 
-public class Native118DefinitionTest {
+public class Native119DefinitionTest {
     @Test
     public void nativeTargetPreservesEverySourceStationAndDistrict() throws Exception {
         Gson gson = new Gson();
         try (InputStreamReader reader = new InputStreamReader(getClass().getResourceAsStream(
                 "/assets/advantageworkstest/works/works-1.13.2.json"), StandardCharsets.UTF_8)) {
             WorksDefinition source = gson.fromJson(reader, WorksDefinition.class);
-            WorksDefinition target = WorksDefinitionLoader.loadNative118();
+            WorksDefinition target = WorksDefinitionLoader.loadNative119();
             assertEquals("1.13.2", source.minecraft);
-            assertEquals("1.18.2", target.minecraft);
+            assertEquals("1.19.4", target.minecraft);
             assertEquals(21, target.stations.size());
             assertEquals(gson.toJsonTree(source.districts), gson.toJsonTree(target.districts));
             assertEquals(gson.toJsonTree(source.stations), gson.toJsonTree(target.stations));

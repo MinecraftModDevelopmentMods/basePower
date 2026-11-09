@@ -1,4 +1,4 @@
-"""Run the original partial-network, bridge and native interop oracles on Forge 40."""
+"""Run the original partial-network, bridge and native interop oracles on Forge 45."""
 
 import argparse
 from pathlib import Path
@@ -14,8 +14,8 @@ from native117_lifecycle import authorize_lifecycle, read_json
 from native117_partial import exercise_bridge, exercise_partial
 from native117_readiness import await_ready
 from native117_ticket_networks import NativeTicketExtendedRun
-import native118
-from native118_machines import LifecycleRun
+import native119
+from native119_machines import LifecycleRun
 
 
 class PartialRun(NativeTicketExtendedRun, LifecycleRun):
@@ -29,11 +29,11 @@ def interop(runtime, launcher, java, progress):
     mark_runtime(runtime)
     observations = {}
     for phase in ("exercise", "restored"):
-        server = native118.Server(runtime, java, launcher, phase)
+        server = native119.Server(runtime, java, launcher, phase)
         try:
             server.send("forceload add 1023 1023 1100 1030")
             ready = await_ready(server, runtime, (63, 63, 68, 64), "interop-" + phase,
-                                minecraft=native118.MINECRAFT)
+                                minecraft=native119.MINECRAFT)
             server.send("advinterop " + phase)
             server.wait("ADVINTEROP COMPLETE " + phase, 120)
             report = read_json(runtime / "advantage-works-results" / f"native-interop-{phase}.json")
@@ -56,16 +56,16 @@ def main():
     parser.add_argument("--port", type=int, required=True)
     parser.add_argument("--campaign", choices=("partial", "bridge", "extended", "interop"), required=True)
     args = parser.parse_args()
-    target = native118.read_target(args.profile, args.seed, args.inventory, args.inventory_sha256)
+    target = native119.read_target(args.profile, args.seed, args.inventory, args.inventory_sha256)
     runtime = output_path(args.output)
     for path in (args.profile, args.seed, args.inventory, *(item["path"] for item in target[2].values())):
         require_disjoint(runtime, path)
     protected = fingerprint(target[0])
-    launcher = native118.stage(runtime, target, args.port)
-    report = dict(status="RUNNING", minecraft=native118.MINECRAFT, forge=native118.FORGE,
+    launcher = native119.stage(runtime, target, args.port)
+    report = dict(status="RUNNING", minecraft=native119.MINECRAFT, forge=native119.FORGE,
                   profileSha256=digest(args.profile), inventorySha256=digest(args.inventory),
                   javaSha256=digest(args.java17), runnerSha256=digest(Path(__file__)))
-    receipt = runtime / f"native118-{args.campaign}-results.json"
+    receipt = runtime / f"native119-{args.campaign}-results.json"
 
     def progress(value):
         report["observations"] = value
@@ -94,7 +94,7 @@ def main():
         try:
             if runner is not None:
                 runner.close()
-            native118.verify_runtime(runtime)
+            native119.verify_runtime(runtime)
             report["seedUnchanged"] = fingerprint(target[0]) == protected
             if not report["seedUnchanged"]:
                 raise AssertionError("Protected server seed changed during the test")

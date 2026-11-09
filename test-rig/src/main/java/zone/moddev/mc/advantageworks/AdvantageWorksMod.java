@@ -3,17 +3,13 @@ package zone.moddev.mc.advantageworks;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.event.RegisterCommandsEvent;
-import net.minecraftforge.common.world.ForgeWorldPreset;
-import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 
 @Mod(AdvantageWorksMod.MODID)
 public final class AdvantageWorksMod {
     public static final String MODID = "advantageworkstest";
-    public static final String VERSION = "1.1.2.118021";
+    public static final String VERSION = "1.1.3.119041";
 
     public AdvantageWorksMod() {
-        FMLJavaModLoadingContext.get().getModEventBus()
-                .addGenericListener(ForgeWorldPreset.class, Native118TestFlat::register);
         MigrationProbe.register();
         ConnectedProbe.register();
         ActorProbe.register();

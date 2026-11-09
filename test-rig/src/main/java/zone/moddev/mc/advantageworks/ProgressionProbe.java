@@ -130,7 +130,7 @@ final class ProgressionProbe {
             changed = false;
             for (Recipe<?> recipe : recipes) {
                 if (executed.contains(recipe.getId().toString()) || recipe.getIngredients().isEmpty()) continue;
-                String type = net.minecraft.core.Registry.RECIPE_TYPE.getKey(recipe.getType()).toString();
+                String type = net.minecraft.core.registries.BuiltInRegistries.RECIPE_TYPE.getKey(recipe.getType()).toString();
                 boolean crafting = recipe.getType() == RecipeType.CRAFTING;
                 boolean smelting = recipe.getType() == RecipeType.SMELTING;
                 boolean crushing = type.equals("basemetals:crushing");
@@ -154,6 +154,9 @@ final class ProgressionProbe {
                 if (crafting) {
                     AbstractContainerMenu container = new AbstractContainerMenu(null, 0) {
                         @Override public boolean stillValid(net.minecraft.world.entity.player.Player p) { return true; }
+                        @Override public ItemStack quickMoveStack(net.minecraft.world.entity.player.Player p, int slot) {
+                            return ItemStack.EMPTY;
+                        }
                     };
                     for (int width = 1; width <= 3 && result.isEmpty(); width++) {
                         if (ingredients.size() > width * 3) continue;
@@ -188,8 +191,8 @@ final class ProgressionProbe {
         JsonObject exclusions = fixture.getAsJsonObject("exclusions");
         int blocked = 0;
         for (Item item : ForgeRegistries.ITEMS.getValues()) {
-            if (!owned(item.getRegistryName())) continue;
-            String id = item.getRegistryName().toString();
+            if (!owned(net.minecraftforge.registries.ForgeRegistries.ITEMS.getKey(item))) continue;
+            String id = net.minecraftforge.registries.ForgeRegistries.ITEMS.getKey(item).toString();
             JsonObject row = new JsonObject();
             row.addProperty("id", id);
             if (exclusions.has(id)) {
@@ -228,8 +231,8 @@ final class ProgressionProbe {
         JsonObject tags = new JsonObject();
         for (String name : new String[] {"wires", "dusts/carbon", "rubber", "plastic", "circuit_boards", "solder"}) {
             List<String> members = new ArrayList<>();
-            for (var item : net.minecraft.core.Registry.ITEM.getTagOrEmpty(ItemTags.create(new ResourceLocation("forge", name))))
-                members.add(item.value().getRegistryName().toString());
+            for (var item : net.minecraft.core.registries.BuiltInRegistries.ITEM.getTagOrEmpty(ItemTags.create(new ResourceLocation("forge", name))))
+                members.add(net.minecraftforge.registries.ForgeRegistries.ITEMS.getKey(item.value()).toString());
             Collections.sort(members);
             tags.add(name, JSON.toJsonTree(members));
         }
@@ -262,7 +265,7 @@ final class ProgressionProbe {
     }
 
     private static LootContext chestContext(ServerLevel world, int seed) {
-        return new LootContext.Builder(world).withRandom(new Random(seed))
+        return new LootContext.Builder(world).withRandom(net.minecraft.util.RandomSource.create(seed))
                 .withParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.ORIGIN, new net.minecraft.world.phys.Vec3(0, 80, 0))
                 .create(net.minecraft.world.level.storage.loot.parameters.LootContextParamSets.CHEST);
     }
@@ -270,14 +273,14 @@ final class ProgressionProbe {
     @SuppressWarnings("unchecked")
     private static ItemStack matchedResult(Recipe<?> recipe, net.minecraft.world.Container inventory, ServerLevel world) {
         Recipe<net.minecraft.world.Container> typed = (Recipe<net.minecraft.world.Container>) recipe;
-        return typed.matches(inventory, world) ? typed.assemble(inventory) : ItemStack.EMPTY;
+        return typed.matches(inventory, world) ? typed.assemble(inventory, world.registryAccess()) : ItemStack.EMPTY;
     }
 
-    private static boolean advantage(ItemStack stack) { return !stack.isEmpty() && owned(stack.getItem().getRegistryName()); }
+    private static boolean advantage(ItemStack stack) { return !stack.isEmpty() && owned(net.minecraftforge.registries.ForgeRegistries.ITEMS.getKey(stack.getItem())); }
     private static boolean owned(ResourceLocation id) {
         return id != null && (id.getNamespace().equals("basepower") || id.getNamespace().equals("basesteam")
                 || id.getNamespace().equals("baseelectric"));
     }
-    static String id(ItemStack stack) { return stack.getItem().getRegistryName().toString(); }
+    static String id(ItemStack stack) { return net.minecraftforge.registries.ForgeRegistries.ITEMS.getKey(stack.getItem()).toString(); }
     static void require(boolean value, String reason) { if (!value) throw new IllegalStateException(reason); }
 }

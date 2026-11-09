@@ -19,7 +19,8 @@ import zipfile
 PROFILES = ("packaged-current", "packaged-decoupled")
 VERSIONS = {"113": ("1.13.2", "25.0.223"), "114": ("1.14.4", "28.2.26"),
             "115": ("1.15.2", "31.2.57"), "116": ("1.16.5", "36.2.34"),
-            "117": ("1.17.1", "37.1.1"), "118": ("1.18.2", "40.3.0")}
+            "117": ("1.17.1", "37.1.1"), "118": ("1.18.2", "40.3.0"),
+            "119": ("1.19.4", "45.4.0")}
 NATIVE117_LAUNCHERS = {
     "libraries/net/minecraftforge/forge/1.17.1-37.1.1/win_args.txt",
     "libraries/net/minecraftforge/forge/1.17.1-37.1.1/unix_args.txt",
@@ -37,6 +38,20 @@ NATIVE118_REQUIRED_CODE = {
     "libraries/net/minecraftforge/fmlloader/1.18.2-40.3.0/fmlloader-1.18.2-40.3.0.jar",
     "libraries/cpw/mods/bootstraplauncher/1.0.0/bootstraplauncher-1.0.0.jar",
     "libraries/net/minecraft/server/1.18.2-20220404.173914/server-1.18.2-20220404.173914-extra.jar",
+}
+NATIVE119_LAUNCHERS = {
+    "libraries/net/minecraftforge/forge/1.19.4-45.4.0/win_args.txt",
+    "libraries/net/minecraftforge/forge/1.19.4-45.4.0/unix_args.txt",
+}
+NATIVE119_REQUIRED_CODE = {
+    "libraries/net/minecraftforge/fmlloader/1.19.4-45.4.0/fmlloader-1.19.4-45.4.0.jar",
+    "libraries/cpw/mods/bootstraplauncher/1.1.2/bootstraplauncher-1.1.2.jar",
+    "libraries/net/minecraft/server/1.19.4-20230314.122934/server-1.19.4-20230314.122934-extra.jar",
+}
+MODULAR_CODE = {
+    "117": (NATIVE117_LAUNCHERS, NATIVE117_REQUIRED_CODE, ".117011"),
+    "118": (NATIVE118_LAUNCHERS, NATIVE118_REQUIRED_CODE, ".118021"),
+    "119": (NATIVE119_LAUNCHERS, NATIVE119_REQUIRED_CODE, ".119041"),
 }
 STATIONS = tuple(["W-%02d" % n for n in range(1, 5)]
                  + ["S-%02d" % n for n in range(1, 9)]
@@ -268,13 +283,16 @@ def log_evidence(evidence, path, line, phase, records):
                            r"Advantage Works command failed")
         for row in text.splitlines():
             require(not error.search(row), str(path) + ": native117 runtime error: " + row)
-    elif line == "118":
-        from native118 import log_findings
-        require("with MCP 20220404.173914" in text, str(path) + ": missing native118 MCP identity")
+    elif line in ("118", "119"):
+        if line == "118":
+            from native118 import log_findings, MCP
+        else:
+            from native119 import log_findings, MCP
+        require("with MCP " + MCP in text, str(path) + ": missing native" + line + " MCP identity")
         require("ThreadedAnvilChunkStorage: All dimensions are saved" in shutdown,
                 str(path) + ": missing completed all-dimension shutdown")
         failures, diagnostics = log_findings(text)
-        require(not failures, str(path) + ": native118 runtime error: " + repr(failures[:5]))
+        require(not failures, str(path) + ": native" + line + " runtime error: " + repr(failures[:5]))
         if diagnostics:
             require(evidence.json(path.with_suffix(".platform-diagnostics.json")) == diagnostics,
                     str(path) + ": changed or unrecorded Netty capability diagnostics")
@@ -294,10 +312,9 @@ def staged_pins(evidence, runtime, pins, name, line=None):
     require(sha(evidence.read(runtime / pins["launcher"])) == pins["launcher_sha256"].upper(),
             name + ": staged launcher changed")
     sealed = pins.get("serverCode", {}).get("files")
-    if line in ("117", "118"):
+    if line in MODULAR_CODE:
         label = "native" + line
-        launchers, required = ((NATIVE117_LAUNCHERS, NATIVE117_REQUIRED_CODE) if line == "117"
-                               else (NATIVE118_LAUNCHERS, NATIVE118_REQUIRED_CODE))
+        launchers, required, suffix = MODULAR_CODE[line]
         require(pins["launcher"] in launchers, name + ": " + label + " requires the modular Forge launcher")
         require(isinstance(sealed, dict) and sealed, name + ": missing sealed " + label + " engine inventory")
         require(required | {pins["launcher"]} <= set(sealed),
@@ -318,7 +335,7 @@ def staged_pins(evidence, runtime, pins, name, line=None):
                     name + ": linked or escaping native117 engine file")
         import tomllib
         for pin in jars:
-            require(pin["version"].endswith(".117011" if line == "117" else ".118021"),
+            require(pin["version"].endswith(suffix),
                     name + ": non-" + label + " mod version")
             with zipfile.ZipFile(runtime / "mods" / Path(pin["path"]).name) as archive:
                 metadata = tomllib.loads(archive.read("META-INF/mods.toml").decode("utf-8"))
@@ -385,7 +402,7 @@ def profile_audit(evidence, runtime, name, report, pins, definitions, line):
                 for phase in ("first", "restarted")}
     result = dict(status="PASS", stations=21, checks=checks, pins=custody, shutdown=shutdown,
                   manualProcedures="NOT_AUTOMATED_BY_BROAD_SWEEP")
-    if line in ("117", "118"):
+    if line in MODULAR_CODE:
         result["native" + line + "LogArchives"] = {
             phase: {kind: log_evidence(evidence, runtime / (kind + "-" + phase + ".log"),
                                       line, phase, records[phase]) for kind in ("latest", "debug")}

@@ -1,4 +1,4 @@
-"""Check retained player and dimension fixtures on the pinned Forge 40 server."""
+"""Check retained player and dimension fixtures on the pinned Forge 45 server."""
 
 import argparse
 from functools import partial
@@ -11,7 +11,7 @@ from native117 import output_path, require_disjoint
 from native117_actors import run_route
 from native117_broad import read_json
 from native117_stopped_entities import audit_stopped
-import native118
+import native119
 
 
 def main():
@@ -33,22 +33,22 @@ def main():
     before = fingerprint(source)
     if Path(approved["source"]).resolve() != source or approved["sourceFingerprint"] != before:
         raise AssertionError("Historical fixture no longer matches its approved source")
-    target = native118.read_target(args.profile, args.seed, args.inventory, args.inventory_sha256)
+    target = native119.read_target(args.profile, args.seed, args.inventory, args.inventory_sha256)
     with socket.socket() as port:
         port.bind(("127.0.0.1", args.port))
     output.mkdir()
     result = dict(status="RUNNING", kind=args.kind, source=str(source), realClientLogin="NOT_TESTED",
                   fixtureReceiptSha256=digest(args.fixture_receipt), profileSha256=digest(args.profile),
                   inventorySha256=digest(args.inventory), checks={})
-    report = output / "native118-actors-results.json"
+    report = output / "native119-actors-results.json"
     write_json(report, result)
     try:
         args.target_manifest = args.profile
         result["checks"] = run_route(
-            source, output / "server", target, args, stage=native118.stage, server_type=native118.Server,
-            stop_audit=partial(audit_stopped, minecraft_version=native118.MINECRAFT, data_version=2975,
+            source, output / "server", target, args, stage=native119.stage, server_type=native119.Server,
+            stop_audit=partial(audit_stopped, minecraft_version=native119.MINECRAFT, data_version=3337,
                                stopping_phase="ServerStoppingEvent"),
-            check_log=native118.require_native_boot, minecraft=native118.MINECRAFT)
+            check_log=native119.require_native_boot, minecraft=native119.MINECRAFT)
         result["status"] = "PASS" if all(c["status"] == "PASS" for c in result["checks"].values()) else "FAIL"
     except Exception:
         result.update(status="FAIL", error=traceback.format_exc())

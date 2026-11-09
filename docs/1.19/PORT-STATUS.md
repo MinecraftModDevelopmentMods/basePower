@@ -18,5 +18,6 @@ The Works harness uses Minecraft's flat preset and retains the 21 station
 definitions. The migration runners check live and serialized machine state,
 verify that the source is unchanged and refuse changed input hashes.
 
-See [the client probe](../../test-rig/client-resources/README.md) for commands.
+See [the 1.19 Works rig](../../test-rig/NATIVE119.md) and
+[the client probe](../../test-rig/client-resources/README.md) for commands.
 Keep local logs and provisional jars out of release artifacts and commits.

@@ -238,7 +238,9 @@ class PortContracts(unittest.TestCase):
     def test_active_port_adapters_are_separately_guarded(self):
         for name in sorted(ACTIVE_ADAPTERS):
             with self.subTest(path=name):
-                self.assertEqual(git_blob(BASE117_ADAPTERS, name).replace(b"\r\n", b"\n"),
+                # The active overview was revised in the audited 1.18 harness port.
+                baseline = "edc43a9" if name == "README.md" else BASE117_ADAPTERS
+                self.assertEqual(git_blob(baseline, name).replace(b"\r\n", b"\n"),
                                  (RIG / name).read_bytes().replace(b"\r\n", b"\n"))
 
     def test_ledger_cannot_refingerprint_or_exempt_historical_oracles(self):

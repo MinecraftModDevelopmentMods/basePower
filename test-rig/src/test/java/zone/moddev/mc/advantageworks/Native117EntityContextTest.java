@@ -84,12 +84,13 @@ public class Native117EntityContextTest {
     }
 
     static ServerLevel world(ResourceKey<Level> key) throws Exception {
+        zone.moddev.mc.advantageworks.unit.ForgeUnitRegistries.registerVanillaFluidTypes();
         Class<?> unsafe = Class.forName("sun.misc.Unsafe");
         Field field = unsafe.getDeclaredField("theUnsafe"); field.setAccessible(true);
         ServerLevel world = (ServerLevel) unsafe.getMethod("allocateInstance", Class.class)
-                .invoke(field.get(null), ServerLevel.class);
+                .invoke(field.get(null), EntityFixtureWorld.class);
         set(world, "dimension", key);
-        set(world, "random", new java.util.Random(0));
+        set(world, "random", net.minecraft.util.RandomSource.create(0));
         set(world, "profiler", (Supplier<ProfilerFiller>) () -> InactiveProfiler.INSTANCE);
         Field ticks = ServerLevel.class.getDeclaredField("entityTickList"); ticks.setAccessible(true);
         ticks.set(world, new net.minecraft.world.level.entity.EntityTickList());
@@ -98,5 +99,18 @@ public class Native117EntityContextTest {
 
     private static void set(ServerLevel world, String name, Object value) throws Exception {
         Field field = Level.class.getDeclaredField(name); field.setAccessible(true); field.set(world, value);
+    }
+
+    private static final class EntityFixtureWorld extends ServerLevel {
+        private EntityFixtureWorld() { super(null, null, null, null, null, null, null, false, 0L, java.util.List.of(), false); }
+
+        @Override public net.minecraft.world.flag.FeatureFlagSet enabledFeatures() {
+            return net.minecraft.world.flag.FeatureFlags.DEFAULT_FLAGS;
+        }
+
+        @Override public void gameEvent(net.minecraft.world.level.gameevent.GameEvent event,
+                net.minecraft.world.phys.Vec3 pos, net.minecraft.world.level.gameevent.GameEvent.Context context) {
+            // This isolated entity fixture has no chunks or game-event listeners.
+        }
     }
 }

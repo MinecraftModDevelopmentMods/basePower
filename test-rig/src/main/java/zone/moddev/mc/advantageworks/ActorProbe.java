@@ -45,23 +45,23 @@ final class ActorProbe {
 
     static boolean witnessed(Entity entity) { return NativeEntityData.containsString(entity, "AdvWorksActor"); }
 
-    private void tick(TickEvent.WorldTickEvent event) {
-        if (!(event.world instanceof ServerLevel)) return;
-        if (event.phase == TickEvent.Phase.START && frozen(event.world)) {
-            NativeEntityHold held = heldActors.computeIfAbsent(event.world, key -> new NativeEntityHold());
-            Native117Worlds.entities((ServerLevel) event.world).filter(ActorProbe::witnessed)
+    private void tick(TickEvent.LevelTickEvent event) {
+        if (!(event.level instanceof ServerLevel)) return;
+        if (event.phase == TickEvent.Phase.START && frozen(event.level)) {
+            NativeEntityHold held = heldActors.computeIfAbsent(event.level, key -> new NativeEntityHold());
+            Native117Worlds.entities((ServerLevel) event.level).filter(ActorProbe::witnessed)
                     .forEach(held::hold);
-            heldActors.put(event.world, held);
+            heldActors.put(event.level, held);
         } else if (event.phase == TickEvent.Phase.END) {
-            NativeEntityHold held = heldActors.remove(event.world);
+            NativeEntityHold held = heldActors.remove(event.level);
             if (held != null) held.restore();
         }
     }
 
-    private void entityJoining(net.minecraftforge.event.entity.EntityJoinWorldEvent event) {
-        if (event.getWorld() instanceof ServerLevel && frozen(event.getWorld())
+    private void entityJoining(net.minecraftforge.event.entity.EntityJoinLevelEvent event) {
+        if (event.getLevel() instanceof ServerLevel && frozen(event.getLevel())
                 && witnessed(event.getEntity())) {
-            heldActors.computeIfAbsent(event.getWorld(), key -> new NativeEntityHold()).hold(event.getEntity());
+            heldActors.computeIfAbsent(event.getLevel(), key -> new NativeEntityHold()).hold(event.getEntity());
         }
     }
 

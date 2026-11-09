@@ -69,8 +69,8 @@ final class Native117Readiness {
         System.out.println("ADVREADINESS QUEUED " + label);
     }
 
-    private void tick(TickEvent.WorldTickEvent event) {
-        if (observation == null || event.phase != TickEvent.Phase.END || event.world != world) return;
+    private void tick(TickEvent.LevelTickEvent event) {
+        if (observation == null || event.phase != TickEvent.Phase.END || event.level != world) return;
         List<State> states = new ArrayList<>();
         for (int x = observation.bounds.minX; x <= observation.bounds.maxX; x++) {
             for (int z = observation.bounds.minZ; z <= observation.bounds.maxZ; z++) {
@@ -82,7 +82,7 @@ final class Native117Readiness {
         if (!observation.observe(world.getGameTime(), System.nanoTime(), states)) return;
         JsonObject report = observation.report();
         report.addProperty("label", label);
-        report.addProperty("minecraft", "1.18.2");
+        report.addProperty("minecraft", "1.19.4");
         report.addProperty("dimension", world.dimension().location().toString());
         try {
             Files.createDirectories(output.toPath().getParent());

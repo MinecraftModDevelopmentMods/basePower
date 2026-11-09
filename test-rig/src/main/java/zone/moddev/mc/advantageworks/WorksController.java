@@ -29,13 +29,15 @@ import net.minecraft.core.Registry;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Style;
-import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.chunk.LevelChunk;
-import net.minecraftforge.common.BiomeDictionary;
+import net.minecraft.core.Holder;
+import net.minecraft.tags.BiomeTags;
+import net.minecraftforge.common.Tags;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.fml.ModList;
@@ -80,7 +82,7 @@ final class WorksController {
 
     synchronized void loadDefinition() {
         if (definition != null) return;
-        definition = WorksDefinitionLoader.loadNative118();
+        definition = WorksDefinitionLoader.loadNative119();
         for (WorksDefinition.Station station : definition.stations) {
             stations.put(station.id.toUpperCase(Locale.ROOT), station);
             statuses.put(station.id, "NOT_BUILT");
@@ -256,15 +258,13 @@ final class WorksController {
         worldgenJob.release();
     }
 
-    static boolean matchesExpectedBiome(ServerLevel world, String expected, Biome biome) {
-        net.minecraft.resources.ResourceKey<Biome> key = world.registryAccess().registryOrThrow(Registry.BIOME_REGISTRY)
-                .getResourceKey(biome).orElseThrow(() -> new IllegalStateException("Unregistered native biome"));
-        if ("DESERT".equals(expected)) {
-            return BiomeDictionary.hasType(key, BiomeDictionary.Type.getType("SANDY"))
-                    && !BiomeDictionary.hasType(key, BiomeDictionary.Type.getType("BEACH"))
-                    && !BiomeDictionary.hasType(key, BiomeDictionary.Type.getType("MESA"));
-        }
-        return BiomeDictionary.hasType(key, BiomeDictionary.Type.getType(expected));
+    static boolean matchesExpectedBiome(String expected, Holder<Biome> biome) {
+        return switch (expected) {
+            case "DESERT" -> biome.is(Tags.Biomes.IS_SANDY)
+                    && !biome.is(BiomeTags.IS_BEACH) && !biome.is(BiomeTags.IS_BADLANDS);
+            case "OCEAN" -> biome.is(BiomeTags.IS_OCEAN);
+            default -> throw new IllegalArgumentException("No biome test for " + expected);
+        };
     }
 
     List<String> stationIdsWithAll() {
@@ -704,7 +704,7 @@ final class WorksController {
                     world.addFreshEntity(entityItem);
                     break;
                 case "spawnEntity":
-                    EntityType<?> entityType = ForgeRegistries.ENTITIES.getValue(new ResourceLocation(action.entity));
+                    EntityType<?> entityType = ForgeRegistries.ENTITY_TYPES.getValue(new ResourceLocation(action.entity));
                     Entity entity = entityType == null ? null : entityType.create(world);
                     if (entity == null) throw new IllegalStateException("Unknown entity " + action.entity);
                     entity.setPos(pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5);
@@ -823,10 +823,10 @@ final class WorksController {
         BlockEntity tile = world.getBlockEntity(pos);
         if (!(tile instanceof SignBlockEntity)) return;
         SignBlockEntity sign = (SignBlockEntity) tile;
-        TextComponent clickable = new TextComponent(label);
+        net.minecraft.network.chat.MutableComponent clickable = Component.literal(label);
         clickable.setStyle(Style.EMPTY.withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, command)));
         sign.setMessage(0, clickable);
-        sign.setMessage(1, new TextComponent("right-click"));
+        sign.setMessage(1, Component.literal("right-click"));
         sign.setChanged();
     }
 
@@ -836,7 +836,7 @@ final class WorksController {
         if (!(tile instanceof SignBlockEntity)) return;
         SignBlockEntity sign = (SignBlockEntity) tile;
         for (int i = 0; i < 4; i++) {
-            sign.setMessage(i, new TextComponent(i < lines.length ? trimSign(lines[i]) : ""));
+            sign.setMessage(i, Component.literal(i < lines.length ? trimSign(lines[i]) : ""));
         }
         sign.setChanged();
     }
@@ -878,7 +878,7 @@ final class WorksController {
     }
 
     private static CommandRuntimeException commandError(String message) {
-        return new CommandRuntimeException(new TextComponent(message));
+        return new CommandRuntimeException(Component.literal(message));
     }
 
     private static BlockState legacyState(String name, Block block, int metadata) {
@@ -902,15 +902,15 @@ final class WorksController {
         if (name == null || name.trim().isEmpty()) return null;
         ResourceLocation id = name.indexOf(':') >= 0 ? new ResourceLocation(name)
                 : new ResourceLocation("basepower", name);
-        Fluid value = Registry.FLUID.getOptional(id).orElse(null);
+        Fluid value = net.minecraft.core.registries.BuiltInRegistries.FLUID.getOptional(id).orElse(null);
         if (value == null) {
             String migratedName = LegacyMigrationApi.fluidTarget(name);
             if (!name.equals(migratedName)) {
-                value = Registry.FLUID.getOptional(new ResourceLocation(migratedName)).orElse(null);
+                value = net.minecraft.core.registries.BuiltInRegistries.FLUID.getOptional(new ResourceLocation(migratedName)).orElse(null);
             }
         }
         if (value == null && name.indexOf(':') < 0) {
-            value = Registry.FLUID.getOptional(new ResourceLocation("minecraft", name)).orElse(null);
+            value = net.minecraft.core.registries.BuiltInRegistries.FLUID.getOptional(new ResourceLocation("minecraft", name)).orElse(null);
         }
         return value;
     }

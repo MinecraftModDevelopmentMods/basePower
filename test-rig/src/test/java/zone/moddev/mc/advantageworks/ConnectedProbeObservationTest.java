@@ -44,7 +44,7 @@ public class ConnectedProbeObservationTest {
 
     private static void observe(CompoundTag data) throws Exception {
         ObservedChest tile = new ObservedChest();
-        Field persistent = BlockEntity.class.getDeclaredField("customTileData");
+        Field persistent = BlockEntity.class.getDeclaredField("customPersistentData");
         persistent.setAccessible(true);
         persistent.set(tile, data);
         CompoundTag before = tile.saveWithFullMetadata().copy();
@@ -84,12 +84,12 @@ public class ConnectedProbeObservationTest {
     private static final class ObservedChest extends ChestBlockEntity {
         int persistentReads;
         ObservedChest() { super(POS, Blocks.CHEST.defaultBlockState()); }
-        @Override public CompoundTag getTileData() { persistentReads++; return super.getTileData(); }
+        @Override public CompoundTag getPersistentData() { persistentReads++; return super.getPersistentData(); }
     }
 
     private static final class ObservationWorld extends ServerLevel {
         BlockEntity tile;
-        private ObservationWorld() { super(null, null, null, null, null, null, null, null, false, 0L, List.of(), false); }
+        private ObservationWorld() { super(null, null, null, null, null, null, null, false, 0L, List.of(), false); }
         @Override public BlockState getBlockState(BlockPos pos) { return Blocks.CHEST.defaultBlockState(); }
         @Override public BlockEntity getBlockEntity(BlockPos pos) { return tile; }
     }

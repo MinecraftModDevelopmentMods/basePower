@@ -1,0 +1,57 @@
+{
+  "name": "packaged-decoupled",
+  "mode": "packaged",
+  "runtimeBase": "build/works-native119",
+  "minecraftVersion": "1.19.4",
+  "portStatus": "PORTED_UNQUALIFIED",
+  "qualificationStatus": "UNQUALIFIED",
+  "sourceCommit": "c9995315e2aee9d9bffec8eb8b1191ad8a0faeb7",
+  "sourceVersion": "2.4.11.119041",
+  "powerDeobfSha256": "512FDEC9275B33533EF773C110E6229E0F07268775FAD4B5942A15B68A9EB87D",
+  "levelType": "minecraft:flat",
+  "levelSeed": "advantage-works-1.19.4-v1",
+  "startupTimeoutSeconds": 180,
+  "forge": {
+    "version": "1.19.4-45.4.0",
+    "installerPath": "../../../../BaseMetals/.runtime-cache/forge-1.19.4-45.4.0-installer.jar",
+    "url": "https://maven.minecraftforge.net/net/minecraftforge/forge/1.19.4-45.4.0/forge-1.19.4-45.4.0-installer.jar",
+    "sha256": "6643BB8C21F409CC528FF656DAF60C206D304CC77BF529BBBAB4B336004DFC53"
+  },
+  "mods": [
+    {
+      "id": "basepower",
+      "version": "2.4.11.119041",
+      "file": "basePower-2.4.11.119041.jar",
+      "path": "../build/libs/basePower-2.4.11.119041.jar",
+      "sha256": "E1689C1147F6F6F93F6516D9188A279093D6CCC2FF1FBEB506468B876BA03E60"
+    },
+    {
+      "id": "basesteam",
+      "version": "2.2.12.119041",
+      "file": "baseSteam-2.2.12.119041.jar",
+      "path": "../../SteamAdvantage/SteamAdvantage/build/libs/baseSteam-2.2.12.119041.jar",
+      "sha256": "13E29CDFCA22BCEE30E6F7260C5DC11524C405BDF5DB16731CD6328C06AC548D"
+    },
+    {
+      "id": "baseelectric",
+      "version": "2.2.12.119041",
+      "file": "baseElectric-2.2.12.119041.jar",
+      "path": "../../ElectricAdvantage/ElectricAdvantage/build/libs/baseElectric-2.2.12.119041.jar",
+      "sha256": "0064D563F9E83E126B6E57D107F8BCEF5AD80276EF422BFBCDB702A0CAD38C1A"
+    },
+    {
+      "id": "orespawn",
+      "version": "4.1.0.119041",
+      "file": "OreSpawn-4.1.0.119041.jar",
+      "path": "../../../../MinecraftMineralogy/OS119/OreSpawn/build/libs/OreSpawn-4.1.0.119041.jar",
+      "sha256": "1B2ECAA546E7FFB35863AC1D9FF92504471EE857045DCD01A068C5CA7F53CFFD"
+    },
+    {
+      "id": "advantageworkstest",
+      "version": "1.1.3.119041",
+      "file": "AdvantageWorksTestHarness-1.1.3.119041.jar",
+      "path": "build/gradle/libs/AdvantageWorksTestHarness-1.1.3.119041.jar",
+      "sha256": "483E3E73568ADD9150084F6A2AFBAFCBB44666553B289066955D718D2CB0DA23"
+    }
+  ]
+}
