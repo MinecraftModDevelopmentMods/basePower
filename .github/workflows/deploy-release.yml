@@ -73,7 +73,7 @@ jobs:
           case "$mc" in
             1.10.2|1.12.2|1.13.2|1.14.4|1.15.2|1.16.5) java="Java 8" ;;
             1.17.1) java="Java 16" ;;
-            1.18.2|1.19.4) java="Java 17" ;;
+            1.18.2|1.19.4|1.20.1) java="Java 17" ;;
             *) echo "Unsupported Minecraft version for this publisher: $mc" >&2; exit 1 ;;
           esac
           echo "minecraft=$mc" >> "$GITHUB_OUTPUT"
