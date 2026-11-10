@@ -29,6 +29,12 @@ machine name and inventory caption. Deliberately missing and overlapping
 labels must fail. It also checks the creative tab, models, textures and
 recipe-book grouping with data from the server.
 
+The tested jars passed a 30-minute run in both a fresh world and a migrated
+1.10.2 world, including a full restart. The optional-power fixture also kept
+4,000 mB in the fluid tank across a restart without Base Metals installed.
+The Nether and End checks still report one vanilla difference: a tamed wolf
+loaded at 20 health instead of 8. Forge reproduced that without any mods.
+
 Manual checks should use the combined Eclipse launch or exact packaged
 candidates: inspect models, recipe discovery and menus, then open a
 disposable copy of an existing world. Pay particular attention to turbine
