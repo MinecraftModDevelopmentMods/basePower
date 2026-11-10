@@ -21,7 +21,7 @@ jobs:
     steps:
       - name: Check out PowerAdvantage
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-      - name: Require the Base Metals pin on upstream master-1.20.1
+      - name: Require the Base Metals pin on upstream master-1.20.6
         id: base-metals-pin
         env:
           GH_TOKEN: ${{ github.token }}

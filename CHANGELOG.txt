@@ -1,4 +1,4 @@
-basePower 2.4.13.120061 (Minecraft 1.20.6 local candidate)
+basePower 2.4.13.120061 (Minecraft 1.20.6)
 
 - Bring basePower to Forge 50 and Java 21 without changing the names of existing machines or items.
 - Read old machine inventories into Minecraft's new item components. Portable fluid tanks still keep their contents when picked up.

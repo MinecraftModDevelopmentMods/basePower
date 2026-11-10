@@ -1,6 +1,6 @@
 # basePower
 
-**Minecraft 1.20.6, version 2.4.13.120061 (local candidate).**
+**Minecraft 1.20.6 (Forge), version 2.4.13.120061.**
 
 See the [1.20.6 port record](docs/1.20.6/PORT-STATUS.md) for the current checks.
 Results from earlier versions do not qualify this build.
@@ -8,14 +8,14 @@ Results from earlier versions do not qualify this build.
 basePower continues DrCyano's Power Advantage. It provides shared power,
 fluids and item transport for baseSteam and baseElectric.
 
-## Playing On 1.20.1
+## Playing On 1.20.6
 
-- Install [MMD OreSpawn 4.1.0.120011](https://www.curseforge.com/minecraft/mc-mods/mmd-orespawn/files/9175609) on both client and server.
+- Install [MMD OreSpawn 4.1.0.120061](https://www.curseforge.com/minecraft/mc-mods/mmd-orespawn/files/9183384) on both client and server.
 - Base Metals is optional for a new basePower world. For a world that already
-  uses Base Metals, keep it installed and use the matching Forge 1.20.1 build
-  `3.1.2.120011`. Older Base Metals builds do not have the shared upgrade hook.
+  uses Base Metals, keep it installed and use the matching Forge 1.20.6 build
+  `3.1.2.120061`. Older Base Metals builds do not have the shared upgrade hook.
 - baseSteam and baseElectric are separate mods. Use only their matching
-  1.20.1 builds. Additional Loot Tables is not needed on 1.20.1.
+  1.20.6 builds. Additional Loot Tables is not needed for the built-in loot.
 
 **Back up the entire world before upgrading. Test only disposable copies.**
 The port keeps existing registry names and machine data. The upgrade checks
