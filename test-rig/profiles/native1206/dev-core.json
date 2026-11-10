@@ -3,7 +3,7 @@
   "mode": "development",
   "minecraftVersion": "1.20.6",
   "forgeVersion": "50.2.0",
-  "powerDeobfSha256": "29C1BD5EF384F8BB2441029061615E52A4B7302B9FC5480F2CE9C84C357A3181",
+  "powerDeobfSha256": "E53BDD64776741B2EBAE36A646049DC98487E1BAD1CF69F1E3FCD95188F907F1",
   "mods": [
     {
       "id": "basesteam",
@@ -13,7 +13,7 @@
     {
       "id": "baseelectric",
       "version": "2.2.14.120061",
-      "sha256": "E9002244F220D7DDBCDBD7B512AB0F34710D8B49276DB4CD72BA131536FE0330"
+      "sha256": "079401D155CF548FA7CB095E155B52D3F10A5CAABAF9ED08F86829D87242AB0E"
     }
   ]
 }
