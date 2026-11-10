@@ -10,7 +10,7 @@ import cyano.poweradvantage.api.modsupport.rf.TileEntityRFSteamConverter;
 import cyano.poweradvantage.api.modsupport.techreborn.BlockTRConverter;
 import cyano.poweradvantage.api.modsupport.techreborn.TileEntityTRElectricityConverter;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.material.Material;
+import cyano.poweradvantage.api.GUIBlock;
 import zone.moddev.mc.basepower.PowerAdvantage;
 import zone.moddev.mc.basepower.config.PowerAdvantageConfig;
 
@@ -28,14 +28,13 @@ public final class ModSupport {
     public static synchronized void initBlocks() {
         if (initialized) return;
         float hardness = 0.75F;
-        Material material = Material.PISTON;
-        converter_rf_steam = Blocks.add(new BlockRFConverter(material, hardness, new ConduitType("steam"),
+        converter_rf_steam = Blocks.add(new BlockRFConverter(GUIBlock.machineProperties(hardness), new ConduitType("steam"),
                 TileEntityRFSteamConverter.class), "converter_rf_steam");
-        converter_rf_electricity = Blocks.add(new BlockRFConverter(material, hardness, new ConduitType("electricity"),
+        converter_rf_electricity = Blocks.add(new BlockRFConverter(GUIBlock.machineProperties(hardness), new ConduitType("electricity"),
                 TileEntityRFElectricityConverter.class), "converter_rf_electricity");
-        converter_rf_quantum = Blocks.add(new BlockRFConverter(material, hardness, new ConduitType("quantum"),
+        converter_rf_quantum = Blocks.add(new BlockRFConverter(GUIBlock.machineProperties(hardness), new ConduitType("quantum"),
                 TileEntityRFQuantumConverter.class), "converter_rf_quantum");
-        converter_tr_electricity = Blocks.add(new BlockTRConverter(material, hardness, new ConduitType("electricity"),
+        converter_tr_electricity = Blocks.add(new BlockTRConverter(GUIBlock.machineProperties(hardness), new ConduitType("electricity"),
                 TileEntityTRElectricityConverter.class), "converter_tr_electricity");
         initialized = true;
     }

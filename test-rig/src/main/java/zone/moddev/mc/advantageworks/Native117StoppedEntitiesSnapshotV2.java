@@ -139,7 +139,7 @@ final class Native117StoppedEntitiesSnapshotV2 {
         JsonArray persistent = new JsonArray(), helpers = new JsonArray();
         for (Entity entity : available) {
             if (entity instanceof Player) continue;
-            if (entity.level != world) throw new IllegalStateException("Entity belongs to another world: " + diagnostic(entity));
+            if (entity.level() != world) throw new IllegalStateException("Entity belongs to another world: " + diagnostic(entity));
             if (entity.getClass() == LeashFenceKnotEntity.class && entity.getType() == EntityType.LEASH_KNOT
                     && !entity.getType().canSerialize() && !entity.isRemoved() && !entity.isPassenger()
                     && entity.getPassengers().isEmpty()) {

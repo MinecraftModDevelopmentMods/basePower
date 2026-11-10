@@ -5,7 +5,6 @@ import cyano.poweradvantage.api.ConduitType;
 import cyano.poweradvantage.api.PowerConnectorContext;
 import zone.moddev.mc.basepower.util.PowerHelper;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.material.Material;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.pathfinder.PathComputationType;
@@ -28,11 +27,6 @@ public abstract class BlockSimplePowerConduit extends ConduitBlock {
 
     private final ConduitType[] types;
     private final double pipeRadius;
-
-    public BlockSimplePowerConduit(Material material, float hardness, float pipeRadius,
-            ConduitType... energyTypes) {
-        this(Block.Properties.of(material).strength(hardness), pipeRadius, energyTypes);
-    }
 
     protected BlockSimplePowerConduit(Block.Properties properties, float pipeRadius,
             ConduitType... energyTypes) {

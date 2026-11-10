@@ -159,7 +159,7 @@ public class TileEntityConveyor extends BlockEntity implements WorldlyContainer,
 				ItemStack destItem = dest.getItem(slot);
 				if(destItem == null || destItem.isEmpty()) {
 					return true;
-				} else if (ItemStack.isSame(item, destItem) && ItemStack.tagMatches(item, destItem)
+				} else if (ItemStack.isSameItemSameTags(item, destItem)
 						&& destItem.getCount() < Math.min(dest.getMaxStackSize(), destItem.getMaxStackSize())) {
 					return true;
 				}
@@ -183,8 +183,7 @@ public class TileEntityConveyor extends BlockEntity implements WorldlyContainer,
 						if(dest.canPlaceItemThroughFace(destValidSlots[j], item, destFace)){
 							ItemStack otherItem = dest.getItem(destValidSlots[j]);
 							if(otherItem != null && !otherItem.isEmpty()
-									&& ItemStack.isSame(item, otherItem)
-									&& ItemStack.tagMatches(item, otherItem)
+									&& ItemStack.isSameItemSameTags(item, otherItem)
 									&& otherItem.getCount() < dest.getMaxStackSize()
 									&& otherItem.getCount() < otherItem.getMaxStackSize()){
 								src.removeItem(srcValidSlots[i], 1);
@@ -395,7 +394,7 @@ public class TileEntityConveyor extends BlockEntity implements WorldlyContainer,
 	public void setItem(int slot, ItemStack item) {
 		ItemStack existing = this.getInventory()[slot];
 		final boolean flag = item != null && !item.isEmpty() && existing != null && !existing.isEmpty()
-				&& item.sameItem(existing) && ItemStack.tagMatches(item, existing);
+				&& ItemStack.isSameItemSameTags(item, existing);
 		this.getInventory()[slot] = (item == null || item.isEmpty()) ? null : item;
 		if (item != null && item.getCount() > this.getMaxStackSize()) {
 			item.setCount(this.getMaxStackSize());

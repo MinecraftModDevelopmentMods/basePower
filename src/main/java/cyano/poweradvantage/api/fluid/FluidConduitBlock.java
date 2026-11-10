@@ -4,7 +4,6 @@ import cyano.poweradvantage.api.ConduitBlock;
 import cyano.poweradvantage.api.ConduitType;
 import cyano.poweradvantage.api.PowerConnectorContext;
 import zone.moddev.mc.basepower.init.Fluids;
-import net.minecraft.world.level.material.Material;
 
 /**
  * <p>
@@ -23,21 +22,8 @@ import net.minecraft.world.level.material.Material;
  */
 public abstract class FluidConduitBlock extends ConduitBlock {
 
-	/**
-	 * Block constructor
-	 *
-	 * @param mat Block material, typically Material.iron
-	 */
-	protected FluidConduitBlock(Material mat) {
-		super(mat);
-	}
-
-	/**
-	 * Block constructor with the break hardness used by the standard conduit
-	 * implementations.
-	 */
-	protected FluidConduitBlock(Material mat, float hardness) {
-		super(mat, hardness);
+	protected FluidConduitBlock(Properties properties) {
+		super(properties);
 	}
 
 

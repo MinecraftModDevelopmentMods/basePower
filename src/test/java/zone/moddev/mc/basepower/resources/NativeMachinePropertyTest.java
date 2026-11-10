@@ -4,7 +4,8 @@ import cyano.poweradvantage.api.GUIBlock;
 import cyano.poweradvantage.api.ConduitType;
 import cyano.poweradvantage.api.simple.BlockSimplePowerConduit;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.material.Material;
+import net.minecraft.world.level.material.MapColor;
+import net.minecraft.world.level.material.PushReaction;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.server.Bootstrap;
 import net.minecraft.world.level.BlockGetter;
@@ -23,30 +24,29 @@ public class NativeMachinePropertyTest {
         net.minecraftforge.registries.GameData.unfreezeData();
     }
 
-    @Test public void materialConstructorsKeepTheLegacyNonSolidDefault() {
-        assertFalse(new MaterialMachine().defaultBlockState().canOcclude());
+    @Test public void machineDefaultsKeepPistonResistanceAndNonOccludingRendering() {
+        var state = new PropertyMachine(GUIBlock.machineProperties(0.75F)).defaultBlockState();
+        state.initCache();
+        assertFalse(state.canOcclude());
+        assertTrue(state.blocksMotion());
+        assertEquals(PushReaction.BLOCK, state.getPistonPushReaction());
     }
 
     @Test public void explicitNativePropertiesRetainBothSolidAndNonSolidChoices() {
-        assertTrue(new PropertyMachine(Block.Properties.of(Material.STONE)).defaultBlockState().canOcclude());
-        assertFalse(new PropertyMachine(Block.Properties.of(Material.STONE).noOcclusion())
+        assertTrue(new PropertyMachine(Block.Properties.of().mapColor(MapColor.STONE)).defaultBlockState().canOcclude());
+        assertFalse(new PropertyMachine(Block.Properties.of().mapColor(MapColor.STONE).noOcclusion())
                 .defaultBlockState().canOcclude());
     }
 
     @Test public void conveyorsRemainNonSolidWhenUsingExplicitNativeProperties() {
-        assertFalse(new BlockConveyor(Material.PISTON, 0.75F).defaultBlockState().canOcclude());
-        assertFalse(new BlockConveyorFilter(Material.PISTON, 0.75F, TileEntityConveyor.class)
+        assertFalse(new BlockConveyor(0.75F).defaultBlockState().canOcclude());
+        assertFalse(new BlockConveyorFilter(0.75F, TileEntityConveyor.class)
                 .defaultBlockState().canOcclude());
     }
 
-    private static final class MaterialMachine extends GUIBlock {
-        MaterialMachine() { super(Material.PISTON, 0.75F); }
-        @Override public BlockEntity newBlockEntity(net.minecraft.core.BlockPos pos, net.minecraft.world.level.block.state.BlockState state) { return null; }
-    }
-
     @Test public void conduitSubclassesCanChooseNativePropertiesWithoutReplacingNetworkBehavior() {
-        PropertyConduit solid = new PropertyConduit(Block.Properties.of(Material.PISTON));
-        PropertyConduit nonSolid = new PropertyConduit(Block.Properties.of(Material.PISTON).noOcclusion());
+        PropertyConduit solid = new PropertyConduit(Block.Properties.of().mapColor(MapColor.STONE));
+        PropertyConduit nonSolid = new PropertyConduit(Block.Properties.of().mapColor(MapColor.STONE).noOcclusion());
         assertTrue(solid.defaultBlockState().canOcclude());
         assertFalse(nonSolid.defaultBlockState().canOcclude());
         assertEquals(6, nonSolid.defaultBlockState().getProperties().size());

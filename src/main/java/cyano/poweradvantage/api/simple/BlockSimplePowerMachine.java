@@ -3,7 +3,6 @@ package cyano.poweradvantage.api.simple;
 import cyano.poweradvantage.api.*;
 import zone.moddev.mc.basepower.conduitnetwork.ConduitRegistry;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
-import net.minecraft.world.level.material.Material;
 import net.minecraft.world.level.block.state.properties.Property;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.level.block.state.StateDefinition;
@@ -41,32 +40,12 @@ net.minecraftforge.fml.common.registry.ForgeRegistries.BLOCKS.register(myMachine
  *
  */
 public abstract class BlockSimplePowerMachine extends GUIBlock implements ITypedConduit {
+	public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
 	private final ConduitType[] type;
 
-	/**
-	 * Blockstate property indicating which direction the block is facing
-	 */
-    public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
-    /**
-     * Standard constructor for a machine block. Remember to set the GUI ID so that a GUI can pop-up 
-     * when the player interacts with this block.
-     * @param blockMaterial This is the material for the block. Typically is set 
-	 * to net.minecraft.block.material.Material.piston, though any material can 
-	 * be used.
-     * @param hardness This affects how long it takes to break the block. 0.5 is 
-	 * a good value if you want it to be easy to break.
-     * @param energyType This is the energy type for this block. This is used by 
-     * power conduits to determine whether to connect to this block.
-     */
-	public BlockSimplePowerMachine(Material blockMaterial, float hardness, ConduitType... energyType){
-		super(blockMaterial, hardness);
-		this.type = energyType;
-		this.registerDefaultState(this.getStateDefinition().any().setValue(FACING, Direction.NORTH));
-	}
 
 	/**
-	 * 1.13 constructor for machines which need non-default block properties such
-	 * as a different sound or blast resistance.
+	 * Sets the block properties and the energy types accepted by this machine.
 	 */
 	protected BlockSimplePowerMachine(Block.Properties properties, ConduitType... energyType) {
 		super(properties);

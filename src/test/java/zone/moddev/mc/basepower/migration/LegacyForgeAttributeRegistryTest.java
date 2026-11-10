@@ -100,9 +100,9 @@ public class LegacyForgeAttributeRegistryTest {
                 DataFixTypes.PLAYER, source, 1343);
         CompoundTag value = actual.getList("Attributes", 10).getCompound(0);
         assertEquals("forge:reach_distance", value.getString("Name"));
-        assertSame(ForgeMod.REACH_DISTANCE.get(), ForgeRegistries.ATTRIBUTES.getValue(
+        assertSame(ForgeMod.BLOCK_REACH.get(), ForgeRegistries.ATTRIBUTES.getValue(
                 new net.minecraft.resources.ResourceLocation(value.getString("Name"))));
-        AttributeInstance nativeAttribute = new AttributeInstance(ForgeMod.REACH_DISTANCE.get(), unused -> {});
+        AttributeInstance nativeAttribute = new AttributeInstance(ForgeMod.BLOCK_REACH.get(), unused -> {});
         nativeAttribute.load(value);
         assertEquals(7.5D, nativeAttribute.getBaseValue(), 0D);
         assertEquals(7.625D, nativeAttribute.getValue(), 0D);

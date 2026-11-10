@@ -1,7 +1,6 @@
 package cyano.poweradvantage.api.simple;
 
 import zone.moddev.mc.basepower.init.Fluids;
-import net.minecraft.world.level.material.Material;
 
 /**
  * This block class provides all of the standard code for creating a machine 
@@ -18,18 +17,6 @@ net.minecraftforge.fml.common.registry.ForgeRegistries.BLOCKS.register(myMachine
  *
  */
 public abstract class BlockSimpleFluidMachine extends BlockSimplePowerMachine {
-	/**
-	 * Standard constructor for a machine block.
-	 *
-	 * @param blockMaterial This is the material for the block. Typically is set
-	 *                      to net.minecraft.block.material.Material.piston, though any material can
-	 *                      be used.
-	 * @param hardness      This affects how long it takes to break the block. 0.5 is
-	 *                      a good value if you want it to be easy to break.
-	 */
-	public BlockSimpleFluidMachine(Material blockMaterial, float hardness) {
-		super(blockMaterial, hardness, Fluids.fluidConduit_general);
-	}
 
     protected BlockSimpleFluidMachine(net.minecraft.world.level.block.Block.Properties properties) {
         super(properties, Fluids.fluidConduit_general);

@@ -53,7 +53,9 @@ public class Native117EntityContextTest {
         ServerLevel world = world(Level.NETHER);
         Boat vehicle = new Boat(EntityType.BOAT, world), passenger = new Boat(EntityType.BOAT, world);
         assertTrue(passenger.startRiding(vehicle, true));
-        passenger.level = world(Level.END);
+        Field level = net.minecraft.world.entity.Entity.class.getDeclaredField("level");
+        level.setAccessible(true);
+        level.set(passenger, world(Level.END));
         reject(vehicle, world);
     }
 
@@ -102,7 +104,7 @@ public class Native117EntityContextTest {
     }
 
     private static final class EntityFixtureWorld extends ServerLevel {
-        private EntityFixtureWorld() { super(null, null, null, null, null, null, null, false, 0L, java.util.List.of(), false); }
+        private EntityFixtureWorld() { super(null, null, null, null, null, null, null, false, 0L, java.util.List.of(), false, null); }
 
         @Override public net.minecraft.world.flag.FeatureFlagSet enabledFeatures() {
             return net.minecraft.world.flag.FeatureFlags.DEFAULT_FLAGS;

@@ -1,8 +1,8 @@
 # basePower
 
-**Minecraft 1.19.4, version 2.4.11.119041.**
+**Minecraft 1.20.1, version 2.4.12.120011.**
 
-See the [1.19 port record](docs/1.19/PORT-STATUS.md) for the current checks.
+See the [1.20.1 port record](docs/1.20.1/PORT-STATUS.md) for the current checks.
 Results from earlier versions do not qualify this build.
 
 basePower continues DrCyano's Power Advantage. It provides shared power,
@@ -12,7 +12,7 @@ fluids and item transport for baseSteam and baseElectric.
 The port keeps existing registry names and machine data. The upgrade checks
 use disposable copies of original Advantage and released base* saves, including
 connected machines, and check them again after a full restart. Check that the
-other mods in your world support 1.19.4 before you upgrade.
+other mods in your world support 1.20.1 before you upgrade.
 The accepted [1.14 results](docs/1.14/BROADER-QUALIFICATION.md) are historical
 evidence, not qualification of this port or a whole modpack.
 
@@ -20,36 +20,36 @@ Recipe-book discovery now follows relevant ingredients. See the [all-Advantage m
 
 The [manufacturing progression audit](docs/1.13/MANUFACTURING-PROGRESSION.md) traces survival parts from raw resources, including configured material aliases, processing, loot-only parts and automated restart checks.
 
-## Building Minecraft 1.19.4
+## Building Minecraft 1.20.1
 
-The build uses Forge 45.4.0, official `1.19.4` mappings,
-MCP `20230314.122934`, ForgeGradle 7.0.34 and Gradle 9.6.1.
+The build uses Forge 47.4.10, official `1.20.1` mappings,
+MCP `20230612.114412`, ForgeGradle 7.0.34 and Gradle 9.6.1.
 Use Java 17 for Gradle, compilation and Minecraft. Mavenizer also
 needs Java 25. CI pins these JDKs and Java 8 for the legacy renamer. Pass the installed homes using
 `-Porg.gradle.java.installations.paths=<java8>,<java17>,<java25>` and disable
 automatic discovery and downloads for a reproducibility check.
 
-Build the pinned Base Metals `3.1.2.119041` and OreSpawn `4.1.0.119041` deobf jars first.
+Build the pinned Base Metals `3.1.2.120011` and OreSpawn `4.1.0.120011` deobf jars first.
 The source pins and checksums are in `gradle.properties`.
-Forge 45 also needs the Mavenizer compatibility jar in the pinned OreSpawn
+Forge 47 also needs the Mavenizer compatibility jar in the pinned OreSpawn
 checkout's `ci-fixtures/tools/` directory. It fixes decompiled Forge sources
 on a clean build and uses Java 25. It is not part of the mod or game runtime.
-Set `-Pforge45MavenizerJar=<path>` when that checkout is in another location.
-Use Base Metals 3.1.2 if it is installed when upgrading a world. It lets
+Set `-Pforge47MavenizerJar=<path>` when that checkout is in another location.
+If Base Metals is installed, use the pinned 3.1.2 build when testing an upgrade. It lets
 both mods preserve old items and machines before Minecraft converts the
 chunk. An older Base Metals jar is not a substitute for this upgrade path.
 
 Then run from the repository root:
 
 ```text
-gradlew.bat clean check build javadoc verifyReleaseDependencies verifyReleaseArtifacts writeReleaseChecksums verifyEclipseProductionClasspath
+gradlew.bat clean check build javadoc genEclipseRuns eclipse isolateEclipseProductionRuns verifyReleaseDependencies verifyReleaseArtifacts writeReleaseChecksums verifyEclipseProductionClasspath
 ```
 
 The default dependency jars are:
 
 ```text
-D:\BaseMetals\BaseMetals 119\BaseMetals\build\libs-dev\BaseMetals-3.1.2.119041-deobf.jar
-D:\MinecraftMineralogy\OS119\OreSpawn\build\libs-dev\OreSpawn-4.1.0.119041-deobf.jar
+D:\BaseMetals\BaseMetals 1201\BaseMetals\build\libs-dev\BaseMetals-3.1.2.120011-deobf.jar
+D:\MinecraftMineralogy\OS1201\OreSpawn\build\libs-dev\OreSpawn-4.1.0.120011-deobf.jar
 ```
 
 Other layouts can pass `-PbaseMetalsDeobfJar=<path>` and `-PoreSpawnDeobfJar=<path>`.
@@ -71,10 +71,10 @@ Refresh the project in Eclipse, allow its Java build to finish, and launch the g
 
 Eclipse copies production resources from `build/resources/main`, not directly from `src/main/resources`. This prevents its builder from overwriting the expanded `mods.toml` with raw `${version}` placeholders. After updating this setup, use **Gradle > Refresh Gradle Project**, then **Project > Clean** before relaunching. After editing resources or version properties, run `processResources` or refresh the Gradle project before the Eclipse build. See the [metadata regression notes](docs/1.13/ECLIPSE-METADATA.md).
 
-To prepare a combined client, build the baseSteam and baseElectric `2.2.12.119041` deobf jars,
+To prepare a combined client, build the baseSteam and baseElectric `2.2.13.120011` deobf jars,
 run `gradlew.bat prepareCombinedEclipseLaunch`, refresh Eclipse, then launch
 `runClientAllAdvantage.launch`. Inputs must match
-`test-rig/profiles/native119/dev-core.json`; alternative layouts can pass
+`test-rig/profiles/native1201/dev-core.json`; alternative layouts can pass
 `-PsteamAdvantageDeobfJar=<path>` and `-PelectricAdvantageDeobfJar=<path>`.
 The ordinary `runClient.launch` remains Power-only. Both use the `run` directory;
 preparing a launch does not copy, open or qualify a save.
@@ -109,6 +109,6 @@ data-pack tags. The shared pre-flattening migration hook remains necessary;
 its presence is not proof that an upgrade is safe.
 
 The [legacy migration guide](docs/1.13/MIGRATION.md) describes the earlier protocols.
-The [1.19 status](docs/1.19/PORT-STATUS.md) tracks this port's qualification.
+The [Advantage Works 1.20.1 guide](test-rig/NATIVE1201.md) lists the automated checks.
 
 The historical 1.10 handbook remains on the [1.10.2 branch](https://github.com/MinecraftModDevelopmentMods/PowerAdvantage/blob/master-1.10.2/docs/1.10/README.md).

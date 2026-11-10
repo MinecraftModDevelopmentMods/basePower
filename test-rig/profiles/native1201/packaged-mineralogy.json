@@ -1,0 +1,68 @@
+{
+  "name": "packaged-mineralogy",
+  "mode": "packaged",
+  "runtimeBase": "build/works-native1201",
+  "minecraftVersion": "1.20.1",
+  "portStatus": "PORTED_UNQUALIFIED",
+  "qualificationStatus": "UNQUALIFIED",
+  "sourceCommit": "83a3f028ffad220fe2f3cc4983a9340dde2295a8",
+  "sourceVersion": "2.4.12.120011",
+  "powerDeobfSha256": "21A2A3007BA076D219E6836707EF365E2031823A09D5E3DC2A92DD88BD67EA01",
+  "levelType": "minecraft:flat",
+  "levelSeed": "advantage-works-1.20.1-v1",
+  "startupTimeoutSeconds": 180,
+  "forge": {
+    "version": "1.20.1-47.4.10",
+    "installerPath": "../../../../BaseMetals/.verification-basemetals1201/dependencies/forge-1.20.1-47.4.10-installer.jar",
+    "url": "https://maven.minecraftforge.net/net/minecraftforge/forge/1.20.1-47.4.10/forge-1.20.1-47.4.10-installer.jar",
+    "sha256": "1912760B4CB6B803D8A826DE603C9076B1DA71EC2765E9A1F8C1CA78F65278E3"
+  },
+  "mods": [
+    {
+      "id": "basepower",
+      "version": "2.4.12.120011",
+      "file": "basePower-2.4.12.120011.jar",
+      "path": "../build/libs/basePower-2.4.12.120011.jar",
+      "sha256": "E6835ECB04D3F2D5F54731694F7B8D87F06B4A0A9DDB18AA5EDD70EE0E1B099A"
+    },
+    {
+      "id": "basesteam",
+      "version": "2.2.13.120011",
+      "file": "baseSteam-2.2.13.120011.jar",
+      "path": "../../SteamAdvantage/SteamAdvantage/build/libs/baseSteam-2.2.13.120011.jar",
+      "sha256": "248F87F7731472025C73F766F7B634268AC38CC987C4CA41E4743C229D54B80E"
+    },
+    {
+      "id": "baseelectric",
+      "version": "2.2.13.120011",
+      "file": "baseElectric-2.2.13.120011.jar",
+      "path": "../../ElectricAdvantage/ElectricAdvantage/build/libs/baseElectric-2.2.13.120011.jar",
+      "sha256": "9344CFCE7B9FB725957F885E2A21FC207DCD58679ED95D319DA04CE854576C5F"
+    },
+    {
+      "id": "orespawn",
+      "version": "4.1.0.120011",
+      "file": "OreSpawn-4.1.0.120011.jar",
+      "path": "../../../../MinecraftMineralogy/OS1201/OreSpawn/build/libs/OreSpawn-4.1.0.120011.jar",
+      "sha256": "E6BDE47C1BB0BF4D08396F1D1FD5B1D2D3F8A5DF09905F279D39E2601D7FE4B0"
+    },
+    {
+      "id": "advantageworkstest",
+      "version": "1.1.4.120011",
+      "file": "AdvantageWorksTestHarness-1.1.4.120011.jar",
+      "path": "build/gradle/libs/AdvantageWorksTestHarness-1.1.4.120011.jar",
+      "sha256": "26654C0A363818FD088DF80900D63E8E4B0981A8A4AE6BEDAC7758853095861D"
+    },
+    {
+      "id": "mineralogy",
+      "version": "6.1.4.120011",
+      "file": "Mineralogy-6.1.4.120011.jar",
+      "path": "../../../../BaseMetals/.verification-basemetals1201/dependencies/Mineralogy-6.1.4.120011.jar",
+      "sha256": "1172C7FF424BCE10E3EAC7A790353CAB35E5A5F06EBB019B31BED05B90ED8A5F"
+    }
+  ],
+  "lifecycleStations": [
+    "W-03",
+    "S-01"
+  ]
+}

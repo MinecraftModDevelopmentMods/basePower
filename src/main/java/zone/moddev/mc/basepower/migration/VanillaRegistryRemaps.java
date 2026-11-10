@@ -157,6 +157,15 @@ public final class VanillaRegistryRemaps {
             target = "zombified_piglin";
         } else if (registry.equals(new ResourceLocation("minecraft:item")) && old.getPath().equals("zombie_pigman_spawn_egg")) {
             target = "zombified_piglin_spawn_egg";
+        } else if (registry.equals(new ResourceLocation("minecraft:item"))) {
+            // Forge keeps the 1.19.4 experimental IDs even when that data pack was not enabled.
+            target = switch (old.getPath()) {
+                case "pottery_shard_archer" -> "archer_pottery_sherd";
+                case "pottery_shard_arms_up" -> "arms_up_pottery_sherd";
+                case "pottery_shard_prize" -> "prize_pottery_sherd";
+                case "pottery_shard_skull" -> "skull_pottery_sherd";
+                default -> null;
+            };
         } else if (registry.equals(new ResourceLocation("minecraft:worldgen/biome")) && old.getPath().equals("nether")) {
             target = "nether_wastes";
         } else if (registry.equals(new ResourceLocation("minecraft:sound_event"))) {
@@ -166,6 +175,10 @@ public final class VanillaRegistryRemaps {
             // The former single Nether biome becomes Nether Wastes in 1.16.
             if (old.getPath().equals("music.nether")) target = "music.nether.nether_wastes";
             if (old.getPath().equals("item.sweet_berries.pick_from_bush")) target = "block.sweet_berry_bush.pick_berries";
+            if (old.getPath().equals("item.brush.brushing")) target = "item.brush.brushing.generic";
+            if (old.getPath().equals("item.brush.brush_sand_completed")) target = "item.brush.brushing.sand.complete";
+            // Native biomes choose their own new music; this alias is for the old shared registry ID.
+            if (old.getPath().equals("music.overworld.jungle_and_forest")) target = "music.overworld.forest";
         }
         return target == null ? null : new ResourceLocation("minecraft", target);
     }

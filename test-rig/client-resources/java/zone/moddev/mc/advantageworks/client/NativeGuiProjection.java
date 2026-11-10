@@ -2,15 +2,18 @@ package zone.moddev.mc.advantageworks.client;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexSorting;
 import org.joml.Matrix4f;
 
 /** Scoped native shader projection for framebuffer-based screen tests. */
 final class NativeGuiProjection implements AutoCloseable {
     private final Matrix4f projection = new Matrix4f(RenderSystem.getProjectionMatrix());
+    private final VertexSorting sorting = RenderSystem.getVertexSorting();
     private final PoseStack modelView = RenderSystem.getModelViewStack();
 
     NativeGuiProjection(float width, float height, float near, float far, float depth) {
-        RenderSystem.setProjectionMatrix(new Matrix4f().setOrtho(0, width, height, 0, near, far));
+        RenderSystem.setProjectionMatrix(new Matrix4f().setOrtho(0, width, height, 0, near, far),
+                VertexSorting.ORTHOGRAPHIC_Z);
         modelView.pushPose();
         modelView.setIdentity();
         modelView.translate(0, 0, depth);
@@ -20,6 +23,6 @@ final class NativeGuiProjection implements AutoCloseable {
     @Override public void close() {
         modelView.popPose();
         RenderSystem.applyModelViewMatrix();
-        RenderSystem.setProjectionMatrix(projection);
+        RenderSystem.setProjectionMatrix(projection, sorting);
     }
 }

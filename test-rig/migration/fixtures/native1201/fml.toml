@@ -1,0 +1,15 @@
+# Forge 47.4.10 defaults except for the external update check in disposable tests.
+versionCheck = false
+disableOptimizedDFU = true
+defaultConfigPath = "defaultconfigs"
+maxThreads = -1
+earlyWindowHeight = 480
+earlyWindowWidth = 854
+earlyWindowControl = true
+earlyWindowFBScale = 1
+earlyWindowProvider = "fmlearlywindow"
+earlyWindowMaximized = false
+earlyWindowSkipGLVersions = []
+earlyWindowLogHelpMessage = true
+earlyWindowSquir = false
+earlyWindowShowCPU = false

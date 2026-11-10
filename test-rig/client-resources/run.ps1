@@ -30,22 +30,22 @@ function Assert-NativeMetadata([string]$Metadata, [string]$Id) {
     # Match the known single-mod header, not dependency modId/versionRange fields.
     $header = [regex]::Match($Metadata, '(?ms)^\[\[mods\]\]\s*(.*?)(?=^\[|\z)').Groups[1].Value
     if ($header -notmatch ('(?m)^modId\s*=\s*"' + [regex]::Escape($Id) + '"[ \t]*(?:#[^\r\n]*)?\r?$') -or
-        $header -notmatch '(?m)^version\s*=\s*"[^"\r\n]*\.119041"[ \t]*(?:#[^\r\n]*)?\r?$' -or
-        $Metadata -notmatch '(?m)^loaderVersion\s*=\s*"\[45,') { throw "Not a native Forge 45 candidate: $Id" }
-    $expected = @{ basepower = '2.4.11.119041'; basesteam = '2.2.12.119041'; baseelectric = '2.2.12.119041' }
+        $header -notmatch '(?m)^version\s*=\s*"[^"\r\n]*\.120011"[ \t]*(?:#[^\r\n]*)?\r?$' -or
+        $Metadata -notmatch '(?m)^loaderVersion\s*=\s*"\[47,') { throw "Not a native Forge 47 candidate: $Id" }
+    $expected = @{ basepower = '2.4.12.120011'; basesteam = '2.2.13.120011'; baseelectric = '2.2.13.120011' }
     if ($expected.ContainsKey($Id) -and $header -notmatch ('(?m)^version\s*=\s*"' + [regex]::Escape($expected[$Id]) + '"[ \t]*(?:#[^\r\n]*)?\r?$')) {
         throw "Unexpected native candidate version for $Id; expected $($expected[$Id])"
     }
 }
 function Assert-NativeLaunch([hashtable]$Environment, [hashtable]$Attributes) {
-    if ($Environment.MC_VERSION -ne '1.19.4' -or $Environment.FORGE_VERSION -ne '45.4.0' -or
-        $Environment.MCP_MAPPINGS -ne 'official_1.19.4' -or $Environment.MCP_VERSION -ne '20230314.122934' -or
-        $Environment.target -ne 'fmluserdevclient') { throw 'Regenerate the native 1.19.4 / Forge 45.4.0 official client launch.' }
+    if ($Environment.MC_VERSION -ne '1.20.1' -or $Environment.FORGE_VERSION -ne '47.4.10' -or
+        $Environment.MCP_MAPPINGS -ne 'official_1.20.1' -or $Environment.MCP_VERSION -ne '20230612.114412' -or
+        $Environment.target -ne 'fmluserdevclient') { throw 'Regenerate the native 1.20.1 / Forge 47.4.10 official client launch.' }
     $program = $Attributes['org.eclipse.jdt.launching.PROGRAM_ARGUMENTS']
-    if ($program -notmatch '1\.19\.4-45\.4\.0' -or
+    if ($program -notmatch '1\.20\.1-47\.4\.10' -or
         $program -notmatch '--main cpw\.mods\.bootstraplauncher\.BootstrapLauncher\b' -or
         $program -notmatch '--launchTarget forgeclientuserdev\b' -or
-        $program -match '1\.(?:13\.2|14\.4|15\.2|16\.5|17\.1)|--(?:server|port|world)\b' -or
+        $program -match '1\.(?:13\.2|14\.4|15\.2|16\.5|17\.1|18\.2|19\.4)|--(?:server|port|world)\b' -or
         @([regex]::Matches($program, '--gameDir\s+\.(?=\s|$)')).Count -ne 1 -or
         @([regex]::Matches($program, '--gameDir\b')).Count -ne 1 -or
         $Attributes['org.eclipse.jdt.launching.MAIN_TYPE'] -ne 'net.minecraftforge.launcher.Main') {
@@ -53,14 +53,14 @@ function Assert-NativeLaunch([hashtable]$Environment, [hashtable]$Attributes) {
     }
 }
 function Assert-NativeArchive([string]$Path) {
-    if ($Path -match '(?:forge|client-extra)-1\.(?:13\.2|14\.4|15\.2|16\.5|17\.1)|[\\/]PA11[345678][\\/]') { throw "Legacy runtime archive: $Path" }
+    if ($Path -match '(?:forge|client-extra)-1\.(?:13\.2|14\.4|15\.2|16\.5|17\.1|18\.2|19\.4)|[\\/]PA11[3456789][\\/]') { throw "Legacy runtime archive: $Path" }
 }
 function Quote-Argument([string]$Value) {
     '"' + [regex]::Replace([regex]::Replace($Value, '(\\*)"', '$1$1\"'), '(\\+)$', '$1$1') + '"'
 }
 $probe = Join-Path $project 'build/client-resource-probe/advantageclientresources-deobf.jar'
 $runtime = Join-Path $project ('run-client-resource-runs/' + [DateTime]::UtcNow.ToString('yyyyMMdd-HHmmss') + '-' + [guid]::NewGuid().ToString('N').Substring(0, 8))
-$inputReport = [ordered]@{ minecraft = '1.19.4'; forge = '45.4.0'; mappings = 'official_1.19.4'; mcp = '20230314.122934'; qualification = 'UNQUALIFIED'; output_source = $OutputSource; launch_profile = $LaunchProfile; require_extensions = [bool]$RequireExtensions; child_renderer_geometry = [bool]$ChildRendererGeometry }
+$inputReport = [ordered]@{ minecraft = '1.20.1'; forge = '47.4.10'; mappings = 'official_1.20.1'; mcp = '20230612.114412'; qualification = 'UNQUALIFIED'; output_source = $OutputSource; launch_profile = $LaunchProfile; require_extensions = [bool]$RequireExtensions; child_renderer_geometry = [bool]$ChildRendererGeometry }
 $inputReport.machine_gui_layouts = [bool]$MachineGuiLayouts
 $phase = 'launch-preflight'
 New-Item -ItemType Directory -Path $runtime | Out-Null
@@ -76,8 +76,8 @@ $inputReport.java = Get-Record $java
 $inputReport.launch = Get-Record (Join-Path $project $LaunchProfile)
 $inputReport.probe = Get-Record $probe
 $probeMetadata = Read-JarMetadata $probe
-if ($probeMetadata -notmatch 'loaderVersion="\[45,46\)"' -or $probeMetadata -notmatch 'versionRange="\[1\.19\.4\]"' -or
-    $probeMetadata -notmatch 'versionRange="\[45\.4\.0\]"' -or $probeMetadata -notmatch 'versionRange="\[2\.4\.11\.119041\]"') { throw 'Rebuild the native 1.19 probe; do not substitute a legacy probe.' }
+if ($probeMetadata -notmatch 'loaderVersion="\[47,48\)"' -or $probeMetadata -notmatch 'versionRange="\[1\.20\.1\]"' -or
+    $probeMetadata -notmatch 'versionRange="\[47\.4\.10\]"' -or $probeMetadata -notmatch 'versionRange="\[2\.4\.12\.120011\]"') { throw 'Rebuild the native 1.20.1 probe; do not substitute a legacy probe.' }
 Copy-Item -LiteralPath (Join-Path $project $LaunchProfile) -Destination (Join-Path $runtime 'launch.xml')
 $environment = @{}
 foreach ($map in $launch.launchConfiguration.mapAttribute) {
@@ -108,7 +108,7 @@ $outputFiles = @(Get-ChildItem -LiteralPath $modOutput -Recurse -File | Sort-Obj
 if (@($outputFiles | Where-Object { $_.path -like '*.class' }).Count -eq 0) { throw 'Selected output has no compiled production classes.' }
 $outputFiles | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath (Join-Path $runtime 'production-files.json') -Encoding utf8
 $inputReport.production_files = Get-Record (Join-Path $runtime 'production-files.json')
-if (-not $PowerCandidate) { $PowerCandidate = Join-Path $project 'build/libs-dev/basePower-2.4.11.119041-deobf.jar' }
+if (-not $PowerCandidate) { $PowerCandidate = Join-Path $project 'build/libs-dev/basePower-2.4.12.120011-deobf.jar' }
 $PowerCandidate = (Resolve-Path -LiteralPath $PowerCandidate).Path
 Assert-NativeMetadata (Read-JarMetadata $PowerCandidate) 'basepower'
 $inputReport.power_candidate = Get-Record $PowerCandidate
@@ -174,7 +174,7 @@ foreach ($archive in $archives) {
 $archives = $launchArchives
 $inputReport.archives = $archiveRecords
 $inputReport.runtime_candidates = $runtimeCandidates
-if (-not ($archives -match 'forge-1\.19\.4-45\.4\.0\.jar$')) { throw 'Missing actual native mapped Forge runtime.' }
+if (-not ($archives -match 'forge-1\.20\.1-47\.4\.10\.jar$')) { throw 'Missing actual native mapped Forge runtime.' }
 if ($RequireExtensions -and (-not $runtimeCandidates.ContainsKey('basesteam') -or -not $runtimeCandidates.ContainsKey('baseelectric'))) { throw 'Combined launch must explicitly contain both native expansion candidates.' }
 $arguments = @([regex]::Matches($attributes['org.eclipse.jdt.launching.PROGRAM_ARGUMENTS'], '"[^"]*"|\S+') | ForEach-Object { $_.Value.Trim('"') })
 $vmArguments = @([regex]::Matches($attributes['org.eclipse.jdt.launching.VM_ARGUMENTS'], '"[^"]*"|\S+') | ForEach-Object { $_.Value.Trim('"') })
@@ -214,7 +214,7 @@ $resultPath = Join-Path $runtime 'client-resources.json'
 if (-not (Test-Path -LiteralPath $resultPath)) { throw "Client did not produce a result; inspect $runtime/logs" }
 $result = Get-Content -LiteralPath $resultPath -Raw | ConvertFrom-Json
 if ($result.status -ne 'PASS') { throw "Client resource check failed: $($result.error); inspect $runtime" }
-if ($result.minecraft -ne '1.19.4' -or $result.forge -ne '45.4.0') { throw 'Result is not native 1.19.4 / Forge 45.4.0 evidence.' }
+if ($result.minecraft -ne '1.20.1' -or $result.forge -ne '47.4.10') { throw 'Result is not native 1.20.1 / Forge 47.4.10 evidence.' }
 if ($MachineGuiLayouts -and $result.machine_gui_layout_status -ne 'PASS') { throw 'Machine GUI layouts did not pass; inspect the retained images and JSON.' }
 $expectedGuiTextChecks = if ($RequireExtensions) { 351 } else { 126 }
 if ($MachineGuiLayouts -and ($result.machine_gui_text_spec -ne 2 -or $result.machine_gui_text_status -ne 'PASS' -or

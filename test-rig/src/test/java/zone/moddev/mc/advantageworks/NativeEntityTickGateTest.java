@@ -34,7 +34,7 @@ public class NativeEntityTickGateTest {
         hold.restore();
         actual.clear(); gate.forEach(actual::add);
         assertEquals(Arrays.asList(first, second), actual);
-        assertTrue(gate.contains(first)); assertSame(world, first.level); assertFalse(first.isRemoved());
+        assertTrue(gate.contains(first)); assertSame(world, first.level()); assertFalse(first.isRemoved());
     }
 
     @Test public void joinBeforeNativeRegistrationIsStillHeldAndAllOtherOperationsDelegate() throws Exception {

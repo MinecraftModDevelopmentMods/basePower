@@ -4,7 +4,8 @@ import cyano.poweradvantage.api.simple.BlockSimpleFluidConduit;
 import zone.moddev.mc.basepower.init.Blocks;
 import zone.moddev.mc.basepower.util.FluidHandlerHelper;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.material.Material;
+import net.minecraft.world.level.material.MapColor;
+import net.minecraft.world.level.material.PushReaction;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
@@ -17,7 +18,8 @@ import net.minecraft.world.level.Level;
 public class FluidPipeBlock extends BlockSimpleFluidConduit {
 
 	public FluidPipeBlock() {
-		super(Material.PISTON, 0.75f, 4f / 16f);
+		super(Properties.of().mapColor(MapColor.STONE).pushReaction(PushReaction.BLOCK)
+				.forceSolidOn().strength(0.75F), 4F / 16F);
 	}
 
 

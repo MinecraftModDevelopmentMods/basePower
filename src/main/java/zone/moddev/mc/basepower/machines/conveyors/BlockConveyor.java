@@ -3,7 +3,6 @@ package zone.moddev.mc.basepower.machines.conveyors;
 import cyano.poweradvantage.api.GUIBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
-import net.minecraft.world.level.material.Material;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
@@ -21,9 +20,8 @@ import net.minecraft.world.level.Level;
 public class BlockConveyor extends GUIBlock {
     public static final DirectionProperty FACING = BlockStateProperties.FACING;
 
-    public BlockConveyor(Material material, float hardness) {
-        super(Block.Properties.of(material).strength(hardness)
-                .sound(SoundType.METAL).noOcclusion().dynamicShape());
+    public BlockConveyor(float hardness) {
+        super(machineProperties(hardness).sound(SoundType.METAL));
         registerDefaultState(getStateDefinition().any().setValue(FACING, Direction.NORTH));
     }
 

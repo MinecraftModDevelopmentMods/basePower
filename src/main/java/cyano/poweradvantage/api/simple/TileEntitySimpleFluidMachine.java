@@ -634,7 +634,7 @@ private final ConduitType[] types = {Fluids.fluidConduit_general};
 		if(this.getInventory() == null) return;
 		ItemStack existing = this.getInventory()[slot];
 		final boolean flag = item != null && !item.isEmpty() && existing != null && !existing.isEmpty()
-				&& item.sameItem(existing) && ItemStack.tagMatches(item, existing);
+				&& ItemStack.isSameItemSameTags(item, existing);
 		this.getInventory()[slot] = (item == null || item.isEmpty()) ? null : item;
 		if (item != null && item.getCount() > this.getMaxStackSize()) {
 			item.setCount(this.getMaxStackSize());
