@@ -17,13 +17,11 @@
     }
   },
   "result": {
-    "item": "basepower:item_filter_ore"
+    "id": "basepower:item_filter_ore"
   },
   "group": "basepower:item_filter_ore",
-  "conditions": [
-    {
-      "type": "basepower:tag_not_empty",
-      "tag": "forge:ingots/gold"
-    }
-  ]
+  "forge:condition": {
+    "type": "basepower:tag_not_empty",
+    "tag": "forge:ingots/gold"
+  }
 }

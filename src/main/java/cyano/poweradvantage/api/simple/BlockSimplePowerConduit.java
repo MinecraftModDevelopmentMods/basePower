@@ -124,7 +124,7 @@ public abstract class BlockSimplePowerConduit extends ConduitBlock {
     }
 
     public boolean isFullCube(BlockState state) { return false; }
-    @Override public boolean isPathfindable(BlockState state, BlockGetter world, BlockPos pos, PathComputationType type) { return false; }
+    @Override public boolean isPathfindable(BlockState state, PathComputationType type) { return false; }
 
     /** Legacy metadata bridge retained for migration tests. */
     public int getMetaFromState(BlockState state) { return 0; }

@@ -83,7 +83,7 @@ final class ConnectedProbe implements ConnectedSession.Port {
                 world.getChunk(x, z);
             }
         }
-        net.minecraftforge.common.util.FakePlayer sentinel = net.minecraftforge.common.util.FakePlayerFactory.getMinecraft(world);
+        WorksOfflinePlayer sentinel = WorksOfflinePlayer.sentinel(world);
         sentinel.setPos(0.5, 80, 0.5);
         if (!world.players().contains(sentinel)) world.players().add(sentinel);
     }
@@ -107,7 +107,7 @@ final class ConnectedProbe implements ConnectedSession.Port {
             entry.add("properties", properties);
             BlockEntity tile = world.getBlockEntity(pos);
             if (tile != null) {
-                CompoundTag tag = tile.saveWithFullMetadata();
+                CompoundTag tag = WorksBlockData.save(tile);
                 java.io.ByteArrayOutputStream bytes = new java.io.ByteArrayOutputStream();
                 net.minecraft.nbt.NbtIo.writeCompressed(tag, bytes);
                 entry.addProperty("nbt", tag.toString());

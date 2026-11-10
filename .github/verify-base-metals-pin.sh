@@ -7,7 +7,7 @@ if [[ ! "$commit" =~ ^[0-9a-f]{40}$ ]]; then
   exit 1
 fi
 
-branch=master-1.20.1
+branch=master-1.20.6
 if ! status="$(gh api "repos/MinecraftModDevelopmentMods/BaseMetals/compare/$commit...$branch" --jq '.status')"; then
   echo "::error::Could not verify Base Metals $commit on upstream $branch"
   exit 1

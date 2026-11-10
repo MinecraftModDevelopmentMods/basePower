@@ -59,7 +59,7 @@ public class Native1201TestFlatTest {
 
         JsonObject saved = WorldGenSettings.CODEC.encodeStart(RegistryOps.create(JsonOps.INSTANCE, registries),
                 new WorldGenSettings(new WorldOptions(42L, false, false), dimensions))
-                .getOrThrow(false, message -> { throw new AssertionError(message); }).getAsJsonObject();
+                .getOrThrow(AssertionError::new).getAsJsonObject();
         assertEquals(42L, saved.get("seed").getAsLong());
         assertFalse(saved.get("generate_features").getAsBoolean());
         assertFalse(saved.get("bonus_chest").getAsBoolean());

@@ -20,7 +20,7 @@ public class LegacyRegistryArchiveTest {
         Path world = temporary.newFolder().toPath();
         Path level = world.resolve("level.dat");
         CompoundTag source = registrySnapshot();
-        NbtIo.writeCompressed(source, level.toFile());
+        NbtIo.writeCompressed(source, level);
         assertEquals(level.toFile(), LegacyWorldDataHook.legacyRegistrySource(level.toFile()));
         byte[] before = Files.readAllBytes(level);
         LegacyWorldDataHook.preserveLegacyRegistry(level.toFile(), source);
@@ -28,16 +28,16 @@ public class LegacyRegistryArchiveTest {
 
         CompoundTag nativeSave = new CompoundTag();
         nativeSave.put("fml", new CompoundTag());
-        NbtIo.writeCompressed(nativeSave, level.toFile());
-        NbtIo.writeCompressed(nativeSave, world.resolve("level.dat_old").toFile());
+        NbtIo.writeCompressed(nativeSave, level);
+        NbtIo.writeCompressed(nativeSave, world.resolve("level.dat_old"));
         var retained = LegacyWorldDataHook.legacyRegistrySource(level.toFile());
         assertNotNull(retained);
         assertNotEquals(level.toFile(), retained);
-        var archive = NbtIo.readCompressed(retained);
+        var archive = NbtIo.readCompressed(retained.toPath(), net.minecraft.nbt.NbtAccounter.unlimitedHeap());
         assertEquals(source.getCompound("FML"), archive.getCompound("FML"));
         assertFalse(archive.contains("Data"));
         LegacyWorldDataHook.preserveLegacyRegistry(level.toFile(), nativeSave);
-        assertEquals(archive, NbtIo.readCompressed(retained));
+        assertEquals(archive, NbtIo.readCompressed(retained.toPath(), net.minecraft.nbt.NbtAccounter.unlimitedHeap()));
     }
 
     @Test public void terrainGuardProtectsOnlySavedDimensionsAndOldHeights() throws Exception {

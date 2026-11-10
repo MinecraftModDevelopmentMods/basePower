@@ -1,5 +1,6 @@
 package zone.moddev.mc.basepower.machines.creative;
 
+import net.minecraft.core.HolderLookup;
 import cyano.poweradvantage.api.ConduitType;
 import cyano.poweradvantage.api.simple.TileEntitySimplePowerMachine;
 import net.minecraft.world.item.ItemStack;
@@ -89,14 +90,14 @@ public class InfiniteEnergyTileEntity extends TileEntitySimplePowerMachine {
 	}
 
 	@Override
-	protected void saveAdditional(final CompoundTag tagRoot) {
-		super.saveAdditional(tagRoot);
+	protected void saveAdditional(final CompoundTag tagRoot, HolderLookup.Provider registries) {
+		super.saveAdditional(tagRoot, registries);
 		tagRoot.putString("InfType", this.type[0].toString());
 	}
 
 	@Override
-	public void load(final CompoundTag tagRoot) {
-		super.load(tagRoot);
+	protected void loadAdditional(final CompoundTag tagRoot, HolderLookup.Provider registries) {
+		super.loadAdditional(tagRoot, registries);
 		if (tagRoot.contains("InfType", 8)) {
 			this.type[0] = new ConduitType(tagRoot.getString("InfType"));
 		}

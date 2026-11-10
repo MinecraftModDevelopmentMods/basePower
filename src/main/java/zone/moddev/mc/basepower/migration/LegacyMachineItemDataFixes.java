@@ -5,6 +5,7 @@ import com.mojang.datafixers.DataFixer;
 import com.mojang.serialization.Dynamic;
 import java.util.ArrayList;
 import java.util.Objects;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.nbt.ListTag;
@@ -13,6 +14,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.SharedConstants;
 import net.minecraft.util.datafix.DataFixers;
 import net.minecraft.util.datafix.fixes.References;
+import zone.moddev.mc.basepower.util.ItemData;
 
 /** Vanilla cannot traverse inventories behind unknown mod block-entity choices. */
 final class LegacyMachineItemDataFixes {
@@ -43,11 +45,17 @@ final class LegacyMachineItemDataFixes {
                 if (supported(id)) {
                     DataFixer fixer = DataFixers.getDataFixer();
                     CompoundTag input = version < 704 ? upgradeTo704(compound, version, fixer) : compound.copy();
-                    CompoundTag fixed = (CompoundTag) fixer.update(References.ITEM_STACK,
-                            new Dynamic<>(NbtOps.INSTANCE, input), Math.max(version, 704), current).getValue();
+                    int from = Math.max(version, 704);
+                    if (from < ItemData.LAST_PORT_DATA_VERSION) {
+                        CompoundTag fixed = (CompoundTag) fixer.update(References.ITEM_STACK,
+                                new Dynamic<>(NbtOps.INSTANCE, input), from, ItemData.LAST_PORT_DATA_VERSION).getValue();
+                        input = (CompoundTag) preserve(compound, fixed);
+                        from = ItemData.LAST_PORT_DATA_VERSION;
+                    }
                     // The native item schema also fixes its nested vanilla inventories.
                     // Do not visit them again with the old version and reset tool damage.
-                    return preserve(compound, fixed);
+                    return fixer.update(References.ITEM_STACK,
+                            new Dynamic<>(NbtOps.INSTANCE, input), from, current).getValue();
                 }
                 return compound;
             }
@@ -102,7 +110,7 @@ final class LegacyMachineItemDataFixes {
                         || before.getInt("Slot") != after.getInt("Slot")))) {
                     throw new IllegalStateException("Native item migration changed inventory count or slot");
                 }
-                if (!supported(id)) return before.copy();
+                if (!supported(id)) return ItemData.withLegacyWear(before.copy(), BuiltInRegistries.ITEM.asLookup());
                 restoreNamedEnchantments(before, after, "ench", "Enchantments");
                 restoreNamedEnchantments(before, after, "StoredEnchantments", "StoredEnchantments");
             }

@@ -1,5 +1,6 @@
 package cyano.poweradvantage.api;
 
+import net.minecraft.core.HolderLookup;
 import zone.moddev.mc.basepower.conduitnetwork.ConduitRegistry;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.server.level.ServerPlayer;
@@ -279,8 +280,8 @@ public abstract class PoweredEntity extends BlockEntity implements IPowerMachine
 	 * packet.
 	 */
 	@Override
-	public void load(final CompoundTag tagRoot) {
-		super.load(tagRoot);
+	protected void loadAdditional(final CompoundTag tagRoot, HolderLookup.Provider registries) {
+		super.loadAdditional(tagRoot, registries);
 		this.conduitRefreshDelay = 2;
 		if (tagRoot.contains("Energy", 11)) {
 			int[] data = tagRoot.getIntArray("Energy");
@@ -296,8 +297,8 @@ public abstract class PoweredEntity extends BlockEntity implements IPowerMachine
 	 * the network.
 	 */
 	@Override
-	protected void saveAdditional(final CompoundTag tagRoot) {
-		super.saveAdditional(tagRoot);
+	protected void saveAdditional(final CompoundTag tagRoot, HolderLookup.Provider registries) {
+		super.saveAdditional(tagRoot, registries);
 		int[] data = new int[this.getTypes().length];
 		for (int i = 0; i < data.length; i++) {
 			data[i] = Float.floatToIntBits(this.getEnergy(this.getTypes()[i]));
@@ -305,15 +306,24 @@ public abstract class PoweredEntity extends BlockEntity implements IPowerMachine
 		tagRoot.putIntArray("Energy", data);
 	}
 
-	/** @deprecated Minecraft now serializes through {@link #saveWithFullMetadata()}. */
-	@Deprecated public CompoundTag save(CompoundTag tag) {
-		return tag.merge(saveWithFullMetadata());
+	private HolderLookup.Provider serializationRegistries() {
+		return getLevel() == null
+				? net.minecraft.core.RegistryAccess.fromRegistryOfRegistries(net.minecraft.core.registries.BuiltInRegistries.REGISTRY)
+				: getLevel().registryAccess();
 	}
 
-	/** @deprecated Minecraft now calls {@link #load(CompoundTag)}. */
+	/** @deprecated Prefer the registry-aware Minecraft save methods. */
+	@Deprecated public CompoundTag save(CompoundTag tag) {
+		return tag.merge(saveWithFullMetadata(serializationRegistries()));
+	}
+
+	/** @deprecated Prefer {@link #loadWithComponents}. */
+	@Deprecated public void load(CompoundTag tag) { loadWithComponents(tag, serializationRegistries()); }
+
+	/** @deprecated Prefer {@link #loadWithComponents}. */
 	@Deprecated public void read(CompoundTag tag) { load(tag); }
 
-	/** @deprecated Minecraft now calls {@link #save(CompoundTag)}. */
+	/** @deprecated Prefer the registry-aware Minecraft save methods. */
 	@Deprecated public CompoundTag write(CompoundTag tag) { return save(tag); }
 
 

@@ -64,10 +64,7 @@ public final class Fluids {
             event.register(ForgeRegistries.Keys.FLUID_TYPES, id("refined_oil"), () -> refinedOilType);
         }
         if (!ForgeRegistries.Keys.FLUIDS.equals(event.getRegistryKey())) return;
-        flowing_crude_oil = new PowerFluid.Flowing(Kind.CRUDE);
-        crude_oil = new PowerFluid.Source(Kind.CRUDE);
-        flowing_refined_oil = new PowerFluid.Flowing(Kind.REFINED);
-        refined_oil = new PowerFluid.Source(Kind.REFINED);
+        prepareOilFluids();
 
         event.register(ForgeRegistries.Keys.FLUIDS, id("flowing_crude_oil"), () -> flowing_crude_oil);
         event.register(ForgeRegistries.Keys.FLUIDS, id("crude_oil"), () -> crude_oil);
@@ -77,6 +74,14 @@ public final class Fluids {
         registerNewFluid(flowing_crude_oil);
         registerNewFluid(refined_oil);
         registerNewFluid(flowing_refined_oil);
+    }
+
+    static synchronized void prepareOilFluids() {
+        if (crude_oil != null) return;
+        flowing_crude_oil = new PowerFluid.Flowing(Kind.CRUDE);
+        crude_oil = new PowerFluid.Source(Kind.CRUDE);
+        flowing_refined_oil = new PowerFluid.Flowing(Kind.REFINED);
+        refined_oil = new PowerFluid.Source(Kind.REFINED);
     }
 
     private static ResourceLocation id(String name) {

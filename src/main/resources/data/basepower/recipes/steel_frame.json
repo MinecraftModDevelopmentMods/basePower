@@ -11,13 +11,11 @@
     }
   },
   "result": {
-    "item": "basepower:steel_frame"
+    "id": "basepower:steel_frame"
   },
   "group": "basepower:steel_frame",
-  "conditions": [
-    {
-      "type": "basepower:tag_not_empty",
-      "tag": "forge:bars/steel"
-    }
-  ]
+  "forge:condition": {
+    "type": "basepower:tag_not_empty",
+    "tag": "forge:bars/steel"
+  }
 }

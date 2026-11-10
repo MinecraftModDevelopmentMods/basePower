@@ -137,7 +137,7 @@ final class RedstoneReloadProbe {
                 seedTrace.add(observation);
                 boolean ready = true;
                 for (Witness witness : witnesses) {
-                    CompoundTag tag = tile(witness).saveWithFullMetadata();
+                    CompoundTag tag = WorksBlockData.save(tile(witness));
                     ready &= tag.getShort("progress") > 0 && tag.contains("targetX", 99)
                             && ((PoweredEntity) tile(witness)).getEnergy(new ConduitType("electricity")) > 24;
                 }
@@ -226,7 +226,7 @@ final class RedstoneReloadProbe {
         BlockEntity tile = tile(witness);
         ((PoweredEntity) tile).setEnergy(500, new ConduitType("electricity"));
         ItemStack dirt = new ItemStack(Items.DIRT, 7);
-        dirt.getOrCreateTag().putString("AdvWorksWitness", witness.id);
+        WorksItemData.update(dirt, tag -> tag.putString("AdvWorksWitness", witness.id));
         ((Container) tile).setItem(0, dirt);
         ((Container) tile).setItem(1, new ItemStack(Items.APPLE, 13));
         tile.setChanged();
@@ -273,7 +273,7 @@ final class RedstoneReloadProbe {
         List<Map<String, Object>> result = new ArrayList<>();
         for (Witness witness : witnesses) {
             BlockEntity tile = tile(witness);
-            CompoundTag nbt = tile.saveWithFullMetadata();
+            CompoundTag nbt = WorksBlockData.save(tile);
             BlockState state = world.getBlockState(witness.pos);
             Map<String, Object> row = new LinkedHashMap<>();
             row.put("id", witness.id);

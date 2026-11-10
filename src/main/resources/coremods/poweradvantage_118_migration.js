@@ -5,11 +5,32 @@ var JumpInsnNode = Java.type('org.objectweb.asm.tree.JumpInsnNode');
 var LabelNode = Java.type('org.objectweb.asm.tree.LabelNode');
 var MethodInsnNode = Java.type('org.objectweb.asm.tree.MethodInsnNode');
 var VarInsnNode = Java.type('org.objectweb.asm.tree.VarInsnNode');
-var ASMAPI = Java.type('net.minecraftforge.coremod.api.ASMAPI');
 
 // Only pre-datafix migration needs bytecode integration.
 var hook = 'zone/moddev/mc/basepower/migration/LegacyWorldDataHook';
 var metadata = 'zone/moddev/mc/basepower/migration/LegacyWorldMetadata';
+var dataFixTypes = 'net/minecraft/util/datafix/DataFixTypes';
+
+function previousInstruction(instruction) {
+    var previous = instruction.getPrevious();
+    while (previous !== null && previous.getOpcode() < 0) previous = previous.getPrevious();
+    return previous;
+}
+
+function isEmbeddedPlayerCall(call) {
+    // The Forge 50 reader pushes PLAYER, then the fixer, value and version.
+    // Inspect the receiver for this invocation, not an unrelated earlier GETSTATIC.
+    var argument = call;
+    var loads = [Opcodes.ILOAD, Opcodes.ALOAD, Opcodes.ALOAD];
+    for (var index = 0; index < loads.length; ++index) {
+        argument = previousInstruction(argument);
+        if (argument === null || argument.getOpcode() !== loads[index]) return false;
+    }
+    var receiver = previousInstruction(argument);
+    return receiver !== null && receiver.getOpcode() === Opcodes.GETSTATIC &&
+            receiver.owner === dataFixTypes && receiver.name === 'PLAYER' &&
+            receiver.desc === 'L' + dataFixTypes + ';';
+}
 
 function patchPlayerDataFix(classNode) {
     var descriptor = '(Lcom/mojang/datafixers/DataFixer;' +
@@ -22,7 +43,7 @@ function patchPlayerDataFix(classNode) {
         for (var instruction = method.instructions.getFirst(); instruction !== null;
                 instruction = instruction.getNext()) {
             if (instruction.getOpcode() === Opcodes.INVOKEVIRTUAL &&
-                    instruction.owner === 'net/minecraft/util/datafix/DataFixTypes' && instruction.desc === descriptor) {
+                    instruction.owner === dataFixTypes && instruction.desc === descriptor) {
                 ++matches;
                 matchedMethod = method;
                 matchedCall = instruction;
@@ -44,77 +65,60 @@ function initializeCoreMod() {
             'target': { 'type': 'CLASS', 'name': 'net.minecraft.world.level.storage.PlayerDataStorage' },
             'transformer': patchPlayerDataFix
         },
-        'poweradvantage_legacy_embedded_player': {
-            'target': { 'type': 'CLASS', 'name': 'net.minecraft.world.level.storage.PrimaryLevelData' },
-            'transformer': patchPlayerDataFix
-        },
         'poweradvantage_legacy_world_info': {
             'target': { 'type': 'CLASS', 'name': 'net.minecraft.world.level.storage.LevelStorageSource' },
             'transformer': function(classNode) {
-                var worldReaders = 0;
-                var packReaders = 0;
+                var worldReaders = [];
+                var rawReturns = [];
+                var lightweightReturns = [];
+                var embeddedSites = [];
+                var dynamic = 'Lcom/mojang/serialization/Dynamic;';
+                var nbt = 'Lnet/minecraft/nbt/CompoundTag;';
+                var embedded = '(Lcom/mojang/datafixers/DataFixer;' + dynamic + 'I)' + dynamic;
                 for (var i = 0; i < classNode.methods.size(); ++i) {
                     var method = classNode.methods.get(i);
-                    var worldReader = method.desc === '(Lcom/mojang/serialization/DynamicOps;' +
-                            'Lnet/minecraft/world/level/WorldDataConfiguration;Lnet/minecraft/core/Registry;' +
-                            'Lcom/mojang/serialization/Lifecycle;' +
-                            'Ljava/nio/file/Path;Lcom/mojang/datafixers/DataFixer;)' +
-                            'Lcom/mojang/datafixers/util/Pair;';
-                    var packReader = method.desc === '(Ljava/nio/file/Path;Lcom/mojang/datafixers/DataFixer;)' +
-                            'Lnet/minecraft/world/level/WorldDataConfiguration;';
-                    if (!worldReader && !packReader) continue;
-                    if (worldReader) {
-                        var prefix = new InsnList();
-                        prefix.add(new VarInsnNode(Opcodes.ALOAD, 4));
-                        prefix.add(new MethodInsnNode(Opcodes.INVOKEINTERFACE,
-                                'java/nio/file/Path', 'toFile', '()Ljava/io/File;', true));
-                        prefix.add(new MethodInsnNode(Opcodes.INVOKESTATIC, hook,
-                                'prepareLegacyWorld', '(Ljava/io/File;)V', false));
-                        method.instructions.insert(prefix);
-                        ++worldReaders;
-                        continue;
+                    if (method.name === 'readLevelDataTagFixed' &&
+                            method.desc === '(Ljava/nio/file/Path;Lcom/mojang/datafixers/DataFixer;)' + dynamic) {
+                        worldReaders.push(method);
                     }
-                    var reads = 0;
-                    for (var read = method.instructions.getFirst(); read !== null; read = read.getNext()) {
-                        if (read.getOpcode() === Opcodes.INVOKESTATIC && read.owner === classNode.name &&
-                                read.desc === '(Ljava/nio/file/Path;)Lnet/minecraft/nbt/Tag;') {
-                            method.instructions.insert(read, new MethodInsnNode(Opcodes.INVOKESTATIC,
-                                    metadata, 'remapLightweight', '(Lnet/minecraft/nbt/Tag;)Lnet/minecraft/nbt/Tag;', false));
-                            ++reads;
+                    var calls = [];
+                    var playerCall = null;
+                    for (var insn = method.instructions.getFirst(); insn !== null; insn = insn.getNext()) {
+                        if (insn.getOpcode() === Opcodes.ARETURN) {
+                            if (method.name === 'readLevelDataTagRaw' && method.desc === '(Ljava/nio/file/Path;)' + nbt) {
+                                rawReturns.push({ method: method, instruction: insn });
+                            } else if (method.name === 'readLightweightData' &&
+                                    method.desc === '(Ljava/nio/file/Path;)Lnet/minecraft/nbt/Tag;') {
+                                lightweightReturns.push({ method: method, instruction: insn });
+                            }
+                        }
+                        if (insn.getOpcode() === Opcodes.INVOKEVIRTUAL && insn.owner === dataFixTypes &&
+                                insn.desc === embedded) {
+                            calls.push(insn);
+                            if (isEmbeddedPlayerCall(insn)) playerCall = insn;
                         }
                     }
-                    if (reads !== 1) throw new Error('Power Advantage expected one lightweight metadata read');
-                    ++packReaders;
-                }
-                if (worldReaders !== 1 || packReaders !== 1) {
-                    throw new Error('Power Advantage could not attach both legacy level readers');
-                }
-                return classNode;
-            }
-        },
-        'poweradvantage_forge_save_metadata': {
-            'target': { 'type': 'CLASS', 'name': 'net.minecraft.world.level.storage.LevelStorageSource$LevelStorageAccess' },
-            'transformer': function(classNode) {
-                var matches = 0;
-                for (var i = 0; i < classNode.methods.size(); ++i) {
-                    var method = classNode.methods.get(i);
-                    var read = null;
-                    for (var call = method.instructions.getFirst(); call !== null; call = call.getNext()) {
-                        if (call.getOpcode() !== Opcodes.INVOKESTATIC) continue;
-                        if (call.owner === 'net/minecraft/nbt/NbtIo' &&
-                                call.desc === '(Ljava/io/File;)Lnet/minecraft/nbt/CompoundTag;') read = call;
-                        if (call.owner === 'net/minecraftforge/common/ForgeHooks' &&
-                                call.name === 'readAdditionalLevelSaveData' &&
-                                call.desc === '(Lnet/minecraft/nbt/CompoundTag;' +
-                                        'Lnet/minecraft/world/level/storage/LevelStorageSource$LevelDirectory;)V') {
-                            if (read === null) throw new Error('Power Advantage expected Forge to read level.dat');
-                            method.instructions.set(read, new MethodInsnNode(Opcodes.INVOKESTATIC,
-                                    metadata, 'read', read.desc, false));
-                            ++matches;
-                        }
+                    if (playerCall !== null) {
+                        if (calls.length !== 1) throw new Error('Power Advantage found an ambiguous embedded player reader');
+                        embeddedSites.push({ method: method, instruction: playerCall });
                     }
                 }
-                if (matches !== 1) throw new Error('Power Advantage could not attach the Forge save metadata reader');
+                if (worldReaders.length !== 1 || rawReturns.length !== 1 ||
+                        lightweightReturns.length !== 1 || embeddedSites.length !== 1) {
+                    throw new Error('Power Advantage could not attach its Forge 50 level and embedded player readers');
+                }
+                var prefix = new InsnList();
+                prefix.add(new VarInsnNode(Opcodes.ALOAD, 0));
+                prefix.add(new MethodInsnNode(Opcodes.INVOKEINTERFACE, 'java/nio/file/Path', 'toFile', '()Ljava/io/File;', true));
+                prefix.add(new MethodInsnNode(Opcodes.INVOKESTATIC, hook, 'prepareLegacyWorld', '(Ljava/io/File;)V', false));
+                worldReaders[0].instructions.insert(prefix);
+                rawReturns[0].method.instructions.insertBefore(rawReturns[0].instruction, new MethodInsnNode(
+                        Opcodes.INVOKESTATIC, metadata, 'remapRaw', '(' + nbt + ')' + nbt, false));
+                lightweightReturns[0].method.instructions.insertBefore(lightweightReturns[0].instruction, new MethodInsnNode(
+                        Opcodes.INVOKESTATIC, metadata, 'remapLightweight', '(Lnet/minecraft/nbt/Tag;)Lnet/minecraft/nbt/Tag;', false));
+                embeddedSites[0].method.instructions.set(embeddedSites[0].instruction, new MethodInsnNode(
+                        Opcodes.INVOKESTATIC, 'zone/moddev/mc/basepower/migration/LegacyPlayerDataFixes',
+                        'updateNativeEmbeddedPlayer', '(L' + dataFixTypes + ';' + embedded.substring(1), false));
                 return classNode;
             }
         },
@@ -181,23 +185,16 @@ function initializeCoreMod() {
             'target': { 'type': 'CLASS', 'name': 'net.minecraft.world.level.chunk.storage.EntityStorage' },
             'transformer': function(classNode) {
                 var matches = 0;
-                var descriptor = '(Lnet/minecraft/nbt/CompoundTag;)Lnet/minecraft/nbt/CompoundTag;';
+                var storage = 'net/minecraft/world/level/chunk/storage/SimpleRegionStorage';
+                var descriptor = '(Lnet/minecraft/nbt/CompoundTag;I)Lnet/minecraft/nbt/CompoundTag;';
                 for (var i = 0; i < classNode.methods.size(); ++i) {
                     var method = classNode.methods.get(i);
-                    if (method.desc !== descriptor || (method.access & Opcodes.ACC_STATIC) !== 0) continue;
-                    ++matches;
-                    var prefix = new InsnList();
-                    prefix.add(new VarInsnNode(Opcodes.ALOAD, 1));
-                    prefix.add(new MethodInsnNode(Opcodes.INVOKESTATIC, hook,
-                            'prepareEntityChunkForMigration', descriptor, false));
-                    prefix.add(new VarInsnNode(Opcodes.ASTORE, 1));
-                    method.instructions.insert(prefix);
-                    for (var instruction = method.instructions.getFirst(); instruction !== null;
-                            instruction = instruction.getNext()) {
-                        if (instruction.getOpcode() === Opcodes.ARETURN) {
-                            method.instructions.insertBefore(instruction, new MethodInsnNode(Opcodes.INVOKESTATIC,
-                                    hook, 'finalizeLegacyChunk', descriptor, false));
-                        }
+                    for (var call = method.instructions.getFirst(); call !== null; call = call.getNext()) {
+                        if (call.getOpcode() !== Opcodes.INVOKEVIRTUAL || call.owner !== storage ||
+                                call.name !== 'upgradeChunkTag' || call.desc !== descriptor) continue;
+                        method.instructions.set(call, new MethodInsnNode(Opcodes.INVOKESTATIC, hook,
+                                'upgradeEntityChunk', '(L' + storage + ';' + descriptor.substring(1), false));
+                        ++matches;
                     }
                 }
                 if (matches !== 1) throw new Error('Power Advantage requires exactly one native entity-chunk converter');
@@ -211,7 +208,7 @@ function initializeCoreMod() {
                 var patched = false;
                 for (var i = 0; i < classNode.methods.size(); ++i) {
                     var method = classNode.methods.get(i);
-                    if (method.desc !== descriptor || method.name !== ASMAPI.mapMethod('m_180807_')) continue;
+                    if (method.desc !== descriptor || method.name !== 'ensureCanWrite') continue;
                     var allowed = new LabelNode();
                     var prefix = new InsnList();
                     prefix.add(new VarInsnNode(Opcodes.ALOAD, 0));

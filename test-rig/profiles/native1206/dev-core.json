@@ -1,0 +1,19 @@
+{
+  "name": "dev-core",
+  "mode": "development",
+  "minecraftVersion": "1.20.6",
+  "forgeVersion": "50.2.0",
+  "powerDeobfSha256": "E53BDD64776741B2EBAE36A646049DC98487E1BAD1CF69F1E3FCD95188F907F1",
+  "mods": [
+    {
+      "id": "basesteam",
+      "version": "2.2.14.120061",
+      "sha256": "5DDABC83B01A8CC8BAE3188BAAACE01BDCF6F756B7049DADF1ADAA3F9CF480FD"
+    },
+    {
+      "id": "baseelectric",
+      "version": "2.2.14.120061",
+      "sha256": "079401D155CF548FA7CB095E155B52D3F10A5CAABAF9ED08F86829D87242AB0E"
+    }
+  ]
+}

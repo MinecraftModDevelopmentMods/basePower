@@ -10,8 +10,11 @@ import java.util.Base64;
 import java.util.List;
 import net.minecraft.SharedConstants;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.core.RegistryAccess;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtIo;
+import net.minecraft.nbt.NbtAccounter;
 import net.minecraft.server.Bootstrap;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.Blocks;
@@ -44,12 +47,11 @@ public class ConnectedProbeObservationTest {
 
     private static void observe(CompoundTag data) throws Exception {
         ObservedChest tile = new ObservedChest();
-        Field persistent = BlockEntity.class.getDeclaredField("customPersistentData");
-        persistent.setAccessible(true);
-        persistent.set(tile, data);
-        CompoundTag before = tile.saveWithFullMetadata().copy();
+        tile.persistentData = data;
         ObservationWorld world = allocate(ObservationWorld.class);
         world.tile = tile;
+        tile.setLevel(world);
+        CompoundTag before = WorksBlockData.save(tile).copy();
         ConnectedProbe probe = new ConnectedProbe();
         Field context = ConnectedProbe.class.getDeclaredField("world");
         context.setAccessible(true);
@@ -63,12 +65,12 @@ public class ConnectedProbeObservationTest {
         definition.add("blocks", blocks);
         for (int observation = 0; observation < 2; observation++) {
             JsonObject row = probe.snapshot(definition).get(0).getAsJsonObject();
-            assertSame("Observation must not allocate or replace live persistent data", data, persistent.get(tile));
+            assertSame("Observation must not allocate or replace live persistent data", data, tile.persistentData);
             assertEquals("Observation must not call the allocating getter", 0, tile.persistentReads);
-            assertEquals(before, tile.saveWithFullMetadata());
+            assertEquals(before, WorksBlockData.save(tile));
             assertEquals(before.toString(), row.get("nbt").getAsString());
             assertEquals(before, NbtIo.readCompressed(new ByteArrayInputStream(
-                    Base64.getDecoder().decode(row.get("nbtBase64").getAsString()))));
+                    Base64.getDecoder().decode(row.get("nbtBase64").getAsString())), NbtAccounter.unlimitedHeap()));
             assertEquals(data == null ? "" : data.getString("AdvConnectedWitness"), row.get("witness").getAsString());
             assertEquals(data != null, before.contains("ForgeData"));
         }
@@ -82,9 +84,20 @@ public class ConnectedProbeObservationTest {
     }
 
     private static final class ObservedChest extends ChestBlockEntity {
+        CompoundTag persistentData;
         int persistentReads;
         ObservedChest() { super(POS, Blocks.CHEST.defaultBlockState()); }
-        @Override public CompoundTag getPersistentData() { persistentReads++; return super.getPersistentData(); }
+        public CompoundTag getPersistentData() {
+            persistentReads++;
+            if (persistentData == null) persistentData = new CompoundTag();
+            return persistentData;
+        }
+        @Override protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+            super.saveAdditional(tag, registries);
+            // Forge 50 no longer stores opaque ForgeData for vanilla tiles.
+            // This extension fixture proves the probe observes, but never allocates, the legacy witness.
+            if (persistentData != null) tag.put("ForgeData", persistentData.copy());
+        }
     }
 
     private static final class ObservationWorld extends ServerLevel {
@@ -92,5 +105,8 @@ public class ConnectedProbeObservationTest {
         private ObservationWorld() { super(null, null, null, null, null, null, null, false, 0L, List.of(), false, null); }
         @Override public BlockState getBlockState(BlockPos pos) { return Blocks.CHEST.defaultBlockState(); }
         @Override public BlockEntity getBlockEntity(BlockPos pos) { return tile; }
+        @Override public RegistryAccess registryAccess() {
+            return RegistryAccess.fromRegistryOfRegistries(net.minecraft.core.registries.BuiltInRegistries.REGISTRY);
+        }
     }
 }

@@ -54,8 +54,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.common.util.FakePlayer;
-import net.minecraftforge.common.util.FakePlayerFactory;
 import net.minecraftforge.event.level.LevelEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.RegisterCommandsEvent;
@@ -271,7 +269,7 @@ final class DimensionEntityProbe {
             }
             PINNED.add(world);
         }
-        FakePlayer sentinel = FakePlayerFactory.getMinecraft(world);
+        WorksOfflinePlayer sentinel = WorksOfflinePlayer.sentinel(world);
         if (sentinel.connection == null) new OfflineConnection(world.getServer(), sentinel);
         sentinel.setPos(144.5, 100, 8.5);
         if (!world.players().contains(sentinel)) world.players().add(sentinel);
@@ -294,8 +292,8 @@ final class DimensionEntityProbe {
 
     private static ServerPlayer readPlayer(MinecraftServer server, ServerLevel world, JsonObject definition) {
         ServerPlayer player = new ServerPlayer(server, world,
-                new GameProfile(UUID.fromString(definition.get("playerUuid").getAsString()), definition.get("playerName").getAsString()));
-        if (server.getPlayerList().load(player) == null) throw new IllegalStateException("No player file loaded");
+                new GameProfile(UUID.fromString(definition.get("playerUuid").getAsString()), definition.get("playerName").getAsString()), net.minecraft.server.level.ClientInformation.createDefault());
+        if (server.getPlayerList().load(player).isEmpty()) throw new IllegalStateException("No player file loaded");
         if (Native117Worlds.legacyId(player.level().dimension()) != dimension(definition) || player.level() != world) {
             throw new IllegalStateException("Player loaded in wrong dimension");
         }
@@ -344,7 +342,7 @@ final class DimensionEntityProbe {
         result.add("entities", entities);
         BlockPos pos = new BlockPos(176, 101, 8); JsonObject generator = new JsonObject();
         generator.addProperty("actualName", net.minecraftforge.registries.ForgeRegistries.BLOCKS.getKey(world.getBlockState(pos).getBlock()).toString());
-        BlockEntity tile = world.getBlockEntity(pos); if (tile != null) generator.add("tile", encode(tile.saveWithFullMetadata()));
+        BlockEntity tile = world.getBlockEntity(pos); if (tile != null) generator.add("tile", encode(WorksBlockData.save(tile)));
         result.add("generator", generator);
         return result;
     }
@@ -438,7 +436,7 @@ final class DimensionEntityProbe {
     }
 
     private static final class OfflineConnection extends ServerGamePacketListenerImpl {
-        OfflineConnection(MinecraftServer server, ServerPlayer player) { super(server, new Connection(PacketFlow.SERVERBOUND), player); }
+        OfflineConnection(MinecraftServer server, ServerPlayer player) { super(server, new Connection(PacketFlow.SERVERBOUND), player, WorksOfflinePlayer.cookie(player)); }
         @Override public void send(Packet<?> packet) { /* Deliberately no socket or client login. */ }
         @Override public void send(Packet<?> packet, PacketSendListener listener) {
             // Death-message packets use this overload; no native network work is queued.

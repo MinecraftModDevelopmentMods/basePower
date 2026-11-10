@@ -89,6 +89,17 @@ public class VanillaRegistryMappingEventTest {
         }
     }
 
+    @Test public void retiresOnlyTheRemovedVanillaEmptyPotionIndex() {
+        IForgeRegistry<Entry> active = registry(null, false, "minecraft:potion");
+        for (String id : new String[] {"minecraft:empty", "minecraft:water", "othermod:empty"}) {
+            var mapping = new MissingMappingsEvent.Mapping<>(active, active, ResourceLocation.parse(id), 42);
+            VanillaRegistryRemaps.remap(event(active, mapping), active);
+            assertEquals(id, id.equals("minecraft:empty") ? MissingMappingsEvent.Action.IGNORE
+                    : MissingMappingsEvent.Action.DEFAULT, property(mapping, "action"));
+            assertNull(property(mapping, "target"));
+        }
+    }
+
     private static MissingMappingsEvent event(IForgeRegistry<Entry> staging, MissingMappingsEvent.Mapping<Entry> mapping) {
         return new MissingMappingsEvent(staging.getRegistryKey(), staging, Collections.singletonList(mapping));
     }

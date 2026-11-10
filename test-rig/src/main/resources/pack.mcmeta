@@ -1,8 +1,8 @@
 {
   "pack": {
-    "description": "Advantage Works 1.19.4 test resources",
-        "pack_format": 15,
-        "forge:resource_pack_format": 15,
-        "forge:data_pack_format": 15
+    "description": "Advantage Works 1.20.6 test resources",
+    "pack_format": 32,
+    "forge:resource_pack_format": 32,
+    "forge:data_pack_format": 41
   }
 }

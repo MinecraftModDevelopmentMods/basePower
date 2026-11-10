@@ -85,7 +85,7 @@ final class ActorProbe {
                 StandardCharsets.UTF_8), JsonObject.class);
         // Entity updates require neighbouring chunks and a non-idle world. This
         // sentinel is never logged in and never reads/writes the witness player.
-        net.minecraftforge.common.util.FakePlayer sentinel = net.minecraftforge.common.util.FakePlayerFactory.getMinecraft(world);
+        WorksOfflinePlayer sentinel = WorksOfflinePlayer.sentinel(world);
         sentinel.setPos(128.5, 80, -16.5);
         if (!world.players().contains(sentinel)) world.players().add(sentinel);
         for (int x = 6; x <= 13; x++) {
@@ -96,7 +96,7 @@ final class ActorProbe {
         result.addProperty("frozen", frozen(world));
         result.addProperty("gameTime", world.getGameTime());
         try (java.io.FileInputStream input = new java.io.FileInputStream(new File("AdvantageWorksMigration/level.dat"))) {
-            CompoundTag data = NbtIo.readCompressed(input).getCompound("Data");
+            CompoundTag data = NbtIo.readCompressed(input, net.minecraft.nbt.NbtAccounter.unlimitedHeap()).getCompound("Data");
             if (data.contains("Player", 10)) result.add("embedded", encode(data.getCompound("Player")));
         }
         boolean read = operation.equals("read");
@@ -104,8 +104,8 @@ final class ActorProbe {
         if (read) {
             GameProfile profile = new GameProfile(UUID.fromString(definition.get("playerUuid").getAsString()),
                     definition.get("playerName").getAsString());
-            ServerPlayer player = new ServerPlayer(server, world, profile);
-            if (server.getPlayerList().load(player) == null) throw new IllegalStateException("No player file loaded");
+            ServerPlayer player = new ServerPlayer(server, world, profile, net.minecraft.server.level.ClientInformation.createDefault());
+            if (server.getPlayerList().load(player).isEmpty()) throw new IllegalStateException("No player file loaded");
             result.add("player", encode(player.saveWithoutId(new CompoundTag())));
             Native117PlayerIo.save(server.getPlayerList(), player);
         }

@@ -18,7 +18,7 @@
     }
   },
   "result": {
-    "item": "basepower:item_filter_fuel"
+    "id": "basepower:item_filter_fuel"
   },
   "group": "basepower:item_filter_fuel"
 }

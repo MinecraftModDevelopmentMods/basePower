@@ -4,9 +4,9 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-import net.minecraft.advancements.Advancement;
+import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.item.crafting.Recipe;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 
@@ -21,11 +21,11 @@ public final class RecipeDiscovery {
         if (!(event.getEntity() instanceof ServerPlayer player)) return;
         // Disabled recipes have no reward to grant. Replay only already-earned
         // discoveries when that exact recipe becomes available on a later login.
-        for (Recipe recipe : player.getServer().getRecipeManager().getRecipes()) {
-            if (!NAMESPACES.contains(recipe.getId().getNamespace()) || recipe.isSpecial()
+        for (RecipeHolder<?> recipe : player.getServer().getRecipeManager().getRecipes()) {
+            if (!NAMESPACES.contains(recipe.id().getNamespace()) || recipe.value().isSpecial()
                     || player .getRecipeBook().contains(recipe)) continue;
-            Advancement advancement = player.getServer().getAdvancements().getAdvancement(
-                    new ResourceLocation(recipe.getId().getNamespace(), "recipes/" + recipe.getId().getPath()));
+            AdvancementHolder advancement = player.getServer().getAdvancements().get(
+                    new ResourceLocation(recipe.id().getNamespace(), "recipes/" + recipe.id().getPath()));
             if (advancement != null && player .getAdvancements().getOrStartProgress(advancement).isDone()) {
                 player .awardRecipes(Collections.singletonList(recipe));
             }

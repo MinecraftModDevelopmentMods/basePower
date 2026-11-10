@@ -7,7 +7,6 @@ import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Random;
 import java.util.UUID;
 import java.util.function.Supplier;
 import net.minecraft.SharedConstants;
@@ -15,6 +14,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.Bootstrap;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.RandomSource;
 import net.minecraft.util.profiling.InactiveProfiler;
 import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.world.entity.Entity;
@@ -37,14 +37,15 @@ public final class NativeLeashKnotPlatformControl {
     }
     public static void main(String[] args) throws Exception {
         SharedConstants.tryDetectVersion(); Bootstrap.bootStrap();
+        zone.moddev.mc.advantageworks.unit.ForgeUnitRegistries.registerVanillaFluidTypes();
         try {
-            Class.forName("zone.moddev.mc.poweradvantage.migration.LegacyEntityDataFixes");
+            Class.forName("zone.moddev.mc.basepower.migration.LegacyEntityDataFixes");
             throw new AssertionError("Power must be absent from the native control");
         } catch (ClassNotFoundException expected) { System.out.println("POWER_LEGACY_CLASS_ABSENT true"); }
         Class<?> unsafe = Class.forName("sun.misc.Unsafe");
         Field instance = unsafe.getDeclaredField("theUnsafe"); instance.setAccessible(true);
         ServerLevel world = (ServerLevel) unsafe.getMethod("allocateInstance", Class.class).invoke(instance.get(null), ServerLevel.class);
-        field(world, "dimension", Level.NETHER); field(world, "random", new Random(0));
+        field(world, "dimension", Level.NETHER); field(world, "random", RandomSource.create(0));
         field(world, "profiler", (Supplier<ProfilerFiller>) () -> InactiveProfiler.INSTANCE);
         LeashFenceKnotEntity knot = new LeashFenceKnotEntity(world, new BlockPos(154, 100, 8));
         UUID identity = knot.getUUID();
@@ -55,9 +56,10 @@ public final class NativeLeashKnotPlatformControl {
                 || EntityType.LEASH_KNOT.canSerialize() || accepted || !identity.equals(knot.getUUID())
                 || !before.equals(observed) || knot.tickCount != 0 || knot.isRemoved()) throw new AssertionError("Native noSave contract differs");
         Map<String,Object> proof = new LinkedHashMap<>();
-        proof.put("format", 1); proof.put("policy", "native117-leash-knot-nosave-v1");
+        proof.put("format", 1); proof.put("policy", "native1206-leash-knot-nosave-v1");
         proof.put("minecraftVersion", SharedConstants.getCurrentVersion().getName());
-        proof.put("dataVersion", SharedConstants.getCurrentVersion().getWorldVersion()); proof.put("forgeVersion", "37.1.1");
+        proof.put("dataVersion", SharedConstants.getCurrentVersion().getDataVersion().getVersion());
+        proof.put("forgeVersion", net.minecraftforge.versions.forge.ForgeVersion.getVersion());
         proof.put("nativeClass", knot.getClass().getName()); proof.put("registryId", EntityType.getKey(knot.getType()).toString());
         proof.put("canSerialize", false); proof.put("rootWriterAccepted", false);
         proof.put("observationalUuidPreserved", true); proof.put("observationalStateUnchanged", true);

@@ -8,10 +8,8 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -27,19 +25,32 @@ import net.minecraft.client.gui.screens.recipebook.RecipeCollection;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import net.minecraft.client.ClientRecipeBook;
+import net.minecraft.core.RegistryAccess;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.NbtAccounter;
+import net.minecraft.nbt.NbtIo;
+import net.minecraft.nbt.Tag;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Recipe;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.stats.RecipeBook;
 import net.minecraft.world.entity.player.StackedContents;
 import net.minecraft.world.item.crafting.RecipeManager;
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.protocol.game.ClientboundUpdateRecipesPacket;
+import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraftforge.registries.ForgeRegistry;
+import net.minecraftforge.registries.GameData;
+import net.minecraftforge.registries.RegistryManager;
 
 /** Decodes actual server recipe packets and exercises Minecraft's real cell grouping. */
 final class RecipeBookGroupingProbe {
-    private static final int GL_PROJECTION = 5889, GL_MODELVIEW = 5888;
     private static final int GL_COLOR_BUFFER_BIT = 16384, GL_DEPTH_BUFFER_BIT = 256, GL_RGBA = 6408, GL_UNSIGNED_BYTE = 5121;
     static void verify(Minecraft minecraft, JsonObject report) {
-        Path root = Paths.get("recipe-book-fixtures");
+        Path root = Path.of("recipe-book-fixtures");
         if (!Files.isDirectory(root)) {
             report.addProperty("recipe_book_grouping_status", "NOT_RUN_NO_NATIVE_FIXTURES");
             return;
@@ -49,54 +60,58 @@ final class RecipeBookGroupingProbe {
         try (Stream<Path> files = Files.list(root)) {
             // A separate main-menu client has not performed Forge's registry handshake.
             // Import only the generated server fixture's ID snapshot, never a user world.
-            Map<net.minecraft.resources.ResourceLocation, net.minecraftforge.registries.ForgeRegistry.Snapshot> registry =
-                    net.minecraftforge.registries.RegistryManager.ACTIVE.takeSnapshot(false);
-            net.minecraft.nbt.CompoundTag saved;
-            try (java.io.InputStream input = Files.newInputStream(root.resolve("server-registries.dat"))) {
-                net.minecraft.nbt.CompoundTag level = net.minecraft.nbt.NbtIo.readCompressed(input);
-                require("1.20.1".equals(level.getCompound("Data").getCompound("Version").getString("Name")),
-                        "Recipe fixture is not a native 1.20.1 server export");
-                net.minecraft.nbt.ListTag mods = level.getCompound("fml").getList("LoadingModList", 10);
-                boolean nativeForge = false;
-                for (int i = 0; i < mods.size(); i++) {
-                    net.minecraft.nbt.CompoundTag mod = mods.getCompound(i);
-                    if ("forge".equals(mod.getString("ModId"))) nativeForge = "47.4.10".equals(mod.getString("ModVersion"));
-                }
-                require(nativeForge, "Recipe fixture was not saved by Forge 47.4.10");
-                saved = level.getCompound("fml").getCompound("Registries");
+            Map<ResourceLocation, ForgeRegistry.Snapshot> registry = RegistryManager.ACTIVE.takeSnapshot(false);
+            CompoundTag level = NbtIo.readCompressed(root.resolve("server-registries.dat"), NbtAccounter.unlimitedHeap());
+            require("1.20.6".equals(level.getCompound("Data").getCompound("Version").getString("Name")),
+                    "Recipe fixture is not a native 1.20.6 server export");
+            ListTag mods = level.getCompound("fml").getList("LoadingModList", Tag.TAG_COMPOUND);
+            boolean nativeForge = false;
+            for (int i = 0; i < mods.size(); i++) {
+                CompoundTag mod = mods.getCompound(i);
+                if ("forge".equals(mod.getString("ModId"))) nativeForge = "50.2.0".equals(mod.getString("ModVersion"));
             }
-            String itemRegistry = net.minecraftforge.registries.ForgeRegistries.ITEMS.getRegistryName().toString();
-            String blockRegistry = net.minecraftforge.registries.ForgeRegistries.BLOCKS.getRegistryName().toString();
-            require(saved.contains(itemRegistry, 10) && saved.contains(blockRegistry, 10)
-                    && !saved.getCompound(itemRegistry).getList("ids", 10).isEmpty()
-                    && !saved.getCompound(blockRegistry).getList("ids", 10).isEmpty(), "Missing native server registry snapshot");
-            for (String key : saved.getAllKeys()) registry.put(new net.minecraft.resources.ResourceLocation(key),
-                    net.minecraftforge.registries.ForgeRegistry.Snapshot.read(saved.getCompound(key)));
-            require(net.minecraftforge.registries.GameData.injectSnapshot(registry, false, false).isEmpty(),
-                    "Client lacks a server registry entry");
-            List<Path> packets = files.filter(file -> file.toString().endsWith(".bin")).sorted().collect(Collectors.toList());
-            require(packets.size() == 3, "Normal, Tech and Apocalyptic recipe-book packets are required");
+            require(nativeForge, "Recipe fixture was not saved by Forge 50.2.0");
+            CompoundTag saved = level.getCompound("fml").getCompound("Registries");
+            String itemRegistry = ForgeRegistries.ITEMS.getRegistryName().toString();
+            String blockRegistry = ForgeRegistries.BLOCKS.getRegistryName().toString();
+            require(saved.contains(itemRegistry, Tag.TAG_COMPOUND) && saved.contains(blockRegistry, Tag.TAG_COMPOUND)
+                    && !saved.getCompound(itemRegistry).getList("ids", Tag.TAG_COMPOUND).isEmpty()
+                    && !saved.getCompound(blockRegistry).getList("ids", Tag.TAG_COMPOUND).isEmpty(), "Missing native server registry snapshot");
+            for (String key : saved.getAllKeys()) registry.put(ResourceLocation.parse(key),
+                    ForgeRegistry.Snapshot.read(saved.getCompound(key)));
+            require(GameData.injectSnapshot(registry, false, false).isEmpty(), "Client lacks a server registry entry");
+            RegistryAccess registries = RegistryAccess.fromRegistryOfRegistries(BuiltInRegistries.REGISTRY);
+            List<Path> packets = files.filter(file -> file.toString().endsWith(".bin")).sorted().toList();
+            Set<String> packetNames = packets.stream().map(file -> file.getFileName().toString()).collect(Collectors.toSet());
+            require(packetNames.equals(Set.of("recipes-normal-sweep.bin", "recipes-tech-sweep.bin", "recipes-apocalyptic-sweep.bin")),
+                    "Normal, Tech and Apocalyptic recipe-book packets are required");
             for (Path file : packets) {
-                JsonObject manifest = new JsonParser().parse(new String(Files.readAllBytes(Paths.get(
-                        file.toString().replace(".bin", ".json"))), StandardCharsets.UTF_8)).getAsJsonObject();
+                Path manifestPath = file.resolveSibling(file.getFileName().toString().replace(".bin", ".json"));
+                JsonObject manifest = JsonParser.parseString(Files.readString(manifestPath)).getAsJsonObject();
                 require("PASS".equals(manifest.get("status").getAsString()), "Server recipe fixture did not pass");
                 Map<String, JsonObject> expected = new HashMap<>();
                 manifest.getAsJsonArray("bookRecipes").forEach(row -> require(expected.put(row.getAsJsonObject().get("id").getAsString(),
                         row.getAsJsonObject()) == null, "Duplicate recipe in packet manifest"));
-                FriendlyByteBuf buffer = new FriendlyByteBuf(Unpooled.wrappedBuffer(Files.readAllBytes(file)));
+                RegistryFriendlyByteBuf buffer = new RegistryFriendlyByteBuf(
+                        Unpooled.wrappedBuffer(Files.readAllBytes(file)), registries);
                 ClientboundUpdateRecipesPacket packet;
-                try { packet = new ClientboundUpdateRecipesPacket(buffer); require(!buffer.isReadable(), "Trailing recipe packet bytes"); }
+                try {
+                    packet = ClientboundUpdateRecipesPacket.STREAM_CODEC.decode(buffer);
+                    require(!buffer.isReadable(), "Trailing recipe packet bytes");
+                }
                 finally { buffer.release(); }
-                RecipeManager manager = new RecipeManager();
+                RecipeManager manager = new RecipeManager(registries);
                 Set<String> cellKeys = new HashSet<>();
-                for (Recipe<?> recipe : packet.getRecipes()) {
-                    JsonObject row = expected.get(recipe.getId().toString());
-                    require(row != null, "Unexpected network recipe " + recipe.getId());
-                    String output = net.minecraftforge.registries.ForgeRegistries.ITEMS.getKey(recipe.getResultItem(net.minecraft.core.RegistryAccess.EMPTY).getItem()).toString();
-                    require(output.equals(row.get("output").getAsString()) && recipe.getResultItem(net.minecraft.core.RegistryAccess.EMPTY).getCount() == row.get("count").getAsInt(),
-                            "Client/server item registry mismatch for " + recipe.getId());
+                for (RecipeHolder<?> holder : packet.getRecipes()) {
+                    Recipe<?> recipe = holder.value();
+                    JsonObject row = expected.get(holder.id().toString());
+                    require(row != null, "Unexpected network recipe " + holder.id());
+                    ItemStack stack = recipe.getResultItem(registries);
+                    String output = ForgeRegistries.ITEMS.getKey(stack.getItem()).toString();
+                    require(output.equals(row.get("output").getAsString()) && stack.getCount() == row.get("count").getAsInt(),
+                            "Client/server item registry mismatch for " + holder.id());
                     require(recipe.getGroup().equals(row.get("group").getAsString()) && recipe.getGroup().equals(output), "Group changed in recipe packet");
-                    String type = net.minecraft.core.registries.BuiltInRegistries.RECIPE_TYPE.getKey(recipe.getType()).toString();
+                    String type = BuiltInRegistries.RECIPE_TYPE.getKey(recipe.getType()).toString();
                     require(type.equals(row.get("type").getAsString()), "Recipe type changed in packet");
                     cellKeys.add(type + "|" + output);
                 }
@@ -104,10 +119,11 @@ final class RecipeBookGroupingProbe {
                 require(manager.getRecipes().size() == expected.size(), "Missing network recipes");
                 ClientRecipeBook book = new ClientRecipeBook();
                 manager.getRecipes().forEach(book::add);
-                book.setupCollections(manager.getRecipes(), net.minecraft.core.RegistryAccess.EMPTY);
+                book.setupCollections(manager.getRecipes(), registries);
                 int counted = 0;
                 for (RecipeCollection cell : book.getCollections()) {
-                    Set<String> outputs = cell.getRecipes().stream().map(recipe -> net.minecraftforge.registries.ForgeRegistries.ITEMS.getKey(recipe.getResultItem(net.minecraft.core.RegistryAccess.EMPTY).getItem()).toString())
+                    Set<String> outputs = cell.getRecipes().stream().map(holder -> ForgeRegistries.ITEMS.getKey(
+                            holder.value().getResultItem(registries).getItem()).toString())
                             .collect(Collectors.toSet());
                     require(outputs.size() == 1 && cell.hasSingleResultItem(), "Mixed items share a native recipe-book cell: " + outputs);
                     counted += cell.getRecipes().size();
@@ -133,11 +149,10 @@ final class RecipeBookGroupingProbe {
         Set<String> selected = new HashSet<>(java.util.Arrays.asList("baseelectric:blank_circuit_board",
                 "baseelectric:integrated_circuit", "baseelectric:control_circuit", "baseelectric:psu", "basepower:item_conveyor"));
         for (RecipeCollection cell : book.getCollections()) {
-            Recipe<?> recipe = cell.getRecipes().get(0);
-            String id = net.minecraftforge.registries.ForgeRegistries.ITEMS.getKey(recipe.getResultItem(net.minecraft.core.RegistryAccess.EMPTY).getItem()).toString();
+            String id = cellOutputId(cell);
             if (selected.contains(id) || id.startsWith("basepower:item_filter_")) shown.add(cell);
         }
-        shown.sort(java.util.Comparator.comparing(cell -> net.minecraftforge.registries.ForgeRegistries.ITEMS.getKey(cell.getRecipes().get(0).getResultItem(net.minecraft.core.RegistryAccess.EMPTY).getItem()).toString()));
+        shown.sort(java.util.Comparator.comparing(RecipeBookGroupingProbe::cellOutputId));
         require(shown.size() == 13, "The thirteen reported circuit/conveyor cells must be separate");
         int width = 1000, height = 180;
         RenderTarget target = new com.mojang.blaze3d.pipeline.TextureTarget(width, height, true, Minecraft.ON_OSX);
@@ -165,7 +180,7 @@ final class RecipeBookGroupingProbe {
                 }
                 button.setPosition(x, y);
                 button.render(graphics, -1, -1, 1F);
-                graphics.drawString(minecraft.font, shown.get(i).getRecipes().get(0).getResultItem(net.minecraft.core.RegistryAccess.EMPTY).getDisplayName(), x + 30, y + 8, 0xFFFFFF, false);
+                graphics.drawString(minecraft.font, cellResult(shown.get(i)).getDisplayName(), x + 30, y + 8, 0xFFFFFF, false);
             }
             graphics.flush();
             ByteBuffer pixels = ByteBuffer.allocateDirect(width * height * 4);
@@ -185,6 +200,14 @@ final class RecipeBookGroupingProbe {
             target.destroyBuffers(); minecraft.getMainRenderTarget().bindWrite(true);
             RenderSystem.enableDepthTest();
         }
+    }
+
+    private static ItemStack cellResult(RecipeCollection cell) {
+        return cell.getRecipes().get(0).value().getResultItem(cell.registryAccess());
+    }
+
+    private static String cellOutputId(RecipeCollection cell) {
+        return ForgeRegistries.ITEMS.getKey(cellResult(cell).getItem()).toString();
     }
 
     private static void require(boolean condition, String message) {

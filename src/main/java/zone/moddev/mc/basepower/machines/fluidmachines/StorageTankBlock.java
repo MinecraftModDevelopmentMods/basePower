@@ -14,14 +14,17 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.world.item.component.CustomData;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Registry;
 import net.minecraft.network.chat.Component;
-import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.level.Level;
 import zone.moddev.mc.basepower.init.Fluids;
+import zone.moddev.mc.basepower.util.ItemData;
 
 /** Portable tank block. FluidID and Volume remain unchanged for old item stacks. */
 public class StorageTankBlock extends BlockSimpleFluidMachine {
@@ -40,9 +43,9 @@ public class StorageTankBlock extends BlockSimpleFluidMachine {
     public void setPlacedBy(Level world, BlockPos pos, BlockState state,
             @Nullable LivingEntity placer, ItemStack stack) {
         super.setPlacedBy(world, pos, state, placer, stack);
-        CompoundTag tag = stack.getTag();
+        CompoundTag tag = ItemData.customData(stack);
         BlockEntity tile = world.getBlockEntity(pos);
-        if (tag != null && tag.contains("FluidID", 8) && tag.contains("Volume", 99)
+        if (tag.contains("FluidID", 8) && tag.contains("Volume", 99)
                 && tile instanceof StorageTankTileEntity) {
             net.minecraft.world.level.material.Fluid fluid = Fluids.byName(tag.getString("FluidID"));
             if (fluid != null) ((StorageTankTileEntity) tile).getTank()
@@ -58,16 +61,16 @@ public class StorageTankBlock extends BlockSimpleFluidMachine {
                     .getKey(tile.getTank().getFluid().getFluid());
             if (id != null) tag.putString("FluidID", id.toString());
             tag.putInt("Volume", tile.getTank().getFluidAmount());
-            stack.setTag(tag);
+            stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
         }
         return stack;
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, @Nullable BlockGetter world,
+    public void appendHoverText(ItemStack stack, Item.TooltipContext context,
             List<Component> tooltip, TooltipFlag flag) {
-        CompoundTag tag = stack.getTag();
-        if (tag == null || !tag.contains("FluidID", 8) || !tag.contains("Volume", 99)) {
+        CompoundTag tag = ItemData.customData(stack);
+        if (!tag.contains("FluidID", 8) || !tag.contains("Volume", 99)) {
             tooltip.add(Component.translatable("tooltip.basepower.empty"));
             return;
         }

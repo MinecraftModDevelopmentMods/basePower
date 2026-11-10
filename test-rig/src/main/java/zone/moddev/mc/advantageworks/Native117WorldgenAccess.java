@@ -11,7 +11,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.TicketType;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.biome.Biome;
-import net.minecraft.world.level.chunk.ChunkStatus;
+import net.minecraft.world.level.chunk.status.ChunkStatus;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraftforge.registries.ForgeRegistries;
 
@@ -34,8 +34,8 @@ final class Native117WorldgenAccess implements WorldgenSamplingJob.WorldAccess {
             @Override public CompletableFuture<LevelChunk> request(int x, int z) {
                 // The public API managedBlocks on the server-thread branch, but not here.
                 return source.getChunkFuture(x, z, ChunkStatus.FULL, true).thenApply(result -> {
-                    net.minecraft.world.level.chunk.ChunkAccess access = result.left().orElseThrow(() ->
-                            new IllegalStateException("Native FULL chunk unavailable: " + result.right()));
+                    net.minecraft.world.level.chunk.ChunkAccess access = result.orElseThrow(() ->
+                            new IllegalStateException("Native FULL chunk unavailable: " + result.getError()));
                     if (!(access instanceof LevelChunk) || access.getStatus() != ChunkStatus.FULL
                             || !access.isLightCorrect() || !access.getPos().equals(new ChunkPos(x, z))) {
                         throw new IllegalStateException("Native chunk was not FULL, lit, and at the requested position");

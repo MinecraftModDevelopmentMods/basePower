@@ -110,7 +110,12 @@ public class Native117EntityContextTest {
             return net.minecraft.world.flag.FeatureFlags.DEFAULT_FLAGS;
         }
 
-        @Override public void gameEvent(net.minecraft.world.level.gameevent.GameEvent event,
+        @Override public net.minecraft.core.RegistryAccess registryAccess() {
+            return net.minecraft.core.RegistryAccess.fromRegistryOfRegistries(
+                    net.minecraft.core.registries.BuiltInRegistries.REGISTRY);
+        }
+
+        @Override public void gameEvent(net.minecraft.core.Holder<net.minecraft.world.level.gameevent.GameEvent> event,
                 net.minecraft.world.phys.Vec3 pos, net.minecraft.world.level.gameevent.GameEvent.Context context) {
             // This isolated entity fixture has no chunks or game-event listeners.
         }

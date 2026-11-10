@@ -1,64 +1,59 @@
 package zone.moddev.mc.basepower.recipe;
 
-import com.google.gson.JsonObject;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.DynamicOps;
+import com.mojang.serialization.MapCodec;
 import java.util.Locale;
-import net.minecraft.tags.ItemTags;
-import net.minecraft.util.GsonHelper;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.common.crafting.CraftingHelper;
+import net.minecraft.tags.ItemTags;
 import net.minecraftforge.common.crafting.conditions.ICondition;
-import net.minecraftforge.common.crafting.conditions.IConditionSerializer;
+import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.registries.DeferredRegister;
+import net.minecraftforge.registries.ForgeRegistries;
 import zone.moddev.mc.basepower.PowerAdvantage;
 import zone.moddev.mc.basepower.RecipeMode;
 
-/** Registers the data-pack conditions used by PowerAdvantage recipe modes. */
+/** Forge recipe conditions for the existing modes and optional material tags. */
 public final class RecipeConditions {
-    private static boolean registered;
+    private static final DeferredRegister<MapCodec<? extends ICondition>> SERIALIZERS =
+            DeferredRegister.create(ForgeRegistries.Keys.CONDITION_SERIALIZERS, PowerAdvantage.MODID);
+
+    static {
+        SERIALIZERS.register("recipe_mode", () -> Mode.MATCH);
+        SERIALIZERS.register("not_recipe_mode", () -> Mode.MISMATCH);
+        SERIALIZERS.register("tag_empty", () -> Material.EMPTY);
+        SERIALIZERS.register("tag_not_empty", () -> Material.NOT_EMPTY);
+    }
 
     private RecipeConditions() {}
 
-    public static synchronized void register() {
-        if (registered) return;
-        for (String name : new String[] {"recipe_mode", "not_recipe_mode", "tag_empty", "tag_not_empty"}) {
-            CraftingHelper.register(new Serializer(name));
-        }
-        registered = true;
-    }
+    public static void register(IEventBus bus) { SERIALIZERS.register(bus); }
 
-    private static final class Condition implements ICondition {
-        private final ResourceLocation id;
-        private final String value;
+    private record Mode(String mode, boolean match) implements ICondition {
+        private static final MapCodec<Mode> MATCH = create(true);
+        private static final MapCodec<Mode> MISMATCH = create(false);
 
-        private Condition(ResourceLocation id, String value) {
-            this.id = id;
-            this.value = value;
+        private static MapCodec<Mode> create(boolean match) {
+            return Codec.STRING.fieldOf("mode").xmap(value -> new Mode(value, match), Mode::mode);
         }
 
-        @Override public ResourceLocation getID() { return id; }
-
-
-        @Override public boolean test(IContext context) {
-            switch (id.getPath()) {
-                case "recipe_mode": return PowerAdvantage.recipeMode == RecipeMode.valueOf(value.toUpperCase(Locale.ROOT));
-                case "not_recipe_mode": return PowerAdvantage.recipeMode != RecipeMode.valueOf(value.toUpperCase(Locale.ROOT));
-                case "tag_empty": return context.getTag(ItemTags.create(new ResourceLocation(value))).isEmpty();
-                case "tag_not_empty": return !context.getTag(ItemTags.create(new ResourceLocation(value))).isEmpty();
-                default: throw new IllegalStateException("Unknown Advantage condition " + id);
-            }
+        @Override public MapCodec<Mode> codec() { return match ? MATCH : MISMATCH; }
+        @Override public boolean test(IContext context, DynamicOps<?> ops) {
+            return (PowerAdvantage.recipeMode == RecipeMode.valueOf(mode.toUpperCase(Locale.ROOT))) == match;
         }
     }
 
-    private static final class Serializer implements IConditionSerializer<Condition> {
-        private final ResourceLocation id;
-        private final String key;
+    private record Material(ResourceLocation tag, boolean empty) implements ICondition {
+        private static final MapCodec<Material> EMPTY = create(true);
+        private static final MapCodec<Material> NOT_EMPTY = create(false);
 
-        private Serializer(String name) {
-            id = new ResourceLocation(PowerAdvantage.MODID, name);
-            key = name.contains("recipe_mode") ? "mode" : "tag";
+        private static MapCodec<Material> create(boolean empty) {
+            return ResourceLocation.CODEC.fieldOf("tag").xmap(id -> new Material(id, empty), Material::tag);
         }
 
-        @Override public ResourceLocation getID() { return id; }
-        @Override public Condition read(JsonObject json) { return new Condition(id, GsonHelper.getAsString(json, key)); }
-        @Override public void write(JsonObject json, Condition condition) { json.addProperty(key, condition.value); }
+        @Override public MapCodec<Material> codec() { return empty ? EMPTY : NOT_EMPTY; }
+        @Override public boolean test(IContext context, DynamicOps<?> ops) {
+            return context.getTag(ItemTags.create(tag)).isEmpty() == empty;
+        }
     }
 }

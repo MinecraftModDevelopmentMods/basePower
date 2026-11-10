@@ -171,8 +171,8 @@ final class NativeHarvestProbe {
         File output = new File("advantage-works-results", "native-harvest-" + label + ".json");
         require(!output.exists(), "Refusing to overwrite harvest evidence");
         ServerPlayer player = new ServerPlayer(world.getServer(), world,
-                new GameProfile(UUID.fromString("c791aefe-a372-4536-9251-27032c01f115"), "AdvWorksHarvest"));
-        player.connection = new ServerGamePacketListenerImpl(world.getServer(), new Connection(PacketFlow.SERVERBOUND), player) {
+                new GameProfile(UUID.fromString("c791aefe-a372-4536-9251-27032c01f115"), "AdvWorksHarvest"), net.minecraft.server.level.ClientInformation.createDefault());
+        player.connection = new ServerGamePacketListenerImpl(world.getServer(), new Connection(PacketFlow.SERVERBOUND), player, WorksOfflinePlayer.cookie(player)) {
             @Override public void send(Packet<?> packet) {}
         };
         player.setPos(POS.getX() + 0.5, POS.getY() + 1, POS.getZ() + 0.5);
@@ -218,7 +218,7 @@ final class NativeHarvestProbe {
         harvestDrops(world, new AABB(POS).inflate(2)).forEach(ItemEntity::discard);
         JsonObject report = new JsonObject();
         report.addProperty("label", label);
-        report.addProperty("minecraft", "1.20.1");
+        report.addProperty("minecraft", net.minecraft.SharedConstants.getCurrentVersion().getName());
         report.addProperty("worldTime", world.getGameTime());
         report.addProperty("fixtureIsolation", "native117-live-drops-v1");
         report.addProperty("status", java.util.stream.StreamSupport.stream(rows.spliterator(), false)

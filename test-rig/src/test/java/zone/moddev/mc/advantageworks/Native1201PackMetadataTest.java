@@ -15,9 +15,9 @@ public class Native1201PackMetadataTest {
             JsonObject pack = new JsonParser().parse(new InputStreamReader(input, StandardCharsets.UTF_8))
                     .getAsJsonObject().getAsJsonObject("pack");
             assertTrue(pack.getAsJsonPrimitive("pack_format").isNumber());
-            assertEquals(15, pack.get("pack_format").getAsInt());
-            assertEquals(15, pack.get("forge:resource_pack_format").getAsInt());
-            assertEquals(15, pack.get("forge:data_pack_format").getAsInt());
+            assertEquals(32, pack.get("pack_format").getAsInt());
+            assertEquals(32, pack.get("forge:resource_pack_format").getAsInt());
+            assertEquals(41, pack.get("forge:data_pack_format").getAsInt());
         }
     }
 }

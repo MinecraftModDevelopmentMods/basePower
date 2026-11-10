@@ -1,11 +1,13 @@
 package zone.moddev.mc.basepower.migration;
 
 import com.mojang.datafixers.DataFixer;
+import com.mojang.serialization.Dynamic;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.SharedConstants;
 import net.minecraft.util.datafix.DataFixTypes;
+import zone.moddev.mc.basepower.util.ItemData;
 
 /** Keeps saved Forge enchantment names across the native numeric player fixers. */
 public final class LegacyPlayerDataFixes {
@@ -13,6 +15,16 @@ public final class LegacyPlayerDataFixes {
 
     public static CompoundTag updateNativePlayer(DataFixTypes type, DataFixer fixer, CompoundTag source, int version) {
         return update(fixer, type, source, version);
+    }
+
+    public static <T> Dynamic<T> updateNativeEmbeddedPlayer(DataFixTypes type, DataFixer fixer,
+            Dynamic<T> source, int version) {
+        if (source.getValue() instanceof CompoundTag compound) {
+            @SuppressWarnings("unchecked")
+            T result = (T) update(fixer, type, compound, version);
+            return new Dynamic<>(source.getOps(), result);
+        }
+        return type.updateToCurrentVersion(fixer, source, version);
     }
 
     public static CompoundTag update(DataFixer fixer, DataFixTypes type, CompoundTag source, int version) {
@@ -26,9 +38,12 @@ public final class LegacyPlayerDataFixes {
             result = type.update(fixer, result, version, 704);
             version = 704;
         }
-        result = type.update(fixer, result, version, current);
-        preserveNames(source, result);
-        return result;
+        if (version < ItemData.LAST_PORT_DATA_VERSION) {
+            result = type.update(fixer, result, version, ItemData.LAST_PORT_DATA_VERSION);
+            preserveNames(source, result);
+            version = ItemData.LAST_PORT_DATA_VERSION;
+        }
+        return type.update(fixer, result, version, current);
     }
 
     static void preserveNames(Tag original, Tag result) {

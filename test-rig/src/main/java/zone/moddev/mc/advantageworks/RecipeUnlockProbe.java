@@ -16,14 +16,14 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import net.minecraft.advancements.Advancement;
+import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.advancements.CriteriaTriggers;
 import net.minecraft.advancements.critereon.InventoryChangeTrigger;
 import net.minecraft.commands.Commands;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.Recipe;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.network.protocol.PacketFlow;
 import net.minecraft.server.network.ServerGamePacketListenerImpl;
 import net.minecraft.network.Connection;
@@ -90,10 +90,10 @@ final class RecipeUnlockProbe {
                 StandardCharsets.UTF_8), JsonObject.class);
         if (player == null) {
             player = new ServerPlayer(server, world, new GameProfile(
-                    UUID.fromString("b9bcb1ba-e8e3-44ec-a729-ef70587dc453"), "RecipeProbe"));
+                    UUID.fromString("b9bcb1ba-e8e3-44ec-a729-ef70587dc453"), "RecipeProbe"), net.minecraft.server.level.ClientInformation.createDefault());
             // Real server player and recipe book, with a sink instead of a remote client.
             transport = nativeTransport();
-            player.connection = new ServerGamePacketListenerImpl(server, transport, player) {
+            player.connection = new ServerGamePacketListenerImpl(server, transport, player, WorksOfflinePlayer.cookie(player)) {
                 @Override public void send(Packet<?> packet) {}
             };
         }
@@ -111,8 +111,8 @@ final class RecipeUnlockProbe {
             for (JsonElement element : cases) {
                 JsonObject definition = element.getAsJsonObject();
                 String id = definition.get("id").getAsString();
-                Advancement advancement = advancement(server, id);
-                Recipe<?> recipe = server.getRecipeManager().byKey(new ResourceLocation(id)).orElse(null);
+                AdvancementHolder advancement = advancement(server, id);
+                RecipeHolder<?> recipe = server.getRecipeManager().byKey(new ResourceLocation(id)).orElse(null);
                 JsonObject row = new JsonObject();
                 row.addProperty("id", id);
                 row.addProperty("recipeActive", recipe != null);
@@ -123,7 +123,7 @@ final class RecipeUnlockProbe {
                 require(!player.getAdvancements().getOrStartProgress(advancement).isDone(), "Unrelated item discovered " + id);
                 for (Map.Entry<String, JsonElement> criterion : definition.getAsJsonObject("ingredients").entrySet()) {
                     InventoryChangeTrigger.TriggerInstance condition = (InventoryChangeTrigger.TriggerInstance)
-                            advancement.getCriteria().get(criterion.getKey()).getTrigger();
+                            advancement.value().criteria().get(criterion.getKey()).triggerInstance();
                     player.getInventory().clearContent();
                     require(!matchesInventory(condition, player.getInventory()), "Empty inventory matches " + id);
                     player.getInventory().setItem(0, new ItemStack(item("minecraft:barrier")));
@@ -169,7 +169,7 @@ final class RecipeUnlockProbe {
             JsonArray additions = new JsonArray();
             for (JsonElement element : cases) {
                 JsonObject definition = element.getAsJsonObject();
-                Advancement advancement = advancement(server, definition.get("id").getAsString());
+                AdvancementHolder advancement = advancement(server, definition.get("id").getAsString());
                 if (!player.getAdvancements().getOrStartProgress(advancement).isDone()) {
                     for (Map.Entry<String, JsonElement> criterion : definition.getAsJsonObject("ingredients").entrySet()) {
                         List<Item> choices = choices(criterion.getValue().getAsJsonObject());
@@ -189,9 +189,10 @@ final class RecipeUnlockProbe {
             result.add("additionalMaterials", additions);
             verifyDiscovered(server, cases, rows);
         } else if (operation.equals("restore")) {
-            require(server.getPlayerList().load(player) != null, "No saved test player");
+            require(server.getPlayerList().load(player).isPresent(), "No saved test player");
             require(transport.channel().isActive(), "Native recipe-login channel is not active");
-            require(net.minecraftforge.network.NetworkHooks.getConnectionData(transport) == null,
+            require(net.minecraftforge.network.NetworkContext.get(transport).getType()
+                            == net.minecraftforge.network.ConnectionType.VANILLA,
                     "Server-only probe must not impersonate a remote modded-client handshake");
             // Dispatch the real Forge event to exercise all three namespaces' restoration.
             MinecraftForge.EVENT_BUS.post(new PlayerEvent.PlayerLoggedInEvent(player));
@@ -212,7 +213,7 @@ final class RecipeUnlockProbe {
                 available |= !choices(criterion.getValue().getAsJsonObject()).isEmpty();
             boolean done = player.getAdvancements().getOrStartProgress(advancement(server, id)).isDone();
             require(!available || done, "Lost discovery: " + id);
-            Recipe<?> recipe = server.getRecipeManager().byKey(new ResourceLocation(id)).orElse(null);
+            RecipeHolder<?> recipe = server.getRecipeManager().byKey(new ResourceLocation(id)).orElse(null);
             require(recipe == null || !available || player.getRecipeBook().contains(recipe), "Lost recipe reward: " + id);
             JsonObject row = new JsonObject();
             row.addProperty("id", id);
@@ -229,16 +230,16 @@ final class RecipeUnlockProbe {
         CriteriaTriggers.INVENTORY_CHANGED.trigger(player, player.getInventory(), player.getInventory().getItem(0));
     }
 
-    private void reset(Advancement advancement, Recipe<?> recipe) {
+    private void reset(AdvancementHolder advancement, RecipeHolder<?> recipe) {
         player.getInventory().clearContent();
         if (recipe != null) player.resetRecipes(Collections.singletonList(recipe));
-        for (String criterion : advancement.getCriteria().keySet())
+        for (String criterion : advancement.value().criteria().keySet())
             player.getAdvancements().revoke(advancement, criterion);
     }
 
-    private static Advancement advancement(MinecraftServer server, String id) {
+    private static AdvancementHolder advancement(MinecraftServer server, String id) {
         ResourceLocation name = new ResourceLocation(id);
-        return server.getAdvancements().getAdvancement(new ResourceLocation(name.getNamespace(), "recipes/" + name.getPath()));
+        return server.getAdvancements().get(new ResourceLocation(name.getNamespace(), "recipes/" + name.getPath()));
     }
 
     private static boolean matchesInventory(InventoryChangeTrigger.TriggerInstance condition,

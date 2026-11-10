@@ -18,7 +18,7 @@
       "conditions": {
         "items": [
           {
-            "tag": "forge:pipes"
+            "items": "#forge:pipes"
           }
         ]
       }
@@ -28,7 +28,7 @@
       "conditions": {
         "items": [
           {
-            "tag": "forge:frames/steel"
+            "items": "#forge:frames/steel"
           }
         ]
       }

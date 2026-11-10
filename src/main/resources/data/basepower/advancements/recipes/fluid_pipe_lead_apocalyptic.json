@@ -6,7 +6,7 @@
       "conditions": {
         "items": [
           {
-            "tag": "forge:ingots/lead"
+            "items": "#forge:ingots/lead"
           }
         ]
       }

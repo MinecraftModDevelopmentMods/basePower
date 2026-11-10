@@ -1,5 +1,6 @@
 package cyano.poweradvantage.api.fluid;
 
+import net.minecraft.core.HolderLookup;
 import cyano.poweradvantage.api.ConduitType;
 import cyano.poweradvantage.api.PowerRequest;
 import cyano.poweradvantage.api.PoweredEntity;
@@ -81,8 +82,8 @@ public abstract class FluidPoweredEntity extends PoweredEntity implements IAdvan
 	 * @param tagRoot An NBT tag
 	 */
 	@Override
-	protected void saveAdditional(final CompoundTag tagRoot) {
-		super.saveAdditional(tagRoot);
+	protected void saveAdditional(final CompoundTag tagRoot, HolderLookup.Provider registries) {
+		super.saveAdditional(tagRoot, registries);
 		CompoundTag tankTag = new CompoundTag();
 		this.getTank().writeToNBT(tankTag);
 		tagRoot.put("Tank", tankTag);
@@ -94,8 +95,8 @@ public abstract class FluidPoweredEntity extends PoweredEntity implements IAdvan
 	 * @param tagRoot An NBT tag
 	 */
 	@Override
-	public void load(final CompoundTag tagRoot) {
-		super.load(tagRoot);
+	protected void loadAdditional(final CompoundTag tagRoot, HolderLookup.Provider registries) {
+		super.loadAdditional(tagRoot, registries);
 		if (tagRoot.contains("Tank", 10)) {
 			CompoundTag tankTag = tagRoot .getCompound("Tank");
 			getTank().readFromNBT(tankTag);

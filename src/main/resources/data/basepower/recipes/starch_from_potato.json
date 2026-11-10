@@ -2,10 +2,17 @@
   "type": "minecraft:crafting_shapeless",
   "ingredients": [
     [
-      { "item": "minecraft:potato" },
-      { "item": "minecraft:poisonous_potato" }
+      {
+        "item": "minecraft:potato"
+      },
+      {
+        "item": "minecraft:poisonous_potato"
+      }
     ]
   ],
-  "result": { "item": "basepower:starch", "count": 1 },
+  "result": {
+    "id": "basepower:starch",
+    "count": 1
+  },
   "group": "basepower:starch"
 }

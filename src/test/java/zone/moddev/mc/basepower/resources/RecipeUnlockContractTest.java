@@ -93,7 +93,7 @@ public class RecipeUnlockContractTest {
             if (!crafting(recipe)) continue;
             JsonElement result = recipe.get("result");
             String output = result.isJsonPrimitive() ? result.getAsString()
-                    : result.getAsJsonObject().get("item").getAsString();
+                    : result.getAsJsonObject().get("id").getAsString();
             assertTrue("Missing output-specific group: " + file, recipe.has("group"));
             assertEquals("Different items must not share a recipe-book cell: " + file,
                     output, recipe.get("group").getAsString());
@@ -113,8 +113,11 @@ public class RecipeUnlockContractTest {
 
     private static String unlockPredicateKey(JsonObject predicate) {
         assertEquals("One explicit native ingredient predicate is required", 1, predicate.size());
-        if (predicate.has("tag")) return "tag:" + predicate.get("tag").getAsString();
-        assertTrue("Minecraft 1.17 ignores the old singular item advancement field", predicate.has("items"));
+        assertTrue("An explicit native item or tag predicate is required", predicate.has("items"));
+        if (predicate.get("items").isJsonPrimitive()) {
+            String value = predicate.get("items").getAsString();
+            return value.startsWith("#") ? "tag:" + value.substring(1) : "item:" + value;
+        }
         JsonArray items = predicate.getAsJsonArray("items");
         assertEquals("Each criterion discovers exactly one recipe ingredient", 1, items.size());
         return "item:" + items.get(0).getAsString();
@@ -126,11 +129,12 @@ public class RecipeUnlockContractTest {
         JsonObject criterion = read(DATA.resolve("advancements/recipes/starch_from_potato.json"))
                 .getAsJsonObject("criteria").getAsJsonObject("has_ingredient_1");
         JsonObject predicate = criterion.getAsJsonObject("conditions").getAsJsonArray("items").get(0).getAsJsonObject();
-        net.minecraft.advancements.critereon.ItemPredicate nativePredicate =
-                net.minecraft.advancements.critereon.ItemPredicate.fromJson(predicate);
-        assertTrue(nativePredicate.matches(new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.POTATO)));
+        var registries = net.minecraft.core.RegistryAccess.fromRegistryOfRegistries(net.minecraft.core.registries.BuiltInRegistries.REGISTRY);
+        var ops = registries.createSerializationContext(com.mojang.serialization.JsonOps.INSTANCE);
+        var nativePredicate = net.minecraft.advancements.critereon.ItemPredicate.CODEC.parse(ops, predicate).getOrThrow();
+        assertTrue(nativePredicate.test(new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.POTATO)));
         assertFalse("An unrelated dirt stack must not satisfy the real native predicate",
-                nativePredicate.matches(new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.DIRT)));
+                nativePredicate.test(new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.DIRT)));
     }
 
     private static void collect(JsonElement element, List<JsonObject> result) {

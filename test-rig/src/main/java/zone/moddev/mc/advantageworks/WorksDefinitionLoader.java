@@ -42,6 +42,10 @@ final class WorksDefinitionLoader {
         return load("/assets/advantageworkstest/works/works-1.20.1.json", "1.20.1");
     }
 
+    static WorksDefinition loadNative1206() {
+        return load("/assets/advantageworkstest/works/works-1.20.6.json", "1.20.6");
+    }
+
     static WorksDefinition load(String resource, String minecraft) {
         JsonObject target = readResource(resource);
         if (target.get("format").getAsInt() != 1 || !minecraft.equals(target.get("minecraft").getAsString())

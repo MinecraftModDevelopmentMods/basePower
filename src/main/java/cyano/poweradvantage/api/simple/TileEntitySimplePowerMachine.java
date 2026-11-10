@@ -1,5 +1,7 @@
 package cyano.poweradvantage.api.simple;
 
+import net.minecraft.core.HolderLookup;
+import zone.moddev.mc.basepower.util.ItemData;
 import cyano.poweradvantage.api.ConduitType;
 import cyano.poweradvantage.api.PowerConnectorContext;
 import cyano.poweradvantage.api.PowerRequest;
@@ -290,8 +292,8 @@ public abstract class TileEntitySimplePowerMachine extends PoweredEntity impleme
 	 * @param tagRoot The root of the NBT
 	 */
 	@Override
-	public void load(final CompoundTag tagRoot) {
-		super.load(tagRoot);
+	protected void loadAdditional(final CompoundTag tagRoot, HolderLookup.Provider registries) {
+		super.loadAdditional(tagRoot, registries);
 		ItemStack[] inventory = this.getInventory();
 		if(inventory != null ){
 			Arrays.fill(inventory, null);
@@ -300,7 +302,7 @@ public abstract class TileEntitySimplePowerMachine extends PoweredEntity impleme
 				final CompoundTag nbttagcompound1 = nbttaglist .getCompound(i);
 				final byte n = nbttagcompound1.getByte("Slot");
 				if (n >= 0 && n < inventory.length) {
-					ItemStack stack = ItemStack.of(nbttagcompound1);
+					ItemStack stack = ItemData.readStack(registries, nbttagcompound1);
 					inventory[n] = stack.isEmpty() ? null : stack;
 				}
 			}
@@ -317,16 +319,15 @@ public abstract class TileEntitySimplePowerMachine extends PoweredEntity impleme
 	 * @param tagRoot The root of the NBT
 	 */
 	@Override
-	protected void saveAdditional(final CompoundTag tagRoot) {
-		super.saveAdditional(tagRoot);
+	protected void saveAdditional(final CompoundTag tagRoot, HolderLookup.Provider registries) {
+		super.saveAdditional(tagRoot, registries);
 		ItemStack[] inventory = this.getInventory();
 		if(inventory != null ){
 			final ListTag nbttaglist = new ListTag();
 			for (int i = 0; i < inventory.length; ++i) {
 				if (inventory[i] != null && !inventory[i].isEmpty()) {
-					final CompoundTag nbttagcompound1 = new CompoundTag();
+					final CompoundTag nbttagcompound1 = (CompoundTag) inventory[i].save(registries);
 					nbttagcompound1.putByte("Slot", (byte)i);
-					inventory[i] .save(nbttagcompound1);
 					nbttaglist .add(nbttagcompound1);
 				}
 			}
@@ -428,14 +429,14 @@ public abstract class TileEntitySimplePowerMachine extends PoweredEntity impleme
 	 */
 	@Override 
 	public ClientboundBlockEntityDataPacket getUpdatePacket(){
-		return ClientboundBlockEntityDataPacket.create(this, tile -> createDataFieldUpdateTag());
+		return ClientboundBlockEntityDataPacket.create(this, (tile, registries) -> createDataFieldUpdateTag());
 	}
 
 	/**
 	 * Receives the network packet made by <code>getDescriptionPacket()</code>
 	 */
 	@Override
-	public void onDataPacket(Connection net, ClientboundBlockEntityDataPacket packet) {
+	public void onDataPacket(Connection net, ClientboundBlockEntityDataPacket packet, HolderLookup.Provider registries) {
 		readDataFieldUpdateTag(packet.getTag());
 	}
 	
@@ -622,7 +623,7 @@ public abstract class TileEntitySimplePowerMachine extends PoweredEntity impleme
 		if(this.getInventory() == null) return;
 		ItemStack existing = this.getInventory()[slot];
 		final boolean flag = item != null && !item.isEmpty() && existing != null && !existing.isEmpty()
-				&& ItemStack.isSameItemSameTags(item, existing);
+				&& ItemStack.isSameItemSameComponents(item, existing);
 		this.getInventory()[slot] = (item == null || item.isEmpty()) ? null : item;
 		if (item != null && item.getCount() > this.getMaxStackSize()) {
 			item.setCount(this.getMaxStackSize());

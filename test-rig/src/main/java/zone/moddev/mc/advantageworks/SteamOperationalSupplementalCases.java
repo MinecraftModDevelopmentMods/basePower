@@ -23,7 +23,6 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.level.GameType;
-import net.minecraftforge.common.util.FakePlayer;
 import net.minecraftforge.registries.ForgeRegistries;
 
 /** Eight supplemental cases included by the Steam operating catalog. */
@@ -79,7 +78,7 @@ final class SteamOperationalSupplementalCases {
     }
 
     private static final class Shot {
-        FakePlayer player;
+        WorksOfflinePlayer player;
         Cow impact, collateral;
         ItemStack weapon;
         float configuredDamage;
@@ -160,8 +159,8 @@ final class SteamOperationalSupplementalCases {
     private static void prepareShot(MachineContext c, Shot shot, String id, boolean collateral) {
         BlockPos muzzle = c.at(16, 8, 10);
         UUID uuid = UUID.nameUUIDFromBytes(("SteamOperationalExtra/" + id + "/" + muzzle).getBytes(StandardCharsets.UTF_8));
-        shot.player = new FakePlayer(c.world, new GameProfile(uuid, "SteamOpExtras"));
-        shot.player.connection = new ServerGamePacketListenerImpl(c.world.getServer(), new Connection(PacketFlow.SERVERBOUND), shot.player) {
+        shot.player = new WorksOfflinePlayer(c.world, new GameProfile(uuid, "SteamOpExtras"));
+        shot.player.connection = new ServerGamePacketListenerImpl(c.world.getServer(), new Connection(PacketFlow.SERVERBOUND), shot.player, WorksOfflinePlayer.cookie(shot.player)) {
             @Override public void send(Packet<?> packet) {
                 if (packet instanceof ClientboundSetEntityMotionPacket) shot.velocityPackets++;
             }
@@ -208,7 +207,7 @@ final class SteamOperationalSupplementalCases {
         c.require(weapon.use(c.world, shot.player, InteractionHand.MAIN_HAND).getResult() == InteractionResult.SUCCESS,
                 "Native rapid reload interaction succeeds");
         c.require(shot.player.getInventory().getItem(1).getCount() == 1
-                && shot.weapon.getOrCreateTag().getByte("loaded") == 1, "Exactly one finite cartridge loads the chamber");
+                && WorksItemData.read(shot.weapon).getByte("loaded") == 1, "Exactly one finite cartridge loads the chamber");
         c.require(weapon.use(c.world, shot.player, InteractionHand.MAIN_HAND).getResult() == InteractionResult.SUCCESS
                 && shot.player.isUsingItem(), "Native use interaction enters the aiming lifecycle");
         shot.player.releaseUsingItem();
@@ -227,7 +226,7 @@ final class SteamOperationalSupplementalCases {
                 "Unenchanted damage is exactly the configured direct impact");
         c.require(shot.weapon.getDamageValue() == 1 && shot.player.getInventory().getItem(1).getCount() == 1,
                 "Each shot consumes one durability and exactly one cartridge, without duplicating debit");
-        c.require(shot.weapon.getOrCreateTag().getByte("loaded") == 0, "Shot leaves an empty chamber");
+        c.require(WorksItemData.read(shot.weapon).getByte("loaded") == 0, "Shot leaves an empty chamber");
         inside(c, shot.impact);
     }
 

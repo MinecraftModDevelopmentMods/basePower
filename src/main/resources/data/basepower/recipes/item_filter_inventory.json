@@ -17,7 +17,7 @@
     }
   },
   "result": {
-    "item": "basepower:item_filter_inventory"
+    "id": "basepower:item_filter_inventory"
   },
   "group": "basepower:item_filter_inventory"
 }

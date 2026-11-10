@@ -81,8 +81,9 @@ final class OilRenderProbe {
     }
 
     private static void requireBucket(net.minecraft.world.item.Item bucket, Fluid expected) {
-        net.minecraftforge.fluids.FluidStack contents = net.minecraftforge.fluids.FluidUtil.getFluidContained(new ItemStack(bucket))
-                .orElseThrow(() -> new IllegalStateException("Bucket has no native fluid capability: " + ForgeRegistries.ITEMS.getKey(bucket)));
+        net.minecraftforge.fluids.FluidStack contents = zone.moddev.mc.basepower.util.FluidContainerHelper
+                .getFluidContained(new ItemStack(bucket))
+                .orElseThrow(() -> new IllegalStateException("Bucket cannot supply a fluid container: " + ForgeRegistries.ITEMS.getKey(bucket)));
         if (!(bucket instanceof BucketItem) || ((BucketItem) bucket).getFluid() != expected
                 || expected.getBucket() != bucket || contents.getFluid() != expected || contents.getAmount() != 1000) {
             throw new IllegalStateException("Wrong bucket fluid: " + ForgeRegistries.ITEMS.getKey(bucket));

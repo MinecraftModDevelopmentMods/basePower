@@ -6,10 +6,7 @@ import com.mojang.datafixers.DSL;
 import com.mojang.datafixers.DataFixer;
 import com.mojang.datafixers.schemas.Schema;
 import com.mojang.serialization.Dynamic;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.util.UUID;
-import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.animal.Wolf;
@@ -18,14 +15,11 @@ import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtUtils;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.StringTag;
-import net.minecraft.util.profiling.InactiveProfiler;
-import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.SharedConstants;
 import net.minecraft.util.datafix.DataFixers;
 import net.minecraft.util.datafix.DataFixTypes;
 import net.minecraft.util.datafix.fixes.References;
 import net.minecraft.server.Bootstrap;
-import net.minecraft.world.level.Level;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraftforge.common.ForgeMod;
 import org.junit.BeforeClass;
@@ -34,7 +28,10 @@ import org.junit.Test;
 public class LegacyEntityAttributeAliasesTest {
     private static final UUID MODIFIER = new UUID(17L, 19L);
 
-    @BeforeClass public static void bootstrap() { Bootstrap.bootStrap(); }
+    @BeforeClass public static void bootstrap() {
+        SharedConstants.tryDetectVersion();
+        Bootstrap.bootStrap();
+    }
 
     @Test public void changesOnlyExactNameAndPreservesUnknownFieldsAndUuidModifiers() {
         CompoundTag entity = entity("example:vehicle", true);
@@ -225,28 +222,23 @@ public class LegacyEntityAttributeAliasesTest {
 
     @Test public void actualNativeWolfRetainsCustomizedBaseTwoAndNonemptyModifier() throws Exception {
         registerForgeAttributes();
-        // Keep constructor-free test setup without linking restricted JDK types.
-        Class<?> allocator = Class.forName("sun.misc.Unsafe");
-        Field unsafeField = allocator.getDeclaredField("theUnsafe"); unsafeField.setAccessible(true);
-        ServerLevel world = (ServerLevel) allocator.getMethod("allocateInstance", Class.class)
-                .invoke(unsafeField.get(null), ServerLevel.class);
-        set(Level.class, world, "dimension", Level.NETHER);
-        set(Level.class, world, "profiler", (Supplier<ProfilerFiller>) () -> InactiveProfiler.INSTANCE);
+        ServerLevel world = NativeWolfTestWorld.create();
         CompoundTag source = entity("minecraft:wolf", true);
         source.putFloat("Health", 8F);
         CompoundTag red = (CompoundTag) DataFixers.getDataFixer().update(References.ENTITY,
                 new Dynamic<>(NbtOps.INSTANCE, source.copy()), 1343,
                 SharedConstants.getCurrentVersion().getDataVersion().getVersion()).getValue();
         Wolf before = new Wolf(EntityType.WOLF, world); before.load(red);
-        assertEquals(1D, before.getAttribute(ForgeMod.SWIM_SPEED.get()).getBaseValue(), 0D);
+        var swimSpeed = ForgeMod.SWIM_SPEED.getHolder().orElseThrow();
+        assertEquals(1D, before.getAttribute(swimSpeed).getBaseValue(), 0D);
         CompoundTag root = chunk(source);
         LegacyEntityDataFixes.prepare(root); LegacyEntityDataFixes.finish(root);
         Wolf after = new Wolf(EntityType.WOLF, world);
         after.load(root.getCompound("Level").getList("Entities", 10).getCompound(0));
-        assertEquals(2D, after.getAttribute(ForgeMod.SWIM_SPEED.get()).getBaseValue(), 0D);
-        assertNotNull(after.getAttribute(ForgeMod.SWIM_SPEED.get()).getModifier(MODIFIER));
-        assertEquals(0.75D, after.getAttribute(ForgeMod.SWIM_SPEED.get()).getModifier(MODIFIER).getAmount(), 0D);
-        assertEquals(2.75D, after.getAttributeValue(ForgeMod.SWIM_SPEED.get()), 0D);
+        assertEquals(2D, after.getAttribute(swimSpeed).getBaseValue(), 0D);
+        assertNotNull(after.getAttribute(swimSpeed).getModifier(MODIFIER));
+        assertEquals(0.75D, after.getAttribute(swimSpeed).getModifier(MODIFIER).amount(), 0D);
+        assertEquals(2.75D, after.getAttributeValue(swimSpeed), 0D);
         assertEquals(8F, after.getHealth(), 0F);
     }
 
@@ -293,9 +285,6 @@ public class LegacyEntityAttributeAliasesTest {
         LegacyForgeAttributeRegistryTest.registerForgeAttributes();
     }
 
-    private static void set(Class<?> owner, Object instance, String name, Object value) throws Exception {
-        Field field = owner.getDeclaredField(name); field.setAccessible(true); field.set(instance, value);
-    }
 
     private static final class RecordingFixer implements DataFixer {
         private final UnaryOperator<CompoundTag> update;

@@ -31,9 +31,13 @@ public class CreativeTabInitializationTest {
         // Plain JUnit runs without the ModLauncher event bus transformer.
         var tabs = ItemGroups.class.getDeclaredField("TABS");
         tabs.setAccessible(true);
-        var addEntries = DeferredRegister.class.getDeclaredMethod("addEntries", RegisterEvent.class);
-        addEntries.setAccessible(true);
-        addEntries.invoke(tabs.get(null), event.newInstance(Registries.CREATIVE_MODE_TAB, null, registry));
+        var dispatcher = Class.forName("net.minecraftforge.registries.DeferredRegister$EventDispatcher");
+        var constructor = dispatcher.getDeclaredConstructor(DeferredRegister.class);
+        constructor.setAccessible(true);
+        var handleEvent = dispatcher.getDeclaredMethod("handleEvent", RegisterEvent.class);
+        handleEvent.setAccessible(true);
+        handleEvent.invoke(constructor.newInstance(tabs.get(null)),
+                event.newInstance(Registries.CREATIVE_MODE_TAB, null, registry));
         ItemGroups.show(Items.IRON_INGOT);
         ItemGroups.show(Items.STICK);
         var id = new ResourceLocation("basepower:machines");

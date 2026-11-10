@@ -1,5 +1,6 @@
 package cyano.poweradvantage.api.modsupport;
 
+import net.minecraft.core.HolderLookup;
 import cyano.poweradvantage.api.ConduitType;
 import cyano.poweradvantage.api.PowerRequest;
 import cyano.poweradvantage.api.simple.TileEntitySimplePowerMachine;
@@ -174,16 +175,16 @@ public abstract class TileEntityConverter extends TileEntitySimplePowerMachine {
 	}
 
 	@Override
-	public void load(final CompoundTag tagRoot) {
-		super.load(tagRoot);
+	protected void loadAdditional(final CompoundTag tagRoot, HolderLookup.Provider registries) {
+		super.loadAdditional(tagRoot, registries);
 		if (tagRoot.contains("Other", 99)) {
 			this.setOtherEnergy(tagRoot.getDouble("Other"));
 		}
 	}
 
 	@Override
-	protected void saveAdditional(final CompoundTag tagRoot) {
-		super.saveAdditional(tagRoot);
+	protected void saveAdditional(final CompoundTag tagRoot, HolderLookup.Provider registries) {
+		super.saveAdditional(tagRoot, registries);
 		tagRoot.putDouble("Other", this.getOtherEnergy());
 	}
 

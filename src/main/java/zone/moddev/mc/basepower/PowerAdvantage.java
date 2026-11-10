@@ -42,7 +42,7 @@ import zone.moddev.mc.basepower.migration.BaseMetalsLegacyMigration;
 public final class PowerAdvantage {
     public static final String MODID = "basepower";
     public static final String NAME = "basePower";
-    public static final String VERSION = "2.4.12.120011";
+    public static final String VERSION = "2.4.13.120061";
     public static final Logger LOGGER = LogManager.getLogger(MODID);
 
     private static PowerAdvantage instance;
@@ -79,13 +79,15 @@ public final class PowerAdvantage {
         MinecraftForge.EVENT_BUS.addListener(ConduitRegistry.getInstance()::onChunkLoad);
         MinecraftForge.EVENT_BUS.addListener(ConduitRegistry.getInstance()::onChunkUnload);
         MinecraftForge.EVENT_BUS.addListener(RecipeDiscovery::onPlayerLogin);
-        MinecraftForge.EVENT_BUS.addListener(zone.moddev.mc.basepower.recipe.PartsLoot::onLoad);
         MinecraftForge.EVENT_BUS.addListener(zone.moddev.mc.basepower.init.Villages::onTrades);
         FMLJavaModLoadingContext.get().getModEventBus().addListener(
                 zone.moddev.mc.basepower.recipe.MaterialTags::registerPack);
+        FMLJavaModLoadingContext.get().getModEventBus().addListener(MachineGUIRegistry::registerTypes);
 
         Fluids.init();
         ItemGroups.register(FMLJavaModLoadingContext.get().getModEventBus());
+        RecipeConditions.register(FMLJavaModLoadingContext.get().getModEventBus());
+        zone.moddev.mc.basepower.recipe.PartsLoot.register(FMLJavaModLoadingContext.get().getModEventBus());
 
         migrateLegacyOreSpawnConfiguration();
         migrateLegacyConfiguration();
@@ -139,8 +141,6 @@ public final class PowerAdvantage {
     private void commonSetup(FMLCommonSetupEvent event) {
         Fuels.init();
         GUI.init();
-        // CraftingHelper's shared condition map is not safe during parallel loading.
-        event.enqueueWork(RecipeConditions::register);
         if (ModList.get().isLoaded("basemetals")) {
             event.enqueueWork(() -> BaseMetalsLegacyMigration.register());
         }

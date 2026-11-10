@@ -11,6 +11,8 @@ import net.minecraft.client.renderer.texture.TextureAtlas;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.client.renderer.BiomeColors;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import cyano.poweradvantage.api.fluid.FluidStack;
 
 
@@ -24,6 +26,7 @@ public class FluidTankGUI extends SimpleMachineGUI {
 	}
 
 	@Override
+	@OnlyIn(Dist.CLIENT)
 	public void drawGUIDecorations(Object srcEntity, GUIContainer guiContainer, int x, int y, float z) {
 		// draw indicator
 		if (srcEntity instanceof FluidPoweredEntity) {
@@ -39,6 +42,7 @@ public class FluidTankGUI extends SimpleMachineGUI {
 	}
 
 
+	@OnlyIn(Dist.CLIENT)
 	public static void drawFluidBar(
 			FluidStack fs, float barHeight, int xPos, int yPos,
 			ResourceLocation displayImage, GUIContainer guiContainer, int x, int y, float zLevel
@@ -53,6 +57,7 @@ public class FluidTankGUI extends SimpleMachineGUI {
 	}
 
 
+	@OnlyIn(Dist.CLIENT)
 	public static void drawFluidFilledRectangle(
 			GUIContainer guiContainer, FluidStack fs,
 			int x, int y, int width, int height,
@@ -81,12 +86,14 @@ public class FluidTankGUI extends SimpleMachineGUI {
 		BufferBuilder vertexbuffer = tessellator.getBuilder();
 		RenderSystem.setShader(net.minecraft.client.renderer.GameRenderer::getPositionTexColorShader);
 		vertexbuffer.begin(com.mojang.blaze3d.vertex.VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
-		for (int dy = 0; dy < height; dy += 16) {
-			int tileHeight = Math.min(16, height - dy);
-			for (int dx = 0; dx < width; dx += 16) {
-				int tileWidth = Math.min(16, width - dx);
-				float u0 = sprite.getU0(), u1 = sprite.getU(tileWidth);
-				float v0 = sprite.getV0(), v1 = sprite.getV(tileHeight);
+		final int tileSize = 16;
+		for (int dy = 0; dy < height; dy += tileSize) {
+			int tileHeight = Math.min(tileSize, height - dy);
+			for (int dx = 0; dx < width; dx += tileSize) {
+				int tileWidth = Math.min(tileSize, width - dx);
+				// Sprite coordinates are fractions of the tile, even when drawing only part of it.
+				float u0 = sprite.getU0(), u1 = sprite.getU((float) tileWidth / tileSize);
+				float v0 = sprite.getV0(), v1 = sprite.getV((float) tileHeight / tileSize);
 				vertexbuffer.vertex(pose, x + dx, y + dy + tileHeight, zLevel).uv(u0, v1).color(red, green, blue, 1F).endVertex();
 				vertexbuffer.vertex(pose, x + dx + tileWidth, y + dy + tileHeight, zLevel).uv(u1, v1).color(red, green, blue, 1F).endVertex();
 				vertexbuffer.vertex(pose, x + dx + tileWidth, y + dy, zLevel).uv(u1, v0).color(red, green, blue, 1F).endVertex();

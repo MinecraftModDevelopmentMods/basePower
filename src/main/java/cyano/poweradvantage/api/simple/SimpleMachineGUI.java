@@ -115,6 +115,7 @@ guiContainer.blit(arrowTexture, x+79, y+35, 0, 0, arrowLength, 17);
 	 * the GUI
 	 * @param z This is the z coordinate (no units) into the depth of the screen
 	 */
+	@OnlyIn(Dist.CLIENT)
 	public void drawGUIDecorations(Object srcEntity, GUIContainer guiContainer, int x, int y, float z){}
 
 	/**
@@ -148,7 +149,14 @@ guiContainer.blit(arrowTexture, x+79, y+35, 0, 0, arrowLength, 17);
 	@Override
 	@OnlyIn(Dist.CLIENT)
 	public AbstractContainerScreen getContainerGUI(BlockEntity e, Player player) {
-		return new GUIContainer(player.getInventory(),(net.minecraft.world.Container)e);
+		return ClientScreens.legacy(this, e, player);
+	}
+
+	@OnlyIn(Dist.CLIENT)
+	private static final class ClientScreens {
+		private static AbstractContainerScreen legacy(SimpleMachineGUI gui, BlockEntity tile, Player player) {
+			return gui.new GUIContainer(player.getInventory(), (net.minecraft.world.Container) tile);
+		}
 	}
 	
 	
@@ -266,7 +274,7 @@ guiContainer.blit(arrowTexture, x+79, y+35, 0, 0, arrowLength, 17);
 
 		@Override
 		public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
-			this.renderBackground(graphics);
+			this.renderBackground(graphics, mouseX, mouseY, partialTicks);
 			super.render(graphics, mouseX, mouseY, partialTicks);
 			this.renderTooltip(graphics, mouseX, mouseY);
 			if (font.width(title.getString()) > width - 8

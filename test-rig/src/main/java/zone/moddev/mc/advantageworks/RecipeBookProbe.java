@@ -11,7 +11,8 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.CraftingContainer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Recipe;
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.world.item.crafting.RecipeHolder;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.protocol.game.ClientboundUpdateRecipesPacket;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.resources.ResourceLocation;
@@ -23,31 +24,33 @@ import static zone.moddev.mc.advantageworks.ProgressionProbe.*;
 final class RecipeBookProbe {
     static void verify(MinecraftServer server, ServerLevel world, String label, JsonObject report) throws Exception {
         JsonArray entries = new JsonArray();
-        List<Recipe<?>> recipes = new ArrayList<>();
-        for (Recipe<?> recipe : server.getRecipeManager().getRecipes()) {
-            String namespace = recipe.getId().getNamespace();
+        List<RecipeHolder<?>> recipes = new ArrayList<>();
+        for (RecipeHolder<?> holder : server.getRecipeManager().getRecipes()) {
+            Recipe<?> recipe = holder.value();
+            String namespace = holder.id().getNamespace();
             if (!(namespace.equals("basepower") || namespace.equals("basesteam") || namespace.equals("baseelectric"))) continue;
             if (recipe.getType() != RecipeType.CRAFTING && recipe.getType() != RecipeType.SMELTING) continue;
             String output = id(recipe.getResultItem(world.registryAccess()));
-            require(output.equals(recipe.getGroup()), "Mixed-output recipe group: " + recipe.getId() + " -> " + recipe.getGroup());
+            require(output.equals(recipe.getGroup()), "Mixed-output recipe group: " + holder.id() + " -> " + recipe.getGroup());
             JsonObject entry = new JsonObject();
-            entry.addProperty("id", recipe.getId().toString());
+            entry.addProperty("id", holder.id().toString());
             entry.addProperty("group", recipe.getGroup());
             entry.addProperty("type", net.minecraft.core.registries.BuiltInRegistries.RECIPE_TYPE.getKey(recipe.getType()).toString());
             entry.addProperty("output", output);
             entry.addProperty("count", recipe.getResultItem(world.registryAccess()).getCount());
             entries.add(entry);
-            recipes.add(recipe);
+            recipes.add(holder);
         }
         report.add("bookRecipes", entries);
-        FriendlyByteBuf buffer = new FriendlyByteBuf(Unpooled.buffer());
+        RegistryFriendlyByteBuf buffer = new RegistryFriendlyByteBuf(Unpooled.buffer(), world.registryAccess());
         try {
-            new ClientboundUpdateRecipesPacket(recipes).write(buffer);
+            ClientboundUpdateRecipesPacket.STREAM_CODEC.encode(buffer, new ClientboundUpdateRecipesPacket(recipes));
             byte[] bytes = new byte[buffer.readableBytes()];
             buffer.readBytes(bytes);
             Files.write(Paths.get("recipes-" + label + ".bin"), bytes);
         } finally { buffer.release(); }
-        Recipe starch = server.getRecipeManager().byKey(new ResourceLocation("basepower:starch_from_potato")).orElse(null);
+        ResourceLocation starchId = new ResourceLocation("basepower:starch_from_potato");
+        Recipe starch = server.getRecipeManager().byKey(starchId).map(RecipeHolder::value).orElse(null);
         require(starch != null && starch.getType() == RecipeType.CRAFTING, "Missing native potato crafting recipe");
         int cases = 0;
         for (int width : new int[] {2, 3}) for (String potato : new String[] {"minecraft:potato", "minecraft:poisonous_potato"}) {
@@ -57,8 +60,8 @@ final class RecipeBookProbe {
                 input.setCount(count);
                 grid.setItem(slot, input);
                 require(starch.matches(grid, world), "Potato recipe rejected slot/stack " + slot + "/" + count);
-                Recipe<?> selected = world.getRecipeManager().getRecipeFor(RecipeType.CRAFTING, grid, world).orElse(null);
-                require(selected != null && selected.getId().equals(starch.getId()), "Conflicting native potato crafting recipe");
+                RecipeHolder<?> selected = world.getRecipeManager().getRecipeFor(RecipeType.CRAFTING, grid, world).orElse(null);
+                require(selected != null && selected.id().equals(starchId), "Conflicting native potato crafting recipe");
                 ItemStack result = starch.assemble(grid, world.registryAccess());
                 require(id(result).equals("basepower:starch") && result.getCount() == 1, "Starch output changed");
                 require(grid.getItem(slot).getCount() == count, "Result preview mutated input");

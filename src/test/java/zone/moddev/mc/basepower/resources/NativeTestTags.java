@@ -24,7 +24,7 @@ public final class NativeTestTags {
         };
         for (JsonElement json : files) {
             TagFile file = TagFile.CODEC.parse(JsonOps.INSTANCE, json)
-                    .getOrThrow(false, message -> { throw new AssertionError(message); });
+                    .getOrThrow(IllegalArgumentException::new);
             if (file.replace()) values.clear();
             for (TagEntry entry : file.entries()) {
                 assertTrue("Unresolved required tag entry: " + entry, entry.build(lookup, values::add));

@@ -1,26 +1,26 @@
 # Native Client Resource Check
 
-This disposable Minecraft 1.20.1 / Forge 47.4.10 client checks models, textures,
+This disposable Minecraft 1.20.6 / Forge 50.2.0 client checks models, textures,
 translations, recipe-book cells and machine screens after Minecraft loads them.
 It registers no gameplay content, opens no world and closes when finished.
 The probe is excluded from release jars and ordinary Eclipse launches.
-See [port status](../../docs/1.20.1/PORT-STATUS.md) for current qualification.
+See [port status](../../docs/1.20.6/PORT-STATUS.md) for current qualification.
 Earlier-version results do not qualify this version.
 
-Use Java 17 for Gradle, compilation and the client and server runners. The
-target is official 1.20.1 mappings with MCP `20230612.114412`.
+Use Java 21 for Gradle, compilation and the client and server runners. The
+target is official 1.20.6 mappings with MCP `20240429.135109`.
 
 ## Build And Run
 
 ```powershell
 ./gradlew.bat check clientResourceProbeJar verifyEclipseProductionClasspath prepareCombinedEclipseLaunch
 ./test-rig/client-resources/test-launcher.ps1
-./test-rig/client-resources/run.ps1 -JavaHome '<Java 17 home>' -LaunchProfile runClientAllAdvantage.launch -RequireExtensions -MachineGuiLayouts -ChildRendererGeometry -RecipeBookFixtures '<native 1.20.1 recipe run>/unlock' -PreflightOnly
-./test-rig/client-resources/run.ps1 -JavaHome '<Java 17 home>' -LaunchProfile runClientAllAdvantage.launch -RequireExtensions -MachineGuiLayouts -ChildRendererGeometry -RecipeBookFixtures '<native 1.20.1 recipe run>/unlock'
+./test-rig/client-resources/run.ps1 -JavaHome '<Java 21 home>' -LaunchProfile runClientAllAdvantage.launch -RequireExtensions -MachineGuiLayouts -ChildRendererGeometry -RecipeBookFixtures '<native 1.20.6 recipe run>/unlock' -PreflightOnly
+./test-rig/client-resources/run.ps1 -JavaHome '<Java 21 home>' -LaunchProfile runClientAllAdvantage.launch -RequireExtensions -MachineGuiLayouts -ChildRendererGeometry -RecipeBookFixtures '<native 1.20.6 recipe run>/unlock'
 ```
 
-The combined launch requires Power `2.4.12.120011`, Steam `2.2.13.120011` and
-Electric `2.2.13.120011`. Pin the exact rebuilt jars in `profiles/native1201`
+The combined launch requires Power `2.4.13.120061`, Steam `2.2.14.120061` and
+Electric `2.2.14.120061`. Pin the exact rebuilt jars in `profiles/native1206`
 before regenerating it. Omitting the combined profile retains Power-only
 scope. Normal Eclipse launches contain production code only.
 
@@ -34,15 +34,15 @@ does not claim a graphical pass.
 
 The default `-OutputSource Gradle` snapshots compiled classes and processed
 resources. `-OutputSource Eclipse` copies `bin/main` without overlaying Gradle
-resources. `-PowerCandidate` selects an explicit native deobf jar; its hash
+resources. `-PowerCandidate` selects an explicit native player jar; its hash
 is provenance, not proof that the selected loose output equals that jar.
 
 ## Recipe Fixtures
 
-Generate fresh exports from the packaged 1.20.1 candidates, not a historical run:
+Generate fresh exports from the packaged 1.20.6 candidates, not a historical run:
 
 ```powershell
-<python.exe> -B test-rig/migration/native1201_recipes.py --profile test-rig/profiles/native1201/packaged-current.json --seed '<Forge 47.4.10 server>' --inventory '<sealed inventory>' --inventory-sha256 '<inventory SHA-256>' --java17 '<Java 17 home>/bin/java.exe' --port 25577 --output test-rig/build/native1201-recipes-new
+<python.exe> -B test-rig/migration/native1206_recipes.py --profile '<pinned packaged-current profile>' --seed '<Forge 50.2.0 server>' --inventory '<sealed inventory>' --inventory-sha256 '<inventory SHA-256>' --java '<Java 21 home>/bin/java.exe' --port 25577 --output test-rig/build/native1206-recipes-new
 ```
 
 Use an existing Python 3.11+ environment with `migration/requirements.txt`.
@@ -67,9 +67,11 @@ this is explicitly `NOT_RUN_NO_NATIVE_FIXTURES`.
 - Every registered Advantage item and valid block state: geometry, missing
   models/sprites, English names, creative-tab contents and GUI translation keys.
   Native fluid-block models are intentionally particle-only.
-- Actual tank screen rendering, full/empty 10,000 mB update packets, fluid
-  capability simulation/execution and neighbour-face culling. The water-gauge
-  pixel at `(88,39)` must satisfy `blue > red + 20` and `blue > green + 10`.
+- Portable and metal tank gauges: compare the whole gauge to an independent
+  native sprite render at empty, quarter, half and full. Water, lava and both
+  oils must show the right texture, tint and fill boundary. The probe also
+  checks real update packets, fluid capability simulation/execution and
+  neighbour-face culling for both tanks.
 - Native bucket fluids and fluid-renderer vertices for crude/refined oil,
   with water/lava controls, actual atlas sprites and tint.
 - With `-MachineGuiLayouts`, real screen rendering at nine window/GUI-scale

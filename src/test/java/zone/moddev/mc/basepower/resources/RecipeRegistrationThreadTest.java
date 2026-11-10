@@ -3,47 +3,45 @@ package zone.moddev.mc.basepower.resources;
 import java.io.InputStream;
 import org.junit.Test;
 import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.Handle;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
-import org.objectweb.asm.tree.InvokeDynamicInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.MethodNode;
 import static org.junit.Assert.*;
 
 public class RecipeRegistrationThreadTest {
-    @Test public void sharedForgeConditionsAreRegisteredAfterParallelSetup() throws Exception {
-        ClassNode node = new ClassNode();
-        try (InputStream input = getClass().getResourceAsStream("/zone/moddev/mc/basepower/PowerAdvantage.class")) {
-            assertNotNull(input);
-            new ClassReader(input).accept(node, 0);
-        }
+    @Test public void sharedForgeConditionsUseTheNativeDeferredRegistry() throws Exception {
         String conditions = "zone/moddev/mc/basepower/recipe/RecipeConditions";
-        int queued = 0;
-        for (MethodNode method : node.methods) {
-            boolean registrationRunnable = false;
+        int subscriptions = 0;
+        for (MethodNode method : read("zone/moddev/mc/basepower/PowerAdvantage").methods) {
             for (AbstractInsnNode instruction : method.instructions.toArray()) {
-                if (instruction instanceof MethodInsnNode) {
-                    MethodInsnNode call = (MethodInsnNode) instruction;
-                    assertFalse("Forge's condition HashMap is not safe during parallel loading",
-                            call.owner.equals(conditions) && call.name.equals("register"));
-                    if (call.owner.equals("net/minecraftforge/fml/event/lifecycle/FMLCommonSetupEvent")
-                            && call.name.equals("enqueueWork") && registrationRunnable) {
-                        assertEquals("Register conditions during common setup", "commonSetup", method.name);
-                        queued++;
-                        registrationRunnable = false;
-                    }
-                }
-                if (instruction instanceof InvokeDynamicInsnNode) {
-                    for (Object argument : ((InvokeDynamicInsnNode) instruction).bsmArgs) {
-                        if (argument instanceof Handle && ((Handle) argument).getOwner().equals(conditions)
-                                && ((Handle) argument).getName().equals("register")) {
-                            registrationRunnable = true;
-                        }
-                    }
+                if (instruction instanceof MethodInsnNode call
+                        && call.owner.equals(conditions) && call.name.equals("register")) {
+                    assertEquals("Subscribe during mod construction, before the registry event", "<init>", method.name);
+                    assertEquals("(Lnet/minecraftforge/eventbus/api/IEventBus;)V", call.desc);
+                    subscriptions++;
                 }
             }
         }
-        assertEquals("Queue registration exactly once on Forge's loading thread", 1, queued);
+        assertEquals(1, subscriptions);
+        ClassNode codecs = read(conditions);
+        MethodNode register = codecs.methods.stream().filter(method -> method.name.equals("register"))
+                .findFirst().orElseThrow();
+        assertTrue(java.util.Arrays.stream(register.instructions.toArray()).anyMatch(instruction ->
+                instruction instanceof MethodInsnNode call && call.owner.equals("net/minecraftforge/registries/DeferredRegister")
+                        && call.name.equals("register") && call.desc.equals("(Lnet/minecraftforge/eventbus/api/IEventBus;)V")));
+        assertTrue(codecs.methods.stream().flatMap(method -> java.util.Arrays.stream(method.instructions.toArray()))
+                .anyMatch(instruction -> instruction instanceof org.objectweb.asm.tree.FieldInsnNode field
+                        && field.owner.equals("net/minecraftforge/registries/ForgeRegistries$Keys")
+                        && field.name.equals("CONDITION_SERIALIZERS")));
+    }
+
+    private ClassNode read(String type) throws Exception {
+        ClassNode node = new ClassNode();
+        try (InputStream input = getClass().getResourceAsStream("/" + type + ".class")) {
+            assertNotNull(input);
+            new ClassReader(input).accept(node, 0);
+        }
+        return node;
     }
 }

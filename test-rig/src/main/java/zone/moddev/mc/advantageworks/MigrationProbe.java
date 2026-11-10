@@ -84,7 +84,7 @@ final class MigrationProbe {
             BlockEntity tile = world.getBlockEntity(pos);
             if (tile != null) {
                 tile.setChanged();
-                CompoundTag nbt = tile.saveWithFullMetadata();
+                CompoundTag nbt = WorksBlockData.save(tile);
                 entry.addProperty("nbt", nbt.toString());
                 java.io.ByteArrayOutputStream bytes = new java.io.ByteArrayOutputStream();
                 net.minecraft.nbt.NbtIo.writeCompressed(nbt, bytes);

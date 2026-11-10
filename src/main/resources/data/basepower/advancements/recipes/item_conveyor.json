@@ -6,7 +6,7 @@
       "conditions": {
         "items": [
           {
-            "tag": "forge:plates/steel"
+            "items": "#forge:plates/steel"
           }
         ]
       }
@@ -16,7 +16,7 @@
       "conditions": {
         "items": [
           {
-            "tag": "forge:sprockets"
+            "items": "#forge:sprockets"
           }
         ]
       }
