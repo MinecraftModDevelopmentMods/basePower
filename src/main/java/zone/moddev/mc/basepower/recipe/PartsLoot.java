@@ -6,7 +6,9 @@ import java.util.Set;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
 import net.minecraft.world.level.storage.loot.LootPool;
-import net.minecraft.world.level.storage.loot.entries.LootTableReference;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.level.storage.loot.entries.NestedLootTable;
 import net.minecraftforge.event.LootTableLoadEvent;
 import net.minecraftforge.fml.ModList;
 import zone.moddev.mc.basepower.PowerAdvantage;
@@ -32,9 +34,14 @@ public final class PartsLoot {
             if (!loaded.test(mod)
                     || (mod.equals("basepower") && name.getPath().equals("chests/end_city_treasure"))) continue;
             String poolName = mod + ":legacy_parts";
-            if (table.getPool(poolName) != null) continue;
-            table.addPool(LootPool.lootPool().name(poolName) .setRolls(ConstantValue.exactly(1))
-                     .add(LootTableReference.lootTableReference(new ResourceLocation(mod, "chests/advantage_parts"))).build());
+            LootPool existing = table.removePool(poolName);
+            if (existing != null) {
+                table.addPool(existing);
+                continue;
+            }
+            table.addPool(LootPool.lootPool().name(poolName).setRolls(ConstantValue.exactly(1))
+                    .add(NestedLootTable.lootTableReference(ResourceKey.create(Registries.LOOT_TABLE,
+                            new ResourceLocation(mod, "chests/advantage_parts")))).build());
         }
     }
 

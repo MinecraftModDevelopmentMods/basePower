@@ -39,6 +39,7 @@ public final class VanillaRegistryRemaps {
         MinecraftForge.EVENT_BUS.addListener(EventPriority.HIGHEST, VanillaRegistryRemaps::blockEntities);
         MinecraftForge.EVENT_BUS.addListener(EventPriority.HIGHEST, VanillaRegistryRemaps::fluids);
         MinecraftForge.EVENT_BUS.addListener(EventPriority.HIGHEST, VanillaRegistryRemaps::enchantments);
+        MinecraftForge.EVENT_BUS.addListener(EventPriority.HIGHEST, VanillaRegistryRemaps::potions);
         MinecraftForge.EVENT_BUS.addListener(EventPriority.HIGHEST, VanillaRegistryRemaps::menus);
         MinecraftForge.EVENT_BUS.addListener(EventPriority.HIGHEST, VanillaRegistryRemaps::recipeSerializers);
     }
@@ -70,8 +71,10 @@ public final class VanillaRegistryRemaps {
                 id -> new ResourceLocation(LegacyMigrationApi.fluidTarget(id.toString())));
     }
     private static void enchantments(MissingMappingsEvent event) {
+        remap(event, ForgeRegistries.ENCHANTMENTS);
         remapAdvantage(event, ForgeRegistries.ENCHANTMENTS, LegacyMigrationApi::registryTarget);
     }
+    private static void potions(MissingMappingsEvent event) { remap(event, ForgeRegistries.POTIONS); }
     private static void menus(MissingMappingsEvent event) {
         remapAdvantage(event, ForgeRegistries.MENU_TYPES, LegacyMigrationApi::registryTarget);
     }
@@ -92,6 +95,12 @@ public final class VanillaRegistryRemaps {
 
     static <T> void remap(MissingMappingsEvent event, IForgeRegistry<T> active) {
         for (MissingMappingsEvent.Mapping<T> mapping : event.getMappings(active.getRegistryKey(), "minecraft")) {
+            if (active.getRegistryName().equals(ResourceLocation.parse("minecraft:potion"))
+                    && mapping.getKey().equals(ResourceLocation.parse("minecraft:empty"))) {
+                // An absent potion is now represented by empty potion contents, not a registry entry.
+                mapping.ignore();
+                continue;
+            }
             if (retiredTransientMemory(active.getRegistryName(), mapping.getKey())) {
                 // Both old types used register(name) without a serializer: no saved
                 // brain values exist. Retire only their obsolete Forge ID indexes.
@@ -153,6 +162,11 @@ public final class VanillaRegistryRemaps {
         if ((registry.equals(new ResourceLocation("minecraft:block")) || registry.equals(new ResourceLocation("minecraft:item")))
                 && old.getPath().equals("grass_path")) {
             target = "dirt_path";
+        } else if ((registry.equals(ResourceLocation.parse("minecraft:block")) || registry.equals(ResourceLocation.parse("minecraft:item")))
+                && old.getPath().equals("grass")) {
+            target = "short_grass";
+        } else if (registry.equals(ResourceLocation.parse("minecraft:enchantment")) && old.getPath().equals("sweeping")) {
+            target = "sweeping_edge";
         } else if (registry.equals(new ResourceLocation("minecraft:entity_type")) && old.getPath().equals("zombie_pigman")) {
             target = "zombified_piglin";
         } else if (registry.equals(new ResourceLocation("minecraft:item")) && old.getPath().equals("zombie_pigman_spawn_egg")) {
@@ -164,6 +178,7 @@ public final class VanillaRegistryRemaps {
                 case "pottery_shard_arms_up" -> "arms_up_pottery_sherd";
                 case "pottery_shard_prize" -> "prize_pottery_sherd";
                 case "pottery_shard_skull" -> "skull_pottery_sherd";
+                case "scute" -> "turtle_scute";
                 default -> null;
             };
         } else if (registry.equals(new ResourceLocation("minecraft:worldgen/biome")) && old.getPath().equals("nether")) {

@@ -6,7 +6,7 @@
       "conditions": {
         "items": [
           {
-            "tag": "forge:governors"
+            "items": "#forge:governors"
           }
         ]
       }
@@ -16,7 +16,7 @@
       "conditions": {
         "items": [
           {
-            "tag": "forge:frames/steel"
+            "items": "#forge:frames/steel"
           }
         ]
       }

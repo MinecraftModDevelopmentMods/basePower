@@ -17,7 +17,7 @@
     }
   },
   "result": {
-    "item": "basepower:item_filter_smelt"
+    "id": "basepower:item_filter_smelt"
   },
   "group": "basepower:item_filter_smelt"
 }

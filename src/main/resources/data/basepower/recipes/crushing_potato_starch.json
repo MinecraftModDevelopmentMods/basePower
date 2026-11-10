@@ -9,13 +9,11 @@
     }
   ],
   "result": {
-    "item": "basepower:starch",
+    "id": "basepower:starch",
     "count": 1
   },
-  "conditions": [
-    {
-      "type": "forge:mod_loaded",
-      "modid": "basemetals"
-    }
-  ]
+  "forge:condition": {
+    "type": "forge:mod_loaded",
+    "modid": "basemetals"
+  }
 }

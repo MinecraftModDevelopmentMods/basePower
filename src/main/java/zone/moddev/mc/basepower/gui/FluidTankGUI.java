@@ -11,6 +11,8 @@ import net.minecraft.client.renderer.texture.TextureAtlas;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.client.renderer.BiomeColors;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import cyano.poweradvantage.api.fluid.FluidStack;
 
 
@@ -24,6 +26,7 @@ public class FluidTankGUI extends SimpleMachineGUI {
 	}
 
 	@Override
+	@OnlyIn(Dist.CLIENT)
 	public void drawGUIDecorations(Object srcEntity, GUIContainer guiContainer, int x, int y, float z) {
 		// draw indicator
 		if (srcEntity instanceof FluidPoweredEntity) {
@@ -39,6 +42,7 @@ public class FluidTankGUI extends SimpleMachineGUI {
 	}
 
 
+	@OnlyIn(Dist.CLIENT)
 	public static void drawFluidBar(
 			FluidStack fs, float barHeight, int xPos, int yPos,
 			ResourceLocation displayImage, GUIContainer guiContainer, int x, int y, float zLevel
@@ -53,6 +57,7 @@ public class FluidTankGUI extends SimpleMachineGUI {
 	}
 
 
+	@OnlyIn(Dist.CLIENT)
 	public static void drawFluidFilledRectangle(
 			GUIContainer guiContainer, FluidStack fs,
 			int x, int y, int width, int height,

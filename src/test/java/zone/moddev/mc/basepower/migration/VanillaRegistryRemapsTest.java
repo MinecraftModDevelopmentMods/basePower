@@ -18,6 +18,15 @@ public class VanillaRegistryRemapsTest {
         assertNull(VanillaRegistryRemaps.replacement(id("entity_type"), id("grass_path")));
     }
 
+    @Test public void retainsVanillaBlockItemAndEnchantmentRenamesThroughForge50() {
+        expect("block", "grass", "short_grass");
+        expect("item", "grass", "short_grass");
+        expect("item", "scute", "turtle_scute");
+        expect("enchantment", "sweeping", "sweeping_edge");
+        assertNull(VanillaRegistryRemaps.replacement(id("block"), id("scute")));
+        assertNull(VanillaRegistryRemaps.replacement(id("item"), id("sweeping")));
+    }
+
     @Test public void retainsTheRenamedBerryPickingSound() {
         expect("sound_event", "item.sweet_berries.pick_from_bush", "block.sweet_berry_bush.pick_berries");
         assertNull(VanillaRegistryRemaps.replacement(id("item"), id("item.sweet_berries.pick_from_bush")));

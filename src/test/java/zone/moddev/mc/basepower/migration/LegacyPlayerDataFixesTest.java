@@ -5,9 +5,9 @@ import com.mojang.datafixers.DataFixer;
 import com.mojang.datafixers.schemas.Schema;
 import com.mojang.serialization.Dynamic;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Consumer;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -30,8 +30,10 @@ public class LegacyPlayerDataFixesTest {
                         Collections.singletonMap(32, name)));
                 CompoundTag source = player(inventory, book), before = source.copy();
                 CompoundTag result = convert(source, 512);
-                assertEquals(name, enchantment(item(result, inventory, 0), "StoredEnchantments").getString("id"));
-                assertEquals(3, enchantment(item(result, inventory, 0), "StoredEnchantments").getInt("lvl"));
+                CompoundTag actual = item(result, inventory, 0);
+                assertStack("minecraft:enchanted_book", 1, actual);
+                assertSlot(actual, 0);
+                assertComponentEnchantment(actual, "minecraft:stored_enchantments", name, 3);
                 assertEquals(before, source);
             }
         }
@@ -40,16 +42,20 @@ public class LegacyPlayerDataFixesTest {
     @Test public void namedOldEnchAndAlreadyModernEnchantmentsSurvive() {
         for (String key : new String[] {"ench", "Enchantments"}) {
             CompoundTag result = convert(player("Inventory", enchanted("minecraft:diamond_pickaxe", key, true)), 512);
-            assertEquals("steamadvantage:steam_capacity", enchantment(item(result, "Inventory", 0), "Enchantments").getString("id"));
-            assertEquals(17, item(result, "Inventory", 0).getCompound("tag").getInt("Damage"));
+            CompoundTag actual = item(result, "Inventory", 0);
+            assertStack("minecraft:diamond_pickaxe", 1, actual);
+            assertComponentEnchantment(actual, "minecraft:enchantments", "steamadvantage:steam_capacity", 3);
+            assertEquals(17, actual.getCompound("components").getInt("minecraft:damage"));
         }
     }
 
     @Test public void numericEnchantmentsStillUseTheNativeMapping() {
         for (String key : new String[] {"ench", "StoredEnchantments"}) {
             CompoundTag result = convert(player("Inventory", enchanted("minecraft:enchanted_book", key, false)), 512);
-            String outputKey = key.equals("ench") ? "Enchantments" : key;
-            assertEquals("minecraft:efficiency", enchantment(item(result, "Inventory", 0), outputKey).getString("id"));
+            String component = key.equals("ench") ? "minecraft:enchantments" : "minecraft:stored_enchantments";
+            CompoundTag actual = item(result, "Inventory", 0);
+            assertStack("minecraft:enchanted_book", 1, actual);
+            assertComponentEnchantment(actual, component, "minecraft:efficiency", 3);
         }
     }
 
@@ -61,31 +67,62 @@ public class LegacyPlayerDataFixesTest {
         contents.add(enchanted("minecraft:diamond_pickaxe", "ench", true));
         CompoundTag wool = stack("minecraft:wool", 14);
         wool.putByte("Slot", (byte) 1);
+        wool.putByte("Count", (byte) 7);
         contents.add(wool);
         CompoundTag book = enchanted("minecraft:enchanted_book", "StoredEnchantments", true);
         book.putByte("Slot", (byte) 2);
         contents.add(book);
+        CompoundTag foreign = stack("other:component", 0);
+        foreign.putByte("Slot", (byte) 7);
+        foreign.putByte("Count", (byte) 3);
+        CompoundTag privateData = new CompoundTag();
+        privateData.put("Private", stack("minecraft:wool", 14));
+        privateData.putIntArray("PrivateArray", new int[] {19, 23});
+        foreign.put("tag", privateData);
+        contents.add(foreign);
         blockEntity.put("Items", contents);
         CompoundTag tag = new CompoundTag();
         tag.put("BlockEntityTag", blockEntity);
         chest.put("tag", tag);
         CompoundTag source = player("Inventory", chest), before = source.copy();
-        ListTag fixed = item(convert(source, 512), "Inventory", 0).getCompound("tag")
-                .getCompound("BlockEntityTag").getList("Items", 10);
-        assertEquals(17, fixed.getCompound(0).getCompound("tag").getInt("Damage"));
-        assertEquals("minecraft:red_wool", fixed.getCompound(1).getString("id"));
-        assertEquals("steamadvantage:steam_capacity", enchantment(fixed.getCompound(0), "Enchantments").getString("id"));
-        assertEquals("steamadvantage:steam_capacity", enchantment(fixed.getCompound(2), "StoredEnchantments").getString("id"));
+        CompoundTag result = convert(source, 512);
+        CompoundTag fixedChest = item(result, "Inventory", 0);
+        assertStack("minecraft:chest", 1, fixedChest);
+        assertSlot(fixedChest, 0);
+        ListTag fixed = fixedChest.getCompound("components").getList("minecraft:container", 10);
+        assertEquals("Container slots: " + fixedChest, 4, fixed.size());
+        CompoundTag pick = itemInContainerSlot(fixed, 0);
+        assertStack("minecraft:diamond_pickaxe", 1, pick);
+        assertEquals(17, pick.getCompound("components").getInt("minecraft:damage"));
+        assertComponentEnchantment(pick, "minecraft:enchantments", "steamadvantage:steam_capacity", 3);
+        assertStack("minecraft:red_wool", 7, itemInContainerSlot(fixed, 1));
+        CompoundTag fixedBook = itemInContainerSlot(fixed, 2);
+        assertStack("minecraft:enchanted_book", 1, fixedBook);
+        assertComponentEnchantment(fixedBook, "minecraft:stored_enchantments", "steamadvantage:steam_capacity", 3);
+        CompoundTag fixedForeign = itemInContainerSlot(fixed, 7);
+        assertStack("other:component", 3, fixedForeign);
+        assertEquals(privateData, fixedForeign.getCompound("components").getCompound("minecraft:custom_data"));
+        int current = SharedConstants.getCurrentVersion().getDataVersion().getVersion();
+        assertEquals(result, convert(result, current));
         assertEquals(before, source);
     }
 
     @Test public void foreignItemPayloadIsNotRestoredOverNativeChanges() {
         CompoundTag foreign = enchanted("other:component", "StoredEnchantments", true);
         foreign.getCompound("tag").putInt("Private", 19);
-        CompoundTag actual = item(convert(player("Inventory", foreign), 512), "Inventory", 0);
+        CompoundTag source = player("Inventory", foreign);
+        CompoundTag before = source.copy();
+        CompoundTag actual = item(convert(source, 512), "Inventory", 0);
+        assertStack("other:component", 1, actual);
+        assertSlot(actual, 0);
         assertFalse("Native damage removal must not be undone by a whole-stack overlay", actual.contains("Damage"));
-        assertEquals(19, actual.getCompound("tag").getInt("Private"));
-        assertEquals("steamadvantage:steam_capacity", enchantment(actual, "StoredEnchantments").getString("id"));
+        CompoundTag components = actual.getCompound("components");
+        assertFalse("Legacy subtype is not vanilla item wear", components.contains("minecraft:damage"));
+        assertFalse("The non-book's private data must not become a stored enchantment",
+                components.contains("minecraft:stored_enchantments"));
+        assertEquals(item(before, "Inventory", 0).getCompound("tag"),
+                components.getCompound("minecraft:custom_data"));
+        assertEquals(before, source);
     }
 
     @Test public void restorationChangesOnlyTheSavedName() {
@@ -96,7 +133,7 @@ public class LegacyPlayerDataFixesTest {
             enchantment(book, "StoredEnchantments").putString("id", "minecraft:protection");
             enchantment(book, "StoredEnchantments").putShort("lvl", (short) 5);
             book.getCompound("tag").putInt("NativeField", 42);
-        });
+        }, true);
         CompoundTag result = LegacyPlayerDataFixes.update(fixer, DataFixTypes.PLAYER, source, 704);
         CompoundTag book = item(result, "Inventory", 0);
         assertEquals("other:native_result", book.getString("id"));
@@ -121,20 +158,24 @@ public class LegacyPlayerDataFixesTest {
         assertEquals(before, source);
     }
 
-    @Test public void usesThePassedFixerAndNativePlayerTypeWithAnExplicit704Boundary() {
+    @Test public void usesThePassedFixerAndNativePlayerTypeWithExplicitSchemaBoundaries() {
         int current = SharedConstants.getCurrentVersion().getDataVersion().getVersion();
-        for (int source : new int[] {-1, 512, 703, 704, 1343, 2230}) {
+        for (int source : new int[] {-1, 512, 703, 704, 1343, 2230, 3464, 3465, 3466}) {
             RecordingFixer fixer = new RecordingFixer(root -> {});
             LegacyPlayerDataFixes.update(fixer, DataFixTypes.PLAYER, player("Inventory", stack("minecraft:stone", 0)), source);
-            List<String> expected = source < 704 ? Arrays.asList(source + "->704", "704->" + current)
-                    : Collections.singletonList(source + "->" + current);
+            List<String> expected = new ArrayList<>();
+            if (source < 704) expected.add(source + "->704");
+            if (source < 3465) expected.add(Math.max(source, 704) + "->3465");
+            expected.add(Math.max(source, 3465) + "->" + current);
             assertEquals(expected, fixer.calls);
         }
     }
 
     @Test public void currentOrNewerDataIsCopiedWithoutOldVersionDfu() {
+        CompoundTag modern = convert(player("Inventory", stack("minecraft:diamond_pickaxe", 17)), 512);
         for (int version : new int[] {SharedConstants.getCurrentVersion().getDataVersion().getVersion(), Integer.MAX_VALUE}) {
-            CompoundTag source = player("Inventory", stack("minecraft:diamond_pickaxe", 17));
+            CompoundTag source = modern.copy();
+            source.putInt("DataVersion", version);
             RecordingFixer fixer = new RecordingFixer(root -> fail("Current data must not be reinterpreted"));
             CompoundTag result = LegacyPlayerDataFixes.update(fixer, DataFixTypes.PLAYER, source, version);
             assertEquals(source, result);
@@ -173,7 +214,10 @@ public class LegacyPlayerDataFixesTest {
         for (int version : new int[] {704, 1343, 1519, 2230}) {
             CompoundTag source = player("EnderItems", enchanted("minecraft:enchanted_book", "StoredEnchantments", true));
             CompoundTag result = convert(source, version);
-            assertEquals("steamadvantage:steam_capacity", enchantment(item(result, "EnderItems", 0), "StoredEnchantments").getString("id"));
+            CompoundTag actual = item(result, "EnderItems", 0);
+            assertStack("minecraft:enchanted_book", 1, actual);
+            assertSlot(actual, 0);
+            assertComponentEnchantment(actual, "minecraft:stored_enchantments", "steamadvantage:steam_capacity", 3);
         }
     }
 
@@ -241,14 +285,44 @@ public class LegacyPlayerDataFixesTest {
     static CompoundTag item(CompoundTag root, String inventory, int index) { return root.getList(inventory, 10).getCompound(index); }
     static CompoundTag enchantment(CompoundTag item, String key) { return item.getCompound("tag").getList(key, 10).getCompound(0); }
 
+    private static void assertStack(String id, int count, CompoundTag item) {
+        assertEquals(id, item.getString("id"));
+        assertEquals("Stack count: " + item, count, item.getInt("count"));
+        assertFalse("Legacy count remains in " + item, item.contains("Count"));
+    }
+
+    private static void assertSlot(CompoundTag item, int slot) {
+        assertTrue("Missing inventory slot in " + item, item.contains("Slot", 1));
+        assertEquals(slot, item.getByte("Slot"));
+    }
+
+    private static void assertComponentEnchantment(CompoundTag item, String component, String name, int level) {
+        CompoundTag levels = item.getCompound("components").getCompound(component).getCompound("levels");
+        assertEquals("Enchantment levels: " + item, Set.of(name), levels.getAllKeys());
+        assertEquals(level, levels.getInt(name));
+    }
+
+    private static CompoundTag itemInContainerSlot(ListTag slots, int slot) {
+        for (int i = 0; i < slots.size(); i++) {
+            CompoundTag entry = slots.getCompound(i);
+            if (entry.contains("slot", 3) && entry.getInt("slot") == slot) return entry.getCompound("item");
+        }
+        throw new AssertionError("Missing slot " + slot + " in " + slots);
+    }
+
     private static final class RecordingFixer implements DataFixer {
         private final Consumer<CompoundTag> mutation;
+        private final boolean legacyStageOnly;
         final List<String> calls = new ArrayList<>();
-        RecordingFixer(Consumer<CompoundTag> mutation) { this.mutation = mutation; }
+        RecordingFixer(Consumer<CompoundTag> mutation) { this(mutation, false); }
+        RecordingFixer(Consumer<CompoundTag> mutation, boolean legacyStageOnly) {
+            this.mutation = mutation;
+            this.legacyStageOnly = legacyStageOnly;
+        }
         @Override public <T> Dynamic<T> update(DSL.TypeReference type, Dynamic<T> input, int from, int to) {
             assertSame(References.PLAYER, type);
             calls.add(from + "->" + to);
-            mutation.accept((CompoundTag) input.getValue());
+            if (!legacyStageOnly || to == 3465) mutation.accept((CompoundTag) input.getValue());
             return input;
         }
         @Override public Schema getSchema(int version) { throw new AssertionError("Not used by the wrapper"); }

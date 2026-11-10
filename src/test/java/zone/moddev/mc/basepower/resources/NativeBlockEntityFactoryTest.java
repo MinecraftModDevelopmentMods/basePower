@@ -40,7 +40,8 @@ public class NativeBlockEntityFactoryTest {
                 assertNotNull(block.getTicker(null, state, Entities.CONVEYOR));
                 net.minecraft.nbt.CompoundTag saved = new net.minecraft.nbt.CompoundTag();
                 saved.putInt("x", 0);
-                tile.load(saved);
+                tile.loadWithComponents(saved,
+                        net.minecraft.core.RegistryAccess.fromRegistryOfRegistries(net.minecraft.core.registries.BuiltInRegistries.REGISTRY));
                 assertEquals("NBT cannot replace the native factory's final position", position, tile.getBlockPos());
             }
             assertNull(block.getTicker(null, state, BlockEntityType.CHEST));

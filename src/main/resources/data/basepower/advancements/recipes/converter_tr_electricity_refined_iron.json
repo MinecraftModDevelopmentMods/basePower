@@ -6,7 +6,7 @@
       "conditions": {
         "items": [
           {
-            "tag": "forge:ingots/refined_iron"
+            "items": "#forge:ingots/refined_iron"
           }
         ]
       }
@@ -16,7 +16,7 @@
       "conditions": {
         "items": [
           {
-            "tag": "forge:power_supply_units"
+            "items": "#forge:power_supply_units"
           }
         ]
       }

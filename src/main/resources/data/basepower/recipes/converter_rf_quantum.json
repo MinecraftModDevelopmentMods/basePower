@@ -15,13 +15,11 @@
     }
   },
   "result": {
-    "item": "basepower:converter_rf_quantum"
+    "id": "basepower:converter_rf_quantum"
   },
-  "conditions": [
-    {
-      "type": "basepower:tag_not_empty",
-      "tag": "forge:frames/steel"
-    }
-  ],
-  "group": "basepower:converter_rf_quantum"
+  "group": "basepower:converter_rf_quantum",
+  "forge:condition": {
+    "type": "basepower:tag_not_empty",
+    "tag": "forge:frames/steel"
+  }
 }

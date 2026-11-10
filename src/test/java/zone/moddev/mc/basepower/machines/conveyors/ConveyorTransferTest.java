@@ -30,13 +30,14 @@ public class ConveyorTransferTest {
         for (int n = 0; n < 6; n++) assertTrue(TileEntityConveyor.transferItem(InventoryWrapper.wrap(source), Direction.EAST,
                 InventoryWrapper.wrap(target), Direction.WEST));
         assertTrue(source.isEmpty());
-        assertEquals(4, target.getItem(0).getCount()); assertEquals("A", target.getItem(0).getTag().getString("Witness"));
-        assertEquals(3, target.getItem(1).getCount()); assertEquals("B", target.getItem(1).getTag().getString("Witness"));
+        assertEquals(4, target.getItem(0).getCount()); assertEquals("A", zone.moddev.mc.basepower.util.ItemData.customData(target.getItem(0)).getString("Witness"));
+        assertEquals(3, target.getItem(1).getCount()); assertEquals("B", zone.moddev.mc.basepower.util.ItemData.customData(target.getItem(1)).getString("Witness"));
     }
 
     private static ItemStack tagged(int count, String value) {
         ItemStack stack = new ItemStack(Items.DIRT, count);
-        stack.getOrCreateTag().putString("Witness", value);
+        net.minecraft.world.item.component.CustomData.update(net.minecraft.core.component.DataComponents.CUSTOM_DATA,
+                stack, tag -> tag.putString("Witness", value));
         return stack;
     }
 }

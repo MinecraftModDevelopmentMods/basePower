@@ -1,5 +1,6 @@
 package zone.moddev.mc.basepower.machines.fluidmachines;
 
+import net.minecraft.core.HolderLookup;
 import cyano.poweradvantage.api.ConduitType;
 import cyano.poweradvantage.api.fluid.FluidStack;
 import cyano.poweradvantage.api.fluid.FluidTank;
@@ -81,17 +82,17 @@ public class FluidDischargeTileEntity extends TileEntitySimpleFluidMachine {
     @Override public boolean isFluidSource() { return false; }
     @Override public boolean isFluidSink() { return true; }
 
-    @Override public CompoundTag getUpdateTag() {
+    @Override public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
         CompoundTag tag = new CompoundTag();
         getTank().writeToNBT(tag);
         return tag;
     }
-    @Override public void handleUpdateTag(CompoundTag tag) { getTank().readFromNBT(tag); }
+    @Override public void handleUpdateTag(CompoundTag tag, HolderLookup.Provider registries) { getTank().readFromNBT(tag); }
     @Override public ClientboundBlockEntityDataPacket getUpdatePacket() {
         return ClientboundBlockEntityDataPacket.create(this);
     }
-    @Override public void onDataPacket(Connection net, ClientboundBlockEntityDataPacket packet) {
-        handleUpdateTag(packet.getTag());
+    @Override public void onDataPacket(Connection net, ClientboundBlockEntityDataPacket packet, HolderLookup.Provider registries) {
+        handleUpdateTag(packet.getTag(), registries);
     }
 
     public static BlockPos scanFluidSpaceForNonsourceBlock(Level world, BlockPos initial, Fluid fluid, int range) {

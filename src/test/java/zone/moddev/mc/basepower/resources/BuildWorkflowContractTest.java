@@ -39,11 +39,12 @@ public class BuildWorkflowContractTest {
             int checkout = workflow.indexOf("- name: Check out pinned Base Metals");
             assertTrue(name, policy >= 0 && checkout > policy);
             assertTrue(name, workflow.contains("ref: " + pins.getProperty("basemetals_source_commit")));
-            assertTrue(name, workflow.contains("BaseMetals-" + pins.getProperty("basemetals_version") + "-deobf.jar"));
+            assertTrue(name, workflow.contains("build/libs/BaseMetals-" + pins.getProperty("basemetals_version") + ".jar"));
+            assertTrue(name, workflow.contains("build/libs/OreSpawn-" + pins.getProperty("orespawn_version") + ".jar"));
             assertTrue(name, workflow.contains("ref: " + pins.getProperty("orespawn_source_commit")));
             assertTrue(name, workflow.contains("master-" + pins.getProperty("minecraft_version")));
             assertTrue(name, workflow.contains("java-version: '25.0.3+9.0.LTS'"));
-            assertTrue(name, workflow.contains("java-version: '17.0.1+12'"));
+            assertTrue(name, workflow.contains("java-version: '" + pins.getProperty("java_setup_version") + ".0.LTS'"));
             assertTrue(name, workflow.contains("java-version: '8.0.502+7'"));
             assertFalse(name, workflow.contains("JAVA_HOME_16_X64"));
             assertTrue(name, workflow.contains("-Porg.gradle.java.installations.paths="));

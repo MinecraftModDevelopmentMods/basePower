@@ -22,7 +22,10 @@ public class MachineGuiTitleTest {
 
     @Test public void renamedMachinesKeepThePlayersFullName() {
         ChestBlockEntity tile = new ChestBlockEntity(net.minecraft.core.BlockPos.ZERO, Blocks.CHEST.defaultBlockState());
-        tile.setCustomName(Component.literal("John's oil tank"));
+        var registries = net.minecraft.core.RegistryAccess.fromRegistryOfRegistries(net.minecraft.core.registries.BuiltInRegistries.REGISTRY);
+        var tag = new net.minecraft.nbt.CompoundTag();
+        tag.putString("CustomName", Component.Serializer.toJson(Component.literal("John's oil tank"), registries));
+        tile.loadWithComponents(tag, registries);
         assertEquals("John's oil tank", MachineGUIRegistry.menuTitle(tile, Blocks.CHEST).getString());
     }
 

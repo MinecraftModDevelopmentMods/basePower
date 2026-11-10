@@ -2,9 +2,11 @@ package zone.moddev.mc.advantageworks.client;
 
 import com.google.gson.JsonObject;
 import cyano.poweradvantage.api.simple.SimpleMachineGUI;
+import io.netty.buffer.Unpooled;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientLevel;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.pipeline.RenderTarget;
@@ -14,7 +16,12 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.RegistryAccess;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.Level;
 import zone.moddev.mc.basepower.gui.FilteredFluidTankGUI;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
@@ -28,11 +35,11 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 
 /** Checks native neighbour culling and the actual fluid-bar drawing function. */
 final class TankVisualProbe {
-    private static final int GL_PROJECTION = 5889, GL_MODELVIEW = 5888;
     private static final int GL_COLOR_BUFFER_BIT = 16384, GL_RGBA = 6408, GL_UNSIGNED_BYTE = 5121;
     private TankVisualProbe() {}
 
@@ -52,20 +59,68 @@ final class TankVisualProbe {
                 "Native capability did not fill the tank");
         MetalTankTileEntity clientTank = new MetalTankTileEntity(BlockPos.ZERO,
                 zone.moddev.mc.basepower.init.Blocks.metal_storage_tank.defaultBlockState());
-        clientTank.onDataPacket(null, serverTank.getUpdatePacket());
+        RegistryAccess registries = RegistryAccess.fromRegistryOfRegistries(BuiltInRegistries.REGISTRY);
+        PacketLevel packetLevel = PacketLevel.withRegistries(registries);
+        syncTank(serverTank, clientTank, packetLevel, registries);
         result.addProperty("synced_tank_amount", clientTank.getTank().getFluidAmount());
         require(clientTank.getTank().getFluidAmount() == 10000, "Filled tank packet lost water");
+        int rgb = renderWater(minecraft, clientTank);
         require(handler.drain(10000, FluidAction.EXECUTE).getAmount() == 10000, "Native capability did not drain the tank");
-        clientTank.onDataPacket(null, serverTank.getUpdatePacket());
+        syncTank(serverTank, clientTank, packetLevel, registries);
         require(clientTank.getTank().getFluidAmount() == 0, "Empty tank packet retained old water");
 
-        int rgb = renderWater(minecraft, clientTank);
         result.addProperty("water_bar_rgb", String.format("%06X", rgb));
         int red = (rgb >>> 16) & 255;
         int green = (rgb >>> 8) & 255;
         int blue = rgb & 255;
         require(metalFloor && portableFloor, "Inset tank culled the floor beneath its exposed corners");
         require(blue > red + 20 && blue > green + 10, "Water gauge is not blue: " + String.format("%06X", rgb));
+    }
+
+    private static void syncTank(MetalTankTileEntity server, MetalTankTileEntity client, PacketLevel packetLevel,
+            RegistryAccess registries) {
+        RegistryFriendlyByteBuf buffer = new RegistryFriendlyByteBuf(Unpooled.buffer(), registries);
+        // Forge 50 obtains the packet's registry access from the sending block entity's level.
+        server.setLevel(packetLevel);
+        try {
+            ClientboundBlockEntityDataPacket.STREAM_CODEC.encode(buffer, server.getUpdatePacket());
+            ClientboundBlockEntityDataPacket packet = ClientboundBlockEntityDataPacket.STREAM_CODEC.decode(buffer);
+            require(!buffer.isReadable(), "Trailing tank update packet bytes");
+            require(packet.getPos().equals(client.getBlockPos()) && packet.getType() == client.getType(),
+                    "Tank update addressed the wrong client block entity");
+            client.onDataPacket(null, packet, registries);
+        } finally {
+            server.setLevel(null);
+            buffer.release();
+        }
+    }
+
+    /** Provides registries for the native packet factory without opening a world. */
+    private static final class PacketLevel extends ClientLevel {
+        private RegistryAccess registries;
+
+        private PacketLevel() {
+            super(null, null, Level.OVERWORLD, null, 0, 0,
+                    () -> net.minecraft.util.profiling.InactiveProfiler.INSTANCE, null, false, 0);
+            throw new AssertionError("Allocate only a registry context, not a connected client world");
+        }
+
+        @Override public RegistryAccess registryAccess() { return registries; }
+
+        private static PacketLevel withRegistries(RegistryAccess registries) {
+            try {
+                // Like the layout probe, bypass ClientLevel's world and connection setup.
+                Class<?> allocator = Class.forName("sun.misc.Unsafe");
+                Field singleton = allocator.getDeclaredField("theUnsafe");
+                singleton.setAccessible(true);
+                PacketLevel level = (PacketLevel) allocator.getMethod("allocateInstance", Class.class)
+                        .invoke(singleton.get(null), PacketLevel.class);
+                level.registries = registries;
+                return level;
+            } catch (ReflectiveOperationException failure) {
+                throw new IllegalStateException("Could not create tank packet registry context", failure);
+            }
+        }
     }
 
     private static boolean floorVisible(final BlockState tank) {
@@ -82,7 +137,8 @@ final class TankVisualProbe {
     }
 
     private static int renderWater(Minecraft minecraft, MetalTankTileEntity tile) {
-        FilteredFluidTankGUI definition = new FilteredFluidTankGUI(new ResourceLocation("basepower", "textures/gui/container/fluid_metal_tank_gui.png"));
+        FilteredFluidTankGUI definition = new FilteredFluidTankGUI(ResourceLocation.fromNamespaceAndPath(
+                "basepower", "textures/gui/container/fluid_metal_tank_gui.png"));
         final int width = 176, height = 240;
         Inventory inventory = new Inventory(null);
         SimpleMachineGUI.Container container = definition.createMenu(1, inventory, tile);
@@ -95,7 +151,6 @@ final class TankVisualProbe {
         };
         screen.init(minecraft, width, height);
         require(screen.getMinecraft() == minecraft, "Native tank screen was not initialized");
-        tile.getTank().setFluid(new cyano.poweradvantage.api.fluid.FluidStack(net.minecraft.world.level.material.Fluids.WATER, 10000));
         RenderTarget framebuffer = new com.mojang.blaze3d.pipeline.TextureTarget(width, height, true, Minecraft.ON_OSX);
         framebuffer.bindWrite(true);
         NativeGuiProjection projection = new NativeGuiProjection(width, height, 1000, 3000, -2000);

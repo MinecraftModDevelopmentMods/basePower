@@ -14,17 +14,20 @@
     }
   },
   "result": {
-    "item": "basepower:rotator_tool"
+    "id": "basepower:rotator_tool"
   },
   "group": "basepower:rotator_tool",
-  "conditions": [
-    {
-      "type": "basepower:tag_not_empty",
-      "tag": "forge:ingots/iron"
-    },
-    {
-      "type": "basepower:tag_not_empty",
-      "tag": "forge:sprockets"
-    }
-  ]
+  "forge:condition": {
+    "type": "forge:and",
+    "values": [
+      {
+        "type": "basepower:tag_not_empty",
+        "tag": "forge:ingots/iron"
+      },
+      {
+        "type": "basepower:tag_not_empty",
+        "tag": "forge:sprockets"
+      }
+    ]
+  }
 }

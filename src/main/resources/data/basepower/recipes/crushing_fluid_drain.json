@@ -4,17 +4,20 @@
     "item": "basepower:fluid_drain"
   },
   "result": {
-    "item": "basepower:fluid_pipe",
+    "id": "basepower:fluid_pipe",
     "count": 2
   },
-  "conditions": [
-    {
-      "type": "forge:mod_loaded",
-      "modid": "basemetals"
-    },
-    {
-      "type": "basepower:recipe_mode",
-      "mode": "APOCALYPTIC"
-    }
-  ]
+  "forge:condition": {
+    "type": "forge:and",
+    "values": [
+      {
+        "type": "forge:mod_loaded",
+        "modid": "basemetals"
+      },
+      {
+        "type": "basepower:recipe_mode",
+        "mode": "APOCALYPTIC"
+      }
+    ]
+  }
 }

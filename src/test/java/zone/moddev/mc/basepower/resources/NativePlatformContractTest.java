@@ -12,7 +12,6 @@ import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.MethodNode;
-import org.objectweb.asm.tree.TypeInsnNode;
 import static org.junit.Assert.*;
 
 public class NativePlatformContractTest {
@@ -43,8 +42,9 @@ public class NativePlatformContractTest {
                         if (call.name.equals("forEach")) installed = true;
                     }
                 }
-                if (instruction instanceof TypeInsnNode
-                        && ((TypeInsnNode) instruction).desc.equals("net/minecraftforge/event/TagsUpdatedEvent")) {
+                if (instruction instanceof MethodInsnNode call
+                        && call.owner.equals("net/minecraftforge/event/ForgeEventFactory")
+                        && call.name.equals("onTagsUpdated")) {
                     assertTrue("Bind tags before notifying observers", installed);
                     events++;
                 }
@@ -53,20 +53,14 @@ public class NativePlatformContractTest {
         assertEquals(1, events);
     }
 
-    @Test public void nativeLootLoaderCallsForgeJsonHookAndNotTheRemovedAdvantageBridge() throws Exception {
+    @Test public void nativeLootLoaderCallsForgeEventAndNotTheRemovedAdvantageBridge() throws Exception {
         ClassNode node = read("net/minecraft/world/level/storage/loot/LootDataType");
         int calls = 0;
         for (MethodNode method : node.methods) for (AbstractInsnNode instruction : method.instructions.toArray()) {
             if (instruction instanceof MethodInsnNode call) {
                 assertNotEquals("zone/moddev/mc/basepower/recipe/PartsLoot", call.owner);
-            }
-            if (instruction instanceof org.objectweb.asm.tree.InvokeDynamicInsnNode dynamic) {
-                for (Object argument : dynamic.bsmArgs) {
-                    if (!(argument instanceof org.objectweb.asm.Handle target)) continue;
-                    assertNotEquals("zone/moddev/mc/basepower/recipe/PartsLoot", target.getOwner());
-                    if (target.getOwner().equals("net/minecraftforge/common/ForgeHooks")
-                            && target.getName().equals("getLootTableDeserializer")) calls++;
-                }
+                if (call.owner.equals("net/minecraftforge/event/ForgeEventFactory")
+                        && call.name.equals("onLoadLootTable")) calls++;
             }
         }
         assertEquals(1, calls);

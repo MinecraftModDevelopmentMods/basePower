@@ -6,7 +6,7 @@
       "conditions": {
         "items": [
           {
-            "tag": "forge:ingots/steel"
+            "items": "#forge:ingots/steel"
           }
         ]
       }
@@ -16,7 +16,7 @@
       "conditions": {
         "items": [
           {
-            "tag": "forge:rods"
+            "items": "#forge:rods"
           }
         ]
       }

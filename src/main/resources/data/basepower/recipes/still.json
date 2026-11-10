@@ -16,13 +16,11 @@
     }
   },
   "result": {
-    "item": "basepower:still"
+    "id": "basepower:still"
   },
   "group": "basepower:still",
-  "conditions": [
-    {
-      "type": "basepower:tag_not_empty",
-      "tag": "forge:pipes"
-    }
-  ]
+  "forge:condition": {
+    "type": "basepower:tag_not_empty",
+    "tag": "forge:pipes"
+  }
 }

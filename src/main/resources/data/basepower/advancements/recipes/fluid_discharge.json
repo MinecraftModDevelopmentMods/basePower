@@ -6,7 +6,7 @@
       "conditions": {
         "items": [
           {
-            "tag": "forge:bars"
+            "items": "#forge:bars"
           }
         ]
       }
@@ -16,7 +16,7 @@
       "conditions": {
         "items": [
           {
-            "tag": "forge:plates/steel"
+            "items": "#forge:plates/steel"
           }
         ]
       }
@@ -26,7 +26,7 @@
       "conditions": {
         "items": [
           {
-            "tag": "forge:frames/steel"
+            "items": "#forge:frames/steel"
           }
         ]
       }
@@ -36,7 +36,7 @@
       "conditions": {
         "items": [
           {
-            "tag": "forge:pipes"
+            "items": "#forge:pipes"
           }
         ]
       }

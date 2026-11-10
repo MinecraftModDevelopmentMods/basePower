@@ -1,5 +1,6 @@
 package zone.moddev.mc.basepower.machines.fluidmachines;
 
+import net.minecraft.core.HolderLookup;
 import cyano.poweradvantage.api.fluid.FluidRequest;
 import cyano.poweradvantage.api.simple.TileEntitySimpleFluidMachine;
 import zone.moddev.mc.basepower.registry.FuelRegistry;
@@ -247,8 +248,8 @@ public class StillTileEntity extends TileEntitySimpleFluidMachine {
 	 * @param tagRoot An NBT tag
 	 */
 	@Override
-	protected void saveAdditional(final CompoundTag tagRoot) {
-		super.saveAdditional(tagRoot);
+	protected void saveAdditional(final CompoundTag tagRoot, HolderLookup.Provider registries) {
+		super.saveAdditional(tagRoot, registries);
 		CompoundTag tankTag2 = new CompoundTag();
 		inputTank.writeToNBT(tankTag2);
 		tagRoot.put("InputTank", tankTag2);
@@ -262,8 +263,8 @@ public class StillTileEntity extends TileEntitySimpleFluidMachine {
 	 * @param tagRoot An NBT tag
 	 */
 	@Override
-	public void load(final CompoundTag tagRoot) {
-		super.load(tagRoot);
+	protected void loadAdditional(final CompoundTag tagRoot, HolderLookup.Provider registries) {
+		super.loadAdditional(tagRoot, registries);
 		if (tagRoot.contains("InputTank", 10)) {
 			CompoundTag tankTag2 = tagRoot .getCompound("InputTank");
 			inputTank.readFromNBT(tankTag2);

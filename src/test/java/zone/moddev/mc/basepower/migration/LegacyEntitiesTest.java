@@ -3,7 +3,6 @@ package zone.moddev.mc.basepower.migration;
 import net.minecraft.util.datafix.DataFixTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.NbtUtils;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.util.datafix.DataFixers;
 import net.minecraft.SharedConstants;
@@ -215,9 +214,16 @@ public class LegacyEntitiesTest {
             root = LegacyWorldDataHook.finalizeLegacyChunk(root);
             CompoundTag actual = root.getList("entities", 10).getCompound(0)
                     .getList("Items", 10).getCompound(0);
-            assertEquals("basemetals:steel_pickaxe", actual.getString("id"));
-            assertEquals(1, actual.getInt("Count"));
-            assertEquals(17, actual.getCompound("tag").getInt("Damage"));
+            String order = (baseFirst ? "Base Metals first: " : "basePower first: ") + actual;
+            assertEquals(order, "basemetals:steel_pickaxe", actual.getString("id"));
+            assertEquals(order, 1, actual.getInt("count"));
+            assertFalse(order, actual.contains("Count"));
+            assertTrue(order, actual.contains("Slot", 1));
+            assertEquals(order, 0, actual.getByte("Slot"));
+            assertEquals(order, 17, actual.getCompound("components").getInt("minecraft:damage"));
+            int current = SharedConstants.getCurrentVersion().getDataVersion().getVersion();
+            root.putInt("DataVersion", current);
+            assertEquals(order, root, convert(root.copy(), current));
         }
     }
 

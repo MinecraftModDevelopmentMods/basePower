@@ -17,7 +17,7 @@
     }
   },
   "result": {
-    "item": "basepower:item_filter_food"
+    "id": "basepower:item_filter_food"
   },
   "group": "basepower:item_filter_food"
 }

@@ -23,11 +23,11 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import com.mojang.serialization.Dynamic;
 
-import cpw.mods.modlauncher.api.INameMappingService;
 import cyano.poweradvantage.api.migration.LegacyMigrationApi;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.nbt.NbtIo;
+import net.minecraft.nbt.NbtAccounter;
 import net.minecraft.nbt.Tag;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -68,7 +68,7 @@ public final class LegacyWorldDataHook {
         try {
             if (source != null) {
                 try (FileInputStream input = new FileInputStream(source)) {
-                    CompoundTag registryArchive = NbtIo.readCompressed(input);
+                    CompoundTag registryArchive = NbtIo.readCompressed(input, NbtAccounter.unlimitedHeap());
                     if (!containsLegacyRegistryEntry(registryArchive)) {
                         throw new IOException("Invalid retained Advantage registry snapshot " + source);
                     }
@@ -79,7 +79,7 @@ public final class LegacyWorldDataHook {
             if (levelDat.isFile()) {
                 // A backup can supply registry IDs, but never replace newer world data.
                 try (FileInputStream current = new FileInputStream(levelDat)) {
-                    CompoundTag root = NbtIo.readCompressed(current);
+                    CompoundTag root = NbtIo.readCompressed(current, NbtAccounter.unlimitedHeap());
                     if (source != null || hasAdvantageNamespaceAliases(root)) migrateLoosePlayerData(levelDat, root);
                 }
             }
@@ -104,7 +104,7 @@ public final class LegacyWorldDataHook {
         try {
             CompoundTag root;
             try (FileInputStream input = new FileInputStream(levelDat)) {
-                root = NbtIo.readCompressed(input);
+                root = NbtIo.readCompressed(input, NbtAccounter.unlimitedHeap());
             }
             boolean changed = removeRetiredVanillaProfessionRegistry(root);
             changed |= renameFlattenedBiomeRegistry(root);
@@ -219,6 +219,11 @@ public final class LegacyWorldDataHook {
         migrateLegacyNbt(root);
         LegacyEntityDataFixes.prepare(root);
         return root;
+    }
+
+    public static CompoundTag upgradeEntityChunk(
+            net.minecraft.world.level.chunk.storage.SimpleRegionStorage storage, CompoundTag source, int fallbackVersion) {
+        return finalizeLegacyChunk(storage.upgradeChunkTag(prepareEntityChunkForMigration(source), fallbackVersion));
     }
 
     /** Called after all mods' entry hooks, immediately before native chunk datafixing. */
@@ -374,7 +379,7 @@ public final class LegacyWorldDataHook {
         Arrays.sort(files);
         for (File file : files) {
             try (FileInputStream input = new FileInputStream(file)) {
-                CompoundTag player = NbtIo.readCompressed(input);
+                CompoundTag player = NbtIo.readCompressed(input, NbtAccounter.unlimitedHeap());
                 if (migrateLegacyNbt(player) > 0) writeWithBackup(file, player);
             }
         }
@@ -465,7 +470,7 @@ public final class LegacyWorldDataHook {
         for (File candidate : new File[] { levelDat, new File(levelDat.getParentFile(), "level.dat_old") }) {
             if (!candidate.isFile()) continue;
             try (FileInputStream input = new FileInputStream(candidate)) {
-                CompoundTag root = NbtIo.readCompressed(input);
+                CompoundTag root = NbtIo.readCompressed(input, NbtAccounter.unlimitedHeap());
                 if (root.contains("FML", 10) && containsLegacyRegistryEntry(root)) return candidate;
             } catch (IOException ignored) {}
         }
@@ -480,7 +485,7 @@ public final class LegacyWorldDataHook {
         archive.put("FML", source.getCompound("FML").copy());
         java.nio.file.Path temporary = Files.createTempFile(target.getParent(), "basepower-legacy-", ".tmp");
         try {
-            NbtIo.writeCompressed(archive, temporary.toFile());
+            NbtIo.writeCompressed(archive, temporary);
             Files.move(temporary, target, StandardCopyOption.ATOMIC_MOVE);
         } finally {
             Files.deleteIfExists(temporary);
@@ -560,8 +565,7 @@ public final class LegacyWorldDataHook {
     @SuppressWarnings("unchecked")
     private static Dynamic<?>[] expandFlatteningTable(int requiredLength) {
         try {
-            String fieldName = ObfuscationReflectionHelper.remapName(INameMappingService.Domain.FIELD, "f_14934_");
-            Field valuesField = BlockStateData.class.getDeclaredField(fieldName);
+            Field valuesField = BlockStateData.class.getDeclaredField("MAP");
             valuesField.setAccessible(true);
             if (Modifier.isFinal(valuesField.getModifiers())) {
                 throw new IllegalStateException("The Advantage flattening-table hook did not run");

@@ -10,6 +10,7 @@ import cyano.poweradvantage.api.migration.LegacyMigrationApi;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtIo;
+import net.minecraft.nbt.NbtAccounter;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
@@ -21,13 +22,18 @@ public final class LegacyWorldMetadata {
 
     public static CompoundTag read(File levelDat) throws IOException {
         LegacyWorldDataHook.prepareForgeRegistryMetadata(levelDat);
-        CompoundTag root = NbtIo.readCompressed(levelDat);
+        CompoundTag root = NbtIo.readCompressed(levelDat.toPath(), NbtAccounter.unlimitedHeap());
         remap(root, ModList.get()::isLoaded);
         return root;
     }
 
     public static Tag remapLightweight(Tag root) {
         if (root instanceof CompoundTag compound) remap(compound, ModList.get()::isLoaded);
+        return root;
+    }
+
+    public static CompoundTag remapRaw(CompoundTag root) {
+        remap(root, ModList.get()::isLoaded);
         return root;
     }
 

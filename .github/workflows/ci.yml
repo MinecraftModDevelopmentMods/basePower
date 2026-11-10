@@ -1,16 +1,16 @@
-name: basePower 1.19 CI
+name: basePower 1.20.6 CI
 
 on:
   push:
-    branches: [master-1.20.1, 'feature/**']
+    branches: [master-1.20.6, 'feature/**']
   pull_request:
-    branches: [master-1.20.1]
+    branches: [master-1.20.6]
 
 permissions:
   contents: read
 
 concurrency:
-  group: basepower-1.19-${{ github.workflow }}-${{ github.ref }}
+  group: basepower-1.20.6-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -25,7 +25,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           repository: MinecraftModDevelopmentMods/OreSpawn
-          ref: 9d9db6cd315c9fce542808aa2551c94bf9267e93
+          ref: 4085315345ff043448b316d75e03f4b8da45402d
           path: .ci-dependencies/OreSpawn
       - name: Use canonical LF dependency inputs
         # Use the same source bytes on hosted and local dependency builds.
@@ -34,23 +34,23 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           repository: MinecraftModDevelopmentMods/BaseMetals
-          ref: d9614e3d26a3b57ddff9703861f18a283c7e8358
+          ref: 0c2cdd4d0e8c3bf2e5fa234d49e57960bbf80bde
           path: .ci-dependencies/BaseMetals
       - name: Install pinned Java 25 Mavenizer runtime
         uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
         with:
           distribution: temurin
           java-version: '25.0.3+9.0.LTS'
-      - name: Install Java 8 renamer runtime
+      - name: Install Java 8 launcher helper
         uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
         with:
           distribution: temurin
           java-version: '8.0.502+7'
-      - name: Install Java 17 for Gradle and production
+      - name: Install Java 21 for Gradle and production
         uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
         with:
           distribution: temurin
-          java-version: '17.0.1+12'
+          java-version: '21.0.7+6.0.LTS'
       - name: Use pinned build toolchains
         # These are Gradle project properties, not JVM system properties.
         shell: bash
@@ -68,11 +68,13 @@ jobs:
           orespawn="$GITHUB_WORKSPACE/.ci-dependencies/OreSpawn"
           basemetals="$GITHUB_WORKSPACE/.ci-dependencies/BaseMetals"
           mavenizer="$orespawn/ci-fixtures/tools/minecraft-mavenizer-0.5.21-orespawn-compat.jar"
+          mirror="$RUNNER_TEMP/orespawn-mirror"
+          bash "$basemetals/gradle/stage-orespawn-release.sh" "$mirror"
           chmod +x "$orespawn/gradlew" "$basemetals/gradlew"
           (cd "$orespawn" && ./gradlew $MMD_GRADLE_TOOLCHAINS jar --no-daemon --stacktrace)
-          (cd "$basemetals" && ./gradlew $MMD_GRADLE_TOOLCHAINS jar --no-daemon --stacktrace)
-          osjar="$orespawn/build/libs-dev/OreSpawn-4.1.0.120011-deobf.jar"
-          bmjar="$basemetals/build/libs-dev/BaseMetals-3.1.2.120011-deobf.jar"
+          (cd "$basemetals" && ./gradlew $MMD_GRADLE_TOOLCHAINS jar -PorespawnVerificationRepository="$mirror" --no-daemon --stacktrace)
+          osjar="$orespawn/build/libs/OreSpawn-4.1.0.120061.jar"
+          bmjar="$basemetals/build/libs/BaseMetals-3.1.2.120061.jar"
           test -f "$osjar" && test -f "$bmjar"
           echo "orespawn=$osjar" >> "$GITHUB_OUTPUT"
           echo "basemetals=$bmjar" >> "$GITHUB_OUTPUT"
@@ -83,25 +85,25 @@ jobs:
           writeReleaseChecksums verifyEclipseProductionClasspath
           -PbaseMetalsDeobfJar=${{ steps.dependencies.outputs.basemetals }}
           -PoreSpawnDeobfJar=${{ steps.dependencies.outputs.orespawn }}
-          -Pforge47MavenizerJar=${{ steps.dependencies.outputs.mavenizer }}
+          -Pforge50MavenizerJar=${{ steps.dependencies.outputs.mavenizer }}
           --no-daemon --stacktrace
       - name: Upload audited release candidate
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: basePower-1.20.1-${{ github.sha }}
+          name: basePower-1.20.6-${{ github.sha }}
           if-no-files-found: error
           retention-days: 30
           path: |
-            build/libs/basePower-2.4.12.120011.jar
-            build/libs/basePower-2.4.12.120011-sources.jar
-            build/libs/basePower-2.4.12.120011-javadoc.jar
+            build/libs/basePower-2.4.13.120061.jar
+            build/libs/basePower-2.4.13.120061-sources.jar
+            build/libs/basePower-2.4.13.120061-javadoc.jar
             build/release/SHA256SUMS
             CHANGELOG.txt
       - name: Upload diagnostics on failure
         if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: basePower-1.20.1-diagnostics-${{ github.sha }}
+          name: basePower-1.20.6-diagnostics-${{ github.sha }}
           if-no-files-found: ignore
           retention-days: 14
           path: |

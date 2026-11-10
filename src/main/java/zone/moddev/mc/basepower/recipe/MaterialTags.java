@@ -1,17 +1,27 @@
 package zone.moddev.mc.basepower.recipe;
 
+import net.minecraft.server.packs.PackLocationInfo;
+import net.minecraft.server.packs.PackResources;
+import net.minecraft.server.packs.PackSelectionConfig;
+import net.minecraft.server.packs.PackType;
+import net.minecraft.server.packs.repository.Pack;
+import net.minecraftforge.event.AddPackFindersEvent;
+
 /** Config-dependent aliases resolved by the server's native tag reload. */
 public final class MaterialTags {
     private MaterialTags() {}
 
-    public static void registerPack(net.minecraftforge.event.AddPackFindersEvent event) {
-        if (event.getPackType() != net.minecraft.server.packs.PackType.SERVER_DATA) return;
+    public static void registerPack(AddPackFindersEvent event) {
+        if (event.getPackType() != PackType.SERVER_DATA) return;
         event.addRepositorySource(consumer -> {
-            net.minecraft.server.packs.repository.Pack pack = net.minecraft.server.packs.repository.Pack.readMetaAndCreate(
-                    MaterialPolicyPack.ID, net.minecraft.network.chat.Component.literal(MaterialPolicyPack.NAME),
-                    true, id -> new MaterialPolicyPack(), event.getPackType(),
-                    net.minecraft.server.packs.repository.Pack.Position.BOTTOM,
-                    net.minecraft.server.packs.repository.PackSource.BUILT_IN);
+            Pack pack = Pack.readMetaAndCreate(MaterialPolicyPack.LOCATION, new Pack.ResourcesSupplier() {
+                @Override public PackResources openPrimary(PackLocationInfo location) {
+                    return new MaterialPolicyPack();
+                }
+                @Override public PackResources openFull(PackLocationInfo location, Pack.Metadata metadata) {
+                    return new MaterialPolicyPack();
+                }
+            }, event.getPackType(), new PackSelectionConfig(true, Pack.Position.BOTTOM, false));
             if (pack != null) consumer.accept(pack);
         });
     }

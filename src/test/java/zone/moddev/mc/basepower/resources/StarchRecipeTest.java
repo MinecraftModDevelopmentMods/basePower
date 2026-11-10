@@ -15,11 +15,11 @@ public class StarchRecipeTest {
     @Test public void craftingAcceptsOneOrdinaryOrPoisonousPotatoWithoutAnotherMod() throws Exception {
         JsonObject recipe = read("starch_from_potato");
         assertEquals("minecraft:crafting_shapeless", recipe.get("type").getAsString());
-        assertFalse(recipe.has("conditions"));
+        assertFalse(recipe.has("forge:condition"));
         JsonArray inputs = recipe.getAsJsonArray("ingredients");
         assertEquals(1, inputs.size());
         assertEquals(potatoes(), items(inputs.get(0).getAsJsonArray()));
-        assertEquals("basepower:starch", recipe.getAsJsonObject("result").get("item").getAsString());
+        assertEquals("basepower:starch", recipe.getAsJsonObject("result").get("id").getAsString());
         assertEquals(1, recipe.getAsJsonObject("result").get("count").getAsInt());
     }
 
@@ -27,7 +27,7 @@ public class StarchRecipeTest {
         JsonObject recipe = read("crushing_potato_starch");
         assertEquals("basemetals:crushing", recipe.get("type").getAsString());
         assertEquals(potatoes(), items(recipe.getAsJsonArray("ingredient")));
-        assertEquals("basepower:starch", recipe.getAsJsonObject("result").get("item").getAsString());
+        assertEquals("basepower:starch", recipe.getAsJsonObject("result").get("id").getAsString());
         assertEquals(1, recipe.getAsJsonObject("result").get("count").getAsInt());
     }
 

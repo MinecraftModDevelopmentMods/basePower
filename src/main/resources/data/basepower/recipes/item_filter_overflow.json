@@ -13,7 +13,7 @@
     }
   },
   "result": {
-    "item": "basepower:item_filter_overflow"
+    "id": "basepower:item_filter_overflow"
   },
   "group": "basepower:item_filter_overflow"
 }

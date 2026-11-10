@@ -10,31 +10,33 @@ public class PartsLootTest {
         LootTable table = LootTable.lootTable().build();
         ResourceLocation chest = new ResourceLocation("minecraft", "chests/simple_dungeon");
         PartsLoot.addPools(table, chest, true, mod -> true);
-        Object original = table.getPool("basesteam:legacy_parts");
+        var original = table.removePool("basesteam:legacy_parts");
         assertNotNull(original);
+        table.addPool(original);
         PartsLoot.addPools(table, chest, true, mod -> true);
-        assertSame(original, table.getPool("basesteam:legacy_parts"));
-        assertNotNull(table.getPool("basepower:legacy_parts"));
-        assertNotNull(table.getPool("baseelectric:legacy_parts"));
+        assertSame(original, table.removePool("basesteam:legacy_parts"));
+        assertNull(table.removePool("basesteam:legacy_parts"));
+        assertNotNull(table.removePool("basepower:legacy_parts"));
+        assertNotNull(table.removePool("baseelectric:legacy_parts"));
     }
 
     @Test public void keepsEndCityExceptionAndAbsentMods() {
         LootTable table = LootTable.lootTable().build();
         PartsLoot.addPools(table, new ResourceLocation("minecraft", "chests/end_city_treasure"), true,
                 mod -> !mod.equals("basesteam"));
-        assertNull(table.getPool("basepower:legacy_parts"));
-        assertNull(table.getPool("basesteam:legacy_parts"));
-        assertNotNull(table.getPool("baseelectric:legacy_parts"));
+        assertNull(table.removePool("basepower:legacy_parts"));
+        assertNull(table.removePool("basesteam:legacy_parts"));
+        assertNotNull(table.removePool("baseelectric:legacy_parts"));
     }
 
     @Test public void leavesUnrelatedTablesAndDisabledLootUnchanged() {
         for (String id : new String[] {"minecraft:chests/desert_pyramid", "othermod:chests/simple_dungeon"}) {
             LootTable table = LootTable.lootTable().build();
             PartsLoot.addPools(table, new ResourceLocation(id), true, mod -> true);
-            assertNull(table.getPool("basepower:legacy_parts"));
+            assertNull(table.removePool("basepower:legacy_parts"));
         }
         LootTable table = LootTable.lootTable().build();
         PartsLoot.addPools(table, new ResourceLocation("minecraft", "chests/simple_dungeon"), false, mod -> true);
-        assertNull(table.getPool("basepower:legacy_parts"));
+        assertNull(table.removePool("basepower:legacy_parts"));
     }
 }

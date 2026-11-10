@@ -20,8 +20,12 @@ final class LegacyEntityDataFixes {
     private static final String[][] FORGE_ATTRIBUTES = {
         {"forge.swimSpeed", "forge:swim_speed"},
         {"forge.nameTagDistance", "forge:nametag_distance"},
-        {"forge.entity_gravity", "forge:entity_gravity"},
-        {"generic.reachDistance", "forge:reach_distance"}
+        {"forge.entity_gravity", "minecraft:generic.gravity"},
+        {"forge:entity_gravity", "minecraft:generic.gravity"},
+        {"generic.reachDistance", "minecraft:player.block_interaction_range"},
+        {"forge:reach_distance", "minecraft:player.block_interaction_range"},
+        {"forge:block_reach", "minecraft:player.block_interaction_range"},
+        {"forge:entity_reach", "minecraft:player.entity_interaction_range"}
     };
 
     private LegacyEntityDataFixes() {}

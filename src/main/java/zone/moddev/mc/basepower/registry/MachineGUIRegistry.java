@@ -22,9 +22,6 @@ import net.minecraftforge.common.extensions.IForgeMenuType;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegisterEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.network.NetworkHooks;
 import zone.moddev.mc.basepower.PowerAdvantage;
 
 import java.util.Map;
@@ -32,7 +29,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /** Legacy GUI definitions backed by Forge's registered container and screen factories. */
-@Mod.EventBusSubscriber(modid = PowerAdvantage.MODID, bus = Mod.EventBusSubscriber.Bus.MOD)
 public final class MachineGUIRegistry {
     private static final MachineGUIRegistry INSTANCE = new MachineGUIRegistry();
     private static final AtomicInteger NEXT_ID = new AtomicInteger(1);
@@ -51,7 +47,6 @@ public final class MachineGUIRegistry {
 
     public void removeGUI(int id) { DEFINITIONS.remove(id); }
 
-    @SubscribeEvent
     public static void registerTypes(RegisterEvent event) {
         if (!ForgeRegistries.Keys.MENU_TYPES.equals(event.getRegistryKey())) return;
         TYPE = IForgeMenuType.create(MachineGUIRegistry::createClientContainer);
@@ -89,7 +84,7 @@ public final class MachineGUIRegistry {
         BlockEntity tile = world.getBlockEntity(pos);
         if (world.isClientSide || player.level() != world || !(tile instanceof Container)) return;
         SimpleMachineGUI gui = definition(id);
-        NetworkHooks.openScreen(player, new MenuProvider() {
+        player.openMenu(new MenuProvider() {
             @Override public AbstractContainerMenu createMenu(int windowId, Inventory inventory, Player owner) {
                 return gui.createMenu(windowId, inventory, (Container) tile);
             }

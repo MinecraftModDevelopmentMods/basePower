@@ -64,7 +64,7 @@ public class FluidDrainTileEntity extends TileEntitySimpleFluidMachine {
     static Fluid pickupSource(LevelAccessor world, BlockPos position, BlockState state) {
         if (!(state.getBlock() instanceof BucketPickup)) return net.minecraft.world.level.material.Fluids.EMPTY;
         Fluid fluid = state.getFluidState().getType();
-        ItemStack bucket = ((BucketPickup)state.getBlock()).pickupBlock(world, position, state);
+        ItemStack bucket = ((BucketPickup)state.getBlock()).pickupBlock(null, world, position, state);
         return bucket.isEmpty() ? net.minecraft.world.level.material.Fluids.EMPTY : fluid;
     }
 

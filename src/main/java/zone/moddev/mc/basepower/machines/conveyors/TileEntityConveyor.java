@@ -1,5 +1,7 @@
 package zone.moddev.mc.basepower.machines.conveyors;
 
+import net.minecraft.core.HolderLookup;
+import zone.moddev.mc.basepower.util.ItemData;
 import zone.moddev.mc.basepower.util.InventoryWrapper;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.entity.item.ItemEntity;
@@ -159,7 +161,7 @@ public class TileEntityConveyor extends BlockEntity implements WorldlyContainer,
 				ItemStack destItem = dest.getItem(slot);
 				if(destItem == null || destItem.isEmpty()) {
 					return true;
-				} else if (ItemStack.isSameItemSameTags(item, destItem)
+				} else if (ItemStack.isSameItemSameComponents(item, destItem)
 						&& destItem.getCount() < Math.min(dest.getMaxStackSize(), destItem.getMaxStackSize())) {
 					return true;
 				}
@@ -183,7 +185,7 @@ public class TileEntityConveyor extends BlockEntity implements WorldlyContainer,
 						if(dest.canPlaceItemThroughFace(destValidSlots[j], item, destFace)){
 							ItemStack otherItem = dest.getItem(destValidSlots[j]);
 							if(otherItem != null && !otherItem.isEmpty()
-									&& ItemStack.isSameItemSameTags(item, otherItem)
+								&& ItemStack.isSameItemSameComponents(item, otherItem)
 									&& otherItem.getCount() < dest.getMaxStackSize()
 									&& otherItem.getCount() < otherItem.getMaxStackSize()){
 								src.removeItem(srcValidSlots[i], 1);
@@ -239,8 +241,8 @@ public class TileEntityConveyor extends BlockEntity implements WorldlyContainer,
 	 * @param tagRoot The root of the NBT
 	 */
 	@Override
-	public void load(final CompoundTag tagRoot) {
-		super.load(tagRoot);
+	protected void loadAdditional(final CompoundTag tagRoot, HolderLookup.Provider registries) {
+		super.loadAdditional(tagRoot, registries);
 		ItemStack[] inventory = this.getInventory();
 		if(inventory != null ){
 			Arrays.fill(inventory, null);
@@ -249,7 +251,7 @@ public class TileEntityConveyor extends BlockEntity implements WorldlyContainer,
 				final CompoundTag nbttagcompound1 = nbttaglist .getCompound(i);
 				final byte n = nbttagcompound1.getByte("Slot");
 				if (n >= 0 && n < inventory.length) {
-					ItemStack stack = ItemStack.of(nbttagcompound1);
+					ItemStack stack = ItemData.readStack(registries, nbttagcompound1);
 					inventory[n] = stack.isEmpty() ? null : stack;
 				}
 			}
@@ -266,16 +268,15 @@ public class TileEntityConveyor extends BlockEntity implements WorldlyContainer,
 	 * @param tagRoot The root of the NBT
 	 */
 	@Override
-	protected void saveAdditional(final CompoundTag tagRoot) {
-		super.saveAdditional(tagRoot);
+	protected void saveAdditional(final CompoundTag tagRoot, HolderLookup.Provider registries) {
+		super.saveAdditional(tagRoot, registries);
 		ItemStack[] inventory = this.getInventory();
 		if(inventory != null ){
 			final ListTag nbttaglist = new ListTag();
 			for (int i = 0; i < inventory.length; ++i) {
 				if (inventory[i] != null && !inventory[i].isEmpty()) {
-					final CompoundTag nbttagcompound1 = new CompoundTag();
+					final CompoundTag nbttagcompound1 = (CompoundTag) inventory[i].save(registries);
 					nbttagcompound1.putByte("Slot", (byte)i);
-					inventory[i] .save(nbttagcompound1);
 					nbttaglist .add(nbttagcompound1);
 				}
 			}
@@ -394,7 +395,7 @@ public class TileEntityConveyor extends BlockEntity implements WorldlyContainer,
 	public void setItem(int slot, ItemStack item) {
 		ItemStack existing = this.getInventory()[slot];
 		final boolean flag = item != null && !item.isEmpty() && existing != null && !existing.isEmpty()
-				&& ItemStack.isSameItemSameTags(item, existing);
+				&& ItemStack.isSameItemSameComponents(item, existing);
 		this.getInventory()[slot] = (item == null || item.isEmpty()) ? null : item;
 		if (item != null && item.getCount() > this.getMaxStackSize()) {
 			item.setCount(this.getMaxStackSize());

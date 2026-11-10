@@ -4,17 +4,20 @@
     "item": "basepower:fluid_storage_tank"
   },
   "result": {
-    "item": "basepower:fluid_pipe",
+    "id": "basepower:fluid_pipe",
     "count": 1
   },
-  "conditions": [
-    {
-      "type": "forge:mod_loaded",
-      "modid": "basemetals"
-    },
-    {
-      "type": "basepower:recipe_mode",
-      "mode": "APOCALYPTIC"
-    }
-  ]
+  "forge:condition": {
+    "type": "forge:and",
+    "values": [
+      {
+        "type": "forge:mod_loaded",
+        "modid": "basemetals"
+      },
+      {
+        "type": "basepower:recipe_mode",
+        "mode": "APOCALYPTIC"
+      }
+    ]
+  }
 }
