@@ -14,6 +14,7 @@ basePower 2.4.12.120011 (Minecraft 1.20.1)
 - Keep all three mods on one creative tab and retain the old recipe unlocks.
 - Keep the shared world upgrade hook so old machine facings, item wear and contents can be read before Minecraft converts the chunks.
 - Map the renamed vanilla pottery and sound entries so 1.19.4 worlds open without a missing registry warning.
+- Requires MMD OreSpawn 4.1.0.120011. If your world already uses Base Metals, keep it installed and upgrade to 3.1.2.120011 before opening a copy of the world.
 
 basePower 2.4.11.119041 (Minecraft 1.19.4)
 

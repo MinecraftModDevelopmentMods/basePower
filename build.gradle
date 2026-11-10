@@ -529,6 +529,11 @@ tasks.register('verifyReleaseArtifacts') {
         }
 
         File mainJar = new File(libs, expectedReleaseFiles.get()[0])
+        String mainHash = MessageDigest.getInstance('SHA-256').digest(mainJar.bytes).encodeHex().toString()
+        if (!mainHash.equalsIgnoreCase(project.release_player_sha256 as String)) {
+            throw new GradleException("${mainJar.name} SHA-256 is ${mainHash}, "
+                    + "expected frozen player jar ${project.release_player_sha256}")
+        }
         new ZipFile(mainJar).withCloseable { zip ->
             List<String> names = zip.entries().collect { it.name }
             ['META-INF/mods.toml', 'META-INF/accesstransformer.cfg', 'pack.mcmeta',

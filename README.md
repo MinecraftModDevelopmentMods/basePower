@@ -8,6 +8,15 @@ Results from earlier versions do not qualify this build.
 basePower continues DrCyano's Power Advantage. It provides shared power,
 fluids and item transport for baseSteam and baseElectric.
 
+## Playing On 1.20.1
+
+- Install [MMD OreSpawn 4.1.0.120011](https://www.curseforge.com/minecraft/mc-mods/mmd-orespawn/files/9175609) on both client and server.
+- Base Metals is optional for a new basePower world. For a world that already
+  uses Base Metals, keep it installed and use the matching Forge 1.20.1 build
+  `3.1.2.120011`. Older Base Metals builds do not have the shared upgrade hook.
+- baseSteam and baseElectric are separate mods. Use only their matching
+  1.20.1 builds. Additional Loot Tables is not needed on 1.20.1.
+
 **Back up the entire world before upgrading. Test only disposable copies.**
 The port keeps existing registry names and machine data. The upgrade checks
 use disposable copies of original Advantage and released base* saves, including
@@ -56,8 +65,10 @@ Other layouts can pass `-PbaseMetalsDeobfJar=<path>` and `-PoreSpawnDeobfJar=<pa
 Dependencies are never embedded in PowerAdvantage artifacts.
 
 Dependency checksums and source commits are recorded in `gradle.properties`.
-Unknown artifacts fail the dependency audit. Archives use reproducible ordering,
-LF text and no empty directories, so fresh checkouts produce the same bytes.
+Unknown artifacts fail the dependency audit. The release audit also rejects a
+player jar that differs from the frozen test kit. Hosted CI requires the Base
+Metals pin to be on its upstream `master-1.20.1` branch; a locally tested pin
+does not qualify a hosted build.
 
 Release jars are written to `build/libs`. Forge 50 uses the same mod jar for play
 and development; `deobfJar` is kept as a task alias for older build scripts.

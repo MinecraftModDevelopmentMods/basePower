@@ -21,15 +21,19 @@ jobs:
     steps:
       - name: Check out PowerAdvantage
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Require the Base Metals pin on upstream master-1.20.1
+        id: base-metals-pin
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash .github/verify-base-metals-pin.sh
+      - name: Use canonical LF dependency inputs
+        run: git config --global core.autocrlf false
       - name: Check out pinned OreSpawn
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           repository: MinecraftModDevelopmentMods/OreSpawn
           ref: 4085315345ff043448b316d75e03f4b8da45402d
           path: .ci-dependencies/OreSpawn
-      - name: Use canonical LF dependency inputs
-        # Use the same source bytes on hosted and local dependency builds.
-        run: git config --global core.autocrlf false
       - name: Check out pinned Base Metals
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
