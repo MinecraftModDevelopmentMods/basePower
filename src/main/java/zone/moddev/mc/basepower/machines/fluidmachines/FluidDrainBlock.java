@@ -3,7 +3,6 @@ package zone.moddev.mc.basepower.machines.fluidmachines;
 import cyano.poweradvantage.api.ConduitType;
 import cyano.poweradvantage.api.PoweredEntity;
 import cyano.poweradvantage.api.simple.BlockSimpleFluidMachine;
-import net.minecraft.world.level.material.Material;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.core.BlockPos;
@@ -14,7 +13,7 @@ public class FluidDrainBlock extends BlockSimpleFluidMachine {
 
 
 	public FluidDrainBlock() {
-		super(Material.PISTON, 3f);
+		super(machineProperties(3F));
 	}
 
 	@Override

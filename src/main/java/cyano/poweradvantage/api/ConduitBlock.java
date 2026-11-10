@@ -1,7 +1,6 @@
 package cyano.poweradvantage.api;
 
 import zone.moddev.mc.basepower.conduitnetwork.ConduitRegistry;
-import net.minecraft.world.level.material.Material;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Explosion;
@@ -24,19 +23,6 @@ import net.minecraft.world.level.Level;
  *
  */
 public abstract class ConduitBlock extends net.minecraft.world.level.block.Block implements  ITypedConduit {
-	/**
-	 * Block constructor
-	 *
-	 * @param mat Block material, typically Material.iron
-	 */
-	protected ConduitBlock(Material mat) {
-		this(mat, 1.0F);
-	}
-
-	protected ConduitBlock(Material mat, float hardness) {
-		this(Properties.of(mat).strength(hardness));
-	}
-
 	protected ConduitBlock(Properties properties) {
 		super(properties);
 	}

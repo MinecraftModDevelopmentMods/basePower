@@ -17,7 +17,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.BlockGetter;
 import zone.moddev.mc.basepower.gui.FilteredFluidTankGUI;
 import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
 import zone.moddev.mc.basepower.registry.MachineGUIRegistry;
@@ -44,7 +44,7 @@ final class TankVisualProbe {
 
         MetalTankTileEntity serverTank = new MetalTankTileEntity(BlockPos.ZERO,
                 zone.moddev.mc.basepower.init.Blocks.metal_storage_tank.defaultBlockState());
-        IFluidHandler handler = serverTank.getCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, Direction.UP)
+        IFluidHandler handler = serverTank.getCapability(ForgeCapabilities.FLUID_HANDLER, Direction.UP)
                 .orElseThrow(() -> new IllegalStateException("Metal tank has no native Forge fluid capability"));
         require(handler.fill(new FluidStack(net.minecraft.world.level.material.Fluids.WATER, 10000), FluidAction.SIMULATE) == 10000
                 && serverTank.getTank().getFluidAmount() == 0, "Native simulated fill changed the tank");
@@ -83,18 +83,22 @@ final class TankVisualProbe {
 
     private static int renderWater(Minecraft minecraft, MetalTankTileEntity tile) {
         FilteredFluidTankGUI definition = new FilteredFluidTankGUI(new ResourceLocation("basepower", "textures/gui/container/fluid_metal_tank_gui.png"));
-        final int width = 128, height = 96;
+        final int width = 176, height = 240;
         Inventory inventory = new Inventory(null);
         SimpleMachineGUI.Container container = definition.createMenu(1, inventory, tile);
         require(container.getType() == MachineGUIRegistry.TYPE && MachineGUIRegistry.TYPE != null,
                 "Tank GUI is not backed by the registered native container type");
-        SimpleMachineGUI.GUIContainer screen = container.createScreen(inventory, net.minecraft.network.chat.Component.literal("Tank probe"));
+        var screen = definition.new GUIContainer(container, inventory, net.minecraft.network.chat.Component.literal("Tank probe")) {
+            void renderTank(net.minecraft.client.gui.GuiGraphics graphics) {
+                renderBg(graphics, 0F, -100, -100);
+            }
+        };
         screen.init(minecraft, width, height);
         require(screen.getMinecraft() == minecraft, "Native tank screen was not initialized");
         tile.getTank().setFluid(new cyano.poweradvantage.api.fluid.FluidStack(net.minecraft.world.level.material.Fluids.WATER, 10000));
         RenderTarget framebuffer = new com.mojang.blaze3d.pipeline.TextureTarget(width, height, true, Minecraft.ON_OSX);
         framebuffer.bindWrite(true);
-        NativeGuiProjection projection = new NativeGuiProjection(width, height, -1, 1, 0);
+        NativeGuiProjection projection = new NativeGuiProjection(width, height, 1000, 3000, -2000);
         RenderSystem.disableDepthTest();
         RenderSystem.enableBlend();
         RenderSystem.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
@@ -102,7 +106,9 @@ final class TankVisualProbe {
         try {
             RenderSystem.clearColor(0F, 0F, 0F, 1F);
             RenderSystem.clear(GL_COLOR_BUFFER_BIT, Minecraft.ON_OSX);
-            definition.drawGUIDecorations(tile, screen, 0, 0, 0F);
+            var graphics = new net.minecraft.client.gui.GuiGraphics(minecraft, minecraft.renderBuffers().bufferSource());
+            screen.renderTank(graphics);
+            graphics.flush();
             ByteBuffer pixels = ByteBuffer.allocateDirect(width * height * 4);
             RenderSystem.readPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
             BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
@@ -114,7 +120,7 @@ final class TankVisualProbe {
                 }
             }
             ImageIO.write(image, "png", new File("tank-water-gauge.png"));
-            return image.getRGB(88, 39) & 0xFFFFFF;
+            return image.getRGB(88, 51) & 0xFFFFFF;
         } catch (IOException failure) {
             throw new IllegalStateException("Could not retain the native tank gauge image", failure);
         } finally {

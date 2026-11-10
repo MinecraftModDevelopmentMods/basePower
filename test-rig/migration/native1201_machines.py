@@ -1,4 +1,4 @@
-"""Exercise 1.19.4 machines using the historical lifecycle and harvest oracles."""
+"""Exercise 1.20.1 machines using the historical lifecycle and harvest oracles."""
 
 import argparse
 from pathlib import Path
@@ -12,42 +12,42 @@ from native117_identity import fixture_ids
 from native117_lifecycle import NativeLifecycleRun, authorize_lifecycle, exercise, read_json
 from native117_oil import NativeOilRun, exercise as exercise_oil, fixtures as oil_fixtures
 from native117_readiness import await_ready
-import native119
+import native1201
 
 MINERALOGY = {
     "id": "mineralogy",
-    "version": "6.1.4.119041",
-    "sourceRef": "84222a0f129c086fd5ddcdb4244468f50ac0d4d1",
-    "file": "Mineralogy-6.1.4.119041.jar",
-    "sha256": "0E197D92B74F8466F35B31357E12629649EA58FF655CEFDF0D1991BE72DDA8A6",
+    "version": "6.1.4.120011",
+    "sourceRef": "3826585128a53dbbd94e05e025ddb32a693ae428",
+    "file": "Mineralogy-6.1.4.120011.jar",
+    "sha256": "1172C7FF424BCE10E3EAC7A790353CAB35E5A5F06EBB019B31BED05B90ED8A5F",
 }
 
 
 class LifecycleRun(NativeLifecycleRun):
-    minecraft = native119.MINECRAFT
+    minecraft = native1201.MINECRAFT
     max_ticket_distance = 12
-    require_boot = staticmethod(native119.require_native_boot)
+    require_boot = staticmethod(native1201.require_native_boot)
 
     def open_server(self, label):
-        return native119.Server(self.runtime, self.java, self.launcher, label)
+        return native1201.Server(self.runtime, self.java, self.launcher, label)
 
 
 class OilRun(NativeOilRun):
-    expected_launcher = native119.LAUNCHER
-    require_boot = staticmethod(native119.require_native_boot)
+    expected_launcher = native1201.LAUNCHER
+    require_boot = staticmethod(native1201.require_native_boot)
 
     def open_server(self, label):
-        return native119.Server(self.runtime, self.java, self.launcher, label)
+        return native1201.Server(self.runtime, self.java, self.launcher, label)
 
 
 def harvest(runtime, java, launcher, report, progress):
     mark_runtime(runtime)
     for label in ("exercise", "restored"):
-        server = native119.Server(runtime, java, launcher, label)
+        server = native1201.Server(runtime, java, launcher, label)
         try:
             server.send("forceload add 1198 1022 1202 1026")
             ready = await_ready(server, runtime, HARVEST_CHUNKS, "harvest-" + label,
-                                minecraft=native119.MINECRAFT)
+                                minecraft=native1201.MINECRAFT)
             server.send("advharvest " + label)
             server.wait("ADVHARVEST COMPLETE " + label, 120)
             document = read_json(runtime / "advantage-works-results" / f"native-harvest-{label}.json")
@@ -55,7 +55,7 @@ def harvest(runtime, java, launcher, report, progress):
                     or document["worldTime"] < ready["completedWorldTime"]):
                 raise AssertionError("Harvest preceded native chunk/entity readiness")
             report[label] = {"observation": document, "readiness": ready}
-            require_checks(document, label, minecraft=native119.MINECRAFT)
+            require_checks(document, label, minecraft=native1201.MINECRAFT)
             require_isolation(document)
             server.send("save-all flush")
             server.wait("Saved the game", 30)
@@ -74,7 +74,7 @@ def main():
     parser.add_argument("--campaign", choices=("lifecycle", "harvest", "oil"), required=True)
     parser.add_argument("--mineralogy-jar", type=Path, help="Include the pinned Mineralogy build in the oil test")
     args = parser.parse_args()
-    target = native119.read_target(args.profile, args.seed, args.inventory, args.inventory_sha256)
+    target = native1201.read_target(args.profile, args.seed, args.inventory, args.inventory_sha256)
     if args.mineralogy_jar:
         jar = args.mineralogy_jar.resolve()
         if args.campaign != "oil" or jar.name != MINERALOGY["file"] or digest(jar) != MINERALOGY["sha256"]:
@@ -88,9 +88,9 @@ def main():
                Path(__file__).with_name(f"native117_{args.campaign}.py")]
     helper_hashes = {path.name: digest(path) for path in helpers}
     seed_hashes = fingerprint(target[0])
-    launcher = native119.stage(output, target, args.port)
-    path = output / f"native119-{args.campaign}-results.json"
-    report = dict(status="RUNNING", minecraft=native119.MINECRAFT, forge=native119.FORGE,
+    launcher = native1201.stage(output, target, args.port)
+    path = output / f"native1201-{args.campaign}-results.json"
+    report = dict(status="RUNNING", minecraft=native1201.MINECRAFT, forge=native1201.FORGE,
                   profileSha256=digest(args.profile), inventorySha256=digest(args.inventory),
                   javaSha256=digest(args.java17), helperSha256=helper_hashes)
 
@@ -116,7 +116,7 @@ def main():
             write_json(output / "lifecycle-fixture.json", definition)
             authorize_lifecycle(output)
             runner = LifecycleRun(output, args.java17, launcher, definition)
-            result = exercise(runner, "fresh119", progress)
+            result = exercise(runner, "fresh1201", progress)
         report.update(status=result["status"], observations=result)
     except Exception as error:
         report.update(status="FAIL", failure=repr(error), traceback=traceback.format_exc())
@@ -125,7 +125,7 @@ def main():
         try:
             if runner is not None:
                 runner.close()
-            native119.verify_runtime(output)
+            native1201.verify_runtime(output)
             report["seedUnchanged"] = fingerprint(target[0]) == seed_hashes
             report["helpersUnchanged"] = {path.name: digest(path) for path in helpers} == helper_hashes
             if not report["seedUnchanged"] or not report["helpersUnchanged"]:

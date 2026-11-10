@@ -3,7 +3,7 @@ package zone.moddev.mc.basepower.gui;
 import cyano.poweradvantage.api.fluid.FluidPoweredEntity;
 import cyano.poweradvantage.api.simple.SimpleMachineGUI;
 import zone.moddev.mc.basepower.math.Integer2D;
-import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
@@ -35,8 +35,6 @@ public class FluidTankGUI extends SimpleMachineGUI {
 						guiDisplayImage, guiContainer, x, y, z);
 			}
 		}
-		com.mojang.blaze3d.systems.RenderSystem.setShaderColor(1f, 1f, 1f, 1f); // reset tint
-		com.mojang.blaze3d.systems.RenderSystem.setShaderTexture(0, guiDisplayImage);
 		guiContainer.blit(x + 77, y + 6, 176, 0, 22, 66); // x, y, textureOffsetX, textureOffsetY, width, height)
 	}
 
@@ -51,10 +49,7 @@ public class FluidTankGUI extends SimpleMachineGUI {
 		final int h = (int) (barSlotHeight * barHeight);
 
 		FluidTankGUI.drawFluidFilledRectangle(guiContainer, fs, x + xPos, y + yPos + barSlotHeight - h, w, h, zLevel);
-		//guiContainer.drawModalRectWithCustomSizedTexture(x+xPos, y+yPos+barSlotHeight-h, 0, 0, w, h, 16, h);//h * texPerPixel); // x, y, u, v, width, height, textureWidth, textureHeight
-
-		com.mojang.blaze3d.systems.RenderSystem.setShaderTexture(0, displayImage);
-		guiContainer.blit(x + xPos - 3, y + yPos - 3, 176, 0, 22, 66); // x, y, textureOffsetX, textureOffsetY, width, height)
+		guiContainer.blit(displayImage, x + xPos - 3, y + yPos - 3, 176, 0, 22, 66);
 	}
 
 
@@ -71,7 +66,6 @@ public class FluidTankGUI extends SimpleMachineGUI {
 		if (stillTexture == null) return;
 		TextureAtlasSprite sprite = guiContainer.getMinecraft().getTextureAtlas(TextureAtlas.LOCATION_BLOCKS)
 				.apply(stillTexture);
-		com.mojang.blaze3d.systems.RenderSystem.setShaderTexture(0, TextureAtlas.LOCATION_BLOCKS);
 		int color = rendering.getTintColor(fluidStack);
 		if (fs.getFluid().isSame(net.minecraft.world.level.material.Fluids.WATER)) {
 			color = guiContainer.getMinecraft().level != null && guiContainer.getMinecraft().player != null
@@ -80,9 +74,12 @@ public class FluidTankGUI extends SimpleMachineGUI {
 		float red = ((color >>> 16) & 255) / 255F;
 		float green = ((color >>> 8) & 255) / 255F;
 		float blue = (color & 255) / 255F;
+		guiContainer.getGraphics().flush();
+		var pose = guiContainer.getMatrices().last().pose();
+		RenderSystem.setShaderTexture(0, sprite.atlasLocation());
 		Tesselator tessellator = Tesselator.getInstance();
 		BufferBuilder vertexbuffer = tessellator.getBuilder();
-		com.mojang.blaze3d.systems.RenderSystem.setShader(net.minecraft.client.renderer.GameRenderer::getPositionTexColorShader);
+		RenderSystem.setShader(net.minecraft.client.renderer.GameRenderer::getPositionTexColorShader);
 		vertexbuffer.begin(com.mojang.blaze3d.vertex.VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
 		for (int dy = 0; dy < height; dy += 16) {
 			int tileHeight = Math.min(16, height - dy);
@@ -90,10 +87,10 @@ public class FluidTankGUI extends SimpleMachineGUI {
 				int tileWidth = Math.min(16, width - dx);
 				float u0 = sprite.getU0(), u1 = sprite.getU(tileWidth);
 				float v0 = sprite.getV0(), v1 = sprite.getV(tileHeight);
-				vertexbuffer.vertex(x + dx, y + dy + tileHeight, zLevel).uv(u0, v1).color(red, green, blue, 1F).endVertex();
-				vertexbuffer.vertex(x + dx + tileWidth, y + dy + tileHeight, zLevel).uv(u1, v1).color(red, green, blue, 1F).endVertex();
-				vertexbuffer.vertex(x + dx + tileWidth, y + dy, zLevel).uv(u1, v0).color(red, green, blue, 1F).endVertex();
-				vertexbuffer.vertex(x + dx, y + dy, zLevel).uv(u0, v0).color(red, green, blue, 1F).endVertex();
+				vertexbuffer.vertex(pose, x + dx, y + dy + tileHeight, zLevel).uv(u0, v1).color(red, green, blue, 1F).endVertex();
+				vertexbuffer.vertex(pose, x + dx + tileWidth, y + dy + tileHeight, zLevel).uv(u1, v1).color(red, green, blue, 1F).endVertex();
+				vertexbuffer.vertex(pose, x + dx + tileWidth, y + dy, zLevel).uv(u1, v0).color(red, green, blue, 1F).endVertex();
+				vertexbuffer.vertex(pose, x + dx, y + dy, zLevel).uv(u0, v0).color(red, green, blue, 1F).endVertex();
 			}
 		}
 		tessellator.end();

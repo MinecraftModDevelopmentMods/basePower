@@ -1,6 +1,7 @@
 package cyano.poweradvantage.api;
 
-import net.minecraft.world.level.material.Material;
+import net.minecraft.world.level.material.MapColor;
+import net.minecraft.world.level.material.PushReaction;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockState;
@@ -37,17 +38,10 @@ import zone.moddev.mc.basepower.util.FluidContainerHelper;
  */
 public abstract class GUIBlock extends net.minecraft.world.level.block.BaseEntityBlock{
 
-	/**
-	 * Constructor for GUI block
-	 * @param m Material for the block (determines what tools can break it and how it interacts with 
-	 * other Minecraft rules).
-	 */
-	public GUIBlock(Material m) {
-		this(m, 1.0F);
-	}
-
-	public GUIBlock(Material m, float hardness) {
-		this(Block.Properties.of(m).strength(hardness).noOcclusion().dynamicShape());
+	/** Defaults for machine blocks formerly made from the piston material. */
+	public static Block.Properties machineProperties(float hardness) {
+		return Block.Properties.of().mapColor(MapColor.STONE).pushReaction(PushReaction.BLOCK)
+				.forceSolidOn().strength(hardness).noOcclusion().dynamicShape();
 	}
 
 	protected GUIBlock(Block.Properties properties) {

@@ -2,7 +2,6 @@ package cyano.poweradvantage.api.modsupport.rf;
 
 import cyano.poweradvantage.api.ConduitType;
 import cyano.poweradvantage.api.simple.BlockSimplePowerMachine;
-import net.minecraft.world.level.material.Material;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.core.BlockPos;
@@ -12,9 +11,9 @@ import net.minecraft.world.level.Level;
 public class BlockRFConverter extends BlockSimplePowerMachine {
     private final Class<? extends TileEntityRFConverter> tileEntityClass;
 
-    public BlockRFConverter(Material material, float hardness, ConduitType type,
+    public BlockRFConverter(Properties properties, ConduitType type,
             Class<? extends TileEntityRFConverter> tileEntityClass) {
-        super(material, hardness, type);
+        super(properties, type);
         this.tileEntityClass = tileEntityClass;
     }
 

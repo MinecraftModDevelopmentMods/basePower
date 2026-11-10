@@ -27,6 +27,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.inventory.CraftingContainer;
+import net.minecraft.world.inventory.TransientCraftingContainer;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Recipe;
@@ -42,6 +43,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.storage.loot.LootContext;
+import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraftforge.event.RegisterCommandsEvent;
@@ -99,22 +101,23 @@ final class ProgressionProbe {
             if (item != null) acquire(known, player, new ItemStack(item), "natural_resource", Collections.emptyList());
         }
         JsonArray loot = new JsonArray();
-        var overriddenTable = server.getLootTables().get(new ResourceLocation("minecraft:chests/simple_dungeon"));
+        var overriddenTable = server.getLootData().getLootTable(new ResourceLocation("minecraft:chests/simple_dungeon"));
+        LootParams chest = chestParams(world);
         for (int seed = 0; seed < 8; seed++) {
             List<ItemStack> raw = new ArrayList<>();
-            overriddenTable.getRandomItemsRaw(chestContext(world, seed), raw::add);
+            overriddenTable.getRandomItemsRaw(new LootContext.Builder(chest).withOptionalRandomSeed(seed + 1L).create(null), raw::add);
             require(raw.size() == 1 && id(raw.get(0)).equals("minecraft:dirt")
                     && raw.get(0).getCount() == 1, "Player loot data-pack override was changed");
             // Base Metals has its own Forge global modifier. It may add loot after the table runs.
-            List<ItemStack> gameplay = overriddenTable.getRandomItems(chestContext(world, seed));
+            List<ItemStack> gameplay = overriddenTable.getRandomItems(chest, seed + 1L);
             require(gameplay.stream().filter(stack -> id(stack).equals("minecraft:dirt")).mapToInt(ItemStack::getCount).sum() == 1
                     && gameplay.stream().noneMatch(ProgressionProbe::advantage),
                     "The live loot pipeline changed the override's contents or added Advantage parts");
         }
         if (PowerAdvantage.recipeMode == RecipeMode.APOCALYPTIC) {
             for (int i = 0; i < 4096; i++) {
-                for (ItemStack stack : server.getLootTables().get(
-                        new ResourceLocation("minecraft:chests/abandoned_mineshaft")).getRandomItems(chestContext(world, i))) {
+                for (ItemStack stack : server.getLootData().getLootTable(
+                        new ResourceLocation("minecraft:chests/abandoned_mineshaft")).getRandomItems(chest, i + 1L)) {
                     if (advantage(stack)) {
                         if (acquire(known, player, stack, "vanilla_chest_loot", Collections.emptyList())) loot.add(id(stack));
                     }
@@ -160,7 +163,7 @@ final class ProgressionProbe {
                     };
                     for (int width = 1; width <= 3 && result.isEmpty(); width++) {
                         if (ingredients.size() > width * 3) continue;
-                        CraftingContainer grid = new CraftingContainer(container, 3, 3);
+                        CraftingContainer grid = new TransientCraftingContainer(container, 3, 3);
                         for (int i = 0; i < ingredients.size(); i++) grid.setItem((i / width) * 3 + i % width, ingredients.get(i));
                         result = matchedResult(recipe, grid, world);
                     }
@@ -264,8 +267,8 @@ final class ProgressionProbe {
         return item == null ? ItemStack.EMPTY : new ItemStack(item);
     }
 
-    private static LootContext chestContext(ServerLevel world, int seed) {
-        return new LootContext.Builder(world).withRandom(net.minecraft.util.RandomSource.create(seed))
+    private static LootParams chestParams(ServerLevel world) {
+        return new LootParams.Builder(world)
                 .withParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.ORIGIN, new net.minecraft.world.phys.Vec3(0, 80, 0))
                 .create(net.minecraft.world.level.storage.loot.parameters.LootContextParamSets.CHEST);
     }

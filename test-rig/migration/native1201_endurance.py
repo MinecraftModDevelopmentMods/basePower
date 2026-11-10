@@ -1,4 +1,4 @@
-"""Run the measured Works feed, conservation and cold-restart protocol on 1.19.4."""
+"""Run the measured Works feed, conservation and cold-restart protocol on 1.20.1."""
 
 import argparse
 from collections import Counter
@@ -11,11 +11,11 @@ from matrix import WORLD, compare, digest, fingerprint, write_json
 from native117 import native_normalized, output_path, require_disjoint
 from native117_broad import read_json
 from native117_endurance import NativeEnduranceRig, configure_new_fresh_fixture, prove_fresh_fixture_before_build
-import native119
+import native1201
 
 
 class Rig(NativeEnduranceRig):
-    server_type = native119.Server
+    server_type = native1201.Server
 
 
 def main():
@@ -29,32 +29,32 @@ def main():
     args = parser.parse_args()
     endurance.require(args.seconds >= 60 and args.seconds % 60 == 0, "Use whole one-minute batches")
     root = output_path(args.output)
-    target = native119.read_target(args.profile, args.seed, args.inventory, args.inventory_sha256)
+    target = native1201.read_target(args.profile, args.seed, args.inventory, args.inventory_sha256)
     for protected in (args.profile, args.seed, args.inventory, *(item["path"] for item in target[2].values())):
         require_disjoint(root, protected)
     source_before = None
     if args.retained:
         require_disjoint(root, args.retained)
-        prior = read_json(args.retained / "native119-legacy-world-results.json")
+        prior = read_json(args.retained / "native1201-legacy-world-results.json")
         if (prior["status"] != "PASS" or prior["profileSha256"] != digest(args.profile)
                 or prior["inventorySha256"] != digest(args.inventory)
                 or digest(args.retained / "migration-restarted.json") != prior["phases"]["restarted"]["snapshotSha256"]):
             raise AssertionError("Retained input does not match the passing pinned migration")
         source_before = fingerprint(args.retained / WORLD)
-    spec = native119.RIG / "src/main/resources/assets/advantageworkstest/works/works-1.13.2.json"
+    spec = native1201.RIG / "src/main/resources/assets/advantageworkstest/works/works-1.13.2.json"
     definitions = {row["id"]: row for row in read_json(spec)["stations"]}
-    report = dict(status="RUNNING", minecraft=native119.MINECRAFT, duration_seconds=args.seconds,
+    report = dict(status="RUNNING", minecraft=native1201.MINECRAFT, duration_seconds=args.seconds,
                   interval_seconds=60, profileSha256=digest(args.profile), inventorySha256=digest(args.inventory),
                   stationDefinitionSha256=digest(spec), active_stations=endurance.ACTIVE,
                   checked_stations=endurance.CHECKED, profiles={}, retained=str(args.retained) if args.retained else None)
-    receipt = root / "native119-endurance-results.json"
+    receipt = root / "native1201-endurance-results.json"
     write_json(receipt, report)
     rigs = []
     try:
-        cases = (("fresh119", None), ("retained-upgrade-native119", args.retained)) if args.retained else (("fresh119", None),)
+        cases = (("fresh1201", None), ("retained-upgrade-native1201", args.retained)) if args.retained else (("fresh1201", None),)
         for index, (name, source) in enumerate(cases):
             runtime = root / name
-            launcher = native119.stage(runtime, target, args.port + index)
+            launcher = native1201.stage(runtime, target, args.port + index)
             rig = Rig(name, runtime, args.java17, launcher, definitions)
             rigs.append(rig)
             if source:
@@ -134,7 +134,7 @@ def main():
         for rig in rigs:
             try:
                 rig.shutdown()
-                native119.verify_runtime(rig.runtime)
+                native1201.verify_runtime(rig.runtime)
             except Exception as error:
                 report.update(status="FAIL", shutdown_or_audit_error=repr(error))
         if args.retained:

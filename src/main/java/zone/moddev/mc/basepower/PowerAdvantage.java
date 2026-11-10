@@ -42,7 +42,7 @@ import zone.moddev.mc.basepower.migration.BaseMetalsLegacyMigration;
 public final class PowerAdvantage {
     public static final String MODID = "basepower";
     public static final String NAME = "basePower";
-    public static final String VERSION = "2.4.11.119041";
+    public static final String VERSION = "2.4.12.120011";
     public static final Logger LOGGER = LogManager.getLogger(MODID);
 
     private static PowerAdvantage instance;
@@ -85,6 +85,7 @@ public final class PowerAdvantage {
                 zone.moddev.mc.basepower.recipe.MaterialTags::registerPack);
 
         Fluids.init();
+        ItemGroups.register(FMLJavaModLoadingContext.get().getModEventBus());
 
         migrateLegacyOreSpawnConfiguration();
         migrateLegacyConfiguration();

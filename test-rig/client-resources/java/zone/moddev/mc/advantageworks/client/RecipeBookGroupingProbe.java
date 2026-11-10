@@ -54,15 +54,15 @@ final class RecipeBookGroupingProbe {
             net.minecraft.nbt.CompoundTag saved;
             try (java.io.InputStream input = Files.newInputStream(root.resolve("server-registries.dat"))) {
                 net.minecraft.nbt.CompoundTag level = net.minecraft.nbt.NbtIo.readCompressed(input);
-                require("1.19.4".equals(level.getCompound("Data").getCompound("Version").getString("Name")),
-                        "Recipe fixture is not a native 1.19.4 server export");
+                require("1.20.1".equals(level.getCompound("Data").getCompound("Version").getString("Name")),
+                        "Recipe fixture is not a native 1.20.1 server export");
                 net.minecraft.nbt.ListTag mods = level.getCompound("fml").getList("LoadingModList", 10);
                 boolean nativeForge = false;
                 for (int i = 0; i < mods.size(); i++) {
                     net.minecraft.nbt.CompoundTag mod = mods.getCompound(i);
-                    if ("forge".equals(mod.getString("ModId"))) nativeForge = "45.4.0".equals(mod.getString("ModVersion"));
+                    if ("forge".equals(mod.getString("ModId"))) nativeForge = "47.4.10".equals(mod.getString("ModVersion"));
                 }
-                require(nativeForge, "Recipe fixture was not saved by Forge 45.4.0");
+                require(nativeForge, "Recipe fixture was not saved by Forge 47.4.10");
                 saved = level.getCompound("fml").getCompound("Registries");
             }
             String itemRegistry = net.minecraftforge.registries.ForgeRegistries.ITEMS.getRegistryName().toString();
@@ -149,6 +149,7 @@ final class RecipeBookGroupingProbe {
             RenderSystem.clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, Minecraft.ON_OSX);
             net.minecraft.world.inventory.CraftingMenu menu = new net.minecraft.world.inventory.CraftingMenu(0, new net.minecraft.world.entity.player.Inventory(null));
             require(menu.getRecipeBookType() == net.minecraft.world.inventory.RecipeBookType.CRAFTING, "Wrong native crafting menu type");
+            var graphics = new net.minecraft.client.gui.GuiGraphics(minecraft, minecraft.renderBuffers().bufferSource());
             for (int i = 0; i < shown.size(); i++) {
                 int x = 10 + (i % 5) * 198, y = 12 + (i / 5) * 55;
                 RecipeButton button = new RecipeButton();
@@ -163,9 +164,10 @@ final class RecipeBookGroupingProbe {
                     }
                 }
                 button.setPosition(x, y);
-                button.render(new com.mojang.blaze3d.vertex.PoseStack(), -1, -1, 1F);
-                minecraft.font.draw(new com.mojang.blaze3d.vertex.PoseStack(), shown.get(i).getRecipes().get(0).getResultItem(net.minecraft.core.RegistryAccess.EMPTY).getDisplayName().getString(), x + 30, y + 8, 0xFFFFFF);
+                button.render(graphics, -1, -1, 1F);
+                graphics.drawString(minecraft.font, shown.get(i).getRecipes().get(0).getResultItem(net.minecraft.core.RegistryAccess.EMPTY).getDisplayName(), x + 30, y + 8, 0xFFFFFF, false);
             }
+            graphics.flush();
             ByteBuffer pixels = ByteBuffer.allocateDirect(width * height * 4);
             RenderSystem.readPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
             BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);

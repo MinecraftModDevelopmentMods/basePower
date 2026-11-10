@@ -4,7 +4,6 @@ import cyano.poweradvantage.api.GUIBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.SoundType;
-import net.minecraft.world.level.material.Material;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
@@ -23,10 +22,9 @@ public class BlockConveyorFilter extends GUIBlock {
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
     private final Class<? extends TileEntityConveyor> tileEntityClass;
 
-    public BlockConveyorFilter(Material material, float hardness,
+    public BlockConveyorFilter(float hardness,
             Class<? extends TileEntityConveyor> tileEntityClass) {
-        super(Block.Properties.of(material).strength(hardness)
-                .sound(SoundType.METAL).noOcclusion().dynamicShape());
+        super(machineProperties(hardness).sound(SoundType.METAL));
         this.tileEntityClass = tileEntityClass;
         registerDefaultState(getStateDefinition().any().setValue(FACING, Direction.NORTH));
     }

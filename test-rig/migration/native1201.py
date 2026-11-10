@@ -1,9 +1,10 @@
-"""Run the 1.19.4 destination with exact, disposable server inputs."""
+"""Run the 1.20.1 destination with exact, disposable server inputs."""
 
 import argparse
 import json
 import os
 import re
+import tomllib
 from pathlib import Path
 
 from matrix import digest, stage as stage_server, write_json
@@ -11,15 +12,15 @@ from native117 import jar_identity, require_disjoint, runtime_error_lines
 from native117_code import NativeLaunch, code_files
 
 
-MINECRAFT = "1.19.4"
-FORGE = "45.4.0"
+MINECRAFT = "1.20.1"
+FORGE = "47.4.10"
 FORGE_VERSION = f"{MINECRAFT}-{FORGE}"
-MCP = "20230314.122934"
+MCP = "20230612.114412"
 RIG = Path(__file__).resolve().parents[1]
 LAUNCHER = f"libraries/net/minecraftforge/forge/{FORGE_VERSION}/" + (
     "win_args.txt" if os.name == "nt" else "unix_args.txt")
-INVENTORY = "native119-code-inventory.json"
-FML_DEFAULTS = RIG / "migration/fixtures/native119/fml.toml"
+INVENTORY = "native1201-code-inventory.json"
+FML_DEFAULTS = RIG / "migration/fixtures/native1201/fml.toml"
 NETTY_PROBES = {
     "direct buffer constructor: unavailable": "java.lang.UnsupportedOperationException: Reflective setAccessible(true) disabled",
     "jdk.internal.misc.Unsafe.allocateUninitializedArray(int): unavailable": (
@@ -59,7 +60,7 @@ def require_boot_identity(path):
     for marker in (f"Starting minecraft server version {MINECRAFT}",
                    f"Forge mod loading, version {FORGE}, for MC {MINECRAFT} with MCP {MCP}", "Done ("):
         if marker not in text:
-            raise AssertionError("Missing native 1.19.4 startup witness: " + marker)
+            raise AssertionError("Missing native 1.20.1 startup witness: " + marker)
 
 
 def require_native_boot(path):
@@ -69,7 +70,7 @@ def require_native_boot(path):
 
 def seal(seed, receipt):
     if receipt.exists() or not (seed / LAUNCHER).is_file():
-        raise ValueError("Supply an installed 1.19.4 server and a new inventory path")
+        raise ValueError("Supply an installed 1.20.1 server and a new inventory path")
     require_disjoint(receipt, seed)
     write_json(receipt, {"forge": FORGE_VERSION, "files": code_files(seed)})
 
@@ -80,7 +81,7 @@ def read_target(profile, seed, inventory, inventory_hash):
     if (data.get("minecraftVersion") != MINECRAFT or data.get("forge", {}).get("version") != FORGE_VERSION
             or data.get("mode") != "packaged" or data.get("portStatus") != "PORTED_UNQUALIFIED"
             or data.get("qualificationStatus") != "UNQUALIFIED"):
-        raise ValueError("Use a pinned, unqualified Forge 45.4.0 destination profile")
+        raise ValueError("Use a pinned, unqualified Forge 47.4.10 destination profile")
     if digest(inventory) != inventory_hash.upper():
         raise AssertionError("Forge server inventory hash changed")
     code = json.loads(inventory.read_text(encoding="utf-8"))
@@ -90,10 +91,10 @@ def read_target(profile, seed, inventory, inventory_hash):
     for mod in data["mods"]:
         jar = (RIG / mod["path"]).resolve()
         identity = mod["id"]
-        if (identity in entries or not mod["version"].endswith(".119041")
+        if (identity in entries or not mod["version"].endswith(".120011")
                 or mod["file"] != jar.name or "deobf" in jar.name
                 or not re.fullmatch("[A-Fa-f0-9]{64}", mod["sha256"])):
-            raise ValueError(f"Invalid packaged 1.19.4 mod pin: {identity}")
+            raise ValueError(f"Invalid packaged 1.20.1 mod pin: {identity}")
         if digest(jar) != mod["sha256"].upper():
             raise AssertionError(f"Pinned mod changed: {jar}")
         jar_identity(jar, identity, mod["version"])
@@ -140,15 +141,37 @@ def verify_runtime(runtime):
 
 
 def prepare_fml_defaults(runtime):
-    # Avoid Forge's first-write/file-watcher race without touching imported settings.
+    # Avoid Forge's first-write race and keep external update services out of the test.
     config = runtime / "config/fml.toml"
     config.parent.mkdir(exist_ok=True)
     try:
         with config.open("xb") as output:
             output.write(FML_DEFAULTS.read_bytes())
     except FileExistsError:
+        original = config.read_bytes()
+        text = original.decode("utf-8")
+        settings = tomllib.loads(text)
+        if settings.get("versionCheck") is False:
+            return
+        if "versionCheck" in settings:
+            updated, count = re.subn(r"(?m)^([ \t]*versionCheck[ \t]*=[ \t]*)true(?=[ \t]*(?:#|\r?$))",
+                                     r"\g<1>false", text, count=1)
+            if count != 1:
+                raise ValueError("Cannot isolate the update check in the copied Forge configuration")
+        else:
+            updated = "versionCheck = false\n" + text
+        if tomllib.loads(updated) != dict(settings, versionCheck=False):
+            raise AssertionError("A setting other than the external Forge update check would change")
+        backup = runtime / "fml-pre-qualification.toml"
+        with backup.open("xb") as output:
+            output.write(original)
+        config.write_bytes(updated.encode("utf-8"))
+        write_json(runtime / "native1201-fml-defaults.json",
+                   {"sha256": digest(config), "originalSha256": digest(backup), "forge": FORGE_VERSION,
+                    "versionCheck": False})
         return
-    write_json(runtime / "native119-fml-defaults.json", {"sha256": digest(FML_DEFAULTS), "forge": FORGE_VERSION})
+    write_json(runtime / "native1201-fml-defaults.json",
+               {"sha256": digest(FML_DEFAULTS), "forge": FORGE_VERSION, "versionCheck": False})
 
 
 class Server(NativeLaunch):
@@ -175,7 +198,7 @@ class Server(NativeLaunch):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Seal a Forge 45.4.0 test server's executable inputs.")
+    parser = argparse.ArgumentParser(description="Seal a Forge 47.4.10 test server's executable inputs.")
     parser.add_argument("--seed", type=Path, required=True)
     parser.add_argument("--inventory", type=Path, required=True)
     args = parser.parse_args()

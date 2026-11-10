@@ -1,4 +1,4 @@
-"""Replay every station checkpoint from a completed 1.19.4 endurance run."""
+"""Replay every station checkpoint from a completed 1.20.1 endurance run."""
 
 import argparse
 from collections import Counter
@@ -10,14 +10,14 @@ import endurance
 from matrix import digest, write_json
 from native117 import require_disjoint
 from native117_broad import read_json
-import native119
+import native1201
 
 
 def replay(run, profile, specification):
-    report = read_json(run / "native119-endurance-results.json")
-    modes = ("fresh119", "retained-upgrade-native119")
+    report = read_json(run / "native1201-endurance-results.json")
+    modes = ("fresh1201", "retained-upgrade-native1201")
     require = endurance.require
-    require(report["status"] == "PASS" and report["minecraft"] == native119.MINECRAFT
+    require(report["status"] == "PASS" and report["minecraft"] == native1201.MINECRAFT
             and report["duration_seconds"] == 1800 and report["interval_seconds"] == 60
             and report["retained_unchanged"] is True and set(report["profiles"]) == set(modes),
             "Expected a complete fresh and migrated 30-minute run")
@@ -42,16 +42,16 @@ def replay(run, profile, specification):
     for mode in modes:
         runtime = run / mode
         station_path = runtime / "advantage-works-results"
-        native119.verify_runtime(runtime)
+        native1201.verify_runtime(runtime)
         require({jar.name: digest(jar) for jar in (runtime / "mods").glob("*.jar")} == expected_jars,
                 mode + ": staged artifacts differ from the approved profile")
         for boot in ("endurance", "endurance-restart"):
-            native119.require_native_boot(runtime / f"console-{boot}.log")
+            native1201.require_native_boot(runtime / f"console-{boot}.log")
         rig = endurance.Rig(mode, runtime, None, None, definitions)
 
         def snapshot(station, label):
             document = read_json(station_path / f"{station}-checkpoint-{label}.json")
-            require(document["minecraft"] == native119.MINECRAFT and document["forge"] == native119.FORGE
+            require(document["minecraft"] == native1201.MINECRAFT and document["forge"] == native1201.FORGE
                     and all(document["mods"].get(key) == value for key, value in mod_versions.items()),
                     mode + ": checkpoint runtime differs from profile")
             return document
@@ -91,7 +91,7 @@ def replay(run, profile, specification):
         results[mode] = dict(checkpoints=len(ledger), stationSnapshots=len(ledger) * len(endurance.CHECKED),
                              setupToEndTicks=ticks, sampledTicks=sampled_ticks, sampledSeconds=sampled_seconds,
                              sampledTicksPerSecond=sampled_ticks / sampled_seconds, outputs=dict(totals))
-    return dict(status="PASS", inputReceiptSha256=digest(run / "native119-endurance-results.json"), profiles=results)
+    return dict(status="PASS", inputReceiptSha256=digest(run / "native1201-endurance-results.json"), profiles=results)
 
 
 def main():

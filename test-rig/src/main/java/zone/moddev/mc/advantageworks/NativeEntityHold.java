@@ -10,7 +10,7 @@ final class NativeEntityHold {
     private final Map<Entity, State> held = new IdentityHashMap<>();
 
     void hold(Entity entity) {
-        if (!(entity.level instanceof ServerLevel)) throw new AssertionError("Entity hold requires a native server world");
+        if (!(entity.level() instanceof ServerLevel)) throw new AssertionError("Entity hold requires a native server world");
         if (!held.containsKey(entity)) {
             State state = new State(entity);
             held.put(entity, state);
@@ -35,7 +35,7 @@ final class NativeEntityHold {
 
         State(Entity entity) {
             ticks = entity.tickCount;
-            gate = NativeEntityTickGate.of((ServerLevel) entity.level);
+            gate = NativeEntityTickGate.of((ServerLevel) entity.level());
         }
     }
 }

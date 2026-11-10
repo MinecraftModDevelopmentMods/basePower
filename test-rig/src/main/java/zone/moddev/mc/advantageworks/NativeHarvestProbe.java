@@ -218,7 +218,7 @@ final class NativeHarvestProbe {
         harvestDrops(world, new AABB(POS).inflate(2)).forEach(ItemEntity::discard);
         JsonObject report = new JsonObject();
         report.addProperty("label", label);
-        report.addProperty("minecraft", "1.19.4");
+        report.addProperty("minecraft", "1.20.1");
         report.addProperty("worldTime", world.getGameTime());
         report.addProperty("fixtureIsolation", "native117-live-drops-v1");
         report.addProperty("status", java.util.stream.StreamSupport.stream(rows.spliterator(), false)

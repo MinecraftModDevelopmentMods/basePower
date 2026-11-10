@@ -61,7 +61,7 @@ public final class MachineGUIRegistry {
     private static SimpleMachineGUI.Container createClientContainer(
             int windowId, Inventory inventory, FriendlyByteBuf data) {
         BlockPos pos = data.readBlockPos();
-        Level world = inventory.player.level;
+        Level world = inventory.player.level();
         BlockEntity tile = world.getBlockEntity(pos);
         Block block = world.getBlockState(pos).getBlock();
         if (!(block instanceof GUIBlock) || !(tile instanceof Container)) {
@@ -87,7 +87,7 @@ public final class MachineGUIRegistry {
 
     public static void open(ServerPlayer player, Level world, BlockPos pos, int id) {
         BlockEntity tile = world.getBlockEntity(pos);
-        if (world.isClientSide || player.level != world || !(tile instanceof Container)) return;
+        if (world.isClientSide || player.level() != world || !(tile instanceof Container)) return;
         SimpleMachineGUI gui = definition(id);
         NetworkHooks.openScreen(player, new MenuProvider() {
             @Override public AbstractContainerMenu createMenu(int windowId, Inventory inventory, Player owner) {

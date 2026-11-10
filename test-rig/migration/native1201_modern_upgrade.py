@@ -1,4 +1,4 @@
-"""Load and operate a stopped, already-qualified 1.18.2 save on 1.19.4."""
+"""Load and operate a stopped, already-qualified 1.19.4 save on 1.20.1."""
 
 import argparse
 from pathlib import Path
@@ -8,9 +8,9 @@ from matrix import WORLD, compare, digest, fingerprint, parse_nbt, write_json
 from native117 import native_normalized, output_path, require_disjoint
 from native117_legacy_world import turbine
 from native117_lifecycle import read_json
-import native119
-from native119_legacy_world import operate
-import native119_saved
+import native1201
+from native1201_legacy_world import operate
+import native1201_saved
 
 
 def main():
@@ -22,9 +22,9 @@ def main():
     parser.add_argument("--port", type=int, required=True)
     args = parser.parse_args()
     source = args.source.resolve()
-    prior = source / "native118-legacy-world-results.json"
+    prior = source / "native119-legacy-world-results.json"
     if digest(prior) != args.receipt_sha256.upper():
-        raise AssertionError("The protected 1.18.2 receipt changed")
+        raise AssertionError("The protected 1.19.4 receipt changed")
     receipt = read_json(prior)
     if receipt["status"] != "PASS" or not receipt["sourceUnchanged"]:
         raise AssertionError("Source lacks a passing independent migration receipt")
@@ -41,25 +41,25 @@ def main():
     before = fingerprint(source)
     positions = {row["name"]: [row["x"], row["y"], row["z"]]
                  for row in read_json(source / "migration-fixture.json")}
-    target = native119.read_target(args.profile, args.seed, args.inventory, args.inventory_sha256)
+    target = native1201.read_target(args.profile, args.seed, args.inventory, args.inventory_sha256)
     output = output_path(args.output)
     for path in (source, args.profile, args.seed, args.inventory,
                  *(item["path"] for item in target[2].values())):
         require_disjoint(output, path)
-    launcher = native119.stage(output, target, args.port)
+    launcher = native1201.stage(output, target, args.port)
     for path in (WORLD, "config"):
         shutil.copytree(source / path, output / path)
     if fingerprint(source / WORLD) != fingerprint(output / WORLD):
-        raise AssertionError("The staged 1.18.2 save differs from the source")
+        raise AssertionError("The staged 1.19.4 save differs from the source")
     shutil.copy2(source / "migration-fixture.json", output / "migration-fixture.json")
     (output / "advantage-migration.allow").touch()
-    result = dict(status="RUNNING", minecraft=native119.MINECRAFT, forge=native119.FORGE,
+    result = dict(status="RUNNING", minecraft=native1201.MINECRAFT, forge=native1201.FORGE,
                   source=str(source), sourceReceiptSha256=digest(prior), sourceFingerprint=before,
                   profileSha256=digest(args.profile), inventorySha256=digest(args.inventory), phases={})
-    result_path = output / "native119-modern-upgrade-results.json"
+    result_path = output / "native1201-modern-upgrade-results.json"
     try:
         for label in ("converted", "restarted"):
-            server = native119.Server(output, args.java17, launcher, label)
+            server = native1201.Server(output, args.java17, launcher, label)
             try:
                 server.snapshot(label)
                 server.send("save-all flush")
@@ -70,12 +70,12 @@ def main():
             comparison = compare(historical, snapshot, native_normalized)
             result["phases"][label] = comparison
             if comparison["status"] != "PASS":
-                raise AssertionError("The native 1.18.2 witnesses changed in " + label)
-            saved = native119_saved.capture(output, label, read_json(snapshot))
+                raise AssertionError("The native 1.19.4 witnesses changed in " + label)
+            saved = native1201_saved.capture(output, label, read_json(snapshot))
             observed = turbine(output / WORLD, positions["hydroGenerator"],
-                               data_version=native119_saved.DATA_VERSION)
+                               data_version=native1201_saved.DATA_VERSION)
             if observed != phase["turbine"]:
-                raise AssertionError("The saved 1.18.2 turbine changed")
+                raise AssertionError("The saved 1.19.4 turbine changed")
             result["phases"][label].update(serialized=saved, turbine=observed,
                                            snapshotSha256=digest(snapshot))
             write_json(result_path, result)

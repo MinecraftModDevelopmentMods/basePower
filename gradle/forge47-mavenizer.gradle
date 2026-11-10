@@ -1,0 +1,27 @@
+import java.security.MessageDigest
+import org.gradle.jvm.toolchain.JvmVendorSpec
+
+// OreSpawn's audited Forge 47 fixture fixes decompiled record accessors.
+def tool = 'ci-fixtures/tools/minecraft-mavenizer-0.5.21-orespawn-compat.jar'
+def defaultJar = project.extensions.extraProperties.has('forge47MavenizerDefault')
+        ? project.forge47MavenizerDefault
+        : "../../../MinecraftMineralogy/OS1201/OreSpawn/${tool}"
+def fixture = file(providers.gradleProperty('forge47MavenizerJar').getOrElse(defaultJar))
+def expected = '416DCA4797BC55826F0DDCF03FDC405F1990FC15C2133FA27A1F143BF7976177'
+if (!fixture.isFile()) {
+    throw new GradleException("Forge 47 requires OreSpawn's Mavenizer fixture: ${fixture}. "
+            + "Use -Pforge47MavenizerJar=<path to ${tool}> for another checkout layout.")
+}
+def actual = MessageDigest.getInstance('SHA-256').digest(fixture.bytes).encodeHex().toString().toUpperCase(Locale.ROOT)
+if (actual != expected) {
+    throw new GradleException("Forge 47 Mavenizer fixture SHA-256 mismatch: expected ${expected}, got ${actual}")
+}
+
+fgtools.configure('mavenizer') {
+    classpath.from(fixture)
+    mainClass.set('net.minecraftforge.mcmaven.cli.Main')
+    javaLauncher.set(javaToolchains.launcherFor {
+        languageVersion = JavaLanguageVersion.of(25)
+        vendor = JvmVendorSpec.ADOPTIUM
+    })
+}

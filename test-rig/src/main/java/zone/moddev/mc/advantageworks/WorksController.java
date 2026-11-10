@@ -82,7 +82,7 @@ final class WorksController {
 
     synchronized void loadDefinition() {
         if (definition != null) return;
-        definition = WorksDefinitionLoader.loadNative119();
+        definition = WorksDefinitionLoader.loadNative1201();
         for (WorksDefinition.Station station : definition.stations) {
             stations.put(station.id.toUpperCase(Locale.ROOT), station);
             statuses.put(station.id, "NOT_BUILT");
@@ -825,8 +825,9 @@ final class WorksController {
         SignBlockEntity sign = (SignBlockEntity) tile;
         net.minecraft.network.chat.MutableComponent clickable = Component.literal(label);
         clickable.setStyle(Style.EMPTY.withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, command)));
-        sign.setMessage(0, clickable);
-        sign.setMessage(1, Component.literal("right-click"));
+        sign.setText(sign.getFrontText().setMessage(0, clickable)
+                .setMessage(1, Component.literal("right-click")), true);
+        sign.setWaxed(true);
         sign.setChanged();
     }
 
@@ -835,9 +836,9 @@ final class WorksController {
         BlockEntity tile = world.getBlockEntity(pos);
         if (!(tile instanceof SignBlockEntity)) return;
         SignBlockEntity sign = (SignBlockEntity) tile;
-        for (int i = 0; i < 4; i++) {
-            sign.setMessage(i, Component.literal(i < lines.length ? trimSign(lines[i]) : ""));
-        }
+        var text = sign.getFrontText();
+        for (int i = 0; i < 4; i++) text = text.setMessage(i, Component.literal(i < lines.length ? trimSign(lines[i]) : ""));
+        sign.setText(text, true);
         sign.setChanged();
     }
 

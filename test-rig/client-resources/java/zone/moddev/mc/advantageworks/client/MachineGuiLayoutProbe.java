@@ -3,7 +3,6 @@ package zone.moddev.mc.advantageworks.client;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.systems.RenderSystem;
 import cyano.poweradvantage.api.GUIBlock;
 import cyano.poweradvantage.api.PoweredEntity;
@@ -25,6 +24,9 @@ import java.util.Map;
 import javax.imageio.ImageIO;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.Font;
+import net.minecraft.world.inventory.tooltip.TooltipComponent;
 import net.minecraft.client.player.LocalPlayer;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -36,6 +38,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraftforge.registries.ForgeRegistries;
 import zone.moddev.mc.basepower.registry.MachineGUIRegistry;
+import org.joml.Vector3f;
 
 /** Renders every registered machine screen, not just its detached decorations. */
 final class MachineGuiLayoutProbe {
@@ -106,7 +109,9 @@ final class MachineGuiLayoutProbe {
                     Field clientSide = net.minecraft.world.level.Level.class.getDeclaredField("isClientSide");
                     clientSide.setAccessible(true);
                     clientSide.setBoolean(world, true);
-                    player.level = world;
+                    Field playerLevel = net.minecraft.world.entity.Entity.class.getDeclaredField("level");
+                    playerLevel.setAccessible(true);
+                    playerLevel.set(player, world);
                     tile.setLevel(world);
                     SimpleMachineGUI.Container menu = ((SimpleMachineGUI) definition).createMenu(1, inventory, (Container) tile);
                     require(expectations.getAsJsonObject("machines").has(id), "No human-facing label expectation for " + id);
@@ -168,7 +173,7 @@ final class MachineGuiLayoutProbe {
                         verifyLongName(minecraft, (SimpleMachineGUI) definition, menu, inventory);
                     }
                     if (block == zone.moddev.mc.basepower.init.Blocks.metal_storage_tank) {
-                        verifyHelperLimits(screen);
+                        verifyHelperLimits(minecraft, screen);
                     }
                     row.addProperty("renders", renders);
                     row.addProperty("tooltip_and_inventory_hitbox", "PASS");
@@ -253,16 +258,18 @@ final class MachineGuiLayoutProbe {
         try {
             RenderSystem.clearColor(0.12F, 0.18F, 0.23F, 1);
             RenderSystem.clear(16384 | 256, Minecraft.ON_OSX);
+            GuiGraphics graphics = screen.recordingGraphics(minecraft);
             if (backgroundOnly) {
                 LabelMode original = screen.labels;
                 screen.labels = LabelMode.HIDDEN;
-                screen.render(new PoseStack(), -100, -100, 0F);
+                screen.render(graphics, -100, -100, 0F);
                 screen.labels = original;
             } else {
                 Slot hotbar = screen.getMenu().slots.get(screen.getMenu().slots.size() - 9);
-                screen.render(new PoseStack(), screen.hoverTitle ? screen.width / 2 : hover ? screen.getLeft() + hotbar.x + 1 : -100,
+                screen.render(graphics, screen.hoverTitle ? screen.width / 2 : hover ? screen.getLeft() + hotbar.x + 1 : -100,
                         screen.hoverTitle ? screen.getTop() + 4 : hover ? screen.getTop() + hotbar.y + 1 : -100, 0F);
             }
+            graphics.flush();
             ByteBuffer pixels = ByteBuffer.allocateDirect(width * height * 4);
             RenderSystem.readPixels(0, 0, width, height, 6408, 5121, pixels);
             BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
@@ -354,7 +361,7 @@ final class MachineGuiLayoutProbe {
         if (!value) throw new IllegalStateException(message);
     }
 
-    private static void verifyHelperLimits(RecordingScreen screen) throws Exception {
+    private static void verifyHelperLimits(Minecraft minecraft, RecordingScreen screen) throws Exception {
         for (String name : new String[]{"zone.moddev.mc.baseelectric.gui.GUIHelper",
                 "zone.moddev.mc.basesteam.gui.GUIHelper"}) {
             if (!net.minecraftforge.fml.ModList.get().isLoaded(name.contains("baseelectric") ? "baseelectric" : "basesteam")) continue;
@@ -363,9 +370,19 @@ final class MachineGuiLayoutProbe {
             for (String method : methods) {
                 Method draw = Class.forName(name).getMethod(method, int.class, int.class, float.class, SimpleMachineGUI.GUIContainer.class);
                 for (float value : new float[]{-1F, 0F, 0.5F, 1F, 15F, Float.NaN, Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY}) {
-                    screen.draws.clear();
-                    draw.invoke(null, screen.getLeft() + 44, screen.getTop() + 46, value, screen);
-                    screen.verifyDrawBounds();
+                    screen.helperCheck = () -> {
+                        try {
+                            screen.draws.clear();
+                            draw.invoke(null, screen.getLeft() + 44, screen.getTop() + 46, value, screen);
+                            screen.verifyDrawBounds();
+                            require((Float.isFinite(value) && value > 0) == !screen.draws.isEmpty(),
+                                    "Wrong draw count for " + method + " at " + value);
+                        } catch (ReflectiveOperationException failure) {
+                            throw new IllegalStateException("Cannot render " + method, failure);
+                        }
+                    };
+                    render(minecraft, screen, VIEWPORTS[0], false);
+                    require(screen.helperCheck == null, "Progress helper did not run inside renderBg");
                 }
             }
         }
@@ -385,7 +402,10 @@ final class MachineGuiLayoutProbe {
     }
 
     private static final class RecordingScreen extends SimpleMachineGUI.GUIContainer {
-        private final List<int[]> draws = new ArrayList<>();
+        private record DrawBounds(float left, float top, float right, float bottom, int u, int v, int width, int height) {}
+
+        private final List<DrawBounds> draws = new ArrayList<>();
+        private Runnable helperCheck;
         private int tooltipCalls;
         private int itemTooltipCalls;
         private LabelMode labels = LabelMode.PRODUCTION;
@@ -398,8 +418,8 @@ final class MachineGuiLayoutProbe {
             this.expectedTitle = expectedTitle;
             this.expectedInventory = expectedInventory;
         }
-        @Override protected void renderLabels(PoseStack matrices, int x, int y) {
-            if (labels == LabelMode.PRODUCTION) { super.renderLabels(matrices, x, y); return; }
+        @Override protected void renderLabels(GuiGraphics graphics, int x, int y) {
+            if (labels == LabelMode.PRODUCTION) { super.renderLabels(graphics, x, y); return; }
             if (labels == LabelMode.HIDDEN) return;
             if (labels != LabelMode.INVENTORY_ONLY) {
                 String text = labels == LabelMode.WRONG_TEXT ? "Untranslated machine.name" : expectedTitle;
@@ -408,39 +428,63 @@ final class MachineGuiLayoutProbe {
                     text += "...";
                 }
                 int textX = (176 - font.width(text)) / 2;
-                font.drawShadow(matrices, text, textX, labels == LabelMode.OVER_GAUGE ? 20 : 1, 0xFFFFFF);
+                graphics.drawString(font, text, textX, labels == LabelMode.OVER_GAUGE ? 20 : 1, 0xFFFFFF);
             }
-            if (labels != LabelMode.TITLE_ONLY) font.drawShadow(matrices, expectedInventory, 8, 140, 0xFFFFFF);
+            if (labels != LabelMode.TITLE_ONLY) graphics.drawString(font, expectedInventory, 8, 140, 0xFFFFFF);
         }
-        @Override public void render(PoseStack matrices, int x, int y, float ticks) {
+        @Override public void render(GuiGraphics graphics, int x, int y, float ticks) {
             draws.clear(); tooltipCalls = 0; itemTooltipCalls = 0; titleTooltip = null;
-            super.render(matrices, x, y, ticks);
+            super.render(graphics, x, y, ticks);
         }
-        @Override protected void renderTooltip(PoseStack matrices, int x, int y) {
+        @Override protected void renderTooltip(GuiGraphics graphics, int x, int y) {
             tooltipCalls++;
-            super.renderTooltip(matrices, x, y);
+            super.renderTooltip(graphics, x, y);
         }
-        @Override public void renderTooltip(PoseStack matrices, net.minecraft.world.item.ItemStack item, int x, int y) {
-            itemTooltipCalls++;
-            super.renderTooltip(matrices, item, x, y);
-        }
-        @Override public void renderTooltip(PoseStack matrices, net.minecraft.network.chat.Component text, int x, int y) {
-            titleTooltip = text.getString();
-            super.renderTooltip(matrices, text, x, y);
+        GuiGraphics recordingGraphics(Minecraft minecraft) {
+            return new GuiGraphics(minecraft, minecraft.renderBuffers().bufferSource()) {
+                @Override public void renderTooltip(Font font, List<net.minecraft.network.chat.Component> lines,
+                        java.util.Optional<TooltipComponent> component, net.minecraft.world.item.ItemStack item,
+                        int x, int y) {
+                    itemTooltipCalls++;
+                    super.renderTooltip(font, lines, component, item, x, y);
+                }
+
+                @Override public void renderTooltip(Font font, net.minecraft.network.chat.Component text, int x, int y) {
+                    titleTooltip = text.getString();
+                    super.renderTooltip(font, text, x, y);
+                }
+            };
         }
         Slot hovered() { return hoveredSlot; }
-        @Override public void blit(int x, int y, int u, int v, int width, int height) {
-            draws.add(new int[]{x - getLeft(), y - getTop(), u, v, width, height});
-            super.blit(x, y, u, v, width, height);
+        @Override public void blit(net.minecraft.resources.ResourceLocation texture,
+                int x, int y, int u, int v, int width, int height) {
+            var pose = getMatrices().last().pose();
+            float left = Float.POSITIVE_INFINITY, top = Float.POSITIVE_INFINITY;
+            float right = Float.NEGATIVE_INFINITY, bottom = Float.NEGATIVE_INFINITY;
+            for (int px : new int[]{x, x + width}) for (int py : new int[]{y, y + height}) {
+                Vector3f corner = pose.transformPosition(px, py, 0, new Vector3f());
+                float relativeX = corner.x - getLeft(), relativeY = corner.y - getTop();
+                left = Math.min(left, relativeX);
+                top = Math.min(top, relativeY);
+                right = Math.max(right, relativeX);
+                bottom = Math.max(bottom, relativeY);
+            }
+            draws.add(new DrawBounds(left, top, right, bottom, u, v, width, height));
+            super.blit(texture, x, y, u, v, width, height);
+            if (helperCheck != null) {
+                Runnable check = helperCheck;
+                helperCheck = null;
+                check.run();
+            }
         }
         void verifyDrawBounds() {
-            for (int[] draw : draws) {
-                require(draw[4] >= 0 && draw[5] >= 0 && draw[0] >= 0 && draw[1] >= 0
-                    && draw[0] + draw[4] <= getXSize() && draw[1] + draw[5] <= getYSize()
-                    && draw[2] >= 0 && draw[3] >= 0 && draw[2] + draw[4] <= 256 && draw[3] + draw[5] <= 256,
-                    "Decoration outside screen or texture: " + java.util.Arrays.toString(draw));
-                if (draw[5] > 0) require(draw[1] >= 12 && (draw[1] + draw[5] <= 140 || draw[1] >= 150),
-                        "Artwork intrudes into a required label row: " + java.util.Arrays.toString(draw));
+            for (DrawBounds draw : draws) {
+                require(draw.width >= 0 && draw.height >= 0 && draw.left >= 0 && draw.top >= 0
+                    && draw.right <= getXSize() && draw.bottom <= getYSize()
+                    && draw.u >= 0 && draw.v >= 0 && draw.u + draw.width <= 256 && draw.v + draw.height <= 256,
+                    "Decoration outside screen or texture: " + draw);
+                if (draw.height > 0) require(draw.top >= 12 && (draw.bottom <= 140 || draw.top >= 150),
+                        "Artwork intrudes into a required label row: " + draw);
             }
         }
     }

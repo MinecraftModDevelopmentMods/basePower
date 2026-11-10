@@ -5,7 +5,6 @@ import java.io.InputStream;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.material.Material;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.objectweb.asm.ClassReader;
@@ -26,7 +25,7 @@ public class NativeBlockEntityFactoryTest {
     }
 
     @Test public void nativeFactoriesKeepTheActualPositionAndFacing() {
-        BlockConveyor block = new BlockConveyor(Material.PISTON, 0.75F);
+        BlockConveyor block = new BlockConveyor(0.75F);
         BlockEntityType<TileEntityConveyor> old = Entities.CONVEYOR;
         try {
             Entities.CONVEYOR = BlockEntityType.Builder.of(TileEntityConveyor::new, block).build(null);

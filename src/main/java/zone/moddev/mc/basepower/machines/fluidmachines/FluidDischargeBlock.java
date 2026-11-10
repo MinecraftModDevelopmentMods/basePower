@@ -4,7 +4,6 @@ import cyano.poweradvantage.api.ConduitType;
 import cyano.poweradvantage.api.PoweredEntity;
 import cyano.poweradvantage.api.simple.BlockSimpleFluidMachine;
 import cyano.poweradvantage.api.simple.TileEntitySimplePowerMachine;
-import net.minecraft.world.level.material.Material;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.Container;
 import net.minecraft.world.Containers;
@@ -16,7 +15,7 @@ import net.minecraft.world.level.Level;
 public class FluidDischargeBlock extends BlockSimpleFluidMachine {
 
 	public FluidDischargeBlock() {
-		super(Material.PISTON, 3f);
+		super(machineProperties(3F));
 	}
 
 	@Override

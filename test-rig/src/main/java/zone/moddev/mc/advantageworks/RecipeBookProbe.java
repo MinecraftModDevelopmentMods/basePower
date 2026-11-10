@@ -85,7 +85,7 @@ final class RecipeBookProbe {
     }
 
     private static CraftingContainer grid(int width) {
-        return new CraftingContainer(new AbstractContainerMenu(null, 0) {
+        return new net.minecraft.world.inventory.TransientCraftingContainer(new AbstractContainerMenu(null, 0) {
             @Override public boolean stillValid(net.minecraft.world.entity.player.Player player) { return true; }
             @Override public ItemStack quickMoveStack(net.minecraft.world.entity.player.Player player, int slot) {
                 return ItemStack.EMPTY;

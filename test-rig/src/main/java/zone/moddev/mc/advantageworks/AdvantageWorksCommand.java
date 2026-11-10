@@ -61,7 +61,7 @@ final class AdvantageWorksCommand {
                 case "checkpoint": message = controller.checkpoint(source.getServer(), target, name); break;
                 default: throw new IllegalArgumentException("Unknown Advantage Works operation " + operation);
             }
-            source.sendSuccess(Component.literal(message), false);
+            source.sendSuccess(() -> Component.literal(message), false);
             return 1;
         } catch (RuntimeException ex) {
             LOGGER.error("Advantage Works command failed: {} {}", operation, target, ex);
@@ -72,7 +72,8 @@ final class AdvantageWorksCommand {
     private static int sampleWorldgen(CommandSourceStack source, int radius) {
         WorksController controller = WorksController.getInstance();
         controller.requireAuthorizedWorld(source.getServer());
-        source.sendSuccess(Component.literal(controller.sampleWorldgen(source.getServer(), radius)), false);
+        String sample = controller.sampleWorldgen(source.getServer(), radius);
+        source.sendSuccess(() -> Component.literal(sample), false);
         return 1;
     }
 }

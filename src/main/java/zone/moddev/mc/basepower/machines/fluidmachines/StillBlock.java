@@ -3,7 +3,8 @@ package zone.moddev.mc.basepower.machines.fluidmachines;
 import cyano.poweradvantage.api.ConduitType;
 import cyano.poweradvantage.api.PoweredEntity;
 import cyano.poweradvantage.api.simple.BlockSimpleFluidMachine;
-import net.minecraft.world.level.material.Material;
+import net.minecraft.world.level.material.MapColor;
+import net.minecraft.world.level.material.PushReaction;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.BlockState;
@@ -23,8 +24,8 @@ public class StillBlock extends BlockSimpleFluidMachine {
 	public static final BooleanProperty ACTIVE = BooleanProperty.create("active");
 
 	public StillBlock() {
-		super(net.minecraft.world.level.block.Block.Properties.of(Material.PISTON)
-                .strength(3f).lightLevel(state -> state.getValue(ACTIVE) ? 12 : 0));
+		super(Properties.of().mapColor(MapColor.STONE).pushReaction(PushReaction.BLOCK).forceSolidOn()
+                .strength(3F).lightLevel(state -> state.getValue(ACTIVE) ? 12 : 0));
 		this.registerDefaultState(defaultBlockState().setValue(ACTIVE, false));
 	}
 

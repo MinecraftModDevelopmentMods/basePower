@@ -130,7 +130,7 @@ final class Native117StoppedEntitiesSnapshot {
         JsonArray result = new JsonArray();
         for (Entity entity : available) {
             if (entity instanceof Player) continue;
-            if (entity.level != world) throw new IllegalStateException("Enumerated entity belongs to another world");
+            if (entity.level() != world) throw new IllegalStateException("Enumerated entity belongs to another world");
             if (!seen.add(entity.getUUID())) throw new IllegalStateException("Duplicate enumerated entity UUID: " + entity.getUUID());
             CompoundTag nbt = serialized(entity);
             if (!nbt.hasUUID("UUID") || !nbt.getUUID("UUID").equals(entity.getUUID())) {

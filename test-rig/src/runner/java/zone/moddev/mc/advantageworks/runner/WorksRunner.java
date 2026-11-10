@@ -67,7 +67,7 @@ public final class WorksRunner {
 
     public static void main(String[] args) throws Exception {
         Arguments arguments = Arguments.parse(args);
-        Profile profile = readNative119Profile(arguments.profile);
+        Profile profile = readNative1201Profile(arguments.profile);
         if (arguments.serverPort != null) profile.serverPort = arguments.serverPort;
         File testRig = findTestRig(arguments.profile);
         File powerRoot = testRig.getParentFile().getCanonicalFile();
@@ -316,17 +316,17 @@ public final class WorksRunner {
         Path args = root.resolve(launcher);
         PreparedServerSeed.requirePlain(args);
         boolean native118 = launcher.startsWith("libraries/net/minecraftforge/forge/1.18.2-40.3.0/");
-        boolean native119 = launcher.startsWith("libraries/net/minecraftforge/forge/1.19.4-45.4.0/");
+        boolean native1201 = launcher.startsWith("libraries/net/minecraftforge/forge/1.20.1-47.4.10/");
         Set<String> expected = new LinkedHashSet<>(Arrays.asList(
                 "--add-modules ALL-MODULE-PATH",
                 "--add-opens java.base/java.util.jar=cpw.mods.securejarhandler",
                 "--add-exports java.base/sun.security.util=cpw.mods.securejarhandler",
                 "-DlibraryDirectory=libraries", "cpw.mods.bootstraplauncher.BootstrapLauncher",
-                "--launchTarget forgeserver", "--fml.forgeVersion " + (native119 ? "45.4.0" : native118 ? "40.3.0" : "37.1.1"),
-                "--fml.mcVersion " + (native119 ? "1.19.4" : native118 ? "1.18.2" : "1.17.1"),
+                "--launchTarget forgeserver", "--fml.forgeVersion " + (native1201 ? "47.4.10" : native118 ? "40.3.0" : "37.1.1"),
+                "--fml.mcVersion " + (native1201 ? "1.20.1" : native118 ? "1.18.2" : "1.17.1"),
                 "--fml.forgeGroup net.minecraftforge",
-                "--fml.mcpVersion " + (native119 ? "20230314.122934" : native118 ? "20220404.173914" : "20210706.113038")));
-        if (native118 || native119) expected.addAll(Arrays.asList(
+                "--fml.mcpVersion " + (native1201 ? "20230612.114412" : native118 ? "20220404.173914" : "20210706.113038")));
+        if (native118 || native1201) expected.addAll(Arrays.asList(
                 "--add-opens java.base/java.lang.invoke=cpw.mods.securejarhandler",
                 "--add-exports jdk.naming.dns/com.sun.jndi.dns=java.naming",
                 "-Djava.net.preferIPv6Addresses=system"));
@@ -786,8 +786,8 @@ public final class WorksRunner {
         }
         return new PreparedServerSeed(preparedPath(testRig, arguments.preparedServerSeed),
                 preparedPath(testRig, arguments.preparedServerSeedInventory), arguments.preparedServerSeedSha256,
-                serverLauncherPath(profile), "1.19.4".equals(profile.minecraftVersion)
-                        ? "libraries/net/minecraft/server/1.19.4-20230314.122934/server-1.19.4-20230314.122934-extra.jar"
+                serverLauncherPath(profile), "1.20.1".equals(profile.minecraftVersion)
+                        ? "libraries/net/minecraft/server/1.20.1-20230612.114412/server-1.20.1-20230612.114412-extra.jar"
                         : "1.18.2".equals(profile.minecraftVersion)
                         ? "libraries/net/minecraft/server/1.18.2-20220404.173914/server-1.18.2-20220404.173914-extra.jar"
                         : "1.17.1".equals(profile.minecraftVersion)
@@ -1104,13 +1104,13 @@ public final class WorksRunner {
 
     private static boolean modularForge(Profile profile) {
         return "1.17.1".equals(profile.minecraftVersion) || "1.18.2".equals(profile.minecraftVersion)
-                || "1.19.4".equals(profile.minecraftVersion);
+                || "1.20.1".equals(profile.minecraftVersion);
     }
 
     private static File runtimeJavaHome(Profile profile) throws Exception {
         if (!modularForge(profile)) return java8Home(profile);
-        boolean native119 = "1.19.4".equals(profile.minecraftVersion);
-        boolean java17 = native119 || "1.18.2".equals(profile.minecraftVersion);
+        boolean native1201 = "1.20.1".equals(profile.minecraftVersion);
+        boolean java17 = native1201 || "1.18.2".equals(profile.minecraftVersion);
         String variable = java17 ? "ADVANTAGE_WORKS_JAVA17_HOME" : "ADVANTAGE_WORKS_JAVA16_HOME";
         String configured = java17 ? profile.java17Home : profile.java16Home;
         if (configured == null || configured.trim().isEmpty()) configured = System.getenv(variable);
@@ -1121,8 +1121,8 @@ public final class WorksRunner {
         if (release.isFile()) {
             try (InputStream input = Files.newInputStream(release.toPath())) { metadata.load(input); }
         }
-        String javaVersion = native119 ? "17.0.1" : java17 ? "17.0.20.1" : "16.0.2";
-        String temurin = native119 ? "17.0.1+12" : java17 ? "17.0.20.1+1" : "16.0.2+7";
+        String javaVersion = native1201 ? "17.0.1" : java17 ? "17.0.20.1" : "16.0.2";
+        String temurin = native1201 ? "17.0.1+12" : java17 ? "17.0.20.1+1" : "16.0.2+7";
         if (!javaExecutable(home).isFile() || !("\"" + javaVersion + "\"").equals(metadata.getProperty("JAVA_VERSION"))
                 || !("\"Temurin-" + temurin + "\"").equals(metadata.getProperty("IMPLEMENTOR_VERSION"))) {
             throw new IllegalStateException("Set " + variable + " to the pinned Temurin " + temurin + " runtime: " + home);
@@ -1183,7 +1183,7 @@ public final class WorksRunner {
         return new File(new File(home, "bin"), windows ? "java.exe" : "java");
     }
 
-    private static void writeRuntimeFiles(File runtime, Profile profile) throws Exception {
+    static void writeRuntimeFiles(File runtime, Profile profile) throws Exception {
         write(new File(runtime, "eula.txt"), "eula=true\n");
         write(new File(runtime, "advantage-works.allow"), "Generated by Advantage Works runner.\n");
         write(new File(runtime, "banned-ips.json"), "[]\n");
@@ -1271,14 +1271,14 @@ public final class WorksRunner {
         return profile;
     }
 
-    static Profile readNative119Profile(File file) throws Exception {
-        Profile profile = readProfile(file, "1.19.4", "1.19.4-45.4.0");
+    static Profile readNative1201Profile(File file) throws Exception {
+        Profile profile = readProfile(file, "1.20.1", "1.20.1-47.4.10");
         if (!"UNQUALIFIED".equals(profile.qualificationStatus)) {
-            throw new IllegalArgumentException("The 1.19.4 destination must start UNQUALIFIED");
+            throw new IllegalArgumentException("The 1.20.1 destination must start UNQUALIFIED");
         }
         for (ModInput input : profile.mods) {
-            if (input.version == null || !input.version.endsWith(".119041")) {
-                throw new IllegalArgumentException("Non-1.19.4 destination mod version: " + input.id);
+            if (input.version == null || !input.version.endsWith(".120011")) {
+                throw new IllegalArgumentException("Non-1.20.1 destination mod version: " + input.id);
             }
         }
         if ("minecraft:flat".equals(profile.levelType)) {
@@ -1289,7 +1289,8 @@ public final class WorksRunner {
                     "/assets/advantageworkstest/works/flat-generator.json")) {
                 if (input == null) throw new IllegalStateException("Missing shared Works generator settings");
                 var settings = GSON.fromJson(new InputStreamReader(input, StandardCharsets.UTF_8), JsonObject.class);
-                profile.generatorSettings = GSON.toJson(settings);
+                // server.properties stores the generator JSON on one line.
+                profile.generatorSettings = settings.toString();
             }
         }
         return profile;

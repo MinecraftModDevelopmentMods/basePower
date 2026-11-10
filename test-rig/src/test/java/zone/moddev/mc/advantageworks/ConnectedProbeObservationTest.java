@@ -89,7 +89,7 @@ public class ConnectedProbeObservationTest {
 
     private static final class ObservationWorld extends ServerLevel {
         BlockEntity tile;
-        private ObservationWorld() { super(null, null, null, null, null, null, null, false, 0L, List.of(), false); }
+        private ObservationWorld() { super(null, null, null, null, null, null, null, false, 0L, List.of(), false, null); }
         @Override public BlockState getBlockState(BlockPos pos) { return Blocks.CHEST.defaultBlockState(); }
         @Override public BlockEntity getBlockEntity(BlockPos pos) { return tile; }
     }
