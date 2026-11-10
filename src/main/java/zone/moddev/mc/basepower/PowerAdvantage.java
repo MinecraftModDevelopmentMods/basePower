@@ -79,7 +79,6 @@ public final class PowerAdvantage {
         MinecraftForge.EVENT_BUS.addListener(ConduitRegistry.getInstance()::onChunkLoad);
         MinecraftForge.EVENT_BUS.addListener(ConduitRegistry.getInstance()::onChunkUnload);
         MinecraftForge.EVENT_BUS.addListener(RecipeDiscovery::onPlayerLogin);
-        MinecraftForge.EVENT_BUS.addListener(zone.moddev.mc.basepower.recipe.PartsLoot::onLoad);
         MinecraftForge.EVENT_BUS.addListener(zone.moddev.mc.basepower.init.Villages::onTrades);
         FMLJavaModLoadingContext.get().getModEventBus().addListener(
                 zone.moddev.mc.basepower.recipe.MaterialTags::registerPack);
@@ -88,6 +87,7 @@ public final class PowerAdvantage {
         Fluids.init();
         ItemGroups.register(FMLJavaModLoadingContext.get().getModEventBus());
         RecipeConditions.register(FMLJavaModLoadingContext.get().getModEventBus());
+        zone.moddev.mc.basepower.recipe.PartsLoot.register(FMLJavaModLoadingContext.get().getModEventBus());
 
         migrateLegacyOreSpawnConfiguration();
         migrateLegacyConfiguration();

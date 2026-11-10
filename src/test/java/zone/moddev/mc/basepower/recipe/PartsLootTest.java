@@ -1,42 +1,30 @@
 package zone.moddev.mc.basepower.recipe;
 
+import java.util.List;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.level.storage.loot.LootTable;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
 public class PartsLootTest {
-    @Test public void addsOnePoolPerLoadedModWithoutDuplicatingOnRepeat() {
-        LootTable table = LootTable.lootTable().build();
-        ResourceLocation chest = new ResourceLocation("minecraft", "chests/simple_dungeon");
-        PartsLoot.addPools(table, chest, true, mod -> true);
-        var original = table.removePool("basesteam:legacy_parts");
-        assertNotNull(original);
-        table.addPool(original);
-        PartsLoot.addPools(table, chest, true, mod -> true);
-        assertSame(original, table.removePool("basesteam:legacy_parts"));
-        assertNull(table.removePool("basesteam:legacy_parts"));
-        assertNotNull(table.removePool("basepower:legacy_parts"));
-        assertNotNull(table.removePool("baseelectric:legacy_parts"));
+    @Test public void addsEachLoadedModOnceAndInTheExistingOrder() {
+        assertEquals(List.of(parts("basepower"), parts("basesteam"), parts("baseelectric")),
+                PartsLoot.partTables(id("minecraft:chests/simple_dungeon"), "vanilla", mod -> true));
     }
 
     @Test public void keepsEndCityExceptionAndAbsentMods() {
-        LootTable table = LootTable.lootTable().build();
-        PartsLoot.addPools(table, new ResourceLocation("minecraft", "chests/end_city_treasure"), true,
-                mod -> !mod.equals("basesteam"));
-        assertNull(table.removePool("basepower:legacy_parts"));
-        assertNull(table.removePool("basesteam:legacy_parts"));
-        assertNotNull(table.removePool("baseelectric:legacy_parts"));
+        assertEquals(List.of(parts("baseelectric")), PartsLoot.partTables(
+                id("minecraft:chests/end_city_treasure"), "vanilla", mod -> !mod.equals("basesteam")));
     }
 
-    @Test public void leavesUnrelatedTablesAndDisabledLootUnchanged() {
-        for (String id : new String[] {"minecraft:chests/desert_pyramid", "othermod:chests/simple_dungeon"}) {
-            LootTable table = LootTable.lootTable().build();
-            PartsLoot.addPools(table, new ResourceLocation(id), true, mod -> true);
-            assertNull(table.removePool("basepower:legacy_parts"));
+    @Test public void doesNotModifyUserPacksOtherModsOrUnrelatedTables() {
+        for (String source : List.of("file/chest-override", "mod:othermod", "")) {
+            assertTrue(PartsLoot.partTables(id("minecraft:chests/simple_dungeon"), source, mod -> true).isEmpty());
         }
-        LootTable table = LootTable.lootTable().build();
-        PartsLoot.addPools(table, new ResourceLocation("minecraft", "chests/simple_dungeon"), false, mod -> true);
-        assertNull(table.removePool("basepower:legacy_parts"));
+        for (String chest : List.of("minecraft:chests/desert_pyramid", "othermod:chests/simple_dungeon")) {
+            assertTrue(PartsLoot.partTables(id(chest), "vanilla", mod -> true).isEmpty());
+        }
     }
+
+    private static ResourceLocation parts(String mod) { return id(mod + ":chests/advantage_parts"); }
+    private static ResourceLocation id(String value) { return ResourceLocation.parse(value); }
 }
