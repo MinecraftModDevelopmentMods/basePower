@@ -73,7 +73,7 @@ jobs:
           basemetals="$GITHUB_WORKSPACE/.ci-dependencies/BaseMetals"
           mavenizer="$orespawn/ci-fixtures/tools/minecraft-mavenizer-0.5.21-orespawn-compat.jar"
           mirror="$RUNNER_TEMP/orespawn-mirror"
-          bash "$basemetals/gradle/stage-orespawn-release.sh" "$mirror"
+          (cd "$basemetals" && bash gradle/stage-orespawn-release.sh "$mirror")
           chmod +x "$orespawn/gradlew" "$basemetals/gradlew"
           (cd "$orespawn" && ./gradlew $MMD_GRADLE_TOOLCHAINS jar --no-daemon --stacktrace)
           (cd "$basemetals" && ./gradlew $MMD_GRADLE_TOOLCHAINS jar -PorespawnVerificationRepository="$mirror" --no-daemon --stacktrace)

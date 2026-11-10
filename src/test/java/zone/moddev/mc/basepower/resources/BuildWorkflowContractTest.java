@@ -42,6 +42,7 @@ public class BuildWorkflowContractTest {
             assertTrue(name, workflow.contains("build/libs/BaseMetals-" + pins.getProperty("basemetals_version") + ".jar"));
             assertTrue(name, workflow.contains("build/libs/OreSpawn-" + pins.getProperty("orespawn_version") + ".jar"));
             assertTrue(name, workflow.contains("ref: " + pins.getProperty("orespawn_source_commit")));
+            assertTrue(name, workflow.contains("(cd \"$basemetals\" && bash gradle/stage-orespawn-release.sh \"$mirror\")"));
             assertTrue(name, workflow.contains("master-" + pins.getProperty("minecraft_version")));
             assertTrue(name, workflow.contains("java-version: '25.0.3+9.0.LTS'"));
             assertTrue(name, workflow.contains("java-version: '" + pins.getProperty("java_setup_version") + ".0.LTS'"));
