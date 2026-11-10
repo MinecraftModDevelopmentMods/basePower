@@ -37,8 +37,11 @@ public class BuildWorkflowContractTest {
                     StandardCharsets.UTF_8);
             int policy = workflow.indexOf("run: git config --global core.autocrlf false");
             int checkout = workflow.indexOf("- name: Check out pinned Base Metals");
-            assertTrue(name, policy >= 0 && checkout > policy);
-            assertTrue(name, workflow.contains("ref: " + pins.getProperty("basemetals_source_commit")));
+            int oreSpawn = workflow.indexOf("- name: Check out pinned OreSpawn");
+            int pinGate = workflow.indexOf("run: bash .github/verify-base-metals-pin.sh");
+            assertTrue(name, policy >= 0 && checkout > policy && oreSpawn > policy);
+            assertTrue(name, pinGate >= 0 && checkout > pinGate);
+            assertTrue(name, workflow.contains("ref: ${{ steps.base-metals-pin.outputs.commit }}"));
             assertTrue(name, workflow.contains("BaseMetals-" + pins.getProperty("basemetals_version") + "-deobf.jar"));
             assertTrue(name, workflow.contains("ref: " + pins.getProperty("orespawn_source_commit")));
             assertTrue(name, workflow.contains("master-" + pins.getProperty("minecraft_version")));

@@ -65,11 +65,12 @@ jobs:
             exit 1
           fi
 
-          successful_ci="$(gh api \
-            "repos/$GITHUB_REPOSITORY/commits/$GITHUB_SHA/check-runs?per_page=100" \
-            --jq '[.check_runs[] | select(.name == "Build, test, and audit" and .conclusion == "success")] | length')"
+          successful_ci="$(gh api --method GET \
+            "repos/$GITHUB_REPOSITORY/actions/workflows/ci.yml/runs" \
+            -f head_sha="$GITHUB_SHA" -f branch="master-$minecraft_version" \
+            -f event=push -f status=success --jq '.total_count')"
           if [[ "$successful_ci" -lt 1 ]]; then
-            echo "The tagged commit has no successful Build, test, and audit check" >&2
+            echo "The tagged commit has no successful push CI on master-$minecraft_version" >&2
             exit 1
           fi
 
@@ -80,10 +81,10 @@ jobs:
           {
             echo "## Release candidate validated"
             echo
-            echo "Tag \`$GITHUB_REF_NAME\` matches this target and has a successful Build, test, and audit check."
+            echo "Tag \`$GITHUB_REF_NAME\` matches this target and has successful push CI on its release branch."
             echo
             echo "**Nothing has been published.**"
             echo
             echo "Live publication requires \`deploy-release.yml\` on the repository default branch."
-            echo "Once that guarded dispatcher is installed, continue at: $RELEASE_WORKFLOW_URL"
+            echo "After the exact CI artifact is approved and registered, continue at: $RELEASE_WORKFLOW_URL"
           } >> "$GITHUB_STEP_SUMMARY"
