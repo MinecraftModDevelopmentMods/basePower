@@ -49,6 +49,12 @@ Base Metals `3.1.2.120061` with the local migration fix and OreSpawn
 
 ## Manual checks
 
+The follow-up gauge fix is client-side only. Both tanks now pass a
+whole-gauge pixel comparison using water, lava, crude oil and refined oil.
+The earlier layout check could pass a corrupted fill because it did not
+compare those pixels. The full migration and endurance receipts describe
+the earlier jar; the gauge fix has its own native client and build checks.
+
 Refresh the Gradle project in Eclipse, clean the project and start
 `runClientAllAdvantage.launch` with Java 21. Start with a new world or a copy
 of an existing world. Keep the original closed and backed up.

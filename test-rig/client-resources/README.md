@@ -67,9 +67,11 @@ this is explicitly `NOT_RUN_NO_NATIVE_FIXTURES`.
 - Every registered Advantage item and valid block state: geometry, missing
   models/sprites, English names, creative-tab contents and GUI translation keys.
   Native fluid-block models are intentionally particle-only.
-- Actual tank screen rendering, full/empty 10,000 mB update packets, fluid
-  capability simulation/execution and neighbour-face culling. The water-gauge
-  pixel at `(88,39)` must satisfy `blue > red + 20` and `blue > green + 10`.
+- Portable and metal tank gauges: compare the whole gauge to an independent
+  native sprite render at empty, quarter, half and full. Water, lava and both
+  oils must show the right texture, tint and fill boundary. The probe also
+  checks real update packets, fluid capability simulation/execution and
+  neighbour-face culling for both tanks.
 - Native bucket fluids and fluid-renderer vertices for crude/refined oil,
   with water/lava controls, actual atlas sprites and tint.
 - With `-MachineGuiLayouts`, real screen rendering at nine window/GUI-scale

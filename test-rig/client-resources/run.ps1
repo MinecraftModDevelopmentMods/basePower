@@ -215,6 +215,9 @@ if (-not (Test-Path -LiteralPath $resultPath)) { throw "Client did not produce a
 $result = Get-Content -LiteralPath $resultPath -Raw | ConvertFrom-Json
 if ($result.status -ne 'PASS') { throw "Client resource check failed: $($result.error); inspect $runtime" }
 if ($result.minecraft -ne '1.20.6' -or $result.forge -ne '50.2.0') { throw 'Result is not native 1.20.6 / Forge 50.2.0 evidence.' }
+if ($result.tank_gauge_pixel_status -ne 'PASS' -or @($result.tank_gauge_pixels).Count -ne 26) {
+    throw 'Full fluid-gauge pixel checks did not pass; a single-pixel probe is not acceptable.'
+}
 if ($MachineGuiLayouts -and $result.machine_gui_layout_status -ne 'PASS') { throw 'Machine GUI layouts did not pass; inspect the retained images and JSON.' }
 $expectedGuiTextChecks = if ($RequireExtensions) { 351 } else { 126 }
 if ($MachineGuiLayouts -and ($result.machine_gui_text_spec -ne 2 -or $result.machine_gui_text_status -ne 'PASS' -or
@@ -234,6 +237,7 @@ if ($log -match "Unable to load model:.*${namespaces}:|Exception loading blockst
     throw "Client logged a model or texture error; inspect $runtime/logs/latest.log"
 }
 Write-Output "PASS: $($result.items) items, $($result.block_states) block states, $($result.creative_entries) creative entries. Evidence: $runtime"
+Write-Output "Fluid gauges: all 26 rendered tank cases matched the reference pixels."
 if ($MachineGuiLayouts) { Write-Output "Required-caption GUI contract v2: $($result.machine_gui_text_checks) text cases passed; $($result.machine_gui_negative_controls_rejected) deliberately broken controls rejected. Images retained." }
 if ($ChildRendererGeometry) { Write-Output 'Additional renderer geometry: worldless scope passed; hydroturbine orientation/spin still requires a disposable-world test. This is not pixel/manual acceptance.' }
 $inputReport.qualification = 'NATIVE_CLIENT_RESOURCE_PASS'
