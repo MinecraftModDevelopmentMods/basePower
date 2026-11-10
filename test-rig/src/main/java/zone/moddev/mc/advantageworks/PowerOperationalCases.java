@@ -56,22 +56,22 @@ final class PowerOperationalCases {
                     c.world.addFreshEntity(dropped);
                 }, c -> {
                     c.require(c.count(6, 2, 5, "minecraft:dirt") == 16, "dropped input delivered");
-                    c.require(c.world.getEntitiesOfClass(ItemEntity.class, new AABB(c.at(3, 0, 4), c.at(8, 5, 7))).isEmpty(), "no duplicate/lost item entity remains");
+                    c.require(c.world.getEntitiesOfClass(ItemEntity.class, WorksBlockData.bounds(c.at(3, 0, 4), c.at(8, 5, 7))).isEmpty(), "no duplicate/lost item entity remains");
                 }));
         cases.add(new MachineScenario("power/conveyor/nbt-preserved", "Distinct custom item data must not merge into or overwrite another stack", 200,
                 c -> {
                     conveyor(c, "basepower:item_conveyor");
                     c.put(4, 2, 5, 0, "minecraft:dirt", 3); c.put(4, 2, 5, 1, "minecraft:dirt", 3);
-                    c.inventory(4, 2, 5).getItem(0).getOrCreateTag().putString("Witness", "A");
-                    c.inventory(4, 2, 5).getItem(1).getOrCreateTag().putString("Witness", "B");
+                    WorksItemData.update(c.inventory(4, 2, 5).getItem(0), tag -> tag.putString("Witness", "A"));
+                    WorksItemData.update(c.inventory(4, 2, 5).getItem(1), tag -> tag.putString("Witness", "B"));
                     c.put(6, 2, 5, 0, "minecraft:dirt", 1);
-                    c.inventory(6, 2, 5).getItem(0).getOrCreateTag().putString("Witness", "A");
+                    WorksItemData.update(c.inventory(6, 2, 5).getItem(0), tag -> tag.putString("Witness", "A"));
                 }, c -> {
                     int a = 0, b = 0, unknown = 0;
                     for (int slot = 0; slot < c.inventory(6, 2, 5).getContainerSize(); slot++) {
                         ItemStack stack = c.inventory(6, 2, 5).getItem(slot);
                         if (stack.isEmpty()) continue;
-                        String witness = stack.hasTag() ? stack.getTag().getString("Witness") : "";
+                        String witness = WorksItemData.read(stack).getString("Witness");
                         if (witness.equals("A")) a += stack.getCount();
                         else if (witness.equals("B")) b += stack.getCount();
                         else unknown += stack.getCount();

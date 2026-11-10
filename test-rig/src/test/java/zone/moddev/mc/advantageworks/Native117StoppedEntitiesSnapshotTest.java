@@ -60,7 +60,7 @@ public class Native117StoppedEntitiesSnapshotTest {
         JsonObject row = Native117StoppedEntitiesSnapshot.entities(world, List.of(entity), new HashSet<>()).get(0).getAsJsonObject();
         CompoundTag captured = decode(row);
         assertEquals(before, captured);
-        assertEquals(7, captured.getCompound("Item").getByte("Count"));
+        assertEquals(7, captured.getCompound("Item").getInt("count"));
         assertEquals("keep exactly", captured.getCompound("ForgeData").getString("Private"));
         assertEquals("minecraft:the_nether", row.get("worldDimensionKey").getAsString());
         assertEquals(entity.getUUID().toString(), row.get("uuid").getAsString());
@@ -151,6 +151,7 @@ public class Native117StoppedEntitiesSnapshotTest {
     }
 
     private static CompoundTag decode(JsonObject row) throws Exception {
-        return NbtIo.readCompressed(new ByteArrayInputStream(Base64.getDecoder().decode(row.get("nbtBase64").getAsString())));
+        return NbtIo.readCompressed(new ByteArrayInputStream(Base64.getDecoder().decode(row.get("nbtBase64").getAsString())),
+                net.minecraft.nbt.NbtAccounter.unlimitedHeap());
     }
 }

@@ -19,9 +19,10 @@ public class Native118EngineSignaturesTest {
     @Test public void nativeChunkRegistryAndTileSignaturesAreExact() throws Exception {
         assertEquals(LevelChunk.class, ServerChunkCache.class.getMethod("getChunkNow", int.class, int.class).getReturnType());
         assertEquals(ServerLevel.class, MinecraftServer.class.getMethod("getLevel", ResourceKey.class).getReturnType());
-        assertEquals(void.class, BlockEntity.class.getMethod("load", CompoundTag.class).getReturnType());
-        assertEquals(CompoundTag.class, BlockEntity.class.getMethod("saveWithFullMetadata").getReturnType());
-        assertTrue(Modifier.isProtected(BlockEntity.class.getDeclaredMethod("saveAdditional", CompoundTag.class).getModifiers()));
+        Class<?> registryProvider = net.minecraft.core.HolderLookup.Provider.class;
+        assertEquals(void.class, BlockEntity.class.getMethod("loadWithComponents", CompoundTag.class, registryProvider).getReturnType());
+        assertEquals(CompoundTag.class, BlockEntity.class.getMethod("saveWithFullMetadata", registryProvider).getReturnType());
+        assertTrue(Modifier.isProtected(BlockEntity.class.getDeclaredMethod("saveAdditional", CompoundTag.class, registryProvider).getModifiers()));
     }
 
     @Test public void nativePlayerSaveRemainsProtectedAndRespawnUsesRegistryKeys() throws Exception {

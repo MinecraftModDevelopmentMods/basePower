@@ -22,8 +22,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.GameRules;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.common.util.FakePlayer;
-import net.minecraftforge.common.util.FakePlayerFactory;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.event.TickEvent;
 
@@ -110,7 +108,7 @@ final class MachineOperationalProbe {
         if (!MARKER.isFile() || !current.getServer().getWorldData().getLevelName().equals("AdvantageWorksMigration")
                 || !requestedLabel.matches("[A-Za-z0-9_-]+")) throw new IllegalStateException("Unmarked or unsafe operating world");
         world = current;
-        FakePlayer sentinel = FakePlayerFactory.getMinecraft(world);
+        WorksOfflinePlayer sentinel = WorksOfflinePlayer.sentinel(world);
         sentinel.setPos(49900.5, 80, 49900.5);
         if (!world.players().contains(sentinel)) world.players().add(sentinel);
     }
@@ -281,7 +279,7 @@ final class MachineOperationalProbe {
                     actual.addProperty("block", net.minecraftforge.registries.ForgeRegistries.BLOCKS.getKey(world.getBlockState(pos).getBlock()).toString());
                     actual.addProperty("state", world.getBlockState(pos).toString());
                     BlockEntity tile = world.getBlockEntity(pos);
-                    if (tile != null) actual.addProperty("nbt", tile.saveWithFullMetadata().toString());
+                    if (tile != null) actual.addProperty("nbt", WorksBlockData.save(tile).toString());
                     positions.add(actual);
                 }
                 row.add("positions", positions); inspectionResults.add(row);

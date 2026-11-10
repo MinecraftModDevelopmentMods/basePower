@@ -179,13 +179,13 @@ final class NativeInteropProbe {
             List<ItemEntity> drops = world.getEntitiesOfClass(ItemEntity.class, new AABB(TANK).inflate(2));
             require(drops.size() == 1, "Expected exactly one portable tank drop; got " + drops.size());
             ItemStack item = drops.get(0).getItem().copy();
-            require(item.getItem() == block.asItem() && item.getCount() == 1 && item.hasTag()
-                    && item.getTag().getString("FluidID").equals("minecraft:water")
-                    && item.getTag().getInt("Volume") == 500, "Native loot lost portable fluid NBT: " + item);
+            require(item.getItem() == block.asItem() && item.getCount() == 1
+                    && WorksItemData.read(item).getString("FluidID").equals("minecraft:water")
+                    && WorksItemData.read(item).getInt("Volume") == 500, "Native loot lost portable fluid NBT: " + item);
             drops.get(0).discard();
             world.setBlock(TANK, block.defaultBlockState(), 3);
             block.setPlacedBy(world, TANK, block.defaultBlockState(),
-                    net.minecraftforge.common.util.FakePlayerFactory.getMinecraft(world), item);
+                    WorksOfflinePlayer.sentinel(world), item);
             require(fluid(world.getBlockEntity(TANK)).getFluidInTank(0).getAmount() == 500,
                     "Replacing native drop did not restore exactly 500 mB");
         });
@@ -200,9 +200,9 @@ final class NativeInteropProbe {
         input.setItem(0, new ItemStack(net.minecraft.world.item.Items.DIRT, 16));
         TileEntityConveyor belt = (TileEntityConveyor) world.getBlockEntity(BELT);
         BlockEntity chest = world.getBlockEntity(BELT.west());
-        CompoundTag state = chest.saveWithFullMetadata();
+        CompoundTag state = WorksBlockData.save(chest);
         state.putString("Lock", "AdvantageInteropKey");
-        chest.load(state);
+        chest.loadWithComponents(state, world.registryAccess());
         check(checks, "locked-chest/conveyor-refuses-extraction", () -> {
             require(InventoryLocks.isLocked(input), "Native nonempty chest lock was not detected");
             for (int i = 0; i < 160; i++) belt.tick();
@@ -210,7 +210,7 @@ final class NativeInteropProbe {
                     "Conveyor bypassed locked source");
         });
         state.remove("Lock");
-        chest.load(state);
+        chest.loadWithComponents(state, world.registryAccess());
         check(checks, "unlocked-chest/conveyor-transfers-exactly", () -> {
             require(!InventoryLocks.isLocked(input), "Cleared lock still blocks extraction");
             for (int i = 0; i < 160; i++) belt.tick();
@@ -329,9 +329,34 @@ final class NativeInteropProbe {
         report.addProperty("status", java.util.stream.StreamSupport.stream(checks.spliterator(), false)
                 .allMatch(row -> row.getAsJsonObject().get("status").getAsString().equals("PASS")) ? "PASS" : "FAIL");
         report.add("checks", checks);
+        if (net.minecraftforge.fml.ModList.get().isLoaded("basemetals")) {
+            JsonArray shared = new JsonArray();
+            check(shared, "basemetals/native-power-crushing", () -> sharedCrushing(world));
+            report.add("sharedChecks", shared);
+        }
         File destination = new File("advantage-works-results", "native-interop-" + phase + ".json");
         require(!destination.exists(), "Refusing to overwrite interop evidence");
         destination.getParentFile().mkdirs();
         Files.write(destination.toPath(), new GsonBuilder().setPrettyPrinting().create().toJson(report).getBytes(StandardCharsets.UTF_8));
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void sharedCrushing(ServerLevel world) {
+        ResourceLocation recipeId = new ResourceLocation("basepower", "crushing_potato_starch");
+        var holder = world.getRecipeManager().byKey(recipeId).orElseThrow(
+                () -> new AssertionError("Missing Power recipe under Base Metals crushing: " + recipeId));
+        var recipe = (net.minecraft.world.item.crafting.Recipe<Container>) holder.value();
+        var type = net.minecraft.core.registries.BuiltInRegistries.RECIPE_TYPE.getKey(recipe.getType());
+        require(new ResourceLocation("basemetals", "crushing").equals(type), "Wrong loaded crushing type: " + type);
+        for (var potato : List.of(net.minecraft.world.item.Items.POTATO, net.minecraft.world.item.Items.POISONOUS_POTATO)) {
+            var input = new net.minecraft.world.SimpleContainer(new ItemStack(potato, 3));
+            require(recipe.matches(input, world), "Shared crusher rejected " + potato);
+            ItemStack result = recipe.assemble(input, world.registryAccess());
+            require(result.getCount() == 1 && new ResourceLocation("basepower", "starch").equals(
+                    ForgeRegistries.ITEMS.getKey(result.getItem())), "Incorrect shared crushing result: " + result);
+            require(input.getItem(0).getCount() == 3, "Assembling a recipe preview mutated its input");
+        }
+        require(!recipe.matches(new net.minecraft.world.SimpleContainer(new ItemStack(net.minecraft.world.item.Items.DIRT)), world),
+                "Shared crushing accepted unrelated input");
     }
 }

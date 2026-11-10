@@ -8,6 +8,14 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.util.UUID;
+import java.util.List;
+import net.minecraft.core.RegistryAccess;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.nbt.NbtAccounter;
+import net.minecraft.nbt.NbtOps;
+import net.minecraft.world.item.enchantment.Enchantment;
+import com.mojang.serialization.Dynamic;
+import net.minecraft.util.datafix.fixes.References;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
@@ -34,21 +42,44 @@ public class Native117PlayerIoTest {
         }
     };
 
-    @BeforeClass public static void bootstrap() { net.minecraft.SharedConstants.tryDetectVersion(); Bootstrap.bootStrap(); }
+    private static RegistryAccess registries;
+
+    @BeforeClass public static void bootstrap() {
+        SharedConstants.tryDetectVersion();
+        Bootstrap.bootStrap();
+        var enchantments = (net.minecraftforge.registries.ForgeRegistry<Enchantment>)
+                net.minecraftforge.registries.ForgeRegistries.ENCHANTMENTS;
+        boolean locked = enchantments.isLocked();
+        if (locked) enchantments.unfreeze();
+        var vanillaView = (net.minecraft.core.MappedRegistry<Enchantment>) BuiltInRegistries.ENCHANTMENT;
+        vanillaView.unfreeze();
+        try {
+            // Forge's item component codec resolves these IDs in its native registry.
+            for (String name : List.of("high_explosive", "powderless", "rapid_reload", "recoil")) {
+                enchantments.register("basesteam:" + name, new Enchantment(Enchantment.definition(
+                        net.minecraft.tags.ItemTags.MINING_ENCHANTABLE, 1, 1, Enchantment.constantCost(1),
+                        Enchantment.constantCost(2), 1, net.minecraft.world.entity.EquipmentSlot.MAINHAND)));
+            }
+        } finally {
+            vanillaView.freeze();
+            if (locked) enchantments.freeze();
+        }
+        registries = RegistryAccess.fromRegistryOfRegistries(BuiltInRegistries.REGISTRY);
+    }
 
     @Test public void realForgePlayerListSaveWithoutConnectionLeavesLegacyBytesUnchanged() throws Exception {
         for (int version : new int[] {512, 1343}) {
             File directory = temporary.newFolder("guard-" + version);
             File file = new File(directory, ID + ".dat");
             CompoundTag legacy = legacy(version);
-            NbtIo.writeCompressed(legacy, file);
+            NbtIo.writeCompressed(legacy, file.toPath());
             byte[] before = Files.readAllBytes(file.toPath());
             PlayerList players = players(data(directory), false);
             Method save = PlayerList.class.getDeclaredMethod("save", ServerPlayer.class);
             save.setAccessible(true);
             save.invoke(players, player(1, 0));
             assertArrayEquals(before, Files.readAllBytes(file.toPath()));
-            assertEquals(legacy, NbtIo.readCompressed(file));
+            assertEquals(legacy, readCompressed(file));
         }
     }
 
@@ -57,13 +88,13 @@ public class Native117PlayerIoTest {
             File directory = temporary.newFolder("save-" + version);
             File file = new File(directory, ID + ".dat");
             CompoundTag legacy = legacy(version);
-            NbtIo.writeCompressed(legacy, file);
+            NbtIo.writeCompressed(legacy, file.toPath());
             byte[] before = Files.readAllBytes(file.toPath());
             HeadlessPlayer player = player(1, 0);
             Native117PlayerIo.save(players(data(directory), false), player);
             assertFalse(java.util.Arrays.equals(before, Files.readAllBytes(file.toPath())));
-            assertSaved(NbtIo.readCompressed(file), player, 1, 0);
-            assertEquals(legacy, NbtIo.readCompressed(new File(directory, ID + ".dat_old")));
+            assertSaved(readCompressed(file), player, 1, 0);
+            assertEquals(legacy, readCompressed(new File(directory, ID + ".dat_old")));
         }
     }
 
@@ -73,18 +104,18 @@ public class Native117PlayerIoTest {
         Native117PlayerIo.save(players(data(directory), false), first);
         HeadlessPlayer second = player(9, 8);
         PlayerDataStorage reopened = data(directory);
-        CompoundTag saved = reopened.load(second);
+        CompoundTag saved = reopened.load(second).orElseThrow();
         assertNotNull(saved);
         assertSaved(saved, second, 1, 0);
         Native117PlayerIo.save(players(reopened, false), second);
-        assertEquals(saved, NbtIo.readCompressed(new File(directory, ID + ".dat")));
+        assertEquals(saved, readCompressed(new File(directory, ID + ".dat")));
     }
 
     @Test public void nativeSavePreservesExactCountSlotAndAllNamedStoredEnchantments() throws Exception {
         File directory = temporary.newFolder("count-slot");
         HeadlessPlayer player = player(3, 8);
         Native117PlayerIo.save(players(data(directory), false), player);
-        assertSaved(NbtIo.readCompressed(new File(directory, ID + ".dat")), player, 3, 8);
+        assertSaved(readCompressed(new File(directory, ID + ".dat")), player, 3, 8);
     }
 
     @Test public void connectedPlayersKeepThePlayerListSavePath() throws Exception {
@@ -115,12 +146,21 @@ public class Native117PlayerIoTest {
         assertEquals(1, inventory.size());
         CompoundTag stack = inventory.getCompound(0);
         assertEquals("minecraft:enchanted_book", stack.getString("id"));
-        assertEquals(count, stack.getByte("Count"));
+        assertEquals(count, stack.getInt("count"));
         assertEquals(slot, stack.getByte("Slot"));
         assertFalse(stack.contains("Damage"));
-        assertEquals(book(count).getCompound("tag"), stack.getCompound("tag"));
-        assertEquals(5, stack.getCompound("tag").getList("StoredEnchantments", 10).size());
-        assertTrue(ItemStack.matches(ItemStack.of(stack), player.items.getItem(slot)));
+        ItemStack decoded = ItemStack.parse(registries, stack).orElseThrow();
+        var stored = decoded.get(net.minecraft.core.component.DataComponents.STORED_ENCHANTMENTS);
+        assertNotNull(stack.toString(), stored);
+        var levels = new java.util.HashMap<String, Integer>();
+        stored.entrySet().forEach(entry -> levels.put(
+                entry.getKey().unwrapKey().orElseThrow().location().toString(), entry.getIntValue()));
+        assertEquals(stack.toString(), 5, levels.size());
+        assertEquals(Integer.valueOf(3), levels.get("minecraft:efficiency"));
+        for (String id : List.of("high_explosive", "powderless", "rapid_reload", "recoil")) {
+            assertEquals(Integer.valueOf(1), levels.get("basesteam:" + id));
+        }
+        assertTrue(ItemStack.matches(decoded, player.items.getItem(slot)));
         assertEquals(inventory, player.items.save(new ListTag()));
     }
 
@@ -151,8 +191,15 @@ public class Native117PlayerIoTest {
         HeadlessPlayer player = allocate(HeadlessPlayer.class);
         player.setUUID(ID);
         player.items = new Inventory(player);
-        player.items.setItem(slot, ItemStack.of(book(count)));
+        CompoundTag nativeBook = (CompoundTag) DataFixers.getDataFixer().update(References.ITEM_STACK,
+                new Dynamic<>(NbtOps.INSTANCE, book(count)), 3465,
+                SharedConstants.getCurrentVersion().getDataVersion().getVersion()).getValue();
+        player.items.setItem(slot, ItemStack.parse(registries, nativeBook).orElseThrow());
         return player;
+    }
+
+    private static CompoundTag readCompressed(File file) throws Exception {
+        return NbtIo.readCompressed(file.toPath(), NbtAccounter.unlimitedHeap());
     }
 
     private static PlayerDataStorage data(File directory) throws Exception {
@@ -185,7 +232,8 @@ public class Native117PlayerIoTest {
     // PlayerData save/load, compressed files, DFU and ItemStacks are native.
     private static final class HeadlessPlayer extends ServerPlayer {
         Inventory items;
-        private HeadlessPlayer() { super(null, null, new GameProfile(ID, "Headless")); }
+        private HeadlessPlayer() { super(null, null, new GameProfile(ID, "Headless"), net.minecraft.server.level.ClientInformation.createDefault()); }
+        @Override public RegistryAccess registryAccess() { return registries; }
         @Override public CompoundTag saveWithoutId(CompoundTag root) {
             root.putInt("DataVersion", SharedConstants.getCurrentVersion().getDataVersion().getVersion());
             root.putUUID("UUID", getUUID());

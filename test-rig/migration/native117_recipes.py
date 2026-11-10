@@ -41,7 +41,7 @@ def read_json(path):
     return json.loads(path.read_text(encoding="utf-8-sig"))
 
 
-def recipe_fixture(jars):
+def recipe_fixture(jars, *, component_predicates=False):
     recipes = []
     sources = {}
     for path in jars:
@@ -66,6 +66,9 @@ def recipe_fixture(jars):
                             raise AssertionError(f"Unsupported inventory predicate: {advancement_name}/{key}")
                         if "items" in items[0]:
                             choices = items[0]["items"]
+                            if component_predicates and isinstance(choices, str) and choices.startswith("#") and len(choices) > 1:
+                                predicates[key] = {"tag": choices[1:]}
+                                continue
                             if (not isinstance(choices, list) or len(choices) != 1
                                     or not isinstance(choices[0], str) or not choices[0]):
                                 raise AssertionError(f"Expected one explicit native item: {advancement_name}/{key}")

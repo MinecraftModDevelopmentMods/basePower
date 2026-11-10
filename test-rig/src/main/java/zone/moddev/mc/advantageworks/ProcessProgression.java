@@ -53,7 +53,7 @@ final class ProcessProgression {
                 && !output.isEmpty() && id(output).equals(id(expected)) && output.getCount() == expected.getCount(),
                 "Live furnace failed " + recipe + ": input=" + furnace.getItem(0)
                     + ", fuel=" + furnace.getItem(1) + ", output=" + output
-                    + ", expected=" + expected + ", saved=" + furnace.saveWithFullMetadata());
+                    + ", expected=" + expected + ", saved=" + WorksBlockData.save(furnace));
         record("live_furnace:" + recipe, input.getCount(), output.getCount());
     }
 
@@ -78,8 +78,8 @@ final class ProcessProgression {
         attempt.addProperty("recipe", recipe);
         attempt.addProperty("sourceUuid", source.getUUID().toString());
         attempt.addProperty("accepted", accepted);
-        attempt.addProperty("inputNbt", input.save(new net.minecraft.nbt.CompoundTag()).toString());
-        attempt.addProperty("expectedNbt", expected.save(new net.minecraft.nbt.CompoundTag()).toString());
+        attempt.addProperty("inputNbt", input.saveOptional(world.registryAccess()).toString());
+        attempt.addProperty("expectedNbt", expected.saveOptional(world.registryAccess()).toString());
         JsonObject before = hammerSnapshot(world, player, pos, area, source);
         attempt.add("before", before);
         attempt.addProperty("sourceMatchesInput", ItemStack.matches(source.getItem(), input));
@@ -121,7 +121,7 @@ final class ProcessProgression {
             String requestedRecipe) {
         JsonObject selection = new JsonObject();
         selection.addProperty("selector", "RecipeManager.getRecipeFor(basemetals:crushing)");
-        selection.addProperty("inputNbt", input.save(new net.minecraft.nbt.CompoundTag()).toString());
+        selection.addProperty("inputNbt", input.saveOptional(world.registryAccess()).toString());
         selection.addProperty("recipeManagerIdentity", System.identityHashCode(world.getRecipeManager()));
         selection.addProperty("requestedIdPresent",
                 world.getRecipeManager().byKey(new ResourceLocation(requestedRecipe)).isPresent());
@@ -131,15 +131,15 @@ final class ProcessProgression {
                 throw new IllegalStateException("Unexpected hammer class " + hammerClass.getName());
             RecipeType<?> type = net.minecraft.core.registries.BuiltInRegistries.RECIPE_TYPE
                     .getOptional(new ResourceLocation("basemetals", "crushing")).orElseThrow();
-            Recipe<?> selected = world.getRecipeManager().getRecipeFor(
+            net.minecraft.world.item.crafting.RecipeHolder<?> selected = world.getRecipeManager().getRecipeFor(
                     (RecipeType<Recipe<Container>>) type, new SimpleContainer(input.copy()), world).orElse(null);
             selection.addProperty("status", selected == null ? "NO_MATCH" : "MATCH");
             selection.addProperty("matched", selected != null);
             if (selected != null) {
-                selection.addProperty("id", selected.getId().toString());
-                selection.addProperty("class", selected.getClass().getName());
-                selection.addProperty("resultNbt", selected.getResultItem(world.registryAccess())
-                        .save(new net.minecraft.nbt.CompoundTag()).toString());
+                selection.addProperty("id", selected.id().toString());
+                selection.addProperty("class", selected.value().getClass().getName());
+                selection.addProperty("resultNbt", selected.value().getResultItem(world.registryAccess())
+                        .saveOptional(world.registryAccess()).toString());
             }
         } catch (RuntimeException | LinkageError error) {
             selection.addProperty("status", "OBSERVER_ERROR");
@@ -159,7 +159,7 @@ final class ProcessProgression {
         sample.addProperty("sourceRemoved", source.isRemoved());
         sample.addProperty("sourceBounds", source.getBoundingBox().toString());
         sample.addProperty("sourceIntersectsArea", source.getBoundingBox().intersects(area));
-        sample.addProperty("sourceNbt", source.getItem().save(new net.minecraft.nbt.CompoundTag()).toString());
+        sample.addProperty("sourceNbt", source.getItem().saveOptional(world.registryAccess()).toString());
         sample.addProperty("uuidLookupIsSource", world.getEntity(source.getUUID()) == source);
         sample.addProperty("entitiesLoaded", world.areEntitiesLoaded(net.minecraft.world.level.ChunkPos.asLong(pos)));
         sample.addProperty("blockAndEntitiesTicking", Native118ChunkTicking.withEntitiesLoaded(world, pos));
@@ -168,7 +168,7 @@ final class ProcessProgression {
         sample.addProperty("creative", player.isCreative());
         sample.addProperty("shift", player.isShiftKeyDown());
         sample.addProperty("hammerClass", player.getMainHandItem().getItem().getClass().getName());
-        sample.addProperty("hammerNbt", player.getMainHandItem().save(new net.minecraft.nbt.CompoundTag()).toString());
+        sample.addProperty("hammerNbt", player.getMainHandItem().saveOptional(world.registryAccess()).toString());
         sample.addProperty("hammerDamage", player.getMainHandItem().getDamageValue());
         sample.addProperty("hammerMaxDamage", player.getMainHandItem().getMaxDamage());
         JsonArray items = new JsonArray();
@@ -180,7 +180,7 @@ final class ProcessProgression {
             item.addProperty("isSource", entity == source);
             item.addProperty("removed", entity.isRemoved());
             item.addProperty("bounds", entity.getBoundingBox().toString());
-            item.addProperty("stackNbt", entity.getItem().save(new net.minecraft.nbt.CompoundTag()).toString());
+            item.addProperty("stackNbt", entity.getItem().saveOptional(world.registryAccess()).toString());
             items.add(item);
         }
         sample.addProperty("sourceInAabb", sourceInAabb);
@@ -192,7 +192,7 @@ final class ProcessProgression {
         if (input.getItem() instanceof BlockItem) {
             for (String id : known.keySet()) {
                 if (id.startsWith("basemetals:") && id.endsWith("_crackhammer")
-                        && stack(id).getItem().isCorrectToolForDrops(((BlockItem) input.getItem()).getBlock().defaultBlockState())) return true;
+                        && stack(id).isCorrectToolForDrops(((BlockItem) input.getItem()).getBlock().defaultBlockState())) return true;
             }
             return (has(known, "basesteam:steam_crusher", "basesteam:steam_boiler_coal", "minecraft:water_bucket"))
                     || has(known, "baseelectric:electric_crusher", "baseelectric:hydroelectric_generator", "minecraft:water_bucket");

@@ -9,7 +9,6 @@ import net.minecraft.world.level.block.FenceGateBlock;
 import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.StandingSignBlock;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.commands.CommandRuntimeException;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -82,21 +81,21 @@ final class WorksController {
 
     synchronized void loadDefinition() {
         if (definition != null) return;
-        definition = WorksDefinitionLoader.loadNative1201();
+        definition = WorksDefinitionLoader.loadNative1206();
         for (WorksDefinition.Station station : definition.stations) {
             stations.put(station.id.toUpperCase(Locale.ROOT), station);
             statuses.put(station.id, "NOT_BUILT");
         }
     }
 
-    void requireAuthorizedWorld(MinecraftServer server) throws CommandRuntimeException {
+    void requireAuthorizedWorld(MinecraftServer server) throws IllegalStateException {
         File marker = new File("advantage-works.allow");
         if (!WorksWorldGuard.authorized(server.getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT), marker.isFile())) {
             throw commandError("Refusing to alter an unmarked world. Expected AdvantageWorks level and advantage-works.allow.");
         }
     }
 
-    synchronized String build(MinecraftServer server, String target) throws CommandRuntimeException {
+    synchronized String build(MinecraftServer server, String target) throws IllegalStateException {
         loadDefinition();
         ServerLevel world = overworld(server);
         if ("all".equalsIgnoreCase(target)) buildConcourse(world);
@@ -118,7 +117,7 @@ final class WorksController {
         return "Advantage Works built " + built + " station(s); skipped " + skipped + " for missing mods.";
     }
 
-    synchronized String reset(MinecraftServer server, String target) throws CommandRuntimeException {
+    synchronized String reset(MinecraftServer server, String target) throws IllegalStateException {
         List<WorksDefinition.Station> selected = select(target, true);
         ServerLevel world = overworld(server);
         int reset = 0;
@@ -133,7 +132,7 @@ final class WorksController {
         return "Reset " + reset + " station(s).";
     }
 
-    synchronized String start(MinecraftServer server, String target) throws CommandRuntimeException {
+    synchronized String start(MinecraftServer server, String target) throws IllegalStateException {
         WorksDefinition.Station station = oneStation(target);
         if (!requirementsPresent(station)) {
             statuses.put(station.id, "SKIP");
@@ -152,7 +151,7 @@ final class WorksController {
         return "Started " + station.id + " - " + station.name;
     }
 
-    synchronized String stop(MinecraftServer server, String target) throws CommandRuntimeException {
+    synchronized String stop(MinecraftServer server, String target) throws IllegalStateException {
         WorksDefinition.Station station = oneStation(target);
         ServerLevel world = overworld(server);
         if (requirementsPresent(station)) {
@@ -179,7 +178,7 @@ final class WorksController {
         }
     }
 
-    synchronized String check(MinecraftServer server, String target) throws CommandRuntimeException {
+    synchronized String check(MinecraftServer server, String target) throws IllegalStateException {
         List<WorksDefinition.Station> selected = select(target, true);
         ServerLevel world = overworld(server);
         Map<String, Integer> summary = new LinkedHashMap<>();
@@ -195,13 +194,13 @@ final class WorksController {
         return "Advantage Works check: " + summary;
     }
 
-    synchronized String status(String target) throws CommandRuntimeException {
+    synchronized String status(String target) throws IllegalStateException {
         if ("all".equalsIgnoreCase(target)) return statuses.toString();
         WorksDefinition.Station station = oneStation(target);
         return station.id + " " + station.name + ": " + statuses.get(station.id);
     }
 
-    synchronized String checkpoint(MinecraftServer server, String target, String name) throws CommandRuntimeException {
+    synchronized String checkpoint(MinecraftServer server, String target, String name) throws IllegalStateException {
         WorksDefinition.Station station = oneStation(target);
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("checkpoint", name);
@@ -211,7 +210,7 @@ final class WorksController {
         return "Checkpoint written for " + station.id + " to " + result.getPath();
     }
 
-    synchronized String sampleWorldgen(MinecraftServer server, int radius) throws CommandRuntimeException {
+    synchronized String sampleWorldgen(MinecraftServer server, int radius) throws IllegalStateException {
         if (radius < 1 || radius > 16) {
             throw commandError("Worldgen sample radius must be between 1 and 16 chunks");
         }
@@ -355,7 +354,7 @@ final class WorksController {
             block.put("block", name == null ? "unknown" : name.toString());
             block.put("state", state.toString());
             BlockEntity tile = world.getBlockEntity(pos);
-            if (tile != null) block.put("nbt", tile.saveWithFullMetadata().toString());
+            if (tile != null) block.put("nbt", WorksBlockData.save(tile).toString());
             snapshot.add(block);
         }
         return snapshot;
@@ -394,7 +393,7 @@ final class WorksController {
             for (int[] position : assertion.positions) {
                 BlockEntity source = world.getBlockEntity(absolute(station, position));
                 if (source == null) return false;
-                total += AssertionChecks.fluidAmount(source.saveWithFullMetadata(), assertion.nbtPath, assertion.fluid);
+                total += AssertionChecks.fluidAmount(WorksBlockData.save(source), assertion.nbtPath, assertion.fluid);
             }
             return compare(total, assertion.operator, assertion.value);
         }
@@ -416,9 +415,8 @@ final class WorksController {
         }
         if ("comparatorOutput".equals(assertion.type)) {
             BlockState state = world.getBlockState(pos);
-            Block source = state.getBlock();
-            return source.hasAnalogOutputSignal(state)
-                    && compare(source.getAnalogOutputSignal(state, world, pos),
+            return state.hasAnalogOutputSignal()
+                    && compare(state.getAnalogOutputSignal(world, pos),
                     assertion.operator, assertion.value);
         }
         BlockEntity tile = world.getBlockEntity(pos);
@@ -436,24 +434,24 @@ final class WorksController {
             Container inventory = (Container) tile;
             if (assertion.slot < 0 || assertion.slot >= inventory.getContainerSize()) return false;
             ItemStack stack = inventory.getItem(assertion.slot);
-            if (stack.isEmpty() || !stack.hasTag()) return false;
-            Number number = numberAt(stack.getTag(), assertion.nbtPath);
+            if (stack.isEmpty()) return false;
+            Number number = numberAt(WorksItemData.read(stack), assertion.nbtPath);
             return number != null && compare(number.doubleValue(), assertion.operator, assertion.value);
         }
         if ("nbtNumber".equals(assertion.type)) {
             if (tile == null) return false;
-            CompoundTag nbt = tile.saveWithFullMetadata();
+            CompoundTag nbt = WorksBlockData.save(tile);
             Number number = numberAt(nbt, assertion.nbtPath);
             return number != null && compare(number.doubleValue(), assertion.operator, assertion.value);
         }
         if ("nbtString".equals(assertion.type)) {
             if (tile == null) return false;
-            String text = stringAt(tile.saveWithFullMetadata(), assertion.nbtPath);
+            String text = stringAt(WorksBlockData.save(tile), assertion.nbtPath);
             return assertion.expectedText != null && assertion.expectedText.equals(text);
         }
         if ("energy".equals(assertion.type)) {
             if (tile == null) return false;
-            int[] energy = tile.saveWithFullMetadata().getIntArray("Energy");
+            int[] energy = WorksBlockData.save(tile).getIntArray("Energy");
             int index = assertion.energyIndex == null ? 0 : assertion.energyIndex;
             return index >= 0 && index < energy.length
                     && compare(Float.intBitsToFloat(energy[index]), assertion.operator, assertion.value);
@@ -522,7 +520,7 @@ final class WorksController {
         BlockPos min = absolute(station, station.boundsMin);
         BlockPos max = absolute(station, station.boundsMax);
         for (Entity entity : world.getEntitiesOfClass(Entity.class,
-                new AABB(min, max.offset(1, 1, 1)))) {
+                WorksBlockData.bounds(min, max.offset(1, 1, 1)))) {
             if (StationOwnership.matches(entity, station.id)) {
                 entity.discard();
             }
@@ -629,7 +627,7 @@ final class WorksController {
                     ItemStack stack = itemStack(stackItem, action.count, action.damage);
                     if (action.nbt != null) {
                         try {
-                            stack.setTag(JsonNbtConverter.toCompound(action.nbt));
+                            WorksItemData.set(stack, JsonNbtConverter.toCompound(action.nbt));
                         } catch (Exception ex) {
                             throw new IllegalStateException("Cannot parse item NBT for " + action.item, ex);
                         }
@@ -749,20 +747,20 @@ final class WorksController {
         BlockEntity tile = world.getBlockEntity(pos);
         if (tile == null) throw new IllegalStateException("No tile entity at " + pos);
         try {
-            CompoundTag base = tile.saveWithFullMetadata();
+            CompoundTag base = WorksBlockData.save(tile);
             CompoundTag additions = JsonNbtConverter.toCompound(supplied);
             base.merge(additions);
             base.putInt("x", pos.getX());
             base.putInt("y", pos.getY());
             base.putInt("z", pos.getZ());
-            tile.load(base);
+            tile.loadWithComponents(base, world.registryAccess());
             tile.setChanged();
         } catch (Exception ex) {
             throw new IllegalStateException("Cannot merge tile NBT at " + pos, ex);
         }
     }
 
-    private List<WorksDefinition.Station> select(String target, boolean allowGroups) throws CommandRuntimeException {
+    private List<WorksDefinition.Station> select(String target, boolean allowGroups) throws IllegalStateException {
         loadDefinition();
         if ("all".equalsIgnoreCase(target)) return new ArrayList<>(stations.values());
         if (allowGroups) {
@@ -778,7 +776,7 @@ final class WorksController {
         return Collections.singletonList(oneStation(target));
     }
 
-    private WorksDefinition.Station oneStation(String id) throws CommandRuntimeException {
+    private WorksDefinition.Station oneStation(String id) throws IllegalStateException {
         loadDefinition();
         WorksDefinition.Station station = stations.get(id.toUpperCase(Locale.ROOT));
         if (station == null) throw commandError("Unknown Advantage Works station " + id);
@@ -856,7 +854,7 @@ final class WorksController {
         entity.getPersistentData().putString("AdvantageWorksStation", stationId);
     }
 
-    private static ServerLevel overworld(MinecraftServer server) throws CommandRuntimeException {
+    private static ServerLevel overworld(MinecraftServer server) throws IllegalStateException {
         ServerLevel world = server.getLevel(Level.OVERWORLD);
         if (world == null) throw commandError("Overworld is not loaded");
         return world;
@@ -878,8 +876,8 @@ final class WorksController {
         return ForgeRegistries.ITEMS.containsKey(key) ? ForgeRegistries.ITEMS.getValue(key) : null;
     }
 
-    private static CommandRuntimeException commandError(String message) {
-        return new CommandRuntimeException(Component.literal(message));
+    private static IllegalStateException commandError(String message) {
+        return new IllegalStateException(message);
     }
 
     private static BlockState legacyState(String name, Block block, int metadata) {

@@ -17,7 +17,7 @@ final class BatteryOperationalCases {
                     c -> {
                         c.block(7, 4, 8, "baseelectric:electric_battery_array");
                         c.put(7, 4, 8, 0, "baseelectric:" + chemistry + "_battery", 1);
-                        c.inventory(7, 4, 8).getItem(0).getOrCreateTag().putFloat("energy", 10);
+                        WorksItemData.update(c.inventory(7, 4, 8).getItem(0), tag -> tag.putFloat("energy", 10));
                         c.block(8, 4, 8, "baseelectric:led_bar");
                     }, c -> {
                         PoweredEntity array = (PoweredEntity)c.tile(7, 4, 8);

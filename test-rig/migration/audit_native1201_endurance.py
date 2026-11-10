@@ -13,11 +13,16 @@ from native117_broad import read_json
 import native1201
 
 
-def replay(run, profile, specification):
-    report = read_json(run / "native1201-endurance-results.json")
-    modes = ("fresh1201", "retained-upgrade-native1201")
+def replay(run, profile, specification, *, adapter=native1201):
+    suffix = adapter.MINECRAFT.replace(".", "")
+    receipt = run / f"native{suffix}-endurance-results.json"
+    report = read_json(receipt)
+    modes = (f"fresh{suffix}", f"retained-upgrade-native{suffix}")
+    parse = getattr(adapter, "parse_snapshot", endurance.parse_snapshot)
+    verify_batch = getattr(adapter, "verify_batch", None)
     require = endurance.require
-    require(report["status"] == "PASS" and report["minecraft"] == native1201.MINECRAFT
+    recorded_forge = report.get("forge", native1201.FORGE if adapter is native1201 else None)
+    require(report["status"] == "PASS" and (report["minecraft"], recorded_forge) == (adapter.MINECRAFT, adapter.FORGE)
             and report["duration_seconds"] == 1800 and report["interval_seconds"] == 60
             and report["retained_unchanged"] is True and set(report["profiles"]) == set(modes),
             "Expected a complete fresh and migrated 30-minute run")
@@ -42,22 +47,22 @@ def replay(run, profile, specification):
     for mode in modes:
         runtime = run / mode
         station_path = runtime / "advantage-works-results"
-        native1201.verify_runtime(runtime)
+        adapter.verify_runtime(runtime)
         require({jar.name: digest(jar) for jar in (runtime / "mods").glob("*.jar")} == expected_jars,
                 mode + ": staged artifacts differ from the approved profile")
         for boot in ("endurance", "endurance-restart"):
-            native1201.require_native_boot(runtime / f"console-{boot}.log")
+            adapter.require_native_boot(runtime / f"console-{boot}.log")
         rig = endurance.Rig(mode, runtime, None, None, definitions)
 
         def snapshot(station, label):
             document = read_json(station_path / f"{station}-checkpoint-{label}.json")
-            require(document["minecraft"] == native1201.MINECRAFT and document["forge"] == native1201.FORGE
+            require(document["minecraft"] == adapter.MINECRAFT and document["forge"] == adapter.FORGE
                     and all(document["mods"].get(key) == value for key, value in mod_versions.items()),
                     mode + ": checkpoint runtime differs from profile")
             return document
 
         setup = snapshot("E-02", "setup")
-        rig.static_batteries = endurance.parse_snapshot(setup)[rig.pos("E-02", (3, 1, 12))]["data"]["Items"]
+        rig.static_batteries = parse(setup)[rig.pos("E-02", (3, 1, 12))]["data"]["Items"]
         ledger = read_json(runtime / "endurance-ledger.json")
         require([row["label"] for row in ledger] == labels, mode + ": missing or misordered checkpoints")
         times = {}
@@ -66,7 +71,9 @@ def replay(run, profile, specification):
             label = row["label"]
             for station in endurance.CHECKED:
                 document = snapshot(station, label)
-                rig.documents[station], rig.snapshots[station] = document, endurance.parse_snapshot(document)
+                rig.documents[station], rig.snapshots[station] = document, parse(document)
+            if verify_batch:
+                verify_batch(runtime, label, rig.documents, definitions)
             with patch.object(endurance, "write_json"):
                 verified = rig.batch(label, power="basepower")
             require(verified == row, mode + "/" + label + ": raw result differs from the reported ledger")
@@ -91,10 +98,10 @@ def replay(run, profile, specification):
         results[mode] = dict(checkpoints=len(ledger), stationSnapshots=len(ledger) * len(endurance.CHECKED),
                              setupToEndTicks=ticks, sampledTicks=sampled_ticks, sampledSeconds=sampled_seconds,
                              sampledTicksPerSecond=sampled_ticks / sampled_seconds, outputs=dict(totals))
-    return dict(status="PASS", inputReceiptSha256=digest(run / "native1201-endurance-results.json"), profiles=results)
+    return dict(status="PASS", inputReceiptSha256=digest(receipt), profiles=results)
 
 
-def main():
+def main(*, adapter=native1201):
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("run", "profile", "specification", "output"):
         parser.add_argument("--" + name, required=True, type=Path)
@@ -103,7 +110,7 @@ def main():
         require_disjoint(args.output, path)
     if args.output.exists():
         raise FileExistsError(args.output)
-    write_json(args.output, replay(args.run, args.profile, args.specification))
+    write_json(args.output, replay(args.run, args.profile, args.specification, adapter=adapter))
     print("PASS: both 30-minute ledgers replayed from native station snapshots")
 
 

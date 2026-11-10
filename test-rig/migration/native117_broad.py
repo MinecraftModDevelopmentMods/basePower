@@ -51,14 +51,14 @@ def nbt(row):
     return plain(nbtlib.parse_nbt(row["nbt"])) if "nbt" in row else {}
 
 
-def drill_state(station, document, *, initial=False):
+def drill_state(station, document, *, initial=False, unpack=nbt):
     rows = {tuple(row["pos"]): row for row in document["snapshot"]}
     if len(rows) != len(document["snapshot"]):
         raise AssertionError("Duplicate snapshot positions")
     cases = drill_cases(station)
     stock = Counter()
     for row in rows.values():
-        for stack in nbt(row).get("Items", []):
+        for stack in unpack(row).get("Items", []):
             marker = stack.get("tag", {}).get("AdvBayStock")
             if marker:
                 if stack.get("id") != "minecraft:diamond":
@@ -80,7 +80,7 @@ def drill_state(station, document, *, initial=False):
                 raise AssertionError(case["id"] + ": initial declared rear track is missing")
         if "facing=" + case["facing"] not in row["state"]:
             raise AssertionError(case["id"] + ": block facing changed")
-        data = nbt(row)
+        data = unpack(row)
         if data.get("ForgeData", {}).get("AdvBayWitness") != case["id"]:
             raise AssertionError(case["id"] + ": persistent moved tile witness lost/replaced")
         if tuple(int(data[axis]) for axis in ("x", "y", "z")) != pos:
@@ -236,11 +236,14 @@ def run_profile(args, profile, output, name, port, stations, *, native118_target
                      if name != "packaged-decoupled" or pin["id"] != "basemetals"}
     expected_mods.update(versions)
     result["expectedMods"] = expected_mods
+    unpack = getattr(native_adapter, "drill_data", nbt)
     server = None
     try:
         verify()
         server = server_type(runtime, java, launcher, "first")
         server.command("advworks build all", "Advantage Works built 21 station(s)")
+        if hasattr(native_adapter, "drill_tickets"):
+            native_adapter.drill_tickets(server, runtime, stations, add=True)
         # Named finite stock and tile data are commissioning witnesses, not repairs
         # performed after operation or restart. Every destination is unchanged later.
         for station in stations:
@@ -251,11 +254,15 @@ def run_profile(args, profile, output, name, port, stations, *, native118_target
                 marker = json.dumps(case["id"])
                 tag = ('{ForgeData:{AdvBayWitness:' + marker + '},Items:[{Slot:0b,id:"minecraft:diamond",'
                        'Count:7b,tag:{AdvBayStock:' + marker + '}}]}')
+                if hasattr(native_adapter, "drill_tag"):
+                    tag = native_adapter.drill_tag(marker)
                 server.command(f"data merge block {pos} {tag}", "Modified block data of")
         initial = {}
         for station in stations:
             if station["id"] in DRILL_BAYS:
-                initial.update(drill_state(station, server.checkpoint(station["id"], "initial"), initial=True))
+                initial.update(drill_state(station, server.checkpoint(station["id"], "initial"), initial=True, unpack=unpack))
+        if hasattr(native_adapter, "drill_tickets"):
+            native_adapter.drill_tickets(server, runtime, stations, add=False)
         result["phases"]["initial"] = dict(status="PASS", drills=initial)
         write_json(runtime / "broad-results.json", result)
         for station in stations:
@@ -270,7 +277,7 @@ def run_profile(args, profile, output, name, port, stations, *, native118_target
         before = {}
         for station in stations:
             if station["id"] in DRILL_BAYS:
-                before.update(drill_state(station, first[station["id"]]))
+                before.update(drill_state(station, first[station["id"]], unpack=unpack))
         result["phases"]["operation"] = operating_state(initial, before)
         result["beforeRestart"] = before
         server.close()
@@ -286,7 +293,7 @@ def run_profile(args, profile, output, name, port, stations, *, native118_target
         after = {}
         for station in stations:
             if station["id"] in DRILL_BAYS:
-                after.update(drill_state(station, second[station["id"]]))
+                after.update(drill_state(station, second[station["id"]], unpack=unpack))
         result["afterRestart"] = after
         result["phases"]["persistence"] = restarted_state(before, after)
         server.close()

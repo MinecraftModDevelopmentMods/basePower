@@ -2,12 +2,11 @@ import org.apache.tools.ant.filters.FixCrLfFilter
 
 plugins {
     id 'java'
-    id 'net.minecraftforge.renamer' version '1.1.5'
     id 'net.minecraftforge.gradle' version '7.0.34'
 }
 
-ext.forge47MavenizerDefault = '../../../../MinecraftMineralogy/OS1201/OreSpawn/ci-fixtures/tools/minecraft-mavenizer-0.5.21-orespawn-compat.jar'
-apply from: '../gradle/forge47-mavenizer.gradle'
+ext.forge50MavenizerDefault = '../../../../MinecraftMineralogy/OS1206/OreSpawn/ci-fixtures/tools/minecraft-mavenizer-0.5.21-orespawn-compat.jar'
+apply from: '../gradle/forge50-mavenizer.gradle'
 
 // Saves, pinned inputs and evidence are siblings, never Gradle cleanup targets.
 layout.buildDirectory = layout.projectDirectory.dir('build/gradle')
@@ -26,16 +25,17 @@ version = project.harness_version
 base.archivesName = 'AdvantageWorksTestHarness'
 
 java {
-    toolchain.languageVersion = JavaLanguageVersion.of(17)
+    toolchain.languageVersion = JavaLanguageVersion.of(21)
 }
 
 tasks.withType(JavaCompile).configureEach {
     javaCompiler = javaToolchains.compilerFor {
-        languageVersion = JavaLanguageVersion.of(17)
+        languageVersion = JavaLanguageVersion.of(21)
     }
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
     options.encoding = 'UTF-8'
+    options.compilerArgs.addAll(['-Xmaxerrs', '1000'])
 }
 
 tasks.withType(AbstractArchiveTask).configureEach {
@@ -69,8 +69,10 @@ repositories {
     }
 }
 
-def powerCompileJar = file(project.findProperty('powerAdvantageDeobfJar')
-        ?: '../build/libs-dev/basePower-2.4.12.120011-deobf.jar')
+def powerCompileJar = file(project.findProperty('powerAdvantageReleaseJar')
+        ?: '../build/libs/basePower-2.4.13.120061.jar')
+def exploratoryPowerSha = providers.gradleProperty('worksExploratoryPowerSha256')
+def powerCompileSha = exploratoryPowerSha.orElse(providers.gradleProperty('works_power_sha256'))
 
 dependencies {
     implementation minecraft.dependency(
@@ -102,19 +104,19 @@ tasks.register('verifyWorksCompileInputPin') {
     group = 'verification'
     description = 'Checks the exact parent-supplied Power API artifact before harness compilation.'
     inputs.file(powerCompileJar)
-    inputs.property('sha256', project.poweradvantage_deobf_sha256)
-    inputs.property('sourceCommit', project.poweradvantage_source_commit)
+    inputs.property('powerSha256', powerCompileSha.orElse(''))
     doLast {
-        if (!powerCompileJar.isFile()) throw new GradleException("Missing 1.20.1 Power compile input: ${powerCompileJar}")
+        if (!powerCompileJar.isFile()) throw new GradleException("Missing 1.20.6 Power compile input: ${powerCompileJar}")
+        if (!(powerCompileSha.getOrElse('') ==~ /[A-Fa-f0-9]{64}/)) {
+            throw new GradleException('Missing or invalid Power SHA-256 pin')
+        }
         String actual = java.security.MessageDigest.getInstance('SHA-256')
                 .digest(powerCompileJar.bytes).encodeHex().toString().toUpperCase(Locale.ROOT)
-        if (actual != project.poweradvantage_deobf_sha256) {
+        if (!actual.equalsIgnoreCase(powerCompileSha.get())) {
             throw new GradleException("Power compile input changed: ${actual}; obtain a new parent pin")
         }
-        if (project.poweradvantage_source_commit != '83a3f028ffad220fe2f3cc4983a9340dde2295a8'
-                || project.poweradvantage_pin_status != 'SOURCE_AND_ARTIFACT_PINNED') {
-            throw new GradleException('The harness requires the verified 1.20.1 Power source pin')
-        }
+        String status = exploratoryPowerSha.isPresent() ? 'EXPLORATORY_UNQUALIFIED' : 'Pinned'
+        logger.lifecycle("${status} Power compile/runtime input: ${actual}")
     }
 }
 
@@ -141,13 +143,13 @@ tasks.named('processResources', ProcessResources) {
 }
 
 tasks.named('jar', Jar) {
-    archiveClassifier = 'deobf'
-    destinationDirectory = layout.buildDirectory.dir('libs-dev')
     manifest {
         attributes([
                 'Implementation-Title': base.archivesName.get(),
                 'Implementation-Version': project.version,
-                'Built-On': "${project.minecraft_version}-${project.forge_version}"
+                'Built-On': "${project.minecraft_version}-${project.forge_version}",
+                'Power-Input-Status': 'EXPLORATORY_UNQUALIFIED',
+                'Power-Input-SHA256': powerCompileSha.getOrElse('').toUpperCase(Locale.ROOT)
         ])
     }
 }
@@ -158,11 +160,6 @@ tasks.named('processRunnerResources', ProcessResources) {
     }
 }
 
-def releaseJar = renamer.classes(tasks.named('jar', Jar)) {
-    map.from minecraft.dependency.toSrgFile
-    archiveClassifier = null
-}
-
 tasks.register('runnerJar', Jar) {
     dependsOn tasks.named('runnerClasses')
     archiveClassifier = 'runner'
@@ -171,8 +168,21 @@ tasks.register('runnerJar', Jar) {
 }
 
 tasks.named('assemble') {
-    dependsOn releaseJar
     dependsOn tasks.named('runnerJar')
+}
+
+def configurePreparedSeedArgs = { JavaExec task ->
+    def options = [
+            worksServerSeed: '--prepared-server-seed',
+            worksServerInventory: '--prepared-server-seed-inventory',
+            worksServerInventorySha256: '--prepared-server-seed-sha256'
+    ]
+    options.each { key, option ->
+        if (project.hasProperty(key)) {
+            String value = project.property(key).toString()
+            task.args option, key.endsWith('Sha256') ? value : file(value).absolutePath
+        }
+    }
 }
 
 def registerWorksRunner = { String taskName, String profileName, boolean automated, String taskDescription ->
@@ -180,12 +190,20 @@ def registerWorksRunner = { String taskName, String profileName, boolean automat
         group = 'verification'
         description = taskDescription
         dependsOn tasks.named('jar')
-        dependsOn releaseJar
         dependsOn tasks.named('runnerClasses')
         classpath = sourceSets.runner.runtimeClasspath
         mainClass = 'zone.moddev.mc.advantageworks.runner.WorksRunner'
         if (!automated) standardInput = System.in
-        args '--profile', file("profiles/native1201/${profileName}.json").absolutePath
+        doFirst { JavaExec task ->
+            String pin = providers.gradleProperty('worksProfileFile').orNull
+            if (!pin) throw new GradleException("Generate the pinned ${profileName} profile with migration/native1206.py profile and set -PworksProfileFile")
+            File profile = file(pin)
+            if (new groovy.json.JsonSlurper().parse(profile).name != profileName) {
+                throw new GradleException("Expected profile ${profileName}: ${profile}")
+            }
+            args '--profile', profile.absolutePath
+            configurePreparedSeedArgs(task)
+        }
         if (automated) args '--automated'
         if (project.hasProperty('worksStations')) {
             args '--stations', project.property('worksStations').toString()
@@ -200,7 +218,7 @@ def registerWorksRunner = { String taskName, String profileName, boolean automat
 }
 
 registerWorksRunner('runWorksDev', 'dev-core', false,
-        'Builds and launches a disposable interactive 1.20.1 Advantage Works development server.')
+        'Builds and launches a disposable interactive 1.20.6 Advantage Works development server.')
 registerWorksRunner('verifyWorksDev', 'dev-core', true,
         'Generates, checks, restarts, and rechecks the disposable development works.')
 registerWorksRunner('verifyWorksTechProgression', 'dev-core-tech-progression', true,
@@ -224,22 +242,25 @@ registerWorksRunner('verifyWorksWorldgenLegacyImport', 'worldgen-legacy-import',
 registerWorksRunner('runWorksPackagedCurrent', 'packaged-current', false,
         'Launches the complete packaged works on localhost for manual inspection.')
 
-tasks.register('verifyWorksNative1201Inputs', JavaExec) {
+tasks.register('verifyWorksNative1206Inputs', JavaExec) {
     group = 'verification'
-    description = 'Checks 1.20.1 candidate identities and hashes without creating or opening a world.'
-    dependsOn tasks.named('runnerClasses'), tasks.named('jar'), releaseJar
+    description = 'Checks 1.20.6 candidate identities and hashes without creating or opening a world.'
+    dependsOn tasks.named('runnerClasses'), tasks.named('jar')
     classpath = sourceSets.runner.runtimeClasspath
     mainClass = 'zone.moddev.mc.advantageworks.runner.WorksRunner'
-    args '--profile', file("profiles/native1201/${project.findProperty('worksProfile') ?: 'packaged-current'}.json").absolutePath,
-            '--validate-only'
+    doFirst { JavaExec task ->
+        String pin = providers.gradleProperty('worksProfileFile').orNull
+        if (!pin) throw new GradleException('Set -PworksProfileFile to a generated Forge 50 profile')
+        args '--profile', file(pin).absolutePath, '--validate-only'
+        configurePreparedSeedArgs(task)
+    }
 }
 
 tasks.register('verifyHarnessIsolation') {
     group = 'verification'
     description = 'Confirms the PowerAdvantage release contains no test-harness content.'
     doLast {
-        File powerJar = file(project.findProperty('powerAdvantageReleaseJar')
-                ?: '../build/libs/basePower-2.4.12.120011.jar')
+        File powerJar = powerCompileJar
         if (!powerJar.isFile()) {
             throw new GradleException("Build PowerAdvantage first: ${powerJar}")
         }
@@ -261,17 +282,32 @@ tasks.named('check') {
 }
 
 def nativeControlClasspath = configurations.compileClasspath.minus(files(powerCompileJar))
+def compileUnitSupport = tasks.register('compileUnitSupport', JavaCompile) {
+    source fileTree('unit-support')
+    classpath = nativeControlClasspath
+    destinationDirectory = layout.buildDirectory.dir('unit-support/classes')
+}
+tasks.register('verifyForge50UnitBootstrap', JavaExec) {
+    group = 'verification'
+    dependsOn compileUnitSupport, unitBootstrapJar
+    classpath = files(compileUnitSupport.flatMap { it.destinationDirectory }) + nativeControlClasspath
+    mainClass = 'zone.moddev.mc.advantageworks.unit.Forge50UnitControl'
+    javaLauncher = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(21) }
+    doFirst { jvmArgs "-javaagent:${unitBootstrapJar.get().archiveFile.get().asFile}" }
+}
 def compilePlatformControls = tasks.register('compilePlatformControls', JavaCompile) {
     source fileTree('platform-controls')
-    classpath = nativeControlClasspath
+    dependsOn compileUnitSupport
+    classpath = nativeControlClasspath + files(compileUnitSupport.flatMap { it.destinationDirectory })
     destinationDirectory = layout.buildDirectory.dir('platform-controls/classes')
 }
 tasks.register('verifyNativeWolfPlatform', JavaExec) {
     group = 'verification'
     dependsOn compilePlatformControls, unitBootstrapJar
-    classpath = files(compilePlatformControls.flatMap { it.destinationDirectory }) + nativeControlClasspath
+    classpath = files(compilePlatformControls.flatMap { it.destinationDirectory },
+            compileUnitSupport.flatMap { it.destinationDirectory }) + nativeControlClasspath
     mainClass = 'NativeWolfPlatformControl'
-    javaLauncher = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(17) }
+    javaLauncher = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(21) }
     doFirst {
         def output = providers.gradleProperty('nativeControlOutput').orNull
         if (!output || file(output).exists()) throw new GradleException('Supply a new -PnativeControlOutput directory')
@@ -283,9 +319,10 @@ tasks.register('verifyNativeWolfPlatform', JavaExec) {
 tasks.register('verifyNativeLeashKnotPlatform', JavaExec) {
     group = 'verification'
     dependsOn compilePlatformControls, unitBootstrapJar
-    classpath = files(compilePlatformControls.flatMap { it.destinationDirectory }) + nativeControlClasspath
+    classpath = files(compilePlatformControls.flatMap { it.destinationDirectory },
+            compileUnitSupport.flatMap { it.destinationDirectory }) + nativeControlClasspath
     mainClass = 'NativeLeashKnotPlatformControl'
-    javaLauncher = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(17) }
+    javaLauncher = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(21) }
     doFirst {
         def output = providers.gradleProperty('nativeControlOutput').orNull
         if (!output || file(output).exists()) throw new GradleException('Supply a new -PnativeControlOutput directory')

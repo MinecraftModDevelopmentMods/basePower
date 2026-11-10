@@ -23,7 +23,6 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.GameType;
-import net.minecraftforge.common.util.FakePlayer;
 import net.minecraftforge.registries.ForgeRegistries;
 
 /** Per-case entities: no shared fake-player factory identity or mutable counters. */
@@ -102,7 +101,7 @@ final class SteamOperationalActors {
     }
 
     private static final class Shot {
-        FakePlayer player;
+        WorksOfflinePlayer player;
         Cow target;
         ItemStack weapon;
         float expectedDamage;
@@ -121,9 +120,9 @@ final class SteamOperationalActors {
                         BlockPos muzzle = c.at(8, 0, 8);
                         UUID id = UUID.nameUUIDFromBytes(("SteamOperational/" + mode + "/" + muzzle)
                                 .getBytes(StandardCharsets.UTF_8));
-                        shot.player = new FakePlayer(c.world, new GameProfile(id, "SteamOperational"));
+                        shot.player = new WorksOfflinePlayer(c.world, new GameProfile(id, "SteamOperational"));
                         shot.player.connection = new ServerGamePacketListenerImpl(c.world.getServer(),
-                                new Connection(PacketFlow.SERVERBOUND), shot.player) {
+                                new Connection(PacketFlow.SERVERBOUND), shot.player, WorksOfflinePlayer.cookie(shot.player)) {
                             @Override public void send(Packet<?> packet) {}
                         };
                         shot.player.gameMode.changeGameModeForPlayer(GameType.SURVIVAL);
@@ -157,7 +156,7 @@ final class SteamOperationalActors {
                             shot.expectedDamage = 0;
                         } else {
                             c.require(reload == InteractionResult.SUCCESS, "Rapid-reload interaction succeeds");
-                            c.require(shot.weapon.getOrCreateTag().getByte("loaded") == 1,
+                            c.require(WorksItemData.read(shot.weapon).getByte("loaded") == 1,
                                     "Reload interaction loads the chamber before the shot");
                             c.record("musket/ammo-after-reload", shot.player.getInventory().getItem(1).getCount());
                             c.require(shot.player.getInventory().getItem(1).getCount() == shot.expectedAmmo,
@@ -182,7 +181,7 @@ final class SteamOperationalActors {
                                 "Only a real shot debits one musket durability");
                         c.require(shot.player.getInventory().getItem(1).getCount() == shot.expectedAmmo,
                                 "Firing does not charge ammunition a second time");
-                        c.require(shot.weapon.getOrCreateTag().getByte("loaded") == 0,
+                        c.require(WorksItemData.read(shot.weapon).getByte("loaded") == 0,
                                 "The chamber is empty after firing or failed unladen use");
                         c.require(!shot.player.isCreative(), "All ammunition and durability measurements use survival mode");
                     }));

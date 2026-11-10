@@ -335,7 +335,7 @@ final class LifecycleProbe {
             BlockPos pos = position(fixture.to);
             LevelChunk chunk = world.getChunkSource().getChunkNow(pos.getX() >> 4, pos.getZ() >> 4);
             BlockEntity tile = existingTile(world, pos);
-            CompoundTag saved = tile == null ? new CompoundTag() : tile.saveWithFullMetadata();
+            CompoundTag saved = tile == null ? new CompoundTag() : WorksBlockData.save(tile);
             boolean hasTarget = saved.contains("targetX", 99) && saved.contains("targetY", 99) && saved.contains("targetZ", 99);
             BlockPos target = hasTarget ? new BlockPos(saved.getInt("targetX"), saved.getInt("targetY"), saved.getInt("targetZ")) : pos;
             Map<String, Object> flags = new LinkedHashMap<>();
@@ -376,7 +376,7 @@ final class LifecycleProbe {
         Map<String, CompoundTag> saved = new LinkedHashMap<>();
         for (Fixture fixture : fixtures.values()) {
             if (fixture.to == null) continue;
-            CompoundTag tag = request.bindings.get(fixture.id).tile.saveWithFullMetadata();
+            CompoundTag tag = WorksBlockData.save(request.bindings.get(fixture.id).tile);
             if (!tag.contains("targetX", 99) || !tag.contains("targetY", 99) || !tag.contains("targetZ", 99)
                     || tag.getShort("progress") <= 0) throw new IllegalStateException("Drill must be mid-block " + fixture.id);
             requireInside(fixture, new int[]{tag.getInt("targetX"), tag.getInt("targetY"), tag.getInt("targetZ")});
@@ -400,7 +400,7 @@ final class LifecycleProbe {
                         Blocks.BEDROCK.defaultBlockState(), 3);
             }
             BlockEntity tile = request.bindings.get(entry.getKey()).tile;
-            tile.load(tag); tile.setChanged();
+            tile.loadWithComponents(tag, tile.getLevel().registryAccess()); tile.setChanged();
         }
         requireNewResult(request.label + "-initial");
         Map<String, Object> initial = observe(request.world);
@@ -545,7 +545,7 @@ final class LifecycleProbe {
         result.put("state", chunk.getBlockState(pos).toString());
         BlockEntity tile = chunk.getBlockEntity(pos, LevelChunk.EntityCreationType.CHECK);
         if (tile != null) {
-            result.put("nbt", tile.saveWithFullMetadata().toString());
+            result.put("nbt", WorksBlockData.save(tile).toString());
             result.put("tileIdentity", System.identityHashCode(tile));
             if (tile instanceof PoweredEntity) {
                 PoweredEntity powered = (PoweredEntity) tile;

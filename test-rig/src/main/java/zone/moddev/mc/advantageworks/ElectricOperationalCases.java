@@ -21,7 +21,6 @@ import net.minecraft.world.level.GameRules;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.common.util.FakePlayer;
 
 /** Independent operating contracts. Only setup seeds inputs; all work uses world ticks. */
 public final class ElectricOperationalCases {
@@ -322,7 +321,7 @@ public final class ElectricOperationalCases {
                     equal(c, "scarce.output", output(c, 9, 3, 6, "minecraft:sugar_cane"), 0);
                     equal(c, "full.seed", slotCount(c, 23, 0, "minecraft:sugar_cane"), 1);
                     equal(c, "full.output", output(c, 23, 3, 6, "minecraft:sugar_cane"), 384);
-                    AABB bay = new AABB(c.at(0, 0, 0), c.at(31, 31, 31));
+                    AABB bay = WorksBlockData.bounds(c.at(0, 0, 0), c.at(31, 31, 31));
                     equal(c, "overflowItems", c.world.getEntitiesOfClass(ItemEntity.class, bay).size(), 0);
                     float soil = ((Number)c.invoke(8, Y, Z, "getSoil", new Class<?>[0])).floatValue();
                     close(c, "scarce.convertedGrowth", 1000 - soil, 799, 0.1f);
@@ -406,7 +405,7 @@ public final class ElectricOperationalCases {
                     close(c, "dry.generated", c.energy(27, Y, 22, ELECTRICITY), 0, 0.001f);
                     int turbines = 0;
                     for (Entity actor : c.world.getEntitiesOfClass(Entity.class,
-                            new AABB(c.at(0, 0, 0), c.at(31, 31, 31)))) {
+                            WorksBlockData.bounds(c.at(0, 0, 0), c.at(31, 31, 31)))) {
                         if (!new ResourceLocation(EA + "hydroturbine").equals(net.minecraftforge.registries.ForgeRegistries.ENTITY_TYPES.getKey(actor.getType()))) continue;
                         turbines++;
                         c.record("hydro.motion/" + actor.getUUID(), actor.getDeltaMovement().toString());
@@ -622,7 +621,7 @@ public final class ElectricOperationalCases {
                         }
                     }));
         }
-        final FakePlayer[] owner = new FakePlayer[1];
+        final WorksOfflinePlayer[] owner = new WorksOfflinePlayer[1];
         final PlayerTeam[] team = new PlayerTeam[1];
         final Husk[] victim = new Husk[1];
         cases.add(new MachineScenario("electric/turret-owner-credit",
@@ -633,7 +632,7 @@ public final class ElectricOperationalCases {
                     c.power(8, 1, Z, ELECTRICITY, 1500);
                     UUID identity = UUID.randomUUID();
                     String name = "EOp" + identity.toString().substring(0, 8);
-                    FakePlayer player = new FakePlayer(c.world, new GameProfile(identity, name));
+                    WorksOfflinePlayer player = new WorksOfflinePlayer(c.world, new GameProfile(identity, name));
                     player.moveTo(c.at(8, 1, 16).getX() + 0.5, c.at(8, 1, 16).getY(), c.at(8, 1, 16).getZ() + 0.5, 0, 0);
                     owner[0] = player;
                     team[0] = c.world.getScoreboard().addPlayerTeam(name);

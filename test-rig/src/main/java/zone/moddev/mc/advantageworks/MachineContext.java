@@ -175,7 +175,7 @@ final class MachineContext {
         if (!Float.isFinite(reserve) || reserve < 0 || reserve > 8000) throw new IllegalArgumentException("Invalid battery reserve");
         block(x, y, z, "baseelectric:electric_battery_array");
         put(x, y, z, 0, "baseelectric:lithium_battery", 1);
-        inventory(x, y, z).getItem(0).getOrCreateTag().putFloat("energy", reserve);
+        WorksItemData.update(inventory(x, y, z).getItem(0), tag -> tag.putFloat("energy", reserve));
         inventory(x, y, z).setChanged();
     }
 
@@ -195,14 +195,14 @@ final class MachineContext {
         return amount;
     }
 
-    CompoundTag nbt(int x, int y, int z) { return tile(x, y, z).saveWithFullMetadata(); }
+    CompoundTag nbt(int x, int y, int z) { return WorksBlockData.save(tile(x, y, z)); }
 
     void seed(int x, int y, int z, CompoundTag patch) {
         mutation("nbt", at(x, y, z), patch.toString());
         BlockEntity tile = tile(x, y, z);
-        CompoundTag nbt = tile.saveWithFullMetadata();
+        CompoundTag nbt = WorksBlockData.save(tile);
         nbt.merge(patch.copy());
-        tile.load(nbt);
+        tile.loadWithComponents(nbt, world.registryAccess());
         tile.setChanged();
     }
 
@@ -234,7 +234,7 @@ final class MachineContext {
             row.addProperty("block", net.minecraftforge.registries.ForgeRegistries.BLOCKS.getKey(state.getBlock()).toString());
             row.addProperty("state", state.toString());
             BlockEntity tile = world.getBlockEntity(pos);
-            if (tile != null) row.addProperty("nbt", tile.saveWithFullMetadata().toString());
+            if (tile != null) row.addProperty("nbt", WorksBlockData.save(tile).toString());
             rows.add(row);
         }
         return rows;
@@ -242,7 +242,7 @@ final class MachineContext {
 
     JsonArray entities() {
         JsonArray result = new JsonArray();
-        net.minecraft.world.phys.AABB bounds = new net.minecraft.world.phys.AABB(at(0, -1, 0), at(31, 31, 31)).inflate(.5);
+        net.minecraft.world.phys.AABB bounds = WorksBlockData.bounds(at(0, -1, 0), at(31, 31, 31)).inflate(.5);
         for (net.minecraft.world.entity.Entity entity : world.getEntitiesOfClass(net.minecraft.world.entity.Entity.class, bounds)) {
             if (entity instanceof net.minecraft.world.entity.player.Player) continue;
             CompoundTag nbt = new CompoundTag();

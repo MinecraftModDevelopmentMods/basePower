@@ -67,13 +67,14 @@ public final class WorksRunner {
 
     public static void main(String[] args) throws Exception {
         Arguments arguments = Arguments.parse(args);
-        Profile profile = readNative1201Profile(arguments.profile);
+        Profile profile = readNative1206Profile(arguments.profile);
         if (arguments.serverPort != null) profile.serverPort = arguments.serverPort;
         File testRig = findTestRig(arguments.profile);
         File powerRoot = testRig.getParentFile().getCanonicalFile();
         // Pin validation precedes directory creation, downloads, and world access.
         requireInputPins(profile);
         profile.preparedSeed = preparedServerSeed(testRig, profile, arguments);
+        requireNative1206CompilePin(testRig, profile);
         if (arguments.validateOnly) {
             List<Map<String, Object>> inputs = stageMods(testRig, null, profile.mods);
             if ("packaged".equals(profile.mode)) {
@@ -86,7 +87,10 @@ public final class WorksRunner {
         String stamp = timestamp();
         File runtimeBase = resolve(testRig, profile.runtimeBase);
         File runtime = new File(runtimeBase, profile.name + "-" + stamp).getCanonicalFile();
-        requireChild(powerRoot, runtime);
+        requireChild(new File(testRig, "build").getCanonicalFile(), runtime);
+        if (profile.preparedSeed == null) {
+            throw new IllegalArgumentException("Forge 50 runtime requires an official prepared server and sealed inventory");
+        }
         if (profile.preparedSeed != null) profile.preparedSeed.requireDisjoint(runtime);
         if (!runtime.mkdirs()) throw new IllegalStateException("Cannot create runtime " + runtime);
 
@@ -315,6 +319,17 @@ public final class WorksRunner {
         PreparedServerSeed.requirePlain(root);
         Path args = root.resolve(launcher);
         PreparedServerSeed.requirePlain(args);
+        if (launcher.startsWith("libraries/net/minecraftforge/forge/1.20.6-50.2.0/")) {
+            String shim = "forge-1.20.6-50.2.0-shim.jar";
+            Path jar = root.resolve(shim);
+            PreparedServerSeed.requirePlain(jar);
+            if (!Files.readString(args, StandardCharsets.UTF_8).strip().equals(
+                    "-Djava.net.preferIPv6Addresses=system -jar " + shim)
+                    || !sha256(jar.toFile()).equals("7BECDDA6D36C8359EADA6018C2EDB21C5914C50028C191BE09A39FF9F516E10C")) {
+                throw new IllegalArgumentException("Unexpected official Forge 50 launcher or shim");
+            }
+            return;
+        }
         boolean native118 = launcher.startsWith("libraries/net/minecraftforge/forge/1.18.2-40.3.0/");
         boolean native1201 = launcher.startsWith("libraries/net/minecraftforge/forge/1.20.1-47.4.10/");
         Set<String> expected = new LinkedHashSet<>(Arrays.asList(
@@ -730,6 +745,9 @@ public final class WorksRunner {
             if (input.verifyIdentity) verifyModIdentity(source, input.id, input.version);
             File destination = mods == null ? source : new File(mods, source.getName());
             if (mods != null) Files.copy(source.toPath(), destination.toPath(), StandardCopyOption.COPY_ATTRIBUTES);
+            if (mods != null && !hash.equals(sha256(destination))) {
+                throw new IllegalStateException("Mod input changed while staging: " + input.id);
+            }
             Map<String, Object> record = new LinkedHashMap<>();
             record.put("id", input.id);
             record.put("version", input.version);
@@ -786,7 +804,9 @@ public final class WorksRunner {
         }
         return new PreparedServerSeed(preparedPath(testRig, arguments.preparedServerSeed),
                 preparedPath(testRig, arguments.preparedServerSeedInventory), arguments.preparedServerSeedSha256,
-                serverLauncherPath(profile), "1.20.1".equals(profile.minecraftVersion)
+                serverLauncherPath(profile), "1.20.6".equals(profile.minecraftVersion)
+                        ? "forge-1.20.6-50.2.0-shim.jar"
+                        : "1.20.1".equals(profile.minecraftVersion)
                         ? "libraries/net/minecraft/server/1.20.1-20230612.114412/server-1.20.1-20230612.114412-extra.jar"
                         : "1.18.2".equals(profile.minecraftVersion)
                         ? "libraries/net/minecraft/server/1.18.2-20220404.173914/server-1.18.2-20220404.173914-extra.jar"
@@ -833,9 +853,11 @@ public final class WorksRunner {
         final Map<String, SeedFile> files = new LinkedHashMap<>();
         final Set<String> directories = new LinkedHashSet<>();
         final List<Process> processes = new ArrayList<>();
+        final boolean forge50;
 
         PreparedServerSeed(Path root, Path inventory, String expectedHash, String launcher, String minecraft)
                 throws Exception {
+            forge50 = "forge-1.20.6-50.2.0-shim.jar".equals(minecraft);
             this.root = root.toAbsolutePath().normalize();
             this.inventory = inventory.toAbsolutePath().normalize();
             if (expectedHash == null || !expectedHash.matches("[0-9A-F]{64}")) {
@@ -903,6 +925,9 @@ public final class WorksRunner {
                     }
                 }
                 reader.endObject();
+                if (forge50 && reader.hasNext() && (!"forge".equals(reader.nextName())
+                        || !"1.20.6-50.2.0".equals(reader.nextString())))
+                    throw new IllegalArgumentException("Incorrect Forge 50 inventory metadata");
                 if (reader.hasNext()) throw new IllegalArgumentException("Unexpected inventory root field");
                 reader.endObject();
                 if (reader.peek() != JsonToken.END_DOCUMENT) throw new IllegalArgumentException("Trailing inventory data");
@@ -953,6 +978,11 @@ public final class WorksRunner {
                             if (!inventorySha256.equals(sha256(path.toFile()))) throw new IOException("Staged inventory changed");
                         } catch (IOException failure) { throw failure; }
                         catch (Exception failure) { throw new IOException(failure); }
+                        return FileVisitResult.CONTINUE;
+                    }
+                    if (codeOnly && forge50 && Set.of("README.txt", "run.bat", "run.sh", "user_jvm_args.txt",
+                            "forge-1.20.6-50.2.0-installer.jar.log").contains(relative)) {
+                        requirePlain(path);
                         return FileVisitResult.CONTINUE;
                     }
                     if (!codeOnly && !relative.startsWith("libraries/") && !relative.toLowerCase(Locale.ROOT).endsWith(".jar")) {
@@ -1104,11 +1134,24 @@ public final class WorksRunner {
 
     private static boolean modularForge(Profile profile) {
         return "1.17.1".equals(profile.minecraftVersion) || "1.18.2".equals(profile.minecraftVersion)
-                || "1.20.1".equals(profile.minecraftVersion);
+                || "1.20.1".equals(profile.minecraftVersion) || "1.20.6".equals(profile.minecraftVersion);
     }
 
     private static File runtimeJavaHome(Profile profile) throws Exception {
         if (!modularForge(profile)) return java8Home(profile);
+        if ("1.20.6".equals(profile.minecraftVersion)) {
+            String configured = profile.java21Home;
+            if (configured == null || configured.isBlank()) configured = System.getenv("ADVANTAGE_WORKS_JAVA21_HOME");
+            File home = new File(configured == null || configured.isBlank()
+                    ? System.getProperty("java.home") : expand(configured)).getCanonicalFile();
+            java.util.Properties release = new java.util.Properties();
+            try (InputStream input = Files.newInputStream(new File(home, "release").toPath())) {
+                release.load(input);
+            }
+            if (!javaExecutable(home).isFile() || !release.getProperty("JAVA_VERSION", "").matches("\"21(?:\\.[0-9]+)*\""))
+                throw new IllegalStateException("Set ADVANTAGE_WORKS_JAVA21_HOME to a Java 21 runtime: " + home);
+            return home;
+        }
         boolean native1201 = "1.20.1".equals(profile.minecraftVersion);
         boolean java17 = native1201 || "1.18.2".equals(profile.minecraftVersion);
         String variable = java17 ? "ADVANTAGE_WORKS_JAVA17_HOME" : "ADVANTAGE_WORKS_JAVA16_HOME";
@@ -1208,7 +1251,7 @@ public final class WorksRunner {
                 + "level-seed=" + profile.levelSeed + "\n"
                 + "level-type=" + profile.levelType + "\n"
                 + "max-players=8\n"
-                + "motd=Advantage Works 1.16.5 Commissioning Ground\n"
+                + "motd=Advantage Works " + profile.minecraftVersion + " Commissioning Ground\n"
                 + "online-mode=false\n"
                 + "server-ip=127.0.0.1\n"
                 + "pvp=false\n"
@@ -1281,6 +1324,42 @@ public final class WorksRunner {
                 throw new IllegalArgumentException("Non-1.20.1 destination mod version: " + input.id);
             }
         }
+        return withFlatSettings(profile);
+    }
+
+    static Profile readNative1206Profile(File file) throws Exception {
+        Profile profile = readProfile(file, "1.20.6", "1.20.6-50.2.0");
+        if (!"EXPLORATORY_UNQUALIFIED".equals(profile.qualificationStatus) || !"packaged".equals(profile.mode)) {
+            throw new IllegalArgumentException("Forge 50 launches must use ordinary pinned packaged artifacts");
+        }
+        Set<String> ids = new LinkedHashSet<>();
+        for (ModInput input : profile.mods) {
+            if (input.id == null || !ids.add(input.id) || input.version == null || !input.version.endsWith(".120061")
+                    || input.file == null || !input.file.endsWith("-" + input.version + ".jar")
+                    || !input.required || !input.verifyIdentity || input.workspaceProduced) {
+                throw new IllegalArgumentException("Invalid ordinary Forge 50 mod input: " + input.id);
+            }
+        }
+        if (!ids.containsAll(Set.of("basepower", "advantageworkstest", "orespawn"))) {
+            throw new IllegalArgumentException("Power, the harness and OreSpawn must be explicitly pinned");
+        }
+        return withFlatSettings(profile);
+    }
+
+    private static void requireNative1206CompilePin(File testRig, Profile profile) throws Exception {
+        ModInput power = profile.mods.stream().filter(input -> "basepower".equals(input.id)).findFirst().orElseThrow();
+        ModInput harness = profile.mods.stream().filter(input -> "advantageworkstest".equals(input.id)).findFirst().orElseThrow();
+        try (var jar = new java.util.jar.JarFile(resolve(testRig, harness.path))) {
+            var manifest = jar.getManifest().getMainAttributes();
+            if (!profile.forge.version.equals(manifest.getValue("Built-On"))
+                    || !profile.qualificationStatus.equals(manifest.getValue("Power-Input-Status"))
+                    || !power.sha256.equalsIgnoreCase(manifest.getValue("Power-Input-SHA256"))) {
+                throw new IllegalArgumentException("Staged Power must be the same ordinary jar used to compile the harness");
+            }
+        }
+    }
+
+    private static Profile withFlatSettings(Profile profile) throws Exception {
         if ("minecraft:flat".equals(profile.levelType)) {
             if (!profile.generatorSettings.isEmpty()) {
                 throw new IllegalArgumentException("Works flat profiles must use the shared generator settings");
@@ -1826,6 +1905,7 @@ public final class WorksRunner {
         String java8Home;
         String java16Home;
         String java17Home;
+        String java21Home;
         String gradleJavaHome;
         String recipeMode = "NORMAL";
         String sourceCommit;

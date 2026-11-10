@@ -82,7 +82,7 @@ final class Native117Readiness {
         if (!observation.observe(world.getGameTime(), System.nanoTime(), states)) return;
         JsonObject report = observation.report();
         report.addProperty("label", label);
-        report.addProperty("minecraft", "1.20.1");
+        report.addProperty("minecraft", net.minecraft.SharedConstants.getCurrentVersion().getName());
         report.addProperty("dimension", world.dimension().location().toString());
         try {
             Files.createDirectories(output.toPath().getParent());
