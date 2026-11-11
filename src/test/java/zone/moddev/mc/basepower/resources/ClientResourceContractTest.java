@@ -51,10 +51,32 @@ public class ClientResourceContractTest {
         }
     }
 
-    @Test public void oilBucketsAndHiddenFluidItemsHaveModels() {
+    @Test public void oilBucketsAndHiddenFluidItemsHaveModels() throws IOException {
         for (String id : new String[] {"crude_oil", "refined_oil", "crude_oil_bucket", "refined_oil_bucket"}) {
             assertTrue("Missing item model for " + id, Files.isRegularFile(ASSETS.resolve("models/item/" + id + ".json")));
         }
+        List<Path> models = jsonFiles(ASSETS.resolve("models/item"));
+        List<Path> definitions = jsonFiles(ASSETS.resolve("items"));
+        assertEquals("Every preserved item model needs a native item definition", 35, models.size());
+        assertEquals("Native item definitions must cover aliases and hidden items too", models.size(), definitions.size());
+        for (Path model : models) {
+            String name = model.getFileName().toString();
+            Path file = ASSETS.resolve("items").resolve(name);
+            JsonObject definition = read(file);
+            assertEquals(file + " must retain the native model node", 1, definition.size());
+            JsonObject node = definition.getAsJsonObject("model");
+            assertEquals(file + " must not redirect or conditionally hide the old model", 2, node.size());
+            assertEquals(file.toString(), "minecraft:model", node.get("type").getAsString());
+            assertEquals(file.toString(), "basepower:item/" + name.replace(".json", ""), node.get("model").getAsString());
+            verifyReference(node.get("model").getAsString(), "models", ".json", file);
+        }
+        JsonObject atlas = read(ROOT.resolve("assets/minecraft/atlases/items.json"));
+        assertEquals("The item atlas must not shadow block or material sprites", 1,
+                atlas.getAsJsonArray("sources").size());
+        JsonObject source = atlas.getAsJsonArray("sources").get(0).getAsJsonObject();
+        assertEquals("directory", source.get("type").getAsString());
+        assertEquals("items", source.get("source").getAsString());
+        assertEquals("items/", source.get("prefix").getAsString());
     }
 
     @Test public void everyLocaleRetainsLegacyNamesAndProvidesModernAliases() throws IOException {
@@ -108,7 +130,7 @@ public class ClientResourceContractTest {
 
     private static JsonObject read(Path file) throws IOException {
         try (Reader reader = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
-            return new JsonParser().parse(reader).getAsJsonObject();
+            return JsonParser.parseReader(reader).getAsJsonObject();
         }
     }
 

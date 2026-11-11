@@ -1,7 +1,5 @@
 {
   "sources": [
-    { "type": "directory", "source": "blocks", "prefix": "blocks/" },
-    { "type": "directory", "source": "items", "prefix": "items/" },
-    { "type": "directory", "source": "materials", "prefix": "materials/" }
+    { "type": "directory", "source": "items", "prefix": "items/" }
   ]
 }
