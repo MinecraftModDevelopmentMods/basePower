@@ -25,6 +25,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import com.mojang.serialization.Dynamic;
 
 import cyano.poweradvantage.api.migration.LegacyMigrationApi;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.nbt.NbtIo;
@@ -109,6 +110,7 @@ public final class LegacyWorldDataHook {
             }
             boolean changed = removeRetiredVanillaProfessionRegistry(root);
             changed |= renameFlattenedBiomeRegistry(root);
+            changed |= normalizeFlattenedRegistryNames(root);
             changed |= archiveDataDrivenEnchantmentIndex(root);
             if (changed) {
                 preserveRetiredRegistryArchive(levelDat, root.getCompoundOrEmpty("basepower:legacy_registry_indexes"));
@@ -117,6 +119,39 @@ public final class LegacyWorldDataHook {
         } catch (IOException exception) {
             throw new IllegalStateException("Could not prepare historical Forge registry indexes in " + levelDat, exception);
         }
+    }
+
+    static boolean normalizeFlattenedRegistryNames(CompoundTag root) {
+        if (root.getCompoundOrEmpty("Data").getIntOr("DataVersion", 0) < 1519) return false;
+        // Only flattened lowercase snapshots: uppercase FML supplies original numeric IDs.
+        CompoundTag registries = root.getCompoundOrEmpty("fml").getCompoundOrEmpty("Registries");
+        Map<String, String> aliases = Map.of(
+                "minecraft:potions", Registries.MOB_EFFECT.identifier().toString(),
+                "minecraft:potiontypes", Registries.POTION.identifier().toString(),
+                "minecraft:soundevents", Registries.SOUND_EVENT.identifier().toString(),
+                "minecraft:enchantments", Registries.ENCHANTMENT.identifier().toString());
+        // Validate every pair before changing any key; never merge conflicting indexes.
+        for (Map.Entry<String, String> alias : aliases.entrySet()) {
+            Tag legacy = registries.get(alias.getKey());
+            if (legacy == null) continue;
+            if (!(legacy instanceof CompoundTag)) {
+                throw new IllegalStateException("Malformed historical registry snapshot " + alias.getKey());
+            }
+            Tag current = registries.get(alias.getValue());
+            if (current != null && !legacy.equals(current)) {
+                throw new IllegalStateException("Conflicting historical registry snapshots " + alias.getKey()
+                        + " and " + alias.getValue() + "; preserve the world backup");
+            }
+        }
+        boolean changed = false;
+        for (Map.Entry<String, String> alias : aliases.entrySet()) {
+            Tag legacy = registries.get(alias.getKey());
+            if (legacy == null) continue;
+            registries.put(alias.getValue(), legacy.copy());
+            registries.remove(alias.getKey());
+            changed = true;
+        }
+        return changed;
     }
 
     static boolean archiveDataDrivenEnchantmentIndex(CompoundTag root) {
