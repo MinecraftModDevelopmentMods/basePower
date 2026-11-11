@@ -49,8 +49,9 @@ automatic discovery and downloads for a reproducibility check.
 Use the pinned Base Metals `3.1.2.121111` and OreSpawn `4.1.0.121111` jars.
 The source pins and checksums are in `gradle.properties`.
 Forge 61 also needs the Mavenizer compatibility jar in the pinned OreSpawn
-checkout's `ci-fixtures/tools/` directory. It fixes decompiled Forge sources
-on a clean build and uses Java 25. It is not part of the mod or game runtime.
+checkout's `ci-fixtures/tools/` directory. This is the same checksum-verified
+source preparation tool used by OreSpawn; its manifest makes no source changes
+for Forge 61.1.0. It uses Java 25 and is not part of the mod or game runtime.
 Set `-Pforge61MavenizerJar=<path>` when that checkout is in another location.
 If Base Metals is installed, use the pinned 3.1.2 build when testing an upgrade. It lets
 both mods preserve old items and machines before Minecraft converts the
@@ -65,8 +66,8 @@ gradlew.bat clean check build javadoc genEclipseRuns eclipse isolateEclipseProdu
 The default dependency jars are:
 
 ```text
-D:\BaseMetals\.verification-basemetals1211\Advantage shared hook\build\libs\BaseMetals-3.1.2.121111.jar
-D:\MinecraftMineralogy\OS1211\OreSpawn\build\libs\OreSpawn-4.1.0.121111.jar
+D:\BaseMetals\.verification-basemetals12111\Advantage shared hook\build\libs\BaseMetals-3.1.2.121111.jar
+D:\MinecraftMineralogy\OS12111\OreSpawn\build\libs\OreSpawn-4.1.0.121111.jar
 ```
 
 Other layouts can pass `-PbaseMetalsDeobfJar=<path>` and `-PoreSpawnDeobfJar=<path>`.

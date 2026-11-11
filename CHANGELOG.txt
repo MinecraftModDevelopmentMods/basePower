@@ -6,6 +6,7 @@ basePower 2.4.15.121111 (Minecraft 1.21.11, local candidate)
 - Keep old-world upgrade checks separate from the machine, restart and visual checks.
 - Keep chunk-migration callbacks cooperative with Base Metals so old turbine and entity data is restored.
 - Handle vanilla's chain rename and retired registry indexes when upgrading newer saved worlds.
+- Keep machine and pipe item names translated with the native block-item naming rules.
 - This version is still being tested locally and has not been published.
 
 basePower 2.4.14.121011 (Minecraft 1.21.1)

@@ -146,8 +146,7 @@ public final class Blocks {
         if (!ForgeRegistries.Keys.ITEMS.equals(event.getRegistryKey())) return;
         init();
         event.register(ForgeRegistries.Keys.ITEMS, helper -> ALL_BLOCKS.forEach((id, block) -> {
-            BlockItem item = new BlockItem(block, new Item.Properties().setId(net.minecraft.resources.ResourceKey.create(
-                    net.minecraft.core.registries.Registries.ITEM, Identifier.fromNamespaceAndPath(PowerAdvantage.MODID, id)))) {
+            BlockItem item = new BlockItem(block, itemProperties(id)) {
                 @Override
                 public void appendHoverText(net.minecraft.world.item.ItemStack stack, Item.TooltipContext context,
                         net.minecraft.world.item.component.TooltipDisplay display,
@@ -162,6 +161,12 @@ public final class Blocks {
             }
             helper.register(Identifier.fromNamespaceAndPath(PowerAdvantage.MODID, id), item);
         }));
+    }
+
+    static Item.Properties itemProperties(String id) {
+        return new Item.Properties().setId(net.minecraft.resources.ResourceKey.create(
+                net.minecraft.core.registries.Registries.ITEM, Identifier.fromNamespaceAndPath(PowerAdvantage.MODID, id)))
+                .useBlockDescriptionPrefix();
     }
 
     public static Map<String, Block> getModBlockRegistry() {
