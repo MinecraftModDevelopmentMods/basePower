@@ -27,7 +27,8 @@ The dependency-corrected Power jar has player SHA-256
 `C98D2CF163BE2480D9AFB0023BBD2D92D401AE0D50BEF73191235BF3F83774A7`.
 Its full release suite passes. The qualification run passed 276 unit tests,
 including fresh Eclipse compiler output. Release preparation adds a passing
-277th test for the CI artifact upload path. Against the preceding registry-repair jar, only
+277th test for the CI artifact upload path and a 278th for source-workflow branch
+filters. Both pass their broken-input controls. Against the preceding registry-repair jar, only
 `META-INF/mods.toml` changed; all gameplay classes and other resources are exact.
 The preceding registry repair passed two additional chained 1.13 dimension
 upgrades through full restart. Those earlier results and failures are retained

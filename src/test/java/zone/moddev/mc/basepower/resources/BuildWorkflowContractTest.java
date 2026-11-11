@@ -7,13 +7,49 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Properties;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 
 public class BuildWorkflowContractTest {
+    @Test public void everySourceWorkflowTargetsTheDeclaredMinecraftBranch() throws Exception {
+        Properties pins = new Properties();
+        try (var input = Files.newBufferedReader(Paths.get("gradle.properties"), StandardCharsets.UTF_8)) {
+            pins.load(input);
+        }
+        String branch = "master-" + pins.getProperty("minecraft_version");
+        String valid = "on:\n  push:\n    branches: [" + branch
+                + "]\n  pull_request:\n    branches:\n      - " + branch + "\npermissions:\n  contents: read\n";
+        requireWorkflowTargets(valid, branch);
+        assertThrows(AssertionError.class, () -> requireWorkflowTargets(
+                valid.replace("      - " + branch, "      - " + branch + "-wrong # " + branch), branch));
+        assertThrows(AssertionError.class, () -> requireWorkflowTargets(
+                valid.replace("  pull_request:", "  unrelated:"), branch));
+        for (String name : new String[] {"ci.yml", "codeql-analysis.yml", "validate-gradle-build.yml"}) {
+            String workflow = Files.readString(Paths.get(".github/workflows", name), StandardCharsets.UTF_8);
+            requireWorkflowTargets(workflow, branch);
+        }
+    }
+
+    private static void requireWorkflowTargets(String workflow, String branch) {
+        var events = Pattern.compile("(?ms)^  (push|pull_request):[ \\t]*\\R(.*?)(?=^  [A-Za-z_][A-Za-z_0-9]*:|^\\S|\\z)")
+                .matcher(workflow);
+        Set<String> found = new HashSet<>();
+        Pattern reference = Pattern.compile(Pattern.quote(branch) + "(?![\\w.-])");
+        while (events.find()) {
+            String body = events.group(2).replaceAll("(?m)#.*$", "");
+            assertTrue(events.group(1) + " must target " + branch, reference.matcher(body).find());
+            found.add(events.group(1));
+        }
+        assertEquals(Set.of("push", "pull_request"), found);
+    }
+
     @Test public void candidateUploadFollowsTheAuditedVersionInsteadOfAHardCodedFilename() throws Exception {
         String workflow = Files.readString(Paths.get(".github/workflows/ci.yml"), StandardCharsets.UTF_8);
         Pattern hardCodedJar = Pattern.compile("build/libs/basePower-[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+");

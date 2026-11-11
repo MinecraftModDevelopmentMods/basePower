@@ -13,6 +13,7 @@ basePower 2.4.15.121111 (Minecraft 1.21.11, local candidate)
 - Recognise four removed vanilla sound indexes when upgrading older worlds.
 - Require Base Metals in Forge's dependency checks as well as on CurseForge.
 - Keep the release upload in step with the declared version.
+- Run wrapper validation on the current Minecraft branch as well as the main build and CodeQL checks.
 - Complete machine, upgrade, graphical and two-world endurance checks against the current jars. Manual testing is accepted; publication remains a separate step.
 
 basePower 2.4.14.121011 (Minecraft 1.21.1)

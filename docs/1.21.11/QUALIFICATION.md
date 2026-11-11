@@ -91,8 +91,10 @@ The independent replay receipt is
 
 Release preparation also adds a CI upload-path regression. It first rejects
 the stale 2.4.14 filenames, then passes with an upload glob following the
-audited current version. The full source suite now has 277 tests; the player
-jar remains C98D. This does not relabel the earlier 276-test receipt.
+audited current version. A second regression catches the wrapper workflow's
+old branch filter and rejects missing/wrong event targets, including misleading
+comments. The full source suite now has 278 tests; the player jar remains C98D.
+This does not relabel the earlier 276-test receipt.
 
 No further production change was needed during this rerun. An isolated build
 caught a Steam test that ignored the configured Power jar and used a fixed
