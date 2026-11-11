@@ -9,8 +9,7 @@ import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 import com.mojang.authlib.GameProfile;
 import com.mojang.brigadier.arguments.StringArgumentType;
-import io.netty.util.concurrent.Future;
-import io.netty.util.concurrent.GenericFutureListener;
+import io.netty.channel.ChannelFutureListener;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.StringReader;
@@ -32,7 +31,7 @@ import java.util.UUID;
 import net.minecraft.world.level.block.BedBlock;
 import net.minecraft.commands.Commands;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.Leashable;
 import net.minecraft.world.entity.decoration.LeashFenceKnotEntity;
 import net.minecraft.world.entity.decoration.HangingEntity;
 import net.minecraft.world.entity.item.ItemEntity;
@@ -48,14 +47,18 @@ import net.minecraft.network.protocol.game.ServerboundClientCommandPacket;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayerGameMode;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.network.PacketSendListener;
 import net.minecraft.core.Direction;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.permissions.Permissions;
+import net.minecraft.world.level.gamerules.GameRules;
+import net.minecraft.world.level.storage.LevelData;
+import net.minecraft.world.level.storage.TagValueInput;
+import static zone.moddev.mc.basepower.util.NbtCompat.containsTag;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.level.LevelEvent;
-import net.minecraftforge.event.TickEvent;
+
 import net.minecraftforge.event.RegisterCommandsEvent;
 
 /** Native additional-dimension player and entity observations, without client acceptance claims. */
@@ -75,14 +78,14 @@ final class DimensionEntityProbe {
     static void register() {
         if (!MARKER.isFile()) return;
         DimensionEntityProbe probe = new DimensionEntityProbe();
-        MinecraftForge.EVENT_BUS.addListener(probe::load);
-        MinecraftForge.EVENT_BUS.addListener(probe::tick);
-        MinecraftForge.EVENT_BUS.addListener(probe::entityJoining);
-        MinecraftForge.EVENT_BUS.addListener(probe::starting);
+        LevelEvent.Load.BUS.addListener(probe::load);
+        NativeTickEvents.listenLevel(probe::tick);
+        net.minecraftforge.event.entity.EntityJoinLevelEvent.BUS.addListener(probe::entityJoining);
+        RegisterCommandsEvent.BUS.addListener(probe::starting);
     }
 
     private static boolean marked(Level world) {
-        return MARKER.isFile() && !world.isClientSide
+        return MARKER.isFile() && !world.isClientSide()
                 && "AdvantageWorksMigration".equals(world.getServer().getWorldData().getLevelName());
     }
 
@@ -106,27 +109,27 @@ final class DimensionEntityProbe {
         } catch (Exception ex) { throw new IllegalStateException("Dimension load preparation failed", ex); }
     }
 
-    private void tick(TickEvent.LevelTickEvent event) {
-        if (!marked(event.level) || !DEFINITION.isFile()) return;
-        if (event.phase == TickEvent.Phase.START) {
+    private void tick(NativeTickEvents.LevelTickEvent event) {
+        if (!marked(event.level()) || !DEFINITION.isFile()) return;
+        if (event.phase() == NativeTickEvents.Phase.START) {
             try {
                 JsonObject definition = definition();
                 int selected = dimension(definition);
-                if (event.level.dimension().equals(Level.OVERWORLD) && nativeOnLoad(definition)) {
-                    ServerLevel selectedWorld = event.level.getServer().getLevel(Native117Worlds.key(selected));
+                if (event.level().dimension().equals(Level.OVERWORLD) && nativeOnLoad(definition)) {
+                    ServerLevel selectedWorld = event.level().getServer().getLevel(Native117Worlds.key(selected));
                     if (selectedWorld == null || !marked(selectedWorld)) throw new IllegalStateException("Dimension unavailable");
                     prepare(selectedWorld);
                 }
-                if (Native117Worlds.legacyId(event.level.dimension()) != selected) return;
+                if (Native117Worlds.legacyId(event.level().dimension()) != selected) return;
                 // Pin/load before either frozen observation or normal native initialization.
-                prepare((ServerLevel) event.level);
-                if (!frozen(event.level, definition)) return;
-                NativeEntityHold hold = held.computeIfAbsent(event.level, key -> new NativeEntityHold());
-                for (Entity entity : witnesses((ServerLevel) event.level)) hold.hold(entity);
-                held.put(event.level, hold);
+                prepare((ServerLevel) event.level());
+                if (!frozen(event.level(), definition)) return;
+                NativeEntityHold hold = held.computeIfAbsent(event.level(), key -> new NativeEntityHold());
+                for (Entity entity : witnesses((ServerLevel) event.level())) hold.hold(entity);
+                held.put(event.level(), hold);
             } catch (Exception ex) { throw new IllegalStateException("Dimension tick preparation failed", ex); }
-        } else if (event.phase == TickEvent.Phase.END) {
-            NativeEntityHold hold = held.remove(event.level);
+        } else if (event.phase() == NativeTickEvents.Phase.END) {
+            NativeEntityHold hold = held.remove(event.level());
             if (hold != null) hold.restore();
         }
     }
@@ -143,7 +146,7 @@ final class DimensionEntityProbe {
 
     private void starting(RegisterCommandsEvent event) {
         for (String operation : new String[] {"read", "snapshot", "operate", "respawn"}) {
-            event.getDispatcher().register(Commands.literal("advdimensions").requires(source -> source.hasPermission(4))
+            event.getDispatcher().register(Commands.literal("advdimensions").requires(source -> source.permissions().hasPermission(Permissions.COMMANDS_OWNER))
                     .then(Commands.literal(operation).then(Commands.argument("label", StringArgumentType.word()).executes(context -> {
                         try {
                             execute(context.getSource().getServer(), operation, StringArgumentType.getString(context, "label"));
@@ -293,7 +296,7 @@ final class DimensionEntityProbe {
     private static ServerPlayer readPlayer(MinecraftServer server, ServerLevel world, JsonObject definition) {
         ServerPlayer player = new ServerPlayer(server, world,
                 new GameProfile(UUID.fromString(definition.get("playerUuid").getAsString()), definition.get("playerName").getAsString()), net.minecraft.server.level.ClientInformation.createDefault());
-        if (server.getPlayerList().load(player).isEmpty()) throw new IllegalStateException("No player file loaded");
+        Native117PlayerIo.load(server.getPlayerList(), player);
         if (Native117Worlds.legacyId(player.level().dimension()) != dimension(definition) || player.level() != world) {
             throw new IllegalStateException("Player loaded in wrong dimension");
         }
@@ -303,7 +306,7 @@ final class DimensionEntityProbe {
     private JsonObject snapshot(MinecraftServer server, ServerLevel world, JsonObject definition, String operation) throws Exception {
         JsonObject result = new JsonObject(); result.add("definition", definition);
         result.addProperty("operation", operation); result.addProperty("dimension", Native117Worlds.legacyId(world.dimension()));
-        result.addProperty("worldDimensionKey", world.dimension().location().toString());
+        result.addProperty("worldDimensionKey", world.dimension().identifier().toString());
         result.addProperty("nativeEntityContextVersion", 1);
         result.addProperty("gameTime", world.getGameTime()); result.addProperty("frozen", frozen(world, definition));
         result.addProperty("nativeOnLoad", nativeOnLoad(definition));
@@ -312,7 +315,7 @@ final class DimensionEntityProbe {
         if (read) {
             ServerPlayer player = readPlayer(server, world, definition);
             result.addProperty("playerWorldDimension", Native117Worlds.legacyId(player.level().dimension()));
-            result.add("player", encode(player.saveWithoutId(new CompoundTag())));
+            result.add("player", encode(NativeActorIo.saveWithoutId(player)));
             if (operation.equals("respawn")) result.add("respawn", respawn(server, world, definition, player));
             else Native117PlayerIo.save(server.getPlayerList(), player);
         }
@@ -321,7 +324,7 @@ final class DimensionEntityProbe {
             JsonObject context = Native117EntityContext.observe(entity, world);
             // This native writer includes type ID and works for both roots and riding passengers.
             CompoundTag nbt = entityNbt(entity);
-            JsonObject entry = encode(nbt); entry.addProperty("witness", nbt.getCompound("ForgeData").getString(WITNESS));
+            JsonObject entry = encode(nbt); entry.addProperty("witness", nbt.getCompound("ForgeData").orElseThrow().getString(WITNESS).orElseThrow());
             entry.add("worldDimensionKey", context.get("worldDimensionKey"));
             entry.add("sameWorld", context.get("sameWorld"));
             entry.add("entityWorlds", context.get("entityWorlds"));
@@ -331,7 +334,7 @@ final class DimensionEntityProbe {
             entry.add("vehicleUuid", entity.getVehicle() == null ? JsonNull.INSTANCE : JSON.toJsonTree(entity.getVehicle().getUUID().toString()));
             JsonArray passengers = new JsonArray(); for (Entity passenger : entity.getPassengers()) passengers.add(passenger.getUUID().toString());
             entry.add("passengerUuids", passengers);
-            Entity leash = entity instanceof Mob ? ((Mob) entity).getLeashHolder() : null;
+            Entity leash = entity instanceof Leashable leashable ? leashable.getLeashHolder() : null;
             entry.add("leashHolderUuid", leash == null ? JsonNull.INSTANCE : JSON.toJsonTree(leash.getUUID().toString()));
             entry.add("leashHolderType", leash == null ? JsonNull.INSTANCE : JSON.toJsonTree(net.minecraftforge.registries.ForgeRegistries.ENTITY_TYPES.getKey(leash.getType()).toString()));
             BlockPos leashPos = leash instanceof net.minecraft.world.entity.decoration.BlockAttachedEntity attached
@@ -370,24 +373,25 @@ final class DimensionEntityProbe {
             destination.setBlock(SPAWN.east(), Blocks.RED_BED.defaultBlockState().setValue(BedBlock.FACING, Direction.EAST)
                     .setValue(BedBlock.PART, net.minecraft.world.level.block.state.properties.BedPart.HEAD), 2);
         }
-        player.setRespawnPosition(Level.OVERWORLD, SPAWN, 0.0F, bedMode.equals("forced"), false);
+        player.setRespawnPosition(new ServerPlayer.RespawnConfig(
+                LevelData.RespawnData.of(Level.OVERWORLD, SPAWN, 0.0F, 0.0F), bedMode.equals("forced")), false);
         JsonObject result = new JsonObject(); result.addProperty("scope", "server-only-dummy-network");
-        result.addProperty("handler", "ServerPlayNetHandler.PERFORM_RESPAWN");
+        result.addProperty("handler", "ServerGamePacketListenerImpl.PERFORM_RESPAWN");
         result.addProperty("keepInventory", keep); result.addProperty("bedMode", bedMode);
-        CompoundTag before = player.saveWithoutId(new CompoundTag());
+        CompoundTag before = NativeActorIo.saveWithoutId(player);
         result.addProperty("fromDimension", Native117Worlds.legacyId(player.level().dimension())); result.add("before", encode(before));
         JsonObject diagnostics = new JsonObject(); result.add("spawnDiagnostics", diagnostics);
         diagnostics.add("before", spawnDiagnostics(player, before));
         Set<Entity> existing = Collections.newSetFromMap(new IdentityHashMap<Entity, Boolean>()); Native117Worlds.entities(world).forEach(existing::add);
-        boolean oldSource = world.getGameRules().getBoolean(net.minecraft.world.level.GameRules.RULE_KEEPINVENTORY),
-                oldTarget = destination.getGameRules().getBoolean(net.minecraft.world.level.GameRules.RULE_KEEPINVENTORY);
+        boolean oldSource = world.getGameRules().get(GameRules.KEEP_INVENTORY),
+                oldTarget = destination.getGameRules().get(GameRules.KEEP_INVENTORY);
         ServerPlayer replacement = null;
         try {
-            world.getGameRules().getRule(net.minecraft.world.level.GameRules.RULE_KEEPINVENTORY).set(keep, server);
-            destination.getGameRules().getRule(net.minecraft.world.level.GameRules.RULE_KEEPINVENTORY).set(keep, server);
+            world.getGameRules().set(GameRules.KEEP_INVENTORY, keep, server);
+            destination.getGameRules().set(GameRules.KEEP_INVENTORY, keep, server);
             OfflineConnection connection = new OfflineConnection(server, player);
             player.setHealth(0); player.die(player.damageSources().generic());
-            CompoundTag afterDeath = player.saveWithoutId(new CompoundTag());
+            CompoundTag afterDeath = NativeActorIo.saveWithoutId(player);
             result.add("afterDeath", encode(afterDeath));
             diagnostics.add("afterDeath", spawnDiagnostics(player, afterDeath));
             if (player.wonGame) throw new IllegalStateException("Expected ordinary death respawn, not queued End exit");
@@ -395,15 +399,15 @@ final class DimensionEntityProbe {
             replacement = server.getPlayerList().getPlayer(player.getUUID());
             if (replacement == null || replacement == player) throw new IllegalStateException("Native respawn handler did not replace player");
             new OfflineConnection(server, replacement);
-            CompoundTag after = replacement.saveWithoutId(new CompoundTag());
+            CompoundTag after = NativeActorIo.saveWithoutId(replacement);
             result.add("after", encode(after));
             diagnostics.add("after", spawnDiagnostics(replacement, after));
             result.addProperty("toDimension", Native117Worlds.legacyId(replacement.level().dimension()));
-            BlockPos bed = replacement.getRespawnPosition();
+            BlockPos bed = replacement.getRespawnConfig() == null ? null : replacement.getRespawnConfig().respawnData().pos();
             result.add("bedLocation", bed == null ? JsonNull.INSTANCE : JSON.toJsonTree(new int[] {bed.getX(), bed.getY(), bed.getZ()}));
             JsonArray drops = new JsonArray();
             for (Entity entity : Native117Worlds.entities(world).collect(java.util.stream.Collectors.toList())) if (entity instanceof ItemEntity && !existing.contains(entity)) {
-                CompoundTag nbt = new CompoundTag(); if (!entity.saveAsPassenger(nbt)) throw new IllegalStateException("Could not serialize death drop");
+                CompoundTag nbt = NativeActorIo.saveAsPassenger(entity);
                 drops.add(encode(nbt));
             }
             result.add("drops", drops);
@@ -412,47 +416,58 @@ final class DimensionEntityProbe {
             try {
                 if (replacement != null) server.getPlayerList().remove(replacement);
             } finally {
-                world.getGameRules().getRule(net.minecraft.world.level.GameRules.RULE_KEEPINVENTORY).set(oldSource, server);
-                destination.getGameRules().getRule(net.minecraft.world.level.GameRules.RULE_KEEPINVENTORY).set(oldTarget, server);
+                world.getGameRules().set(GameRules.KEEP_INVENTORY, oldSource, server);
+                destination.getGameRules().set(GameRules.KEEP_INVENTORY, oldTarget, server);
             }
         }
     }
 
-    private static JsonObject spawnDiagnostics(ServerPlayer player, CompoundTag nbt) {
+    static JsonObject spawnDiagnostics(ServerPlayer player, CompoundTag nbt) throws Exception {
         JsonObject result = new JsonObject(); result.addProperty("queryDimension", 0);
         result.addProperty("playerWorldDimension", Native117Worlds.legacyId(player.level().dimension()));
-        result.addProperty("spawnDimension", Native117Worlds.legacyId(player.getRespawnDimension()));
-        BlockPos bed = player.getRespawnPosition();
+        ServerPlayer.RespawnConfig config = player.getRespawnConfig();
+        result.addProperty("spawnDimension", Native117Worlds.legacyId(config == null ? Level.OVERWORLD : config.respawnData().dimension()));
+        BlockPos bed = config == null ? null : config.respawnData().pos();
         result.add("bedLocation", bed == null ? JsonNull.INSTANCE : JSON.toJsonTree(new int[] {bed.getX(), bed.getY(), bed.getZ()}));
-        result.addProperty("spawnForced", player.isRespawnForced());
-        JsonObject spawn = new JsonObject();
-        for (String key : new String[] {"SpawnX", "SpawnY", "SpawnZ"}) {
-            spawn.add(key, nbt.contains(key, 99) ? JSON.toJsonTree(nbt.getInt(key)) : JsonNull.INSTANCE);
+        result.add("spawnForced", config == null ? JsonNull.INSTANCE : JSON.toJsonTree(config.forced()));
+        if (config == null) {
+            if (nbt.contains("respawn")) throw new IllegalStateException("Serialized respawn exists without native configuration");
+            result.add("serializedSpawn", JsonNull.INSTANCE);
+            result.add("serializedRespawn", JsonNull.INSTANCE);
+            return result;
         }
-        spawn.add("SpawnForced", nbt.contains("SpawnForced", 99) ? JSON.toJsonTree(nbt.getBoolean("SpawnForced")) : JsonNull.INSTANCE);
-        spawn.add("SpawnDimension", nbt.contains("SpawnDimension", 8) ? JSON.toJsonTree(nbt.getString("SpawnDimension"))
-                : nbt.contains("SpawnDimension", 99) ? JSON.toJsonTree(nbt.getInt("SpawnDimension")) : JsonNull.INSTANCE);
+        if (!containsTag(nbt, "respawn", 10)) throw new IllegalStateException("Missing native serialized respawn compound");
+        ServerPlayer.RespawnConfig decoded = TagValueInput.create(NativeActorIo.reporter("respawn diagnostics"),
+                player.registryAccess(), nbt).read("respawn", ServerPlayer.RespawnConfig.CODEC).orElseThrow();
+        if (!config.equals(decoded)) throw new IllegalStateException("Serialized respawn differs from native configuration");
+        CompoundTag saved = nbt.getCompound("respawn").orElseThrow();
+        JsonObject spawn = new JsonObject();
+        spawn.addProperty("dimension", saved.getString("dimension").orElseThrow());
+        spawn.add("pos", JSON.toJsonTree(saved.getIntArray("pos").orElseThrow()));
+        spawn.addProperty("yaw", saved.getFloat("yaw").orElseThrow());
+        spawn.addProperty("pitch", saved.getFloat("pitch").orElseThrow());
+        // The native codec omits forced=false. Retain that absence in the raw evidence.
+        if (saved.contains("forced")) spawn.addProperty("forced", saved.getBoolean("forced").orElseThrow());
         result.add("serializedSpawn", spawn);
+        result.add("serializedRespawn", encode(saved));
         return result;
     }
 
     private static final class OfflineConnection extends ServerGamePacketListenerImpl {
-        OfflineConnection(MinecraftServer server, ServerPlayer player) { super(server, new Connection(PacketFlow.SERVERBOUND), player, WorksOfflinePlayer.cookie(player)); }
+        OfflineConnection(MinecraftServer server, ServerPlayer player) { super(server, new Connection(PacketFlow.SERVERBOUND) {}, player, WorksOfflinePlayer.cookie(player)); }
         @Override public void send(Packet<?> packet) { /* Deliberately no socket or client login. */ }
-        @Override public void send(Packet<?> packet, PacketSendListener listener) {
+        @Override public void send(Packet<?> packet, ChannelFutureListener listener) {
             // Death-message packets use this overload; no native network work is queued.
         }
     }
 
     private static CompoundTag entityNbt(Entity entity) {
         if (entity instanceof LeashFenceKnotEntity) {
-            CompoundTag nbt = entity.saveWithoutId(new CompoundTag());
+            CompoundTag nbt = NativeActorIo.saveWithoutId(entity);
             nbt.putString("id", net.minecraftforge.registries.ForgeRegistries.ENTITY_TYPES.getKey(entity.getType()).toString());
             return nbt;
         }
-        CompoundTag nbt = new CompoundTag();
-        if (!entity.saveAsPassenger(nbt)) throw new IllegalStateException("Could not serialize dimension witness");
-        return nbt;
+        return NativeActorIo.saveAsPassenger(entity);
     }
 
     private static JsonObject encode(CompoundTag nbt) throws Exception {

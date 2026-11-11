@@ -7,20 +7,16 @@ import cyano.poweradvantage.api.simple.SimpleMachineGUI;
 import cyano.poweradvantage.api.simple.TileEntitySimpleFluidMachine;
 import io.netty.buffer.Unpooled;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
-import com.mojang.blaze3d.platform.GlStateManager;
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.pipeline.RenderTarget;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.core.Direction;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -40,12 +36,10 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
-import java.nio.ByteBuffer;
 import java.util.function.Consumer;
 
 /** Checks native neighbour culling and the actual fluid-bar drawing function. */
 final class TankVisualProbe {
-    private static final int GL_COLOR_BUFFER_BIT = 16384, GL_RGBA = 6408, GL_UNSIGNED_BYTE = 5121;
     private static final int WIDTH = 176, HEIGHT = 240;
     private static final int PANEL_TOP = 12, GAUGE_X = 80, GAUGE_Y = PANEL_TOP + 9, GAUGE_HEIGHT = 60, TILE = 16;
     private TankVisualProbe() {}
@@ -79,15 +73,15 @@ final class TankVisualProbe {
         RegistryAccess registries = RegistryAccess.fromRegistryOfRegistries(BuiltInRegistries.REGISTRY);
         PacketLevel packetLevel = PacketLevel.withRegistries(registries);
         var definition = registeredDefinition(block);
-        var inventory = new Inventory(null);
+        var inventory = new Inventory(null, new net.minecraft.world.entity.EntityEquipment());
         var container = definition.createMenu(1, inventory, client);
         require(container.getType() == MachineGUIRegistry.TYPE && MachineGUIRegistry.TYPE != null,
                 "Tank GUI is not backed by the registered native container type");
         var screen = definition.new GUIContainer(container, inventory, net.minecraft.network.chat.Component.literal(name)) {
             void renderTank(GuiGraphics graphics) { renderBg(graphics, 0F, -100, -100); }
         };
-        screen.init(minecraft, WIDTH, HEIGHT);
-        ResourceLocation texture = ResourceLocation.fromNamespaceAndPath("basepower", "textures/gui/container/" + art);
+        screen.init(WIDTH, HEIGHT);
+        Identifier texture = Identifier.fromNamespaceAndPath("basepower", "textures/gui/container/" + art);
         BufferedImage empty = render(minecraft, screen::renderTank);
         BufferedImage emptyReference = reference(minecraft, texture, null, 0);
         compare(name, "empty", 0, 0, empty, emptyReference, emptyReference, cases);
@@ -148,8 +142,7 @@ final class TankVisualProbe {
         private RegistryAccess registries;
 
         private PacketLevel() {
-            super(null, null, Level.OVERWORLD, null, 0, 0,
-                    () -> net.minecraft.util.profiling.InactiveProfiler.INSTANCE, null, false, 0);
+            super(null, null, Level.OVERWORLD, null, 0, 0, null, false, 0, 0);
             throw new AssertionError("Allocate only a registry context, not a connected client world");
         }
 
@@ -174,31 +167,34 @@ final class TankVisualProbe {
     private static boolean floorVisible(final BlockState tank) {
         BlockGetter world = new BlockGetter() {
             @Override public int getHeight() { return 256; }
-            @Override public int getMinBuildHeight() { return 0; }
+            @Override public int getMinY() { return 0; }
             @Override public BlockEntity getBlockEntity(BlockPos pos) { return null; }
             @Override public BlockState getBlockState(BlockPos pos) {
                 return pos.equals(BlockPos.ZERO.above()) ? tank : net.minecraft.world.level.block.Blocks.GRASS_BLOCK.defaultBlockState();
             }
             @Override public FluidState getFluidState(BlockPos pos) { return getBlockState(pos).getFluidState(); }
         };
-        return Block.shouldRenderFace(net.minecraft.world.level.block.Blocks.GRASS_BLOCK.defaultBlockState(), world, BlockPos.ZERO, Direction.UP, BlockPos.ZERO.above());
+        return Block.shouldRenderFace(world, BlockPos.ZERO,
+                net.minecraft.world.level.block.Blocks.GRASS_BLOCK.defaultBlockState(), tank, Direction.UP);
     }
 
-    private static BufferedImage reference(Minecraft minecraft, ResourceLocation texture, Sample sample, int rows) {
+    private static BufferedImage reference(Minecraft minecraft, Identifier texture, Sample sample, int rows) {
         return render(minecraft, graphics -> {
-            graphics.blit(texture, 0, PANEL_TOP, 0, 0, WIDTH, 128);
+            graphics.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED,
+                    texture, 0, PANEL_TOP, 0, 0, WIDTH, 128, 256, 256);
             if (sample != null) {
-                var sprite = minecraft.getTextureAtlas(TextureAtlas.LOCATION_BLOCKS).apply(ResourceLocation.parse(sample.sprite()));
-                require(sprite.contents().name().equals(ResourceLocation.parse(sample.sprite())), "Missing reference sprite: " + sample.sprite());
+                var sprite = minecraft.getAtlasManager().getAtlasOrThrow(net.minecraft.data.AtlasIds.BLOCKS)
+                        .getSprite(Identifier.parse(sample.sprite()));
+                require(sprite.contents().name().equals(Identifier.parse(sample.sprite())), "Missing reference sprite: " + sample.sprite());
                 int tint = sample.tint();
                 // Use Minecraft's full-sprite blit, not the production UV or clipped-tile calculations.
                 for (int y = GAUGE_Y + GAUGE_HEIGHT - rows; y < GAUGE_Y + GAUGE_HEIGHT; y += TILE) {
-                    graphics.blit(GAUGE_X, y, 0, TILE, TILE, sprite,
-                            (tint >>> 16 & 255) / 255F, (tint >>> 8 & 255) / 255F, (tint & 255) / 255F, 1F);
+                    graphics.blitSprite(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED,
+                            sprite, GAUGE_X, y, TILE, TILE, tint | 0xFF000000);
                 }
             }
-            RenderSystem.enableBlend();
-            graphics.blit(texture, GAUGE_X - 3, GAUGE_Y - 3, 176, 0, 22, 66);
+            graphics.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED,
+                    texture, GAUGE_X - 3, GAUGE_Y - 3, 176, 0, 22, 66, 256, 256);
         });
     }
 
@@ -231,36 +227,7 @@ final class TankVisualProbe {
     }
 
     private static BufferedImage render(Minecraft minecraft, Consumer<GuiGraphics> draw) {
-        RenderTarget framebuffer = new com.mojang.blaze3d.pipeline.TextureTarget(WIDTH, HEIGHT, true, Minecraft.ON_OSX);
-        framebuffer.bindWrite(true);
-        NativeGuiProjection projection = new NativeGuiProjection(WIDTH, HEIGHT, 1000, 3000, -2000);
-        RenderSystem.disableDepthTest();
-        RenderSystem.enableBlend();
-        RenderSystem.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
-        RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
-        try {
-            RenderSystem.clearColor(0F, 0F, 0F, 1F);
-            RenderSystem.clear(GL_COLOR_BUFFER_BIT, Minecraft.ON_OSX);
-            var graphics = new GuiGraphics(minecraft, minecraft.renderBuffers().bufferSource());
-            draw.accept(graphics);
-            graphics.flush();
-            ByteBuffer pixels = ByteBuffer.allocateDirect(WIDTH * HEIGHT * 4);
-            RenderSystem.readPixels(0, 0, WIDTH, HEIGHT, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
-            BufferedImage image = new BufferedImage(WIDTH, HEIGHT, BufferedImage.TYPE_INT_RGB);
-            for (int y = 0; y < HEIGHT; y++) {
-                for (int x = 0; x < WIDTH; x++) {
-                    int index = ((HEIGHT - y - 1) * WIDTH + x) * 4;
-                    image.setRGB(x, y, (pixels.get(index) & 255) << 16
-                            | (pixels.get(index + 1) & 255) << 8 | pixels.get(index + 2) & 255);
-                }
-            }
-            return image;
-        } finally {
-            projection.close();
-            framebuffer.destroyBuffers();
-            minecraft.getMainRenderTarget().bindWrite(true);
-            RenderSystem.enableDepthTest();
-        }
+        return NativeGuiProjection.render(minecraft, WIDTH, HEIGHT, 1, 0xFF000000, draw);
     }
 
     private static void require(boolean condition, String message) {

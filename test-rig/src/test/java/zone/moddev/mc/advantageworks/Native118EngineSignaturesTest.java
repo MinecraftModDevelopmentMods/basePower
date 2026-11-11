@@ -20,17 +20,19 @@ public class Native118EngineSignaturesTest {
         assertEquals(LevelChunk.class, ServerChunkCache.class.getMethod("getChunkNow", int.class, int.class).getReturnType());
         assertEquals(ServerLevel.class, MinecraftServer.class.getMethod("getLevel", ResourceKey.class).getReturnType());
         Class<?> registryProvider = net.minecraft.core.HolderLookup.Provider.class;
-        assertEquals(void.class, BlockEntity.class.getMethod("loadWithComponents", CompoundTag.class, registryProvider).getReturnType());
+        assertEquals(void.class, BlockEntity.class.getMethod("loadWithComponents",
+                net.minecraft.world.level.storage.ValueInput.class).getReturnType());
         assertEquals(CompoundTag.class, BlockEntity.class.getMethod("saveWithFullMetadata", registryProvider).getReturnType());
-        assertTrue(Modifier.isProtected(BlockEntity.class.getDeclaredMethod("saveAdditional", CompoundTag.class, registryProvider).getModifiers()));
+        assertTrue(Modifier.isProtected(BlockEntity.class.getDeclaredMethod("saveAdditional",
+                net.minecraft.world.level.storage.ValueOutput.class).getModifiers()));
     }
 
-    @Test public void nativePlayerSaveRemainsProtectedAndRespawnUsesRegistryKeys() throws Exception {
+    @Test public void nativePlayerSaveRemainsProtectedAndRespawnUsesNativeConfiguration() throws Exception {
         Method save = PlayerList.class.getDeclaredMethod("save", ServerPlayer.class);
         assertTrue(Modifier.isProtected(save.getModifiers()));
-        assertEquals(ResourceKey.class, ServerPlayer.class.getMethod("getRespawnDimension").getReturnType());
-        assertEquals(void.class, ServerPlayer.class.getMethod("setRespawnPosition", ResourceKey.class,
-                net.minecraft.core.BlockPos.class, float.class, boolean.class, boolean.class).getReturnType());
+        assertEquals(ServerPlayer.RespawnConfig.class, ServerPlayer.class.getMethod("getRespawnConfig").getReturnType());
+        assertEquals(void.class, ServerPlayer.class.getMethod("setRespawnPosition",
+                ServerPlayer.RespawnConfig.class, boolean.class).getReturnType());
     }
 
     @Test public void realNativeBitStoragePadsFiveSevenAndThirteenBitValues() throws Exception {

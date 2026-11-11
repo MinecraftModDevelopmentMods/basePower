@@ -23,7 +23,7 @@ import net.minecraft.world.level.block.state.properties.Property;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.SignBlockEntity;
 import net.minecraft.core.Direction;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.core.Registry;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.core.BlockPos;
@@ -38,7 +38,7 @@ import net.minecraft.core.Holder;
 import net.minecraft.tags.BiomeTags;
 import net.minecraftforge.common.Tags;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.TickEvent;
+
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.event.server.ServerStoppingEvent;
 import net.minecraftforge.registries.ForgeRegistries;
@@ -71,8 +71,8 @@ final class WorksController {
     private final WorldgenSamplingJob.Slot worldgenJob = new WorldgenSamplingJob.Slot();
 
     private WorksController() {
-        MinecraftForge.EVENT_BUS.addListener(this::worldgenTick);
-        MinecraftForge.EVENT_BUS.addListener(this::worldgenStopping);
+        NativeTickEvents.listenServer(this::worldgenTick);
+        ServerStoppingEvent.BUS.addListener(this::worldgenStopping);
     }
 
     static WorksController getInstance() {
@@ -81,7 +81,7 @@ final class WorksController {
 
     synchronized void loadDefinition() {
         if (definition != null) return;
-        definition = WorksDefinitionLoader.loadNative1211();
+        definition = WorksDefinitionLoader.loadNative12111();
         for (WorksDefinition.Station station : definition.stations) {
             stations.put(station.id.toUpperCase(Locale.ROOT), station);
             statuses.put(station.id, "NOT_BUILT");
@@ -113,7 +113,8 @@ final class WorksController {
             statuses.put(station.id, "READY");
             built++;
         }
-        world.setDefaultSpawnPos(new BlockPos(0, 4, 0), 0.0F);
+        world.setRespawnData(net.minecraft.world.level.storage.LevelData.RespawnData.of(
+                world.dimension(), new BlockPos(0, 4, 0), 0.0F, 0.0F));
         return "Advantage Works built " + built + " station(s); skipped " + skipped + " for missing mods.";
     }
 
@@ -216,14 +217,14 @@ final class WorksController {
         }
         if (worldgenJob.current() != null) throw commandError("A worldgen sample is already running");
         ServerLevel world = overworld(server);
-        BlockPos spawn = world.getSharedSpawnPos();
+        BlockPos spawn = world.getRespawnData().pos();
         worldgenJob.start(new WorldgenSamplingJob(new Native117WorldgenAccess(world),
                 spawn.getX(), spawn.getY(), spawn.getZ(), world.getSeaLevel(), radius));
         return "Queued worldgen sample with radius " + radius + " for bounded server-tick sampling";
     }
 
-    private synchronized void worldgenTick(TickEvent.ServerTickEvent event) {
-        if (event.phase != TickEvent.Phase.END || worldgenJob.current() == null) return;
+    private synchronized void worldgenTick(NativeTickEvents.ServerTickEvent event) {
+        if (event.phase() != NativeTickEvents.Phase.END || worldgenJob.current() == null) return;
         WorldgenSamplingJob job = worldgenJob.current();
         job.tick();
         if (!job.finished()) return;
@@ -349,7 +350,7 @@ final class WorksController {
         for (BlockPos pos : positions) {
             Map<String, Object> block = new LinkedHashMap<>();
             BlockState state = world.getBlockState(pos);
-            ResourceLocation name = ForgeRegistries.BLOCKS.getKey(state.getBlock());
+            Identifier name = ForgeRegistries.BLOCKS.getKey(state.getBlock());
             block.put("pos", Arrays.asList(pos.getX(), pos.getY(), pos.getZ()));
             block.put("block", name == null ? "unknown" : name.toString());
             block.put("state", state.toString());
@@ -416,7 +417,7 @@ final class WorksController {
         if ("comparatorOutput".equals(assertion.type)) {
             BlockState state = world.getBlockState(pos);
             return state.hasAnalogOutputSignal()
-                    && compare(state.getAnalogOutputSignal(world, pos),
+                    && compare(state.getAnalogOutputSignal(world, pos, Direction.UP),
                     assertion.operator, assertion.value);
         }
         BlockEntity tile = world.getBlockEntity(pos);
@@ -451,7 +452,7 @@ final class WorksController {
         }
         if ("energy".equals(assertion.type)) {
             if (tile == null) return false;
-            int[] energy = WorksBlockData.save(tile).getIntArray("Energy");
+            int[] energy = WorksBlockData.save(tile).getIntArray("Energy").orElseThrow();
             int index = assertion.energyIndex == null ? 0 : assertion.energyIndex;
             return index >= 0 && index < energy.length
                     && compare(Float.intBitsToFloat(energy[index]), assertion.operator, assertion.value);
@@ -475,12 +476,12 @@ final class WorksController {
         String[] parts = path.split("\\.");
         CompoundTag current = root;
         for (int i = 0; i < parts.length - 1; i++) {
-            if (!current.contains(parts[i], 10)) return null;
-            current = current.getCompound(parts[i]);
+            if (!zone.moddev.mc.basepower.util.NbtCompat.containsTag(current, parts[i], 10)) return null;
+            current = current.getCompound(parts[i]).orElseThrow();
         }
         String leaf = parts[parts.length - 1];
-        if (!current.contains(leaf, 99)) return null;
-        return current.getDouble(leaf);
+        if (!zone.moddev.mc.basepower.util.NbtCompat.containsTag(current, leaf, 99)) return null;
+        return current.getDouble(leaf).orElseThrow();
     }
 
     private static String stringAt(CompoundTag root, String path) {
@@ -488,11 +489,11 @@ final class WorksController {
         String[] parts = path.split("\\.");
         CompoundTag current = root;
         for (int i = 0; i < parts.length - 1; i++) {
-            if (!current.contains(parts[i], 10)) return null;
-            current = current.getCompound(parts[i]);
+            if (!zone.moddev.mc.basepower.util.NbtCompat.containsTag(current, parts[i], 10)) return null;
+            current = current.getCompound(parts[i]).orElseThrow();
         }
         String leaf = parts[parts.length - 1];
-        return current.contains(leaf, 8) ? current.getString(leaf) : null;
+        return zone.moddev.mc.basepower.util.NbtCompat.containsTag(current, leaf, 8) ? current.getString(leaf).orElseThrow() : null;
     }
 
     private static boolean compare(double actual, String operator, Number expected) {
@@ -635,7 +636,7 @@ final class WorksController {
                     if (action.enchantment != null) {
                         var enchantment = world.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT)
                                 .getOrThrow(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ENCHANTMENT,
-                                        ResourceLocation.parse(action.enchantment)));
+                                        Identifier.parse(action.enchantment)));
                         stack.enchant(enchantment, action.level);
                     }
                     ((Container) tile).setItem(action.slot, stack);
@@ -700,8 +701,8 @@ final class WorksController {
                     world.addFreshEntity(entityItem);
                     break;
                 case "spawnEntity":
-                    EntityType<?> entityType = ForgeRegistries.ENTITY_TYPES.getValue(ResourceLocation.parse(action.entity));
-                    Entity entity = entityType == null ? null : entityType.create(world);
+                    EntityType<?> entityType = ForgeRegistries.ENTITY_TYPES.getValue(Identifier.parse(action.entity));
+                    Entity entity = entityType == null ? null : entityType.create(world, net.minecraft.world.entity.EntitySpawnReason.COMMAND);
                     if (entity == null) throw new IllegalStateException("Unknown entity " + action.entity);
                     entity.setPos(pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5);
                     tagEntity(entity, station.id);
@@ -751,7 +752,7 @@ final class WorksController {
             base.putInt("x", pos.getX());
             base.putInt("y", pos.getY());
             base.putInt("z", pos.getZ());
-            tile.loadWithComponents(base, world.registryAccess());
+            WorksBlockData.load(tile, base);
             tile.setChanged();
         } catch (Exception ex) {
             throw new IllegalStateException("Cannot merge tile NBT at " + pos, ex);
@@ -820,7 +821,7 @@ final class WorksController {
         if (!(tile instanceof SignBlockEntity)) return;
         SignBlockEntity sign = (SignBlockEntity) tile;
         net.minecraft.network.chat.MutableComponent clickable = Component.literal(label);
-        clickable.setStyle(Style.EMPTY.withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, command)));
+        clickable.setStyle(Style.EMPTY.withClickEvent(new ClickEvent.RunCommand(command)));
         sign.setText(sign.getFrontText().setMessage(0, clickable)
                 .setMessage(1, Component.literal("right-click")), true);
         sign.setWaxed(true);
@@ -862,7 +863,7 @@ final class WorksController {
         if (name == null) return Blocks.AIR;
         String resolved = "minecraft:flowing_water".equals(name) ? "minecraft:water"
                 : "minecraft:stonebrick".equals(name) ? "minecraft:stone_bricks" : name;
-        Block value = ForgeRegistries.BLOCKS.getValue(ResourceLocation.parse(resolved));
+        Block value = ForgeRegistries.BLOCKS.getValue(Identifier.parse(resolved));
         return value == null ? Blocks.AIR : value;
     }
 
@@ -870,7 +871,7 @@ final class WorksController {
         if (name == null) return null;
         String resolved = "minecraft:sapling".equals(name) ? "minecraft:oak_sapling"
                 : "minecraft:planks".equals(name) ? "minecraft:oak_planks" : name;
-        ResourceLocation key = ResourceLocation.parse(resolved);
+        Identifier key = Identifier.parse(resolved);
         return ForgeRegistries.ITEMS.containsKey(key) ? ForgeRegistries.ITEMS.getValue(key) : null;
     }
 
@@ -881,7 +882,7 @@ final class WorksController {
     private static BlockState legacyState(String name, Block block, int metadata) {
         if (name != null && (name.startsWith("basepower:")
                 || name.startsWith("basesteam:") || name.startsWith("baseelectric:"))) {
-            return LegacyMigrationApi.decodeBlockState(ResourceLocation.parse(name), block, metadata);
+            return LegacyMigrationApi.decodeBlockState(Identifier.parse(name), block, metadata);
         }
         if (block instanceof LiquidBlock) {
             return block.defaultBlockState().setValue(LiquidBlock.LEVEL, Integer.valueOf(metadata & 15));
@@ -897,17 +898,17 @@ final class WorksController {
 
     private static Fluid fluid(String name) {
         if (name == null || name.trim().isEmpty()) return null;
-        ResourceLocation id = name.indexOf(':') >= 0 ? ResourceLocation.parse(name)
-                : ResourceLocation.fromNamespaceAndPath("basepower", name);
+        Identifier id = name.indexOf(':') >= 0 ? Identifier.parse(name)
+                : Identifier.fromNamespaceAndPath("basepower", name);
         Fluid value = net.minecraft.core.registries.BuiltInRegistries.FLUID.getOptional(id).orElse(null);
         if (value == null) {
             String migratedName = LegacyMigrationApi.fluidTarget(name);
             if (!name.equals(migratedName)) {
-                value = net.minecraft.core.registries.BuiltInRegistries.FLUID.getOptional(ResourceLocation.parse(migratedName)).orElse(null);
+                value = net.minecraft.core.registries.BuiltInRegistries.FLUID.getOptional(Identifier.parse(migratedName)).orElse(null);
             }
         }
         if (value == null && name.indexOf(':') < 0) {
-            value = net.minecraft.core.registries.BuiltInRegistries.FLUID.getOptional(ResourceLocation.fromNamespaceAndPath("minecraft", name)).orElse(null);
+            value = net.minecraft.core.registries.BuiltInRegistries.FLUID.getOptional(Identifier.fromNamespaceAndPath("minecraft", name)).orElse(null);
         }
         return value;
     }
@@ -915,6 +916,6 @@ final class WorksController {
     private static Block wool(int metadata) {
         String[] colors = {"white", "orange", "magenta", "light_blue", "yellow", "lime", "pink",
                 "gray", "light_gray", "cyan", "purple", "blue", "brown", "green", "red", "black"};
-        return ForgeRegistries.BLOCKS.getValue(ResourceLocation.fromNamespaceAndPath("minecraft", colors[metadata & 15] + "_wool"));
+        return ForgeRegistries.BLOCKS.getValue(Identifier.fromNamespaceAndPath("minecraft", colors[metadata & 15] + "_wool"));
     }
 }

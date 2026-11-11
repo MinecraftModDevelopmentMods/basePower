@@ -6,6 +6,11 @@ param(
 $ErrorActionPreference = 'Stop'
 $RepositoryRoot = (Resolve-Path -LiteralPath $RepositoryRoot).Path
 $TargetRoot = (Resolve-Path -LiteralPath $TargetRoot).Path
+$targetMetadata = Get-Content -LiteralPath (Join-Path $TargetRoot 'resources/META-INF/mods.toml') -Raw
+if ($targetMetadata.Contains('loaderVersion="[61,62)"')) {
+    & (Join-Path $PSScriptRoot 'test-native-geometry-contract.ps1') -RepositoryRoot $RepositoryRoot -TargetRoot $TargetRoot -NativeSourcesJar $NativeSourcesJar
+    return
+}
 $checks = 0
 function Assert-GeometryContract([bool]$Condition, [string]$Message) {
     if (-not $Condition) { throw $Message }

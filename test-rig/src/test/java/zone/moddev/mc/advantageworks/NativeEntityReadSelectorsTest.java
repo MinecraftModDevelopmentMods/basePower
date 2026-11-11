@@ -12,8 +12,9 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.Bootstrap;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.vehicle.Boat;
+import net.minecraft.world.entity.vehicle.boat.Boat;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.storage.ValueOutput;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -59,7 +60,7 @@ public class NativeEntityReadSelectorsTest {
         if (scenario.equals("otherValue")) data.putString(key, "another station");
         field.set(entity, data);
         entity.persistentReads = 0;
-        CompoundTag before = entity.saveWithoutId(new CompoundTag()).copy();
+        CompoundTag before = NativeActorIo.saveWithoutId(entity).copy();
         int ticks = entity.tickCount;
         for (int observation = 0; observation < 2; observation++) {
             int serializations = entity.serializations;
@@ -76,7 +77,7 @@ public class NativeEntityReadSelectorsTest {
             assertSame("Rejected and accepted entities must retain the exact persistent-data field", data, field.get(entity));
             assertEquals("Read selectors must never call the allocating getter", 0, entity.persistentReads);
             assertEquals("Selection must not serialize an entity or invoke its save callbacks", serializations, entity.serializations);
-            assertEquals(before, entity.saveWithoutId(new CompoundTag()));
+            assertEquals(before, NativeActorIo.saveWithoutId(entity));
             assertEquals(data != null, before.contains("ForgeData"));
             assertEquals(ticks, entity.tickCount);
             assertFalse(entity.isRemoved());
@@ -86,8 +87,8 @@ public class NativeEntityReadSelectorsTest {
     private static final class ObservedBoat extends Boat {
         int persistentReads;
         int serializations;
-        ObservedBoat(Level world) { super(EntityType.BOAT, world); }
+        ObservedBoat(Level world) { super(EntityType.OAK_BOAT, world, () -> net.minecraft.world.item.Items.OAK_BOAT); }
         @Override public CompoundTag getPersistentData() { persistentReads++; return super.getPersistentData(); }
-        @Override public CompoundTag saveWithoutId(CompoundTag tag) { serializations++; return super.saveWithoutId(tag); }
+        @Override public void saveWithoutId(ValueOutput output) { serializations++; super.saveWithoutId(output); }
     }
 }

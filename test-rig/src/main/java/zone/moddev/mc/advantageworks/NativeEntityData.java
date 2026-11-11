@@ -14,12 +14,12 @@ final class NativeEntityData {
 
     static boolean containsString(Entity entity, String key) {
         CompoundTag data = peek(entity);
-        return data != null && data.contains(key, 8);
+        return data != null && zone.moddev.mc.basepower.util.NbtCompat.containsTag(data, key, 8);
     }
 
     static String string(Entity entity, String key) {
         CompoundTag data = peek(entity);
-        return data == null ? "" : data.getString(key);
+        return data == null ? "" : data.getString(key).orElse("");
     }
 
     private static CompoundTag peek(Entity entity) {

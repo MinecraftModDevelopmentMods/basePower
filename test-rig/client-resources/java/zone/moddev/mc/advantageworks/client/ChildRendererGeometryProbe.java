@@ -4,26 +4,21 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import com.mojang.datafixers.util.Pair;
 import cyano.poweradvantage.api.PoweredEntity;
 import net.minecraft.client.Minecraft;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderStateShard;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.entity.EntityRenderer;
-import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
-import net.minecraft.client.renderer.blockentity.BlockEntityRenderDispatcher;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormatElement;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.core.Direction;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraftforge.registries.ForgeRegistries;
 
 import javax.imageio.ImageIO;
@@ -39,12 +34,10 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 /** Additional CPU geometry evidence from the registered renderers; never opens a world. */
 final class ChildRendererGeometryProbe {
     private static final float EPSILON = 0.0001F;
-    private static final int LIGHT = 0xF000F0;
     private static final String STEAM_RENDERER = "zone.moddev.mc.basesteam.graphics.DrillBitRenderer";
     private static final String DRILL_RENDERER = "zone.moddev.mc.baseelectric.graphics.LaserDrillRenderer";
     private static final String TURRET_RENDERER = "zone.moddev.mc.baseelectric.graphics.LaserTurretRenderer";
@@ -63,13 +56,13 @@ final class ChildRendererGeometryProbe {
             drill(minecraft, cases);
             turret(minecraft, cases);
             run(cases, "hydroturbine-registration", row -> {
-                EntityType<?> type = ForgeRegistries.ENTITY_TYPES.getValue(ResourceLocation.parse("baseelectric:hydroturbine"));
+                EntityType<?> type = ForgeRegistries.ENTITY_TYPES.getValue(Identifier.parse("baseelectric:hydroturbine"));
                 require(type != null, "Missing registered hydroturbine type");
-                EntityRenderer<?> renderer = minecraft.getEntityRenderDispatcher().renderers.get(type);
+                EntityRenderer<?, ?> renderer = minecraft.getEntityRenderDispatcher().renderers.get(type);
                 require(renderer != null && TURBINE_RENDERER.equals(renderer.getClass().getName()), "Missing production hydroturbine renderer");
                 row.addProperty("renderer", renderer.getClass().getName());
-                ResourceLocation texture = (ResourceLocation) valueOfType(renderer, ResourceLocation.class);
-                require(ResourceLocation.parse("baseelectric:textures/entity/hydroturbine.png").equals(texture), "Wrong hydroturbine texture");
+                Identifier texture = (Identifier) valueOfType(renderer, Identifier.class);
+                require(Identifier.parse("baseelectric:textures/entity/hydroturbine.png").equals(texture), "Wrong hydroturbine texture");
                 texture(minecraft, texture, row);
                 row.addProperty("status", "MANUAL_GAP_WORLD_REQUIRED");
                 row.addProperty("gap", "HydroturbineEntity constructor reads World.rand; orientation/spin vertices require a fresh disposable client world. No entity was constructed, no render invoked, and no geometry pass is claimed.");
@@ -175,7 +168,7 @@ final class ChildRendererGeometryProbe {
     }
 
     private static BlockEntity tile(String id) {
-        BlockEntityType<?> type = ForgeRegistries.BLOCK_ENTITY_TYPES.getValue(ResourceLocation.parse(id));
+        BlockEntityType<?> type = ForgeRegistries.BLOCK_ENTITY_TYPES.getValue(Identifier.parse(id));
         require(type != null, "Missing registered tile type " + id);
         net.minecraft.world.level.block.state.BlockState state = ForgeRegistries.BLOCKS.getValues().stream()
                 .map(net.minecraft.world.level.block.Block::defaultBlockState).filter(type::isValid).findFirst()
@@ -187,7 +180,7 @@ final class ChildRendererGeometryProbe {
 
     private static List<float[]> render(Minecraft minecraft, BlockEntity tile, String expectedRenderer,
             float partial, String expectedTexture, JsonObject row) throws Exception {
-        BlockEntityRenderer<BlockEntity> renderer = minecraft.getBlockEntityRenderDispatcher().getRenderer(tile);
+        BlockEntityRenderer renderer = minecraft.getBlockEntityRenderDispatcher().getRenderer(tile);
         require(renderer != null && expectedRenderer.equals(renderer.getClass().getName()), "Dispatcher has no expected production renderer: " + expectedRenderer);
         row.addProperty("renderer", renderer.getClass().getName());
         row.addProperty("partial_tick", partial);
@@ -195,17 +188,31 @@ final class ChildRendererGeometryProbe {
         PoseStack.Pose original = matrices.last();
         org.joml.Matrix4f position = new org.joml.Matrix4f(original.pose());
         org.joml.Matrix3f normal = new org.joml.Matrix3f(original.normal());
-        Capture buffers = new Capture(minecraft, ResourceLocation.parse(expectedTexture), row);
+        Capture buffers = new Capture(minecraft, Identifier.parse(expectedTexture), row);
         boolean balanced;
         Throwable renderFailure = null;
         try {
-            renderer.render(tile, partial, matrices, buffers, LIGHT, OverlayTexture.NO_OVERLAY);
+            var state = renderer.createRenderState();
+            renderer.extractRenderState(tile, state, partial, net.minecraft.world.phys.Vec3.ZERO, null);
+            var collector = (net.minecraft.client.renderer.SubmitNodeCollector) java.lang.reflect.Proxy.newProxyInstance(
+                    net.minecraft.client.renderer.SubmitNodeCollector.class.getClassLoader(),
+                    new Class<?>[]{net.minecraft.client.renderer.SubmitNodeCollector.class}, (proxy, method, arguments) -> {
+                        if (method.getName().equals("order")) return proxy;
+                        if (!method.getName().equals("submitCustomGeometry"))
+                            throw new IllegalStateException("Unexpected native renderer submission: " + method);
+                        PoseStack submitted = (PoseStack) arguments[0];
+                        RenderType pipeline = (RenderType) arguments[1];
+                        var geometry = (net.minecraft.client.renderer.SubmitNodeCollector.CustomGeometryRenderer) arguments[2];
+                        geometry.render(submitted.last(), buffers.getBuffer(pipeline));
+                        return null;
+                    });
+            renderer.submit(state, matrices, collector, new net.minecraft.client.renderer.state.CameraRenderState());
         } catch (RuntimeException | LinkageError | AssertionError failure) {
             renderFailure = failure;
             row.addProperty("render_error", failure.toString());
             throw failure;
         } finally {
-            balanced = matrices.clear() && matrices.last() == original
+            balanced = matrices.isEmpty() && matrices.last() == original
                     && position.equals(original.pose()) && normal.equals(original.normal());
             row.addProperty("matrix_balanced", balanced);
             try { buffers.finish(); }
@@ -223,13 +230,13 @@ final class ChildRendererGeometryProbe {
 
     private static final class Capture implements MultiBufferSource {
         private final Minecraft minecraft;
-        private final ResourceLocation expectedTexture;
+        private final Identifier expectedTexture;
         private final JsonArray batches = new JsonArray();
         private final Map<RenderType, BufferBuilder> buffers = new LinkedHashMap<>();
         private final List<com.mojang.blaze3d.vertex.ByteBufferBuilder> storage = new ArrayList<>();
         private final List<float[]> vertices = new ArrayList<>();
 
-        Capture(Minecraft minecraft, ResourceLocation expectedTexture, JsonObject row) {
+        Capture(Minecraft minecraft, Identifier expectedTexture, JsonObject row) {
             this.minecraft = minecraft;
             this.expectedTexture = expectedTexture;
             row.add("native_buffers", batches);
@@ -280,11 +287,12 @@ final class ChildRendererGeometryProbe {
                     raw.add(values);
                 }
                 // Inspect the texture actually selected by the production RenderType, not a substitute type.
-                Object state = valueOfType(entry.getKey(), RenderType.CompositeState.class);
-                Object textureState = valueOfType(state, RenderStateShard.EmptyTextureStateShard.class);
-                Optional<?> selected = (Optional<?>) valueOfType(textureState, Optional.class);
-                require(selected.isPresent() && selected.get() instanceof ResourceLocation, "Production render type has no texture");
-                ResourceLocation selectedTexture = (ResourceLocation) selected.get();
+                Object state = valueOfType(entry.getKey(), net.minecraft.client.renderer.rendertype.RenderSetup.class);
+                Field texturesField = state.getClass().getDeclaredField("textures");
+                texturesField.setAccessible(true);
+                Object binding = ((Map<?, ?>) texturesField.get(state)).get("Sampler0");
+                require(binding != null, "Production render type has no texture");
+                Identifier selectedTexture = (Identifier) valueOfType(binding, Identifier.class);
                 batch.addProperty("texture", selectedTexture.toString());
                 require(expectedTexture.equals(selectedTexture), "Production renderer selected the wrong texture");
                 texture(minecraft, selectedTexture, batch);
@@ -325,7 +333,7 @@ final class ChildRendererGeometryProbe {
         require(close(start, 0) && close(end, length), "Beam cardinal bounds/length changed");
     }
 
-    private static void texture(Minecraft minecraft, ResourceLocation location, JsonObject row) throws IOException {
+    private static void texture(Minecraft minecraft, Identifier location, JsonObject row) throws IOException {
         try (var resource = minecraft.getResourceManager().open(location)) {
             BufferedImage image = ImageIO.read(resource);
             require(image != null && image.getWidth() > 0 && image.getHeight() > 0, "Renderer texture is not a readable image: " + location);

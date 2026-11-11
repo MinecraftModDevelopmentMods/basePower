@@ -9,8 +9,8 @@ import static org.junit.Assert.*;
 public class WorldgenProtocolContractTest {
     @Test public void samplingAdvancesOnlyFromNativeServerTickEnd() throws Exception {
         String source = source("src/main/java/zone/moddev/mc/advantageworks/WorksController.java");
-        assertTrue("Sampling must yield to native server ticks", source.contains("TickEvent.ServerTickEvent"));
-        assertTrue(source.contains("TickEvent.Phase.END"));
+        assertTrue("Sampling must yield to native server ticks", source.contains("NativeTickEvents.ServerTickEvent"));
+        assertTrue(source.contains("NativeTickEvents.Phase.END"));
         String command = source.substring(source.indexOf("synchronized String sampleWorldgen("),
                 source.indexOf("List<String> stationIdsWithAll()"));
         assertFalse("The command must not synchronously populate the halo",

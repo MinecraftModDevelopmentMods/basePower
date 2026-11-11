@@ -11,7 +11,7 @@ import java.util.function.Consumer;
 import net.minecraft.commands.Commands;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.MenuProvider;
@@ -54,11 +54,11 @@ final class NativeOilBucketProbe {
     }
 
     static void register() {
-        if (Files.isRegularFile(MARKER)) MinecraftForge.EVENT_BUS.addListener(NativeOilBucketProbe::commands);
+        if (Files.isRegularFile(MARKER)) RegisterCommandsEvent.BUS.addListener(NativeOilBucketProbe::commands);
     }
 
     private static void commands(RegisterCommandsEvent event) {
-        event.getDispatcher().register(Commands.literal("advoilbuckets").requires(source -> source.hasPermission(4))
+        event.getDispatcher().register(Commands.literal("advoilbuckets").requires(source -> source.permissions().hasPermission(net.minecraft.server.permissions.Permissions.COMMANDS_OWNER))
                 .executes(context -> {
                     try {
                         run(context.getSource().getLevel());
@@ -111,7 +111,7 @@ final class NativeOilBucketProbe {
         for (Direction direction : Direction.Plane.HORIZONTAL) {
             world.setBlockAndUpdate(basin.relative(direction), Blocks.STONE.defaultBlockState());
         }
-        player.moveTo(basin.getX() + 0.5, basin.getY() + 1.5, basin.getZ() + 0.5, 0, 90);
+        player.snapTo(basin.getX() + 0.5, basin.getY() + 1.5, basin.getZ() + 0.5, 0, 90);
         hand(player, filled);
         var placed = player.gameMode.useItem(player, world, player.getItemInHand(HAND), HAND);
         require(placed.consumesAction(), "Filled bucket world use returned " + placed);
@@ -129,7 +129,7 @@ final class NativeOilBucketProbe {
 
     private static IFluidHandler machine(ServerLevel world, BlockPos pos, Fluid oil, int amount) {
         world.setBlockAndUpdate(pos, Blocks.AIR.defaultBlockState());
-        var block = ForgeRegistries.BLOCKS.getValue(ResourceLocation.fromNamespaceAndPath("basepower", "fluid_storage_tank"));
+        var block = ForgeRegistries.BLOCKS.getValue(Identifier.fromNamespaceAndPath("basepower", "fluid_storage_tank"));
         require(block != null, "Storage tank block unavailable");
         world.setBlockAndUpdate(pos, block.defaultBlockState());
         var tile = world.getBlockEntity(pos);
@@ -150,7 +150,7 @@ final class NativeOilBucketProbe {
     }
 
     private static boolean clickTank(ServerLevel world, WorksOfflinePlayer player, BlockPos pos) {
-        player.moveTo(pos.getX() + 0.5, pos.getY() + 1.5, pos.getZ() + 1.5, 180, 35);
+        player.snapTo(pos.getX() + 0.5, pos.getY() + 1.5, pos.getZ() + 1.5, 180, 35);
         var hit = new BlockHitResult(Vec3.atCenterOf(pos).add(0, 0.5, 0), Direction.UP, pos, false);
         return player.gameMode.useItemOn(player, world, player.getItemInHand(HAND), HAND, hit).consumesAction();
     }
@@ -196,8 +196,8 @@ final class NativeOilBucketProbe {
         JsonArray checks = new JsonArray();
         for (int index = 0; index < 2; index++) {
             String name = index == 0 ? "crude_oil" : "refined_oil";
-            var oil = ForgeRegistries.FLUIDS.getValue(ResourceLocation.fromNamespaceAndPath("basepower", name));
-            var filled = ForgeRegistries.ITEMS.getValue(ResourceLocation.fromNamespaceAndPath("basepower", name + "_bucket"));
+            var oil = ForgeRegistries.FLUIDS.getValue(Identifier.fromNamespaceAndPath("basepower", name));
+            var filled = ForgeRegistries.ITEMS.getValue(Identifier.fromNamespaceAndPath("basepower", name + "_bucket"));
             require(oil != null && filled instanceof net.minecraft.world.item.BucketItem, "Oil source or bucket unavailable");
             int x = 1072 + 16 * index;
             BlockPos basin = new BlockPos(x, 8, 1025), tank = new BlockPos(x, 8, 1029);

@@ -19,7 +19,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.TickEvent;
+
 import net.minecraftforge.event.level.LevelEvent;
 import net.minecraftforge.event.RegisterCommandsEvent;
 
@@ -31,28 +31,28 @@ final class MigrationProbe {
     static void register() {
         if (!MARKER.isFile()) return;
         MigrationProbe probe = new MigrationProbe();
-        MinecraftForge.EVENT_BUS.addListener(probe::load);
-        MinecraftForge.EVENT_BUS.addListener(probe::tick);
-        MinecraftForge.EVENT_BUS.addListener(probe::chunkLoaded);
-        MinecraftForge.EVENT_BUS.addListener(probe::starting);
+        LevelEvent.Load.BUS.addListener(probe::load);
+        NativeTickEvents.listenLevel(probe::tick);
+        net.minecraftforge.event.level.ChunkEvent.Load.BUS.addListener(probe::chunkLoaded);
+        RegisterCommandsEvent.BUS.addListener(probe::starting);
     }
 
     private void load(LevelEvent.Load event) {
         if (event.getLevel() instanceof Level) freeze((Level) event.getLevel());
     }
-    private void tick(TickEvent.LevelTickEvent event) {
-        if (event.phase == TickEvent.Phase.START) freeze(event.level);
+    private void tick(NativeTickEvents.LevelTickEvent event) {
+        if (event.phase() == NativeTickEvents.Phase.START) freeze(event.level());
     }
     private void chunkLoaded(net.minecraftforge.event.level.ChunkEvent.Load event) {
         if (event.getLevel() instanceof Level) freeze((Level) event.getLevel());
     }
     private void freeze(Level world) {
-        if (!world.isClientSide && !new File("migration-operate.allow").isFile()) NativeBlockEntityTicks.drain(world);
+        if (!world.isClientSide() && !new File("migration-operate.allow").isFile()) NativeBlockEntityTicks.drain(world);
     }
 
     private void starting(RegisterCommandsEvent event) {
         event.getDispatcher().register(Commands.literal("advprobe")
-                .requires(source -> source.hasPermission(4))
+                .requires(source -> source.permissions().hasPermission(net.minecraft.server.permissions.Permissions.COMMANDS_OWNER))
                 .then(Commands.literal("snapshot")
                         .then(Commands.argument("label", StringArgumentType.word()).executes(context -> {
                             try {

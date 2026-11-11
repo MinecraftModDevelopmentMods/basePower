@@ -10,7 +10,7 @@ $ProjectRoot = (Resolve-Path -LiteralPath $ProjectRoot).Path
 $Evidence = [IO.Path]::GetFullPath($Evidence)
 if (Test-Path -LiteralPath $Evidence) { throw 'Refusing to replace Eclipse evidence' }
 if ((Get-Content -LiteralPath (Join-Path $JavaHome 'release') -Raw) -notmatch '(?m)^JAVA_VERSION="21(?:\.|\+|")') {
-    throw 'The Forge 52 Eclipse build requires Java 21'
+    throw 'The native Eclipse build requires Java 21'
 }
 $null = New-Item -ItemType Directory -Path $Evidence
 $java = Join-Path $JavaHome 'bin/java.exe'
@@ -64,6 +64,39 @@ try {
         }
         $report.compilations[$scope].classes = $classes.Count
     }
+    $inventory = @()
+    $expected = 0
+    foreach ($file in Get-ChildItem -LiteralPath (Join-Path $ProjectRoot 'build/test-results/test') -Filter 'TEST-*.xml') {
+        [xml]$suite = Get-Content -LiteralPath $file.FullName -Raw
+        if ([int]$suite.testsuite.failures -or [int]$suite.testsuite.errors -or [int]$suite.testsuite.skipped) {
+            throw 'The Gradle inventory includes failed or skipped tests'
+        }
+        $inventory += [string]$suite.testsuite.name
+        $expected += [int]$suite.testsuite.tests
+    }
+    if (-not $expected) { throw 'Missing Gradle test inventory' }
+    $runtime = @($outputs.test, $outputs.main, (Join-Path $ProjectRoot 'build/resources/main'),
+            (Join-Path $ProjectRoot 'build/resources/test')) + $libraries
+    $runtimeClasspath = $runtime -join ';'
+    $bootstrap = Join-Path $ProjectRoot 'build/unit-bootstrap/forge-native-unit-bootstrap.jar'
+    if (-not (Test-Path -LiteralPath $bootstrap -PathType Leaf)) { throw 'Missing native unit bootstrap' }
+    $testArgs = @('-Xmx2G', ('"-javaagent:' + $bootstrap.Replace('\', '/') + '"'),
+            ('"-Dbasepower.nativePackClasspath=' + $runtimeClasspath.Replace('\', '/') + '"'),
+            '-cp', ('"' + $runtimeClasspath.Replace('\', '/') + '"'),
+            'zone.moddev.mc.advantageworks.unit.EclipseUnitLauncher', [string]$expected) + $inventory
+    $testArgFile = Join-Path $Evidence 'junit.args'
+    [IO.File]::WriteAllLines($testArgFile, $testArgs, [Text.UTF8Encoding]::new($false))
+    Push-Location $ProjectRoot
+    try {
+        & $java "@$testArgFile" *> (Join-Path $Evidence 'junit.log')
+        $code = $LASTEXITCODE
+    } finally { Pop-Location }
+    $report['junit'] = @{ exitCode=$code; expectedTests=$expected; suites=$inventory }
+    if ($code -ne 0) { throw 'Fresh Eclipse-output tests failed; inspect retained junit.log' }
+    $summary = Get-Content -LiteralPath (Join-Path $Evidence 'junit.log') -Raw
+    if (-not $summary.Contains("PASS: $expected tests; zero failures, ignored tests or assumptions")) {
+        throw 'Missing exact fresh-output test count'
+    }
     $report.status = 'PASS'
 } catch {
     $report.status = 'FAIL'
@@ -72,4 +105,4 @@ try {
 } finally {
     $report | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $Evidence 'ecj-results.json') -Encoding utf8
 }
-Write-Output 'PASS: both Eclipse source scopes compile with the generated production and test classpaths'
+Write-Output 'PASS: both Eclipse source scopes compile and the complete test inventory passes on fresh ECJ output'

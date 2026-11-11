@@ -46,6 +46,17 @@ def measure_batch(documents, definitions):
     return semantic_machine_audit.endurance_batch(views, definitions, identity=target_id)
 
 
+def stop_at_checkpoint(rig):
+    # Keep ticking buffers and timers identical between observation and disk save.
+    rig.command("tick freeze", "The game is frozen")
+    rig.checkpoint("restart-resumed")
+    rig.batch("restart-resumed")
+    statuses = rig.structure()
+    rig.command("save-all flush", "Saved the game")
+    rig.shutdown()
+    return statuses
+
+
 class Rig(NativeEnduranceRig):
     server_type = native.Server
 
@@ -134,7 +145,7 @@ def main():
     write_json(receipt, report)
     rigs = []
     try:
-        cases = (("fresh1211", None), ("retained-upgrade-native12111", args.retained)) if args.retained else (("fresh1211", None),)
+        cases = (("fresh12111", None), ("retained-upgrade-native12111", args.retained)) if args.retained else (("fresh12111", None),)
         for index, (name, source) in enumerate(cases):
             check_hold(root)
             runtime = root / name
@@ -201,11 +212,7 @@ def main():
             time.sleep(min(1, max(0, resume_deadline - time.monotonic())))
         for rig in rigs:
             check_hold(root)
-            rig.checkpoint("restart-resumed")
-            rig.batch("restart-resumed")
-            statuses = rig.structure()
-            rig.command("save-all flush", "Saved the game")
-            rig.shutdown()
+            statuses = stop_at_checkpoint(rig)
             totals = Counter()
             for batch in rig.ledger:
                 if batch["label"].startswith("cycle-"):

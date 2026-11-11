@@ -17,9 +17,9 @@ import native12111 as native
 
 
 MINERALOGY = dict(id="mineralogy", version="6.1.4.121111",
-                  sourceRef="87d2d1bb2d1e7898f602f8ae9284f43e543c6e01",
+                  sourceRef="d27b800100213c8166a24a7196adf22d05a99bab",
                   file="Mineralogy-6.1.4.121111.jar",
-                  sha256="DD1537FF6279BBB8BAFEFFA3FBE6BA799B124125FD5C383FF59F9DB0184F358D")
+                  sha256="2ADE7BEE0ACD5B1463752B3D14A01E27D3FFA5448E9407BA8F41DFAFBCA0D954")
 
 
 def oil_pins(entries):

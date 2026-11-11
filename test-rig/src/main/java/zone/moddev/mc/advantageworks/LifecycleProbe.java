@@ -28,7 +28,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.level.ChunkEvent;
-import net.minecraftforge.event.TickEvent;
+
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import zone.moddev.mc.basepower.conduitnetwork.ConduitRegistry;
@@ -179,15 +179,15 @@ final class LifecycleProbe {
         } catch (Exception error) {
             throw new IllegalStateException("Invalid lifecycle fixture", error);
         }
-        MinecraftForge.EVENT_BUS.addListener(probe::starting);
-        MinecraftForge.EVENT_BUS.addListener(probe::tick);
-        MinecraftForge.EVENT_BUS.addListener(probe::unload);
-        MinecraftForge.EVENT_BUS.addListener(probe::load);
+        RegisterCommandsEvent.BUS.addListener(probe::starting);
+        NativeTickEvents.listenLevel(probe::tick);
+        ChunkEvent.Unload.BUS.addListener(probe::unload);
+        ChunkEvent.Load.BUS.addListener(probe::load);
     }
 
     private void starting(RegisterCommandsEvent event) {
         event.getDispatcher().register(Commands.literal("advlifecycle")
-                .requires(source -> source.hasPermission(4))
+                .requires(source -> source.permissions().hasPermission(net.minecraft.server.permissions.Permissions.COMMANDS_OWNER))
                 .then(Commands.argument("operation", StringArgumentType.word())
                         .then(Commands.argument("label", StringArgumentType.word()).executes(context -> {
                             WorksController.getInstance().requireAuthorizedWorld(context.getSource().getServer());
@@ -233,7 +233,7 @@ final class LifecycleProbe {
                     BlockPos source = position(oil.source);
                     if (!world.isEmptyBlock(source)) throw new IllegalStateException("Oil source is not empty: " + oil.id);
                     net.minecraft.world.item.Item item = net.minecraftforge.registries.ForgeRegistries.ITEMS.getValue(
-                            net.minecraft.resources.ResourceLocation.parse(oil.bucket));
+                            net.minecraft.resources.Identifier.parse(oil.bucket));
                     if (!(item instanceof net.minecraft.world.item.BucketItem)
                             || !((net.minecraft.world.item.BucketItem) item).emptyContents(null, world, source, null))
                         throw new IllegalStateException("Bucket placement failed: " + oil.id);
@@ -336,8 +336,8 @@ final class LifecycleProbe {
             LevelChunk chunk = world.getChunkSource().getChunkNow(pos.getX() >> 4, pos.getZ() >> 4);
             BlockEntity tile = existingTile(world, pos);
             CompoundTag saved = tile == null ? new CompoundTag() : WorksBlockData.save(tile);
-            boolean hasTarget = saved.contains("targetX", 99) && saved.contains("targetY", 99) && saved.contains("targetZ", 99);
-            BlockPos target = hasTarget ? new BlockPos(saved.getInt("targetX"), saved.getInt("targetY"), saved.getInt("targetZ")) : pos;
+            boolean hasTarget = zone.moddev.mc.basepower.util.NbtCompat.containsTag(saved, "targetX", 99) && zone.moddev.mc.basepower.util.NbtCompat.containsTag(saved, "targetY", 99) && zone.moddev.mc.basepower.util.NbtCompat.containsTag(saved, "targetZ", 99);
+            BlockPos target = hasTarget ? new BlockPos(saved.getInt("targetX").orElseThrow(), saved.getInt("targetY").orElseThrow(), saved.getInt("targetZ").orElseThrow()) : pos;
             Map<String, Object> flags = new LinkedHashMap<>();
             flags.put("allFixtureChunksReady", allChunks);
             flags.put("chunkLoaded", chunk != null);
@@ -377,10 +377,10 @@ final class LifecycleProbe {
         for (Fixture fixture : fixtures.values()) {
             if (fixture.to == null) continue;
             CompoundTag tag = WorksBlockData.save(request.bindings.get(fixture.id).tile);
-            if (!tag.contains("targetX", 99) || !tag.contains("targetY", 99) || !tag.contains("targetZ", 99)
-                    || tag.getShort("progress") <= 0) throw new IllegalStateException("Drill must be mid-block " + fixture.id);
-            requireInside(fixture, new int[]{tag.getInt("targetX"), tag.getInt("targetY"), tag.getInt("targetZ")});
-            if ("changed-target-read".equals(request.operation) && !tag.contains("TargetState", 10) && !tag.contains("TargetStates", 9))
+            if (!zone.moddev.mc.basepower.util.NbtCompat.containsTag(tag, "targetX", 99) || !zone.moddev.mc.basepower.util.NbtCompat.containsTag(tag, "targetY", 99) || !zone.moddev.mc.basepower.util.NbtCompat.containsTag(tag, "targetZ", 99)
+                    || tag.getShort("progress").orElseThrow() <= 0) throw new IllegalStateException("Drill must be mid-block " + fixture.id);
+            requireInside(fixture, new int[]{tag.getInt("targetX").orElseThrow(), tag.getInt("targetY").orElseThrow(), tag.getInt("targetZ").orElseThrow()});
+            if ("changed-target-read".equals(request.operation) && !zone.moddev.mc.basepower.util.NbtCompat.containsTag(tag, "TargetState", 10) && !zone.moddev.mc.basepower.util.NbtCompat.containsTag(tag, "TargetStates", 9))
                 throw new IllegalStateException("Changed-target prerequisite lacks restored saved state " + fixture.id);
             saved.put(fixture.id, tag);
         }
@@ -396,11 +396,11 @@ final class LifecycleProbe {
             if ("legacy-read".equals(request.operation)) {
                 tag.remove("TargetState"); tag.remove("TargetStates");
             } else {
-                request.world.setBlock(new BlockPos(tag.getInt("targetX"), tag.getInt("targetY"), tag.getInt("targetZ")),
+                request.world.setBlock(new BlockPos(tag.getInt("targetX").orElseThrow(), tag.getInt("targetY").orElseThrow(), tag.getInt("targetZ").orElseThrow()),
                         Blocks.BEDROCK.defaultBlockState(), 3);
             }
             BlockEntity tile = request.bindings.get(entry.getKey()).tile;
-            tile.loadWithComponents(tag, tile.getLevel().registryAccess()); tile.setChanged();
+            WorksBlockData.load(tile, tag); tile.setChanged();
         }
         requireNewResult(request.label + "-initial");
         Map<String, Object> initial = observe(request.world);
@@ -434,7 +434,7 @@ final class LifecycleProbe {
         Map<String, Object> result = observe(request.world);
         Map<String, Object> proof = new LinkedHashMap<>();
         proof.put("protocol", LifecycleRoundTrip.PROTOCOL); proof.put("operation", request.operation);
-        proof.put("label", request.label); proof.put("dimension", request.world.dimension().location().toString());
+        proof.put("label", request.label); proof.put("dimension", request.world.dimension().identifier().toString());
         proof.put("status", request.window.failure == null ? "PASS" : "FAIL");
         proof.put("failure", request.window.failure); proof.put("startPhase", "START"); proof.put("endPhase", request.completionPhase);
         proof.put("startWorldTime", request.window.startWorldTime); proof.put("endWorldTime", request.world.getGameTime());
@@ -466,16 +466,16 @@ final class LifecycleProbe {
         System.out.println("ADVLIFECYCLE COMPLETE " + request.operation + " " + request.label);
     }
 
-    private void roundTripTick(TickEvent.LevelTickEvent event) {
+    private void roundTripTick(NativeTickEvents.LevelTickEvent event) {
         RoundTripRequest request = roundTrip;
-        if (request == null || event.level != request.world) return;
+        if (request == null || event.level() != request.world) return;
         boolean finish = false;
         try {
-            if (event.phase == TickEvent.Phase.START && !request.window.started) {
+            if (event.phase() == NativeTickEvents.Phase.START && !request.window.started) {
                 if (request.window.start(request.world.getGameTime(), System.nanoTime(), roundTripPrerequisites(request)))
                     applyRoundTrip(request);
                 finish = request.window.finished;
-            } else if (event.phase == TickEvent.Phase.END && request.window.started) {
+            } else if (event.phase() == NativeTickEvents.Phase.END && request.window.started) {
                 boolean complete = request.bindings.values().stream().allMatch(binding -> binding.capture.complete() && binding.current(request.world));
                 request.window.end(request.world.getGameTime(), complete);
                 finish = true;
@@ -485,7 +485,7 @@ final class LifecycleProbe {
             finish = true;
         }
         if (finish) {
-            request.completionPhase = event.phase.name();
+            request.completionPhase = event.phase().name();
             finishRoundTrip(request);
         }
     }
@@ -557,16 +557,16 @@ final class LifecycleProbe {
         return result;
     }
 
-    private void tick(TickEvent.LevelTickEvent event) {
+    private void tick(NativeTickEvents.LevelTickEvent event) {
         roundTripTick(event);
-        if (!watching || !(event.level instanceof ServerLevel)) return;
-        ServerLevel world = (ServerLevel) event.level;
+        if (!watching || !(event.level() instanceof ServerLevel)) return;
+        ServerLevel world = (ServerLevel) event.level();
         for (Fixture fixture : fixtures.values()) {
             if (fixture.from == null || completed.contains(fixture.id)) continue;
             int step = routeSteps.getOrDefault(fixture.id, 0);
             int[] from = fixture.route == null ? fixture.from : fixture.route.get(step);
             int[] to = fixture.route == null ? fixture.to : fixture.route.get(step + 1);
-            if (event.phase == TickEvent.Phase.START) {
+            if (event.phase() == NativeTickEvents.Phase.START) {
                 Map<String, Object> original = witness(world, from);
                 if (fixture.block.equals(original.get("block"))) before.put(fixture.id, original);
             } else {

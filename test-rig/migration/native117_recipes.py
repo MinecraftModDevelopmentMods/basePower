@@ -189,10 +189,11 @@ def audit_unlock_log(path, previous_recipes, current_recipes, errors=runtime_err
     events = []
     for original in errors(path.read_text(encoding="utf-8", errors="replace")):
         line = re.sub(r"\x1b\[[0-9;]*m", "", original)
-        match = re.search(r"\[Server thread/ERROR\] \[(?:minecraft/ServerRecipeBook|net\.minecraft\.stats\.ServerRecipeBook/?)\]: Tried to load unrecognized recipe: ([a-z0-9_]+:[a-z0-9_./-]+) removed now\.$", line)
-        if not match or match[1] not in removed:
+        match = re.search(r"\[Server thread/ERROR\] \[(?:minecraft/ServerRecipeBook|net\.minecraft\.stats\.ServerRecipeBook/?)\]: Tried to load unrecognized recipe: (?:([a-z0-9_]+:[a-z0-9_./-]+)|ResourceKey\[minecraft:recipe / ([a-z0-9_]+:[a-z0-9_./-]+)\]) removed now\.$", line)
+        identity = (match[1] or match[2]) if match else None
+        if identity not in removed:
             raise AssertionError(f"Unexpected native recipe runtime error: {original}")
-        observed.add(match[1])
+        observed.add(identity)
         events.append(original)
     if observed != removed:
         raise AssertionError(f"Saved-book pruning did not match the native packet-set difference: expected {sorted(removed)}, saw {sorted(observed)}")
@@ -281,13 +282,17 @@ def progression_campaign(root, target, entry, java, port, report, *, engine=None
     server_type = Server if engine is None else engine.server
     version = ("1.17.1", "37.1.1") if engine is None else engine.version
     result_name = "native117-recipes-results.json" if engine is None else engine.result_name
-    pack_format = 7 if engine is None else engine.pack_format
+    pack_metadata = None if engine is None else getattr(engine, "pack_metadata", None)
+    if pack_metadata is None:
+        pack_metadata = {"pack_format": 7 if engine is None else engine.pack_format,
+                         "description": "Disposable loot-override witness"}
+    require_log = require_clean_log if engine is None else getattr(engine, "require_clean_log", require_clean_log)
     runtime = root / "progression"
     launcher = stage_runtime(runtime, target, port, "progression")
     definition = fixture_ids(progression_fixture())
     write_json(runtime / "progression-fixture.json", definition)
     pack = runtime / WORLD / "datapacks/progression-override"
-    write_json(pack / "pack.mcmeta", {"pack": {"pack_format": pack_format, "description": "Disposable loot-override witness"}})
+    write_json(pack / "pack.mcmeta", {"pack": pack_metadata})
     loot_directory = "loot_tables" if engine is None else getattr(engine, "loot_directory", "loot_tables")
     write_json(pack / f"data/minecraft/{loot_directory}/chests/simple_dungeon.json", {
         "pools": [{"name": "test_override", "rolls": 1, "entries": [{"type": "item", "name": "minecraft:dirt"}]}]})
@@ -316,7 +321,7 @@ def progression_campaign(root, target, entry, java, port, report, *, engine=None
                     server.send("save-all flush")
                 finally:
                     server.close()
-                require_clean_log(runtime / f"console-{label}.log")
+                require_log(runtime / f"console-{label}.log")
                 verify_level(runtime, entry, *version)
 
 

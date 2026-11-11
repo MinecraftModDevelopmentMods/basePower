@@ -6,16 +6,28 @@ import io.netty.buffer.Unpooled;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.CraftingContainer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeHolder;
+import net.minecraft.world.item.crafting.CraftingRecipe;
+import net.minecraft.world.item.crafting.display.RecipeDisplayEntry;
+import net.minecraft.world.item.crafting.display.SlotDisplayContext;
+import net.minecraft.util.context.ContextMap;
 import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.protocol.game.ClientboundUpdateRecipesPacket;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.protocol.common.ClientboundUpdateTagsPacket;
+import net.minecraft.network.protocol.game.ClientboundRecipeBookAddPacket;
+import net.minecraft.tags.TagNetworkSerialization;
+import net.minecraft.core.Registry;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.crafting.RecipeType;
 import static zone.moddev.mc.advantageworks.ProgressionProbe.*;
@@ -24,34 +36,65 @@ import static zone.moddev.mc.advantageworks.ProgressionProbe.*;
 final class RecipeBookProbe {
     static void verify(MinecraftServer server, ServerLevel world, String label, JsonObject report) throws Exception {
         JsonArray entries = new JsonArray();
-        List<RecipeHolder<?>> recipes = new ArrayList<>();
+        List<ClientboundRecipeBookAddPacket.Entry> displays = new ArrayList<>();
+        Map<Integer, String> groupOutputs = new HashMap<>();
+        ContextMap displayContext = SlotDisplayContext.fromLevel(world);
         for (RecipeHolder<?> holder : server.getRecipeManager().getRecipes()) {
             Recipe<?> recipe = holder.value();
-            String namespace = holder.id().getNamespace();
+            Identifier recipeId = holder.id().identifier();
+            String namespace = recipeId.getNamespace();
             if (!(namespace.equals("basepower") || namespace.equals("basesteam") || namespace.equals("baseelectric"))) continue;
             if (recipe.getType() != RecipeType.CRAFTING && recipe.getType() != RecipeType.SMELTING) continue;
-            String output = id(recipe.getResultItem(world.registryAccess()));
-            require(output.equals(recipe.getGroup()), "Mixed-output recipe group: " + holder.id() + " -> " + recipe.getGroup());
+            List<RecipeDisplayEntry> recipeDisplays = new ArrayList<>();
+            server.getRecipeManager().listDisplaysForRecipe(holder.id(), recipeDisplays::add);
+            require(!recipeDisplays.isEmpty(), "Recipe has no native book display: " + recipeId);
+            ItemStack result = displayResult(recipeDisplays.getFirst(), displayContext);
+            String output = id(result);
+            require(output.equals(recipe.group()), "Mixed-output recipe group: " + recipeId + " -> " + recipe.group());
             JsonObject entry = new JsonObject();
-            entry.addProperty("id", holder.id().toString());
-            entry.addProperty("group", recipe.getGroup());
+            entry.addProperty("id", recipeId.toString());
+            entry.addProperty("group", recipe.group());
             entry.addProperty("type", net.minecraft.core.registries.BuiltInRegistries.RECIPE_TYPE.getKey(recipe.getType()).toString());
             entry.addProperty("output", output);
-            entry.addProperty("count", recipe.getResultItem(world.registryAccess()).getCount());
+            entry.addProperty("count", result.getCount());
+            JsonArray displayIds = new JsonArray();
+            for (RecipeDisplayEntry display : recipeDisplays) {
+                require(ItemStack.matches(result, displayResult(display, displayContext)),
+                        "Recipe displays disagree on output: " + recipeId);
+                require(display.group().isPresent(), "Recipe display lost its book group: " + recipeId);
+                String previous = groupOutputs.putIfAbsent(display.group().getAsInt(), output);
+                require(previous == null || previous.equals(output), "Native book group mixes outputs: " + recipeId);
+                displayIds.add(display.id().index());
+                displays.add(new ClientboundRecipeBookAddPacket.Entry(display, false, false));
+            }
+            entry.add("displayIds", displayIds);
             entries.add(entry);
-            recipes.add(holder);
         }
         report.add("bookRecipes", entries);
+        report.addProperty("bookPacketType", "ClientboundRecipeBookAddPacket");
+        var tags = TagNetworkSerialization.serializeTagsToNetwork(server.registries());
+        byte[] tagBytes = itemTagsPacket(tags);
+        String tagFile = "tags-" + label + ".bin";
+        Files.write(Paths.get(tagFile), tagBytes);
+        report.addProperty("tagsPacketType", "ClientboundUpdateTagsPacket");
+        report.addProperty("tagsPacketFile", tagFile);
+        report.addProperty("tagsPacketSha256", java.util.HexFormat.of().formatHex(
+                java.security.MessageDigest.getInstance("SHA-256").digest(tagBytes)));
+        report.addProperty("itemTagCount", tags.get(Registries.ITEM).size());
         RegistryFriendlyByteBuf buffer = new RegistryFriendlyByteBuf(Unpooled.buffer(), world.registryAccess());
         try {
-            ClientboundUpdateRecipesPacket.STREAM_CODEC.encode(buffer, new ClientboundUpdateRecipesPacket(recipes));
+            ClientboundRecipeBookAddPacket.STREAM_CODEC.encode(buffer, new ClientboundRecipeBookAddPacket(displays, true));
             byte[] bytes = new byte[buffer.readableBytes()];
-            buffer.readBytes(bytes);
+            buffer.getBytes(buffer.readerIndex(), bytes);
+            ClientboundRecipeBookAddPacket decoded = ClientboundRecipeBookAddPacket.STREAM_CODEC.decode(buffer);
+            require(!buffer.isReadable() && decoded.replace() && decoded.entries().equals(displays),
+                    "Native recipe-book packet did not round-trip");
             Files.write(Paths.get("recipes-" + label + ".bin"), bytes);
         } finally { buffer.release(); }
-        ResourceLocation starchId = ResourceLocation.parse("basepower:starch_from_potato");
-        Recipe starch = server.getRecipeManager().byKey(starchId).map(RecipeHolder::value).orElse(null);
-        require(starch != null && starch.getType() == RecipeType.CRAFTING, "Missing native potato crafting recipe");
+        var starchId = RecipeUnlockProbe.recipeKey("basepower:starch_from_potato");
+        Recipe<?> starchRecipe = server.getRecipeManager().byKey(starchId).map(RecipeHolder::value).orElse(null);
+        require(starchRecipe instanceof CraftingRecipe, "Missing native potato crafting recipe");
+        CraftingRecipe starch = (CraftingRecipe) starchRecipe;
         int cases = 0;
         for (int width : new int[] {2, 3}) for (String potato : new String[] {"minecraft:potato", "minecraft:poisonous_potato"}) {
             for (int slot = 0; slot < width * width; slot++) for (int count : new int[] {1, 64}) {
@@ -60,7 +103,7 @@ final class RecipeBookProbe {
                 input.setCount(count);
                 grid.setItem(slot, input);
                 require(starch.matches(grid.asCraftInput(), world), "Potato recipe rejected slot/stack " + slot + "/" + count);
-                RecipeHolder<?> selected = world.getRecipeManager().getRecipeFor(RecipeType.CRAFTING, grid.asCraftInput(), world).orElse(null);
+                RecipeHolder<?> selected = world.recipeAccess().getRecipeFor(RecipeType.CRAFTING, grid.asCraftInput(), world).orElse(null);
                 require(selected != null && selected.id().equals(starchId), "Conflicting native potato crafting recipe");
                 ItemStack result = starch.assemble(grid.asCraftInput(), world.registryAccess());
                 require(id(result).equals("basepower:starch") && result.getCount() == 1, "Starch output changed");
@@ -85,6 +128,28 @@ final class RecipeBookProbe {
             cases++;
         }
         report.addProperty("potatoCraftingCases", cases);
+    }
+
+    static ItemStack displayResult(RecipeDisplayEntry display, ContextMap context) {
+        List<ItemStack> results = display.resultItems(context);
+        require(results.size() == 1 && !results.getFirst().isEmpty(),
+                "Recipe display must have exactly one nonempty output: " + display.id());
+        return results.getFirst();
+    }
+
+    static byte[] itemTagsPacket(Map<ResourceKey<? extends Registry<?>>, TagNetworkSerialization.NetworkPayload> tags) {
+        var items = tags.get(Registries.ITEM);
+        require(items != null && !items.isEmpty(), "Native recipe export requires the real server item tags");
+        FriendlyByteBuf buffer = new FriendlyByteBuf(Unpooled.buffer());
+        try {
+            ClientboundUpdateTagsPacket.STREAM_CODEC.encode(buffer, new ClientboundUpdateTagsPacket(tags));
+            byte[] bytes = new byte[buffer.readableBytes()];
+            buffer.getBytes(buffer.readerIndex(), bytes);
+            var decoded = ClientboundUpdateTagsPacket.STREAM_CODEC.decode(buffer);
+            require(!buffer.isReadable() && decoded.getTags().keySet().equals(tags.keySet()),
+                    "Native tag packet did not round-trip its registry set");
+            return bytes;
+        } finally { buffer.release(); }
     }
 
     private static CraftingContainer grid(int width) {

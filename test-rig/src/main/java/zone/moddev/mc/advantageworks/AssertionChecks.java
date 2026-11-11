@@ -44,19 +44,19 @@ final class AssertionChecks {
     }
 
     static int fluidAmount(CompoundTag tile, String key, String expectedFluid) {
-        if (!tile.contains(key, 10)) throw new IllegalArgumentException("Missing tank compound " + key);
-        CompoundTag tank = tile.getCompound(key);
+        if (!zone.moddev.mc.basepower.util.NbtCompat.containsTag(tile, key, 10)) throw new IllegalArgumentException("Missing tank compound " + key);
+        CompoundTag tank = tile.getCompound(key).orElseThrow();
         // Forge writes an explicit empty marker; a missing tank is not an empty tank.
-        if (tank.contains("Empty", 1) && tank.getBoolean("Empty")
+        if (zone.moddev.mc.basepower.util.NbtCompat.containsTag(tank, "Empty", 1) && tank.getBoolean("Empty").orElseThrow()
                 && !tank.contains("Amount") && !tank.contains("FluidName")) return 0;
         if (tank.contains("Empty")) throw new IllegalArgumentException("Contradictory empty tank marker at " + key);
-        if (!tank.contains("Amount", 3) || !tank.contains("FluidName", 8)) {
+        if (!zone.moddev.mc.basepower.util.NbtCompat.containsTag(tank, "Amount", 3) || !zone.moddev.mc.basepower.util.NbtCompat.containsTag(tank, "FluidName", 8)) {
             throw new IllegalArgumentException("Missing tank amount or fluid identity at " + key);
         }
-        int amount = tank.getInt("Amount");
-        if (amount < 0 || (amount > 0 && tank.getString("FluidName").isEmpty())) {
+        int amount = tank.getInt("Amount").orElseThrow();
+        if (amount < 0 || (amount > 0 && tank.getString("FluidName").orElseThrow().isEmpty())) {
             throw new IllegalArgumentException("Invalid tank contents at " + key);
         }
-        return expectedFluid == null || expectedFluid.equals(tank.getString("FluidName")) ? amount : 0;
+        return expectedFluid == null || expectedFluid.equals(tank.getString("FluidName").orElseThrow()) ? amount : 0;
     }
 }

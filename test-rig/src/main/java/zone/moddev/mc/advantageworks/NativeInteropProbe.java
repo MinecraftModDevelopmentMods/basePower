@@ -19,7 +19,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.core.Direction;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -43,12 +43,12 @@ final class NativeInteropProbe {
     private static final BlockPos BELT = new BlockPos(1040, 8, 1024);
 
     static void register() {
-        if (MARKER.isFile()) MinecraftForge.EVENT_BUS.addListener(new NativeInteropProbe()::starting);
+        if (MARKER.isFile()) RegisterCommandsEvent.BUS.addListener(new NativeInteropProbe()::starting);
     }
 
     private void starting(RegisterCommandsEvent event) {
         event.getDispatcher().register(Commands.literal("advinterop")
-                .requires(source -> source.hasPermission(4))
+                .requires(source -> source.permissions().hasPermission(net.minecraft.server.permissions.Permissions.COMMANDS_OWNER))
                 .then(Commands.argument("phase", StringArgumentType.word()).executes(context -> {
                     String phase = StringArgumentType.getString(context, "phase");
                     try { run(context.getSource().getLevel(), phase); }
@@ -77,7 +77,7 @@ final class NativeInteropProbe {
     }
 
     private static Block block(String id) {
-        ResourceLocation key = ResourceLocation.parse(id);
+        Identifier key = Identifier.parse(id);
         require(ForgeRegistries.BLOCKS.containsKey(key), "Missing registry entry: " + id);
         return ForgeRegistries.BLOCKS.getValue(key);
     }
@@ -180,8 +180,8 @@ final class NativeInteropProbe {
             require(drops.size() == 1, "Expected exactly one portable tank drop; got " + drops.size());
             ItemStack item = drops.get(0).getItem().copy();
             require(item.getItem() == block.asItem() && item.getCount() == 1
-                    && WorksItemData.read(item).getString("FluidID").equals("minecraft:water")
-                    && WorksItemData.read(item).getInt("Volume") == 500, "Native loot lost portable fluid NBT: " + item);
+                    && WorksItemData.read(item).getString("FluidID").orElseThrow().equals("minecraft:water")
+                    && WorksItemData.read(item).getInt("Volume").orElseThrow() == 500, "Native loot lost portable fluid NBT: " + item);
             drops.get(0).discard();
             world.setBlock(TANK, block.defaultBlockState(), 3);
             block.setPlacedBy(world, TANK, block.defaultBlockState(),
@@ -201,16 +201,23 @@ final class NativeInteropProbe {
         TileEntityConveyor belt = (TileEntityConveyor) world.getBlockEntity(BELT);
         BlockEntity chest = world.getBlockEntity(BELT.west());
         CompoundTag state = WorksBlockData.save(chest);
-        state.putString("Lock", "AdvantageInteropKey");
-        chest.loadWithComponents(state, world.registryAccess());
+        net.minecraft.world.LockCode lock = new net.minecraft.world.LockCode(
+                net.minecraft.advancements.criterion.ItemPredicate.Builder.item().of(
+                        world.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.ITEM),
+                        net.minecraft.world.item.Items.STICK).build());
+        state.put("lock", net.minecraft.world.LockCode.CODEC.encodeStart(
+                world.registryAccess().createSerializationContext(net.minecraft.nbt.NbtOps.INSTANCE), lock).getOrThrow());
+        WorksBlockData.load(chest, state);
         check(checks, "locked-chest/conveyor-refuses-extraction", () -> {
+            require(((net.minecraft.world.level.block.entity.BaseContainerBlockEntity) chest).isLocked(),
+                    "Vanilla did not install the native chest lock");
             require(InventoryLocks.isLocked(input), "Native nonempty chest lock was not detected");
             for (int i = 0; i < 160; i++) belt.tick();
             require(input.getItem(0).getCount() == 16 && output.isEmpty() && belt.isEmpty(),
                     "Conveyor bypassed locked source");
         });
-        state.remove("Lock");
-        chest.loadWithComponents(state, world.registryAccess());
+        state.remove("lock");
+        WorksBlockData.load(chest, state);
         check(checks, "unlocked-chest/conveyor-transfers-exactly", () -> {
             require(!InventoryLocks.isLocked(input), "Cleared lock still blocks extraction");
             for (int i = 0; i < 160; i++) belt.tick();
@@ -276,7 +283,7 @@ final class NativeInteropProbe {
                 IItemHandler oldItemWrapper = oldItems.orElseThrow(() -> new AssertionError("Missing original item wrapper"));
                 FluidStack before = oldFluidWrapper.getFluidInTank(0);
                 require(before.getFluid() == net.minecraft.world.level.material.Fluids.WATER && before.getAmount() == 500
-                        && before.hasTag() && before.getTag().getString("InteropWitness").equals("native117-callback")
+                        && before.hasTag() && before.getTag().getString("InteropWitness").orElseThrow().equals("native117-callback")
                         && oldItemWrapper.getSlots() == 0, "Standalone wrappers do not expose the seeded tank contents");
                 CompoundTag contents = tile.getTank().writeToNBT(new CompoundTag());
                 CompoundTag exposedFluid = before.writeToNBT(new CompoundTag());
@@ -342,17 +349,18 @@ final class NativeInteropProbe {
 
     @SuppressWarnings("unchecked")
     private static void sharedCrushing(ServerLevel world) {
-        ResourceLocation recipeId = ResourceLocation.fromNamespaceAndPath("basepower", "crushing_potato_starch");
-        var holder = world.getRecipeManager().byKey(recipeId).orElseThrow(
+        Identifier recipeId = Identifier.fromNamespaceAndPath("basepower", "crushing_potato_starch");
+        var holder = world.getServer().getRecipeManager().byKey(net.minecraft.resources.ResourceKey.create(
+                net.minecraft.core.registries.Registries.RECIPE, recipeId)).orElseThrow(
                 () -> new AssertionError("Missing Power recipe under Base Metals crushing: " + recipeId));
         var recipe = (net.minecraft.world.item.crafting.Recipe<net.minecraft.world.item.crafting.SingleRecipeInput>) holder.value();
         var type = net.minecraft.core.registries.BuiltInRegistries.RECIPE_TYPE.getKey(recipe.getType());
-        require(ResourceLocation.fromNamespaceAndPath("basemetals", "crushing").equals(type), "Wrong loaded crushing type: " + type);
+        require(Identifier.fromNamespaceAndPath("basemetals", "crushing").equals(type), "Wrong loaded crushing type: " + type);
         for (var potato : List.of(net.minecraft.world.item.Items.POTATO, net.minecraft.world.item.Items.POISONOUS_POTATO)) {
             var input = new net.minecraft.world.item.crafting.SingleRecipeInput(new ItemStack(potato, 3));
             require(recipe.matches(input, world), "Shared crusher rejected " + potato);
             ItemStack result = recipe.assemble(input, world.registryAccess());
-            require(result.getCount() == 1 && ResourceLocation.fromNamespaceAndPath("basepower", "starch").equals(
+            require(result.getCount() == 1 && Identifier.fromNamespaceAndPath("basepower", "starch").equals(
                     ForgeRegistries.ITEMS.getKey(result.getItem())), "Incorrect shared crushing result: " + result);
             require(input.getItem(0).getCount() == 3, "Assembling a recipe preview mutated its input");
         }

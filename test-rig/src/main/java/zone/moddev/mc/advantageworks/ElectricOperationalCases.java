@@ -7,17 +7,17 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.item.ItemEntity;
-import net.minecraft.world.entity.monster.Husk;
+import net.minecraft.world.entity.monster.zombie.Husk;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.Container;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.scores.PlayerTeam;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.core.BlockPos;
-import net.minecraft.world.level.GameRules;
+import net.minecraft.world.level.gamerules.GameRules;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.registries.ForgeRegistries;
@@ -210,7 +210,7 @@ public final class ElectricOperationalCases {
                 + "mutation. The 48 finite mB then operate on natural ticks, making 24 mB refined oil for 384 electricity.", 80, c -> {
                     c.block(8, Y, Z, EA + "electric_still");
                     c.electricSupply(7, Y, Z, 1000);
-                    net.minecraft.world.level.material.Fluid oil = ForgeRegistries.FLUIDS.getValue(ResourceLocation.parse("basepower:crude_oil"));
+                    net.minecraft.world.level.material.Fluid oil = ForgeRegistries.FLUIDS.getValue(Identifier.parse("basepower:crude_oil"));
                     c.require(oil != null, "Crude oil exists for faced automation");
                     int stored = 0;
                     for (Direction face : Direction.values()) {
@@ -229,7 +229,7 @@ public final class ElectricOperationalCases {
                     for (Direction face : Direction.values()) {
                         FluidStack simulated = fluids(c, 8, face).drain(24, IFluidHandler.FluidAction.SIMULATE);
                         equal(c, "face." + face + ".drainable", simulated.getAmount(), 24);
-                        c.require(ResourceLocation.parse("basepower:refined_oil").equals(net.minecraftforge.registries.ForgeRegistries.FLUIDS.getKey(simulated.getFluid())), "Face offers the real refined product " + face);
+                        c.require(Identifier.parse("basepower:refined_oil").equals(net.minecraftforge.registries.ForgeRegistries.FLUIDS.getKey(simulated.getFluid())), "Face offers the real refined product " + face);
                         equal(c, "face." + face + ".drainSimulationUnchanged", tankAmount(c, 8, 1), 24);
                     }
                 }));
@@ -406,7 +406,7 @@ public final class ElectricOperationalCases {
                     int turbines = 0;
                     for (Entity actor : c.world.getEntitiesOfClass(Entity.class,
                             WorksBlockData.bounds(c.at(0, 0, 0), c.at(31, 31, 31)))) {
-                        if (!ResourceLocation.parse(EA + "hydroturbine").equals(net.minecraftforge.registries.ForgeRegistries.ENTITY_TYPES.getKey(actor.getType()))) continue;
+                        if (!Identifier.parse(EA + "hydroturbine").equals(net.minecraftforge.registries.ForgeRegistries.ENTITY_TYPES.getKey(actor.getType()))) continue;
                         turbines++;
                         c.record("hydro.motion/" + actor.getUUID(), actor.getDeltaMovement().toString());
                         c.require(actor.getDeltaMovement().lengthSqr() == 0,
@@ -427,7 +427,7 @@ public final class ElectricOperationalCases {
                     c.record("setup.previousDayTime", previousTime[0]);
                     c.record("setup.weatherFactor", weatherFactor[0]);
                     c.world.setDayTime(6000);
-                    daylightCycle[0] = c.world.getGameRules().getBoolean(GameRules.RULE_DAYLIGHT);
+                    daylightCycle[0] = c.world.getGameRules().get(GameRules.ADVANCE_TIME);
                     c.record("setup.daylightCycle", daylightCycle[0]);
                     c.record("daylight.constructionGameTime", c.world.getGameTime());
                 }, c -> {
@@ -500,10 +500,10 @@ public final class ElectricOperationalCases {
                     close(c, "positive.generated", c.energy(8, Y, Z, ELECTRICITY), expected, 0.001f);
                     close(c, "empty.generated", c.energy(16, Y, Z, ELECTRICITY), 0, 0.001f);
                     close(c, "full.electricity", c.energy(24, Y, Z, ELECTRICITY), 1000, 0.001f);
-                    c.record("positive.steamRemaining", c.nbt(8, Y, Z).getFloat("steam"));
-                    close(c, "positive.steamExhausted", c.nbt(8, Y, Z).getFloat("steam"), 0, 0.001f);
+                    c.record("positive.steamRemaining", c.nbt(8, Y, Z).getFloat("steam").orElseThrow());
+                    close(c, "positive.steamExhausted", c.nbt(8, Y, Z).getFloat("steam").orElseThrow(), 0, 0.001f);
                     int fullUpdates = ElectricOperationalRates.updateDelays(c.activationTick, phase(c, 24, Y, Z), 40).size();
-                    close(c, "full.steamAfterDecay", c.nbt(24, Y, Z).getFloat("steam"),
+                    close(c, "full.steamAfterDecay", c.nbt(24, Y, Z).getFloat("steam").orElseThrow(),
                             ElectricOperationalRates.fullGeneratorSteam(32, fullUpdates), 0.001f);
                 }));
         cases.add(new MachineScenario("electric/steam-generator-supply",
@@ -584,9 +584,9 @@ public final class ElectricOperationalCases {
                         if (mode != 1) c.power(8, 1, Z, ELECTRICITY, mode == 2 ? 999 : 1500);
                         if (mode == 3) for (int y = 1; y <= 4; y++) for (int z = Z - 2; z <= Z + 2; z++)
                             c.block(12, y, z, "minecraft:stone");
-                        Husk husk = EntityType.HUSK.create(c.world);
+                        Husk husk = EntityType.HUSK.create(c.world, net.minecraft.world.entity.EntitySpawnReason.COMMAND);
                         c.require(husk != null, "Created a real hostile target");
-                        husk.moveTo(c.at(16, 1, Z).getX() + 0.5, c.at(16, 1, Z).getY(), c.at(16, 1, Z).getZ() + 0.5, 0, 0);
+                        husk.snapTo(c.at(16, 1, Z).getX() + 0.5, c.at(16, 1, Z).getY(), c.at(16, 1, Z).getZ() + 0.5, 0, 0);
                         husk.setNoAi(true);
                         husk.setPersistenceRequired();
                         husk.setNoGravity(true);
@@ -633,16 +633,16 @@ public final class ElectricOperationalCases {
                     UUID identity = UUID.randomUUID();
                     String name = "EOp" + identity.toString().substring(0, 8);
                     WorksOfflinePlayer player = new WorksOfflinePlayer(c.world, new GameProfile(identity, name));
-                    player.moveTo(c.at(8, 1, 16).getX() + 0.5, c.at(8, 1, 16).getY(), c.at(8, 1, 16).getZ() + 0.5, 0, 0);
+                    player.snapTo(c.at(8, 1, 16).getX() + 0.5, c.at(8, 1, 16).getY(), c.at(8, 1, 16).getZ() + 0.5, 0, 0);
                     owner[0] = player;
                     team[0] = c.world.getScoreboard().addPlayerTeam(name);
                     c.world.getScoreboard().addPlayerToTeam(player.getScoreboardName(), team[0]);
                     c.world.addNewPlayer(player);
                     c.invoke(8, 1, Z, "setOwner", new Class<?>[] {Player.class}, player);
-                    Husk husk = EntityType.HUSK.create(c.world);
+                    Husk husk = EntityType.HUSK.create(c.world, net.minecraft.world.entity.EntitySpawnReason.COMMAND);
                     c.require(husk != null, "Created ownership target");
                     victim[0] = husk;
-                    husk.moveTo(c.at(16, 1, Z).getX() + 0.5, c.at(16, 1, Z).getY(), c.at(16, 1, Z).getZ() + 0.5, 0, 0);
+                    husk.snapTo(c.at(16, 1, Z).getX() + 0.5, c.at(16, 1, Z).getY(), c.at(16, 1, Z).getZ() + 0.5, 0, 0);
                     husk.setNoAi(true);
                     husk.setNoGravity(true);
                     husk.setPersistenceRequired();
@@ -686,7 +686,7 @@ public final class ElectricOperationalCases {
     private static int ledLight(MachineContext c, int x, int y, int z) {
         var pos = c.at(x, y, z);
         var state = c.world.getBlockState(pos);
-        c.require(ResourceLocation.parse(EA + "led_bar").equals(ForgeRegistries.BLOCKS.getKey(state.getBlock())),
+        c.require(Identifier.parse(EA + "led_bar").equals(ForgeRegistries.BLOCKS.getKey(state.getBlock())),
                 "Light observation targets the real LED");
         return state.getLightEmission(c.world, pos);
     }
@@ -732,7 +732,7 @@ public final class ElectricOperationalCases {
     }
 
     private static int stackCount(ItemStack stack, String id) {
-        return stack == null || stack.isEmpty() || !ResourceLocation.parse(id).equals(net.minecraftforge.registries.ForgeRegistries.ITEMS.getKey(stack.getItem())) ? 0 : stack.getCount();
+        return stack == null || stack.isEmpty() || !Identifier.parse(id).equals(net.minecraftforge.registries.ForgeRegistries.ITEMS.getKey(stack.getItem())) ? 0 : stack.getCount();
     }
 
     private static IFluidHandler fluids(MachineContext c, int x) {
@@ -749,7 +749,7 @@ public final class ElectricOperationalCases {
     private static void reserve(MachineContext c, int x, int y, int z, String method, String id, int amount) {
         cyano.poweradvantage.api.fluid.FluidTank tank = (cyano.poweradvantage.api.fluid.FluidTank)
                 c.invoke(x, y, z, method, new Class<?>[0]);
-        net.minecraft.world.level.material.Fluid fluid = ForgeRegistries.FLUIDS.getValue(ResourceLocation.parse(id));
+        net.minecraft.world.level.material.Fluid fluid = ForgeRegistries.FLUIDS.getValue(Identifier.parse(id));
         c.require(fluid != null && amount >= 0 && amount <= tank.getCapacity(), "Valid finite fluid reserve " + id);
         tank.setFluid(new cyano.poweradvantage.api.fluid.FluidStack(fluid, amount));
         c.tile(x, y, z).setChanged();
@@ -769,11 +769,11 @@ public final class ElectricOperationalCases {
     private static void fluidIs(MachineContext c, int x, int tank, String id) {
         FluidStack fluid = fluids(c, x).getFluidInTank(tank);
         c.record("fluid." + x + "." + tank, String.valueOf(net.minecraftforge.registries.ForgeRegistries.FLUIDS.getKey(fluid.getFluid())));
-        c.require(ResourceLocation.parse(id).equals(net.minecraftforge.registries.ForgeRegistries.FLUIDS.getKey(fluid.getFluid())), "Tank contains " + id);
+        c.require(Identifier.parse(id).equals(net.minecraftforge.registries.ForgeRegistries.FLUIDS.getKey(fluid.getFluid())), "Tank contains " + id);
     }
 
     private static void rejectFluid(MachineContext c, int x, String id, int amount) {
-        net.minecraft.world.level.material.Fluid fluid = ForgeRegistries.FLUIDS.getValue(ResourceLocation.parse(id));
+        net.minecraft.world.level.material.Fluid fluid = ForgeRegistries.FLUIDS.getValue(Identifier.parse(id));
         c.require(fluid != null, "Negative-control fluid exists: " + id);
         equal(c, "invalidFluid.accepted", fluids(c, x).fill(new FluidStack(fluid, amount), IFluidHandler.FluidAction.EXECUTE), 0);
     }

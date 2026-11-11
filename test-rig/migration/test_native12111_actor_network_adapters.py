@@ -39,8 +39,8 @@ class ActorAdapters(unittest.TestCase):
         self.assertEqual({
             "id": "basesteam:musket", "count": 2, "Slot": -106, "components": {
                 "minecraft:damage": 5,
-                "minecraft:enchantments": {"levels": {"basesteam:recoil": 3}},
-                "minecraft:stored_enchantments": {"levels": {"basesteam:powderless": 1}},
+                "minecraft:enchantments": {"basesteam:recoil": 3},
+                "minecraft:stored_enchantments": {"basesteam:powderless": 1},
                 "minecraft:custom_data": {"Nested": {"id": "minecraft:dirt", "Count": 17}},
             },
         }, actor_driver.expected_components(item))

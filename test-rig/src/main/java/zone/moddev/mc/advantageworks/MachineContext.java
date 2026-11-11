@@ -21,7 +21,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.block.state.properties.Property;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraftforge.registries.ForgeRegistries;
@@ -92,7 +92,7 @@ final class MachineContext {
     }
 
     void block(int x, int y, int z, String id) {
-        ResourceLocation name = ResourceLocation.parse(id);
+        Identifier name = Identifier.parse(id);
         if (!ForgeRegistries.BLOCKS.containsKey(name)) throw new IllegalArgumentException("Missing block " + id);
         mutation("block", at(x, y, z), id);
         world.setBlock(at(x, y, z), ForgeRegistries.BLOCKS.getValue(name).defaultBlockState(), 3);
@@ -128,7 +128,7 @@ final class MachineContext {
     }
 
     void put(int x, int y, int z, int slot, String item, int count) {
-        ResourceLocation id = ResourceLocation.parse(item);
+        Identifier id = Identifier.parse(item);
         if (!ForgeRegistries.ITEMS.containsKey(id) || count < 0 || count > 64) throw new IllegalArgumentException("Invalid stock " + item);
         mutation("inventory", at(x, y, z), slot + ":" + item + ":" + count);
         Container inventory = inventory(x, y, z);
@@ -138,8 +138,8 @@ final class MachineContext {
     }
 
     int count(int x, int y, int z, String item) {
-        Item expected = ForgeRegistries.ITEMS.getValue(ResourceLocation.parse(item));
-        if (!ForgeRegistries.ITEMS.containsKey(ResourceLocation.parse(item))) throw new IllegalArgumentException("Missing item " + item);
+        Item expected = ForgeRegistries.ITEMS.getValue(Identifier.parse(item));
+        if (!ForgeRegistries.ITEMS.containsKey(Identifier.parse(item))) throw new IllegalArgumentException("Missing item " + item);
         Container inventory = inventory(x, y, z);
         int total = 0;
         for (int slot = 0; slot < inventory.getContainerSize(); slot++) {
@@ -180,7 +180,7 @@ final class MachineContext {
     }
 
     void tank(int x, int y, int z, String fluid, int amount) {
-        ResourceLocation id = ResourceLocation.parse(fluid);
+        Identifier id = Identifier.parse(fluid);
         if (!ForgeRegistries.FLUIDS.containsKey(id) || amount < 0) throw new IllegalArgumentException("Invalid fluid reserve");
         mutation("tank", at(x, y, z), fluid + ":" + amount);
         cyano.poweradvantage.api.fluid.FluidTank tank = ((TileEntitySimpleFluidMachine) tile(x, y, z)).getTank();
@@ -202,7 +202,7 @@ final class MachineContext {
         BlockEntity tile = tile(x, y, z);
         CompoundTag nbt = WorksBlockData.save(tile);
         nbt.merge(patch.copy());
-        tile.loadWithComponents(nbt, world.registryAccess());
+        WorksBlockData.load(tile, nbt);
         tile.setChanged();
     }
 
@@ -245,8 +245,7 @@ final class MachineContext {
         net.minecraft.world.phys.AABB bounds = WorksBlockData.bounds(at(0, -1, 0), at(31, 31, 31)).inflate(.5);
         for (net.minecraft.world.entity.Entity entity : world.getEntitiesOfClass(net.minecraft.world.entity.Entity.class, bounds)) {
             if (entity instanceof net.minecraft.world.entity.player.Player) continue;
-            CompoundTag nbt = new CompoundTag();
-            if (!entity.save(nbt)) throw new IllegalStateException("Test actor could not be saved: " + entity);
+            CompoundTag nbt = NativeActorIo.save(entity);
             JsonObject row = new JsonObject();
             row.addProperty("uuid", entity.getUUID().toString()); row.addProperty("nbt", nbt.toString());
             result.add(row);

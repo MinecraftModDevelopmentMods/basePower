@@ -12,6 +12,7 @@ import java.util.Base64;
 import java.util.HashSet;
 import java.util.List;
 import net.minecraft.SharedConstants;
+import net.minecraft.core.UUIDUtil;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtIo;
 import net.minecraft.server.Bootstrap;
@@ -19,9 +20,10 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.LightningBolt;
 import net.minecraft.world.entity.item.ItemEntity;
-import net.minecraft.world.entity.vehicle.Boat;
+import net.minecraft.world.entity.vehicle.boat.Boat;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
@@ -60,8 +62,8 @@ public class Native117StoppedEntitiesSnapshotTest {
         JsonObject row = Native117StoppedEntitiesSnapshot.entities(world, List.of(entity), new HashSet<>()).get(0).getAsJsonObject();
         CompoundTag captured = decode(row);
         assertEquals(before, captured);
-        assertEquals(7, captured.getCompound("Item").getInt("count"));
-        assertEquals("keep exactly", captured.getCompound("ForgeData").getString("Private"));
+        assertEquals(7, (int) captured.getCompound("Item").orElseThrow().getInt("count").orElseThrow());
+        assertEquals("keep exactly", captured.getCompound("ForgeData").orElseThrow().getString("Private").orElseThrow());
         assertEquals("minecraft:the_nether", row.get("worldDimensionKey").getAsString());
         assertEquals(entity.getUUID().toString(), row.get("uuid").getAsString());
         assertEquals(ticks, entity.tickCount);
@@ -71,17 +73,17 @@ public class Native117StoppedEntitiesSnapshotTest {
 
     @Test public void capturesRootAndPassengerNativeNbtWithoutDismounting() throws Exception {
         ServerLevel world = Native117EntityContextTest.world(Level.END);
-        Boat root = new Boat(EntityType.BOAT, world), passenger = new Boat(EntityType.BOAT, world);
+        Boat root = Native117EntityContextTest.boat(world), passenger = Native117EntityContextTest.boat(world);
         root.setPos(8.5, 80, 8.5);
         passenger.setPos(8.5, 81, 8.5);
-        assertTrue(passenger.startRiding(root, true));
+        assertTrue(passenger.startRiding(root, true, false));
         CompoundTag before = Native117StoppedEntitiesSnapshot.serialized(root).copy();
         JsonArray rows = Native117StoppedEntitiesSnapshot.entities(world, List.of(root, passenger), new HashSet<>());
         assertEquals(2, rows.size());
         assertEquals(before, decode(rows.get(0).getAsJsonObject()));
-        assertEquals(passenger.getUUID(), decode(rows.get(0).getAsJsonObject()).getList("Passengers", 10).getCompound(0).getUUID("UUID"));
-        assertEquals(passenger.getUUID(), decode(rows.get(1).getAsJsonObject()).getUUID("UUID"));
-        assertEquals(decode(rows.get(0).getAsJsonObject()).getList("Passengers", 10).getCompound(0),
+        assertEquals(passenger.getUUID(), decode(rows.get(0).getAsJsonObject()).getList("Passengers").orElseThrow().getCompound(0).orElseThrow().read("UUID", UUIDUtil.CODEC).orElseThrow());
+        assertEquals(passenger.getUUID(), decode(rows.get(1).getAsJsonObject()).read("UUID", UUIDUtil.CODEC).orElseThrow());
+        assertEquals(decode(rows.get(0).getAsJsonObject()).getList("Passengers").orElseThrow().getCompound(0).orElseThrow(),
                 decode(rows.get(1).getAsJsonObject()));
         assertEquals(root.getUUID().toString(), rows.get(1).getAsJsonObject().get("vehicleUuid").getAsString());
         assertSame(root, passenger.getVehicle());
@@ -93,7 +95,7 @@ public class Native117StoppedEntitiesSnapshotTest {
         ItemEntity entity = new ItemEntity(world, -0.25, 80, 8.5, new ItemStack(Items.DIRT, 7));
         entity.getPersistentData().putInt("Private", 42);
         CompoundTag saved = Native117StoppedEntitiesSnapshot.serialized(entity);
-        Entity loaded = EntityType.loadEntityRecursive(saved.copy(), world, value -> value);
+        Entity loaded = EntityType.loadEntityRecursive(saved.copy(), world, EntitySpawnReason.LOAD, value -> value);
         assertNotNull(loaded);
         assertEquals(saved, Native117StoppedEntitiesSnapshot.serialized(loaded));
     }
@@ -108,7 +110,7 @@ public class Native117StoppedEntitiesSnapshotTest {
 
     @Test public void rejectsWrongWorldAndDuplicateEnumeratedUuid() throws Exception {
         ServerLevel world = Native117EntityContextTest.world(Level.OVERWORLD);
-        Boat root = new Boat(EntityType.BOAT, world), other = new Boat(EntityType.BOAT, world);
+        Boat root = Native117EntityContextTest.boat(world), other = Native117EntityContextTest.boat(world);
         other.setUUID(root.getUUID());
         try {
             Native117StoppedEntitiesSnapshot.entities(world, List.of(root, other), new HashSet<>());
@@ -126,7 +128,7 @@ public class Native117StoppedEntitiesSnapshotTest {
         try {
             Native117StoppedEntitiesSnapshot.entities(world, List.of(transientEntity), new HashSet<>());
             fail("Native writer refusal was hidden");
-        } catch (IllegalStateException expected) { assertTrue(expected.getMessage().contains("writer refused")); }
+        } catch (IllegalStateException expected) { assertTrue(expected.getMessage().contains("save refused")); }
     }
 
     @Test public void replacesOnlyRuntimeSnapshotAndLeavesNoTemporaryFile() throws Exception {

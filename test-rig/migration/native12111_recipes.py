@@ -8,19 +8,20 @@ from native117 import output_path, require_disjoint
 from native117_recipes import (
     MOD_COUNTS, RecipePruning, progression_campaign, recipe_fixture, require_free_port, unlock_campaign,
 )
-import native1201
 import native12111
 
 
 class RecipeServer(RecipePruning, native12111.Server):
     @staticmethod
     def errors(text):
-        return native1201.log_findings(text)[0]
+        return native12111.log_findings(text)[0]
 
 
 class Engine:
     version = (native12111.MINECRAFT, native12111.FORGE)
-    pack_format = 48
+    pack_metadata = {"min_format": [94, 1], "max_format": [94, 1],
+                     "description": "Disposable loot-override witness"}
+    require_clean_log = staticmethod(native12111.require_clean_log)
     loot_directory = "loot_table"
     server = native12111.Server
     recipe_server = RecipeServer

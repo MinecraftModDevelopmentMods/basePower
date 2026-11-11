@@ -6,8 +6,7 @@ import java.lang.reflect.Method;
 import java.util.UUID;
 import net.minecraft.server.Bootstrap;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.vehicle.Boat;
+import net.minecraft.world.entity.vehicle.boat.Boat;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.event.entity.EntityJoinLevelEvent;
 import org.junit.BeforeClass;
@@ -20,7 +19,7 @@ public class Native117JoiningHoldTest {
 
     @Test public void joiningActorIsHeldBeforeItCanEnterTheNativeTickList() throws Exception {
         ServerLevel world = Native117EntityContextTest.world(Level.OVERWORLD);
-        Boat boat = new Boat(EntityType.BOAT, world);
+        Boat boat = Native117EntityContextTest.boat(world);
         boat.tickCount = 17;
         UUID identity = boat.getUUID();
         MachineOperationalProbe probe = new MachineOperationalProbe();
@@ -42,7 +41,7 @@ public class Native117JoiningHoldTest {
 
     @Test public void nativeJoinWhileMeasuringIsNotFrozen() throws Exception {
         ServerLevel world = Native117EntityContextTest.world(Level.OVERWORLD);
-        Boat boat = new Boat(EntityType.BOAT, world);
+        Boat boat = Native117EntityContextTest.boat(world);
         MachineOperationalProbe probe = new MachineOperationalProbe();
         Field paused = MachineOperationalProbe.class.getDeclaredField("paused"); paused.setAccessible(true);
         paused.setBoolean(probe, false);
@@ -53,7 +52,7 @@ public class Native117JoiningHoldTest {
     }
 
     @Test public void previouslyDisabledActorRemainsDisabledAfterHold() throws Exception {
-        Boat boat = new Boat(EntityType.BOAT, Native117EntityContextTest.world(Level.OVERWORLD));
+        Boat boat = Native117EntityContextTest.boat(Native117EntityContextTest.world(Level.OVERWORLD));
         boat.canUpdate(false);
         NativeEntityHold hold = new NativeEntityHold();
         hold.hold(boat); hold.hold(boat); hold.restore();
@@ -61,7 +60,7 @@ public class Native117JoiningHoldTest {
     }
 
     @Test public void nativeTickDriftCannotBeHiddenByRestoringTheCounter() throws Exception {
-        Boat boat = new Boat(EntityType.BOAT, Native117EntityContextTest.world(Level.OVERWORLD));
+        Boat boat = Native117EntityContextTest.boat(Native117EntityContextTest.world(Level.OVERWORLD));
         NativeEntityHold hold = new NativeEntityHold();
         hold.hold(boat);
         boat.tickCount++;

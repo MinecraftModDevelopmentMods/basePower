@@ -7,7 +7,7 @@ import java.util.function.Consumer;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.core.Direction;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.registries.ForgeRegistries;
 
@@ -60,7 +60,7 @@ final class SteamOperationalCases {
 
     // This is an actual face-capability insertion, not c.tank's direct reserve seeding.
     private static void fill(MachineContext c, String id, int amount) {
-        Fluid fluid = ForgeRegistries.FLUIDS.getValue(ResourceLocation.parse(id));
+        Fluid fluid = ForgeRegistries.FLUIDS.getValue(Identifier.parse(id));
         c.require(fluid != null, "Registered input fluid " + id);
         IFluidHandler handler = c.tile(X, Y, Z).getCapability(
                 net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER, Direction.UP)
@@ -78,14 +78,14 @@ final class SteamOperationalCases {
         else if (key.equals("TankOut")) getter = "getOutputTank";
         else throw new IllegalArgumentException("Unknown Steam reserve tank " + key);
         FluidTank tank = tank(c, getter);
-        Fluid type = ForgeRegistries.FLUIDS.getValue(ResourceLocation.parse(fluid));
+        Fluid type = ForgeRegistries.FLUIDS.getValue(Identifier.parse(fluid));
         c.require(type != null && amount > 0 && amount <= tank.getCapacity(), "Valid finite setup reserve for " + key);
         // Replace the complete tank value: recursively merged NBT retains an old Empty marker.
         tank.setFluid(new FluidStack(type, amount));
         c.tile(X, Y, Z).setChanged();
         c.record("setup/reserve/" + key, fluid + ":" + amount);
         fluid(c, getter, fluid, amount);
-        c.require(!c.nbt(X, Y, Z).getCompound(key).contains("Empty"), "Finite reserve is serialized as nonempty before ticking");
+        c.require(!c.nbt(X, Y, Z).getCompound(key).orElseThrow().contains("Empty"), "Finite reserve is serialized as nonempty before ticking");
     }
 
     private static void slot(MachineContext c, int index, String item, int count) {
@@ -149,7 +149,14 @@ final class SteamOperationalCases {
                     fluid(c, "getWaterTank", "minecraft:water", 0);
                     float value = steam(c); c.require(value >= 0 && value <= 3.75F,
                             "Three water cannot create more than 3.75 steam at the historical oil bonus (including idle loss)");
-                    c.require(c.nbt(X, Y, Z).getInt("BurnTime") == 0, "Small fuel aliquot burns out naturally"); });
+                    var boiler = (cyano.poweradvantage.api.simple.TileEntitySimplePowerMachine)c.tile(X, Y, Z);
+                    boiler.prepareDataFieldsForSync();
+                    int[] counters = boiler.getDataFieldArray();
+                    c.require(counters != null && counters.length == 6, "Native oil boiler exposes all six public sync fields");
+                    c.record("oil/burnTime", counters[2]);
+                    c.record("oil/totalBurnTime", counters[3]);
+                    c.require(oilChargeBurnedOut(counters[2], counters[3], c.nbt(X, Y, Z)),
+                            "Small fuel aliquot ignited and burned out naturally; public counters agree with native saved state"); });
 
         add(cases, "geothermal-production", "A contained lava heat source boils finite water from a cold start.", 240,
                 c -> { machine(c, "steam_boiler_geothermal"); heat(c); fill(c, "minecraft:water", 256); },
@@ -188,6 +195,12 @@ final class SteamOperationalCases {
                 c -> { fluid(c, "getTank", "minecraft:water", 8);
                     c.require(steam(c) == 0 && c.energy(X, Y, Z, "electricity") == 15,
                             "Sub-operation electrical charge is retained without partial production"); });
+    }
+
+    static boolean oilChargeBurnedOut(int burnTime, int totalBurnTime, net.minecraft.nbt.CompoundTag saved) {
+        // The native oil boiler omits BurnTime at zero, but retains a positive completed burn total.
+        return burnTime == 0 && totalBurnTime > 0 && !saved.contains("BurnTime")
+                && saved.getInt("BurnTimeTotal").filter(total -> total == totalBurnTime).isPresent();
     }
 
     private static void heat(MachineContext c) {

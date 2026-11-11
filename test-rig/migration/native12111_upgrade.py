@@ -1,9 +1,11 @@
 """Strict shared family upgrade using sealed historical or modern source receipts."""
 
 import argparse
+import copy
 import gzip
 import io
 from pathlib import Path
+import re
 import shutil
 import time
 import traceback
@@ -13,6 +15,7 @@ import nbtlib
 
 from matrix import WORLD, digest, differences, fingerprint, parse_nbt, plain, write_json
 from native117 import native_normalized, output_path, require_disjoint
+from native117_readiness import await_ready
 from native117_format import decode_palette
 from native117_legacy_world import turbine
 from native12111 import (EXPLORATORY, FORGE, LAUNCHER, MINECRAFT, Server, java21, read_family_target, read_json, stage,
@@ -21,6 +24,7 @@ from transformer_order import read_region
 
 
 DATA_VERSION = 4671
+COMPONENT_SOURCE_VERSIONS = {"1.20.1": 3465, "1.20.6": 3839, "1.21.1": 3955}
 JOBS = (("sourceChest", "destination", "dirt", "dirt", 8),
         ("steamCrusher", "steamCrusher", "stone", "cobblestone", 1),
         ("electricFurnace", "electricFurnace", "iron_ore", "iron_ingot", 1))
@@ -47,7 +51,7 @@ def components(value):
             levels = {row["id"]: row["lvl"] for row in entries}
             if len(levels) != len(entries):
                 raise AssertionError("Duplicate enchantment witness")
-            patch[after] = {"levels": levels}
+            patch[after] = levels
     if old:
         patch["minecraft:custom_data"] = components(old)
     if patch:
@@ -55,7 +59,48 @@ def components(value):
     return stack
 
 
-def comparison(before, after, *, modern):
+def expected_components(value, *, source_version):
+    """Adapt a sealed source expectation, never native observed data."""
+    if not isinstance(source_version, str) or source_version not in COMPONENT_SOURCE_VERSIONS:
+        raise AssertionError(f"Unsupported source component version: {source_version!r}")
+    if source_version == "1.20.1":
+        return components(value)
+    identifier = re.compile(r"[a-z0-9_.-]+:[a-z0-9/._-]+")
+
+    def walk(node):
+        if isinstance(node, list):
+            return [walk(item) for item in node]
+        if not isinstance(node, dict):
+            return copy.deepcopy(node)
+        if "id" not in node or not any(key in node for key in ("count", "Count")):
+            return {key: walk(item) for key, item in node.items()}
+        if "Count" in node or type(node.get("count")) is not int or node["count"] < 1:
+            raise AssertionError("Modern source stack requires native integer count")
+        if not isinstance(node["id"], str) or not identifier.fullmatch(node["id"]):
+            raise AssertionError("Modern source stack requires an exact item identifier")
+        stack = copy.deepcopy(node)
+        patch = stack.get("components", {})
+        if not isinstance(patch, dict):
+            raise AssertionError("Modern source components must be a map")
+        # Unknown stack/component payloads are opaque evidence, not conversion targets.
+        for name in ("minecraft:enchantments", "minecraft:stored_enchantments"):
+            if name not in patch:
+                continue
+            wrapper = patch[name]
+            if not isinstance(wrapper, dict) or set(wrapper) != {"levels"}:
+                raise AssertionError(f"Unexpected source enchantment wrapper: {name}: {wrapper!r}")
+            levels = wrapper["levels"]
+            if not isinstance(levels, dict) or any(
+                    not isinstance(key, str) or not identifier.fullmatch(key)
+                    or type(level) is not int or not 1 <= level <= 255 for key, level in levels.items()):
+                raise AssertionError(f"Invalid source enchantment levels: {name}: {levels!r}")
+            patch[name] = levels
+        return stack
+
+    return walk(value)
+
+
+def comparison(before, after, *, modern, source_version="1.20.1"):
     def index(rows):
         result = {(row["name"], row["x"], row["y"], row["z"]): row for row in rows}
         if len(rows) != len(result):
@@ -78,7 +123,10 @@ def comparison(before, after, *, modern):
         elif left.get("nbtBase64"):
             expected = native_normalized(plain(parse_nbt(left)))
             if modern:
-                expected = components(expected)
+                expected = expected_components(expected, source_version=source_version)
+                # Native BlockEntity.saveWithFullMetadata always writes its component map,
+                # including an empty map. Do not discard unexpected observed components.
+                expected.setdefault("components", {})
             actual = native_normalized(plain(parse_nbt(right)))
             findings.extend(differences(expected, actual, key + ".nbt"))
             for row in differences(actual, expected, key + ".nbt"):
@@ -171,13 +219,26 @@ def count(rows, name, item):
     return sum(int(stack["count"]) for stack in parse_nbt(tile).get("Items", ()) if stack["id"] == "minecraft:" + item)
 
 
+def load_operating_chunks(server, runtime, positions):
+    chunks = sorted({(x >> 4, z >> 4) for x, _, z in positions.values()})
+    if not chunks:
+        raise AssertionError("An operating migration needs explicit machine coordinates")
+    for cx, cz in chunks:
+        server.send(f"forceload add {cx << 4} {cz << 4}")
+    return [await_ready(server, runtime, (cx, cz, cx, cz), f"upgrade-operation-{index}", minecraft=MINECRAFT)
+            for index, (cx, cz) in enumerate(chunks)]
+
+
 def operate(runtime, frozen, target, java, port, positions, before):
     expected = stage(runtime, *target, port)
     copy_source(frozen, runtime)
     shutil.copy2(frozen / "migration-fixture.json", runtime / "migration-fixture.json")
     (runtime / "migration-operate.allow").touch()
 
+    readiness = []
+
     def start(server):
+        readiness.extend(load_operating_chunks(server, runtime, positions))
         for source, _, item, _, amount in JOBS:
             x, y, z = positions[source]
             server.send(f"item replace block {x} {y} {z} container.0 with minecraft:{item} {amount}")
@@ -188,7 +249,7 @@ def operate(runtime, frozen, target, java, port, positions, before):
         rows = with_server(runtime, java, "operation", start)
     finally:
         verify_runtime(runtime, target[1], expected)
-    results = {}
+    results = {"readiness": readiness}
     for source, sink, item, product, amount in JOBS:
         old, new, remaining = count(before, sink, product), count(rows, sink, product), count(rows, source, item)
         if new != old + amount or remaining:
@@ -205,6 +266,13 @@ def run(args):
     validate_hash(prior_path, args.receipt_sha256)
     prior = read_json(prior_path)
     restart = prior["phases"]["restarted"]
+    # Historical 1.20.1 receipts predate the minecraft field; require their sealed data-version proof.
+    source_version = prior.get("minecraft", "1.20.1" if args.legacy_reference else None)
+    source_data_version = restart.get("serialized", {}).get("nativeDataVersion")
+    if (not isinstance(source_version, str) or source_version not in COMPONENT_SOURCE_VERSIONS
+            or type(source_data_version) is not int
+            or source_data_version != COMPONENT_SOURCE_VERSIONS[source_version]):
+        raise AssertionError(f"Unproven source component version: {source_version!r}/{source_data_version!r}")
     if prior["status"] != "PASS" or not prior["sourceUnchanged"] or restart["status"] != "PASS":
         raise AssertionError("Missing passing source and restart receipts")
     old_snapshot = reference / "migration-restarted.json"
@@ -242,14 +310,14 @@ def run(args):
             except Exception as failure:
                 if snapshot.is_file():
                     try:
-                        phase = comparison(old_rows, read_json(snapshot), modern=True)
+                        phase = comparison(old_rows, read_json(snapshot), modern=True, source_version=source_version)
                         phase.update(snapshotSha256=digest(snapshot), evidenceStatus="OBSERVATION_ONLY",
                                      reason="Server or log validation failed")
                         result["phases"][label] = phase
                     except Exception as diagnostic:
                         failure.add_note(f"Snapshot comparison also failed: {diagnostic!r}")
                 raise
-            phase = comparison(old_rows, rows, modern=True)
+            phase = comparison(old_rows, rows, modern=True, source_version=source_version)
             phase["snapshotSha256"] = digest(snapshot)
             result["phases"][label] = phase
             write_json(receipt, result)
@@ -289,7 +357,8 @@ def main():
     parser.add_argument("--legacy-reference", type=lambda value: Path(value).resolve(strict=True),
                         help="Passing independent 1.20.1 reference for the exact historical source directory")
     parser.add_argument("--source-receipt-name", choices=("native1201-modern-upgrade-results.json",
-                        "native1206-modern-upgrade-results.json"), default="native1201-modern-upgrade-results.json")
+                        "native1206-modern-upgrade-results.json", "native1211-modern-upgrade-results.json"),
+                        default="native1201-modern-upgrade-results.json")
     for key in ("receipt", "inventory"):
         parser.add_argument("--" + key + "-sha256", required=True)
     parser.add_argument("--port", type=int, required=True)

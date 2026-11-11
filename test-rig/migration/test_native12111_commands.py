@@ -4,9 +4,24 @@ from pathlib import Path
 from zipfile import ZipFile
 from unittest.mock import patch
 import native12111 as native
+import queue
+from types import SimpleNamespace
 
 
 class NativeCommandsTest(unittest.TestCase):
+    def test_empty_server_pause_is_an_immediate_failed_wait(self):
+        server = object.__new__(native.Server)
+        server.lines = queue.Queue()
+        server.lines.put("[Server thread/INFO]: Server empty for 60 seconds, pausing\n")
+        server.process = SimpleNamespace(poll=lambda: None)
+        server.log = SimpleNamespace(name="fixture.log")
+        with self.assertRaisesRegex(RuntimeError, "pausing"):
+            server.wait("unreached machine completion", 1)
+
+    def test_pause_is_rejected_even_at_info_level_in_saved_logs(self):
+        failures, _ = native.log_findings("[11Nov2026 12:00:00] [Server thread/INFO] [minecraft/MinecraftServer/]: Server empty for 60 seconds, pausing")
+        self.assertEqual(1, len(failures))
+
     def test_legacy_rule_is_translated_and_requires_a_native_acknowledgement(self):
         server = object.__new__(native.Server)
         with patch.object(native.NativeLaunch, "send") as send, patch.object(server, "wait") as wait:

@@ -6,7 +6,6 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.client.Minecraft;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.client.renderer.texture.TextureAtlas;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormatElement;
 import net.minecraft.world.level.material.Fluid;
@@ -14,7 +13,7 @@ import net.minecraft.world.level.material.FlowingFluid;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.item.BucketItem;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.core.Direction;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
@@ -34,7 +33,6 @@ import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 /** Exercises the native fluid renderer, not just oil's particle-only block model. */
 final class OilRenderProbe {
@@ -48,7 +46,8 @@ final class OilRenderProbe {
                 net.minecraft.world.level.material.Fluids.FLOWING_WATER.builtInRegistryHolder()));
         synthetic.put(FluidTags.LAVA, List.of(net.minecraft.world.level.material.Fluids.LAVA.builtInRegistryHolder(),
                 net.minecraft.world.level.material.Fluids.FLOWING_LAVA.builtInRegistryHolder()));
-        BuiltInRegistries.FLUID.bindTags(synthetic);
+        BuiltInRegistries.FLUID.prepareTagReload(new net.minecraft.tags.TagLoader.LoadResult<>(
+                net.minecraft.core.registries.Registries.FLUID, synthetic)).apply();
         try {
         requireBucket(Items.crude_oil_bucket, Fluids.crude_oil);
         requireBucket(Items.refined_oil_bucket, Fluids.refined_oil);
@@ -65,8 +64,8 @@ final class OilRenderProbe {
         valid &= check(minecraft, net.minecraft.world.level.material.Fluids.LAVA.defaultFluidState(), "minecraft:block/lava_still", false, cases);
         if (!valid) throw new IllegalStateException("Native fluid renderer used the wrong sprite or tint: " + cases);
         } finally {
-            BuiltInRegistries.FLUID.resetTags();
-            BuiltInRegistries.FLUID.bindTags(previous);
+            BuiltInRegistries.FLUID.prepareTagReload(new net.minecraft.tags.TagLoader.LoadResult<>(
+                    net.minecraft.core.registries.Registries.FLUID, previous)).apply();
             require(fluidTags().equals(previous), "Synthetic fluid tag membership was not restored");
         }
     }
@@ -74,8 +73,8 @@ final class OilRenderProbe {
     private static Map<TagKey<Fluid>, List<Holder<Fluid>>> fluidTags() {
         Map<TagKey<Fluid>, List<Holder<Fluid>>> tags = new HashMap<>();
         BuiltInRegistries.FLUID.getTags().forEach(tag -> {
-            List<Holder<Fluid>> values = tag.getSecond().stream().toList();
-            if (!values.isEmpty()) tags.put(tag.getFirst(), values);
+            List<Holder<Fluid>> values = tag.stream().toList();
+            tags.put(tag.key(), values);
         });
         return tags;
     }
@@ -94,7 +93,7 @@ final class OilRenderProbe {
         // A tiny read-only neighbourhood supplies a slope for flowing sprites; no save is opened.
         BlockAndTintGetter world = new BlockAndTintGetter() {
             @Override public int getHeight() { return 256; }
-            @Override public int getMinBuildHeight() { return 0; }
+            @Override public int getMinY() { return 0; }
             @Override public float getShade(Direction side, boolean shade) { return 1.0F; }
             @Override public BlockEntity getBlockEntity(BlockPos pos) { return null; }
             @Override public BlockState getBlockState(BlockPos pos) { return blockAt(state, flowing, pos); }
@@ -111,7 +110,8 @@ final class OilRenderProbe {
                 BlockPos.ZERO, world, buffer, world.getBlockState(BlockPos.ZERO), state);
         try (var built = buffer.buildOrThrow()) {
         int vertices = built.drawState().vertexCount();
-        TextureAtlasSprite sprite = minecraft.getTextureAtlas(TextureAtlas.LOCATION_BLOCKS).apply(ResourceLocation.parse(texture));
+        TextureAtlasSprite sprite = minecraft.getAtlasManager().getAtlasOrThrow(net.minecraft.data.AtlasIds.BLOCKS)
+                .getSprite(Identifier.parse(texture));
         require(vertices >= 4, "Native fluid renderer emitted no top face for " + state);
         ByteBuffer data = built.vertexBuffer();
         int uvOffset = elementOffset(VertexFormatElement.Usage.UV, 0);

@@ -1,0 +1,24 @@
+modLoader="javafml"
+loaderVersion="[61,)"
+license="All Rights Reserved"
+showAsResourcePack=false
+
+[[mods]]
+modId="advantageorderprobe"
+version="1.0.0.121111"
+displayName="Local Native61 Order Probe"
+description="Local instrumented order test only. Not production qualification."
+
+[[dependencies.advantageorderprobe]]
+modId="forge"
+mandatory=true
+versionRange="[61.1.0]"
+ordering="NONE"
+side="SERVER"
+
+[[dependencies.advantageorderprobe]]
+modId="minecraft"
+mandatory=true
+versionRange="[1.21.11]"
+ordering="NONE"
+side="SERVER"

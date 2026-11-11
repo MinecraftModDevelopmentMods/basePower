@@ -4,6 +4,7 @@ import argparse
 import builtins
 import copy
 from functools import partial
+import math
 from pathlib import Path
 import shutil
 import socket
@@ -14,11 +15,12 @@ import nbtlib
 
 import actors
 import dimensions
-from matrix import WORLD, digest, fingerprint, write_json
+from matrix import WORLD, digest, fingerprint, plain, write_json
 from native117 import output_path, require_disjoint
-from native117_actor_io import bind, capture_actors, capture_dimensions
+from native117_actor_io import bind, capture_actors, capture_dimensions, semantic as historical_semantic
 import native117_actors as historical
 from native117_dimension_io import parse_dimension_nbt, project_entity
+from native117_format import DIMENSIONS, dimension_id
 import native117_entity_storage as entity_storage
 import native117_helper_contract as helper_contract
 import native117_stopped_entities as stopped
@@ -26,6 +28,19 @@ import native12111 as native
 
 
 DATA_VERSION = 4671
+HELPER_CONTRACT_SHA = "EBFF575F4777A43C12255250B704C06FF700D5160AFCAFE7252508353CD430C4"
+PLAYER_EQUIPMENT_SLOTS = {100: "feet", 101: "legs", 102: "chest", 103: "head", -106: "offhand"}
+NATIVE_ATTRIBUTE_ALIASES = {
+    "minecraft:" + name: "minecraft:generic." + name
+    for name in ("max_health", "knockback_resistance", "movement_speed", "armor",
+                 "armor_toughness", "follow_range", "attack_damage")
+}
+NATIVE_ATTRIBUTE_ALIASES["minecraft:jump_strength"] = "minecraft:horse.jump_strength"
+BOAT_VARIANTS = frozenset(("oak", "spruce", "birch", "jungle", "acacia", "cherry", "dark_oak", "mangrove", "bamboo"))
+WOLF_CONTROL_HASHES = {
+    512: "809FA56A63DD762CD1046B8E29B68F25FCE3FC1789E1BA164B6AA9DB8BF0F63E",
+    1343: "3069BED41A69603E09A6F586BF984D126B80B0DE68CB26C4294B5C665D10347F",
+}
 ENCHANTMENTS = {
     "Enchantments": "minecraft:enchantments",
     "StoredEnchantments": "minecraft:stored_enchantments",
@@ -56,7 +71,7 @@ def expected_components(value):
             levels = {item["id"]: item["lvl"] for item in enchantments}
             if len(levels) != len(enchantments) or any(not isinstance(key, str) for key in levels):
                 raise AssertionError("Historical enchantments must have unique registry names")
-            components[component] = {"levels": levels}
+            components[component] = levels
     if custom:
         components["minecraft:custom_data"] = custom
     if components:
@@ -78,9 +93,143 @@ def exact_items(expected, observed, path=""):
     return []
 
 
+def source_components(state, version):
+    if version in (3839, 3955):
+        from native12111_upgrade import expected_components as modern_components
+        return modern_components(state, source_version={3839: "1.20.6", 3955: "1.21.1"}[version])
+    if version >= 3839:
+        raise ValueError("Unreviewed native component player source version: " + str(version))
+    return expected_components(state)
+
+
 def baseline(source, kind):
-    state, label = historical.baseline(source, kind)
-    return expected_components(state), label
+    source_baseline = bind(historical.baseline,
+                           capture_dimensions=bind(capture_dimensions, semantic=player_semantic))
+    state, label = source_baseline(source, kind)
+    definition = native.read_json(source / ("dimension-fixture.json" if kind == "dimensions" else "actor-fixture.json"))
+    player = nbtlib.load(source / WORLD / "playerdata" / (definition["playerUuid"] + ".dat"))
+    return source_components(state, int(player.get("DataVersion", -1))), label
+
+
+def expected_player_equipment(player):
+    """Apply native PlayerEquipmentFix's exact placement to expectations only."""
+    result = copy.deepcopy(player)
+    if "Inventory" not in result:
+        return result
+    inventory = result["Inventory"]
+    if not isinstance(inventory, list):
+        raise ValueError("Malformed expected player inventory")
+    equipment = result.get("equipment", {})
+    if not isinstance(equipment, dict):
+        raise ValueError("Malformed expected player equipment")
+    slots, remaining, moved = set(), [], {}
+    for item in inventory:
+        if not isinstance(item, dict) or type(item.get("Slot")) is not int:
+            raise ValueError("Missing or malformed expected inventory Slot")
+        slot = item["Slot"]
+        if slot in slots:
+            raise ValueError("Duplicate expected inventory Slot")
+        slots.add(slot)
+        name = PLAYER_EQUIPMENT_SLOTS.get(slot)
+        if name is None:
+            remaining.append(item)
+        else:
+            if "equipment" in result or not isinstance(item.get("id"), str) or type(item.get("count")) is not int or item["count"] <= 0:
+                raise ValueError("Ambiguous or malformed expected legacy equipment")
+            moved[name] = {key: value for key, value in item.items() if key != "Slot"}
+    result["Inventory"] = remaining
+    if moved:
+        result["equipment"] = moved
+    return result
+
+
+def expected_state(value, kind, survival=False, adapter=True):
+    result = historical.expected_state(value, kind, survival, adapter)
+    # Conversion leaves the unopened loose file historical. Level.dat host data
+    # has already undergone DFU, and every read phase loads/saves the loose player.
+    for container in ("file", "adapter", "embedded"):
+        if container in result and (container != "file" or adapter):
+            result[container] = expected_player_equipment(result[container])
+            if kind == "dimensions":
+                result[container] = expected_player_respawn(result[container])
+    if kind == "dimensions":
+        for entity in result.get("entities", {}).values():
+            expected_dimension_entity(entity)
+    return result
+
+
+def expected_player_respawn(player):
+    result = copy.deepcopy(player)
+    fields = ("SpawnX", "SpawnY", "SpawnZ", "SpawnDimension", "SpawnAngle", "SpawnForced")
+    if not any(key in result for key in fields):
+        return result
+    if "respawn" in result or not all(type(result.get(key)) is int for key in fields[:3]):
+        raise ValueError("Incomplete or ambiguous expected respawn position")
+    yaw = result.get("SpawnAngle", 0.0)
+    forced = result.get("SpawnForced", 0)
+    if (type(yaw) not in (int, float) or not math.isfinite(yaw)
+            or type(forced) not in (int, bool) or forced not in (0, 1)):
+        raise ValueError("Malformed expected respawn angle or forced flag")
+    respawn = dict(pos=[result[key] for key in fields[:3]],
+                   dimension=DIMENSIONS[dimension_id(result.get("SpawnDimension", 0))], yaw=yaw, pitch=0.0)
+    if forced:
+        respawn["forced"] = 1
+    for key in fields:
+        result.pop(key, None)
+    result["respawn"] = respawn
+    return result
+
+
+def expected_dimension_entity(entity):
+    if entity.get("id") in ("minecraft:boat", "minecraft:chest_boat"):
+        variant = entity.get("Type", "oak")
+        if variant not in BOAT_VARIANTS:
+            raise ValueError("Unproven historical boat variant")
+        chest = entity["id"] == "minecraft:chest_boat"
+        entity["id"] = "minecraft:" + variant + ("_chest" if chest else "") + ("_raft" if variant == "bamboo" else "_boat")
+        entity.pop("Type", None)
+    if entity.get("id") == "minecraft:horse":
+        moved = {}
+        for old, slot in (("SaddleItem", "saddle"), ("ArmorItem", "body")):
+            if old in entity:
+                if "equipment" in entity:
+                    raise ValueError("Ambiguous expected horse equipment")
+                moved[slot] = entity.pop(old)
+        if moved:
+            entity["equipment"] = moved
+    for passenger in entity.get("Passengers", ()):
+        expected_dimension_entity(passenger)
+
+
+def player_semantic(value, keys, registry):
+    if "SpawnX" in keys:
+        keys = (*keys, "SpawnAngle")
+    result = historical_semantic(value, keys, registry)
+    if "Inventory" in keys and "equipment" in value:
+        equipment = value["equipment"]
+        if not isinstance(equipment, dict):
+            raise ValueError("Malformed observed player equipment")
+        result["equipment"] = plain(equipment)
+    if "SpawnX" in keys and "respawn" in value:
+        if not isinstance(value["respawn"], dict):
+            raise ValueError("Malformed observed player respawn")
+        if any(key in value for key in ("SpawnX", "SpawnY", "SpawnZ", "SpawnDimension", "SpawnAngle", "SpawnForced")):
+            raise ValueError("Ambiguous observed native and historical respawn")
+        result["respawn"] = plain(value["respawn"])
+    return result
+
+
+def dimension_entity_state(value):
+    result = dimensions.entity_state(value)
+    if "equipment" in value:
+        if not isinstance(value["equipment"], dict):
+            raise ValueError("Malformed observed entity equipment")
+        if any(key in value for key in ("SaddleItem", "ArmorItem", "body_armor_item", "saddle", "ArmorItems", "HandItems")):
+            raise ValueError("Ambiguous observed native and historical entity equipment")
+        result["equipment"] = copy.deepcopy(value["equipment"])
+    if "Passengers" in value:
+        result["Passengers"] = [dimension_entity_state(entry) for entry in value["Passengers"]]
+    return result
 
 
 def leash_position(value):
@@ -129,7 +278,8 @@ def native_attribute_view(value):
                 if not isinstance(original, dict) or not isinstance(original.get("id"), str):
                     raise ValueError("Malformed native attribute")
                 row = dict(original)
-                name = row.pop("id")
+                raw_name = row.pop("id")
+                name = NATIVE_ATTRIBUTE_ALIASES.get(raw_name, raw_name)
                 if name in names or "Name" in row or "Base" in row or "Modifiers" in row:
                     raise ValueError("Duplicate or ambiguous native attribute")
                 names.add(name)
@@ -154,14 +304,16 @@ def capture_player_version(capture, runtime, label, evidence):
             raise AssertionError(f"{label}: native player file was not serialized as data version {DATA_VERSION}: {version}")
         # The unopened loose file has not gone through PlayerDataStorage yet.
         # Compare the retained source representation but keep its original file and version as evidence.
-        state["file"] = expected_components(state["file"])
+        state["file"] = source_components(state["file"], version)
     write_json(evidence / "player-format.json", dict(dataVersion=version, native=version == DATA_VERSION))
     return state
 
 
 retain = bind(historical.retain,
-              capture_actors=partial(capture_player_version, capture_actors),
-              capture_dimensions=partial(capture_player_version, bind(capture_dimensions, parse_nbt=native_dimension_nbt)))
+              capture_actors=partial(capture_player_version, bind(capture_actors, semantic=player_semantic)),
+              capture_dimensions=partial(capture_player_version, bind(capture_dimensions, semantic=player_semantic,
+                                                                      entity_state=dimension_entity_state,
+                                                                      parse_nbt=native_dimension_nbt)))
 command = bind(historical.command, retain=retain)
 release = bind(historical.release, command=command)
 
@@ -184,7 +336,7 @@ def helper_snapshot(record):
 
 validate_helpers = bind(helper_contract.validate, native=SimpleNamespace(
     _snapshots=helper_snapshot, _nbt=entity_storage._nbt, _decompress=entity_storage._decompress,
-    _identity=entity_storage._identity), CONTRACT_SHA="83990C70FA3F6AD0CDC2803CA956B6CF1227EA5B5701D95175874B7D9EEA0AB8",
+    _identity=entity_storage._identity), CONTRACT_SHA=HELPER_CONTRACT_SHA,
     POLICY="native12111-leash-knot-nosave-v1")
 helper_adapter = SimpleNamespace(CONTRACT="native12111-helper-contract.json", LIFECYCLE=helper_contract.LIFECYCLE,
                                  validate=validate_helpers, raw_helpers_absent=helper_contract.raw_helpers_absent)
@@ -205,6 +357,7 @@ audit_stopped = bind(stopped.audit_stopped,
 def verdict(oracle, before, after):
     result = oracle(before, after)
     findings = exact_items(before, after)
+    findings.extend(exact_native_maps(before, after))
     result["differences"].extend(findings)
     if findings:
         result["status"] = "FAIL"
@@ -213,6 +366,21 @@ def verdict(oracle, before, after):
         if "player_status" in result and any(not row["path"].startswith(".entities.") for row in findings):
             result["player_status"] = "FAIL"
     return result
+
+
+def exact_native_maps(expected, actual, path=""):
+    findings = []
+    if isinstance(expected, dict) and isinstance(actual, dict):
+        for key, default in (("equipment", {}), ("respawn", None)):
+            before, after = expected.get(key, default), actual.get(key, default)
+            if before != after:
+                findings.append(dict(path=f"{path}.{key}.exact-map", expected=before, actual=after))
+        for key in expected.keys() & actual.keys():
+            findings.extend(exact_native_maps(expected[key], actual[key], f"{path}.{key}"))
+    elif isinstance(expected, list) and isinstance(actual, list):
+        for index, (before, after) in enumerate(zip(expected, actual)):
+            findings.extend(exact_native_maps(before, after, f"{path}[{index}]"))
+    return findings
 
 
 def assess_native(before, after, strict, proof, scope, adapter):
@@ -232,8 +400,7 @@ def assess_native(before, after, strict, proof, scope, adapter):
     # These exact changes were independently reproduced by vanilla DFU and native
     # Wolf load/save on a classpath that contains no Advantage classes.
     controls = {}
-    for version, checksum in ((512, "39770FAE00166CFC3F107E1990D13699383D5C5797640DF60F9241455D8C40C7"),
-                              (1343, "456850C8BC2F43931750A6CBAC4A8020C7007B10A70E51CB77DF0FD7464AA38E")):
+    for version, checksum in WOLF_CONTROL_HASHES.items():
         path = Path(proof) / f"legacy-{version}-receipt.json"
         native.validate_hash(path, checksum)
         controls[str(version)] = dict(path=str(path), sha256=checksum, observation=native.read_json(path))
@@ -276,7 +443,7 @@ def copy_fixture(source, runtime):
         shutil.copytree(config, runtime / "config", dirs_exist_ok=True)
 
 
-run_route = bind(historical.run_route, baseline=baseline, command=command, release=release,
+run_route = bind(historical.run_route, baseline=baseline, expected_state=expected_state, command=command, release=release,
                  copy_fixture=copy_fixture, assess=assess_native,
                  summarize_checks=summarize_native,
                  native117_dimension_assessment=SimpleNamespace(__file__=__file__),
@@ -294,6 +461,8 @@ def main():
     parser.add_argument("--inventory-sha256", required=True)
     parser.add_argument("--kind", choices=("actors", "dimensions"), required=True)
     parser.add_argument("--native-wolf-proof", type=lambda value: Path(value).resolve(strict=True))
+    parser.add_argument("--source-stopped-reference", type=lambda value: Path(value).resolve(strict=True))
+    parser.add_argument("--source-stopped-reference-sha256")
     parser.add_argument("--port", type=int, required=True)
     args = parser.parse_args()
     if not 26450 <= args.port <= 65535:
@@ -311,6 +480,20 @@ def main():
     before = fingerprint(source)
     if not before or Path(approved["source"]).resolve() != source or approved["sourceFingerprint"] != before:
         raise AssertionError("Historical fixture no longer matches its approved receipt")
+    source_reference, reference_before, reference_helper, active_route = None, None, None, run_route
+    if args.source_stopped_reference is not None or args.source_stopped_reference_sha256 is not None:
+        if args.kind != "actors" or args.source_stopped_reference is None or args.source_stopped_reference_sha256 is None:
+            raise ValueError("Stopped source reference requires actors mode and explicit file plus SHA-256")
+        import native12111_stopped_actor_reference as reference_helper
+        require_disjoint(output, args.source_stopped_reference.parent)
+        source_reference = reference_helper.validate(args.source_stopped_reference, args.source_stopped_reference_sha256,
+                                                     source, args.fixture_receipt_sha256)
+        reference_before = fingerprint(args.source_stopped_reference.parent)
+        def stopped_baseline(actual_source, kind):
+            if actual_source.resolve() != source or kind != "actors":
+                raise AssertionError("Stopped source reference bound to a different route")
+            return copy.deepcopy(source_reference), "sealed-source-stopped-disk"
+        active_route = bind(run_route, baseline=stopped_baseline)
     with socket.socket() as listener:
         listener.bind(("127.0.0.1", args.port))
     seed_before = fingerprint(seed)
@@ -325,6 +508,12 @@ def main():
                   historicalOracleSha256=digest(Path(historical.__file__)), javaSha256=digest(java),
                   javaVersion=version, port=args.port, jars=expected_jars, checks={})
     output.mkdir()
+    shutil.copy2(runner, output / runner.name)
+    if source_reference is not None:
+        result["stoppedSourceReference"] = dict(path=str(args.source_stopped_reference),
+                sha256=digest(args.source_stopped_reference), helperSha256=digest(Path(reference_helper.__file__)),
+                targetObservationsUsed=False, sealedBeforeTargetLoad=True)
+        shutil.copy2(Path(reference_helper.__file__), output / "stopped-reference-builder-source.py")
     write_json(report, result)
 
     def stage(destination, target, port):
@@ -344,7 +533,7 @@ def main():
 
     try:
         args.target_manifest, args.java17 = args.profile, java
-        result["checks"] = run_route(
+        result["checks"] = active_route(
             source, runtime, (seed, inventory, mods), args, stage=stage, server_type=Server,
             stop_audit=partial(audit_stopped, minecraft_version=native.MINECRAFT,
                                data_version=DATA_VERSION, stopping_phase="ServerStoppingEvent"),
@@ -371,6 +560,12 @@ def main():
         ))
         if not all(result[key] for key in ("sourceUnchanged", "seedUnchanged", "inputsUnchanged")):
             result["status"] = "FAIL"
+        if source_reference is not None:
+            result["stoppedSourceReferenceUnchanged"] = (
+                fingerprint(args.source_stopped_reference.parent) == reference_before
+                and digest(Path(reference_helper.__file__)) == result["stoppedSourceReference"]["helperSha256"])
+            if not result["stoppedSourceReferenceUnchanged"]:
+                result["status"] = "FAIL"
         write_json(report, result)
     return int(result["status"] not in ("PASS", "PASS_WITH_NATIVE_DIFFERENCE"))
 

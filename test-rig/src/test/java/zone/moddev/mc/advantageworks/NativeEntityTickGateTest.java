@@ -7,7 +7,7 @@ import java.util.List;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.vehicle.Boat;
+import net.minecraft.world.entity.vehicle.boat.Boat;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.entity.EntityTickList;
 import org.junit.BeforeClass;
@@ -22,7 +22,7 @@ public class NativeEntityTickGateTest {
         ServerLevel world = Native117EntityContextTest.world(Level.OVERWORLD);
         java.lang.reflect.Field field = ServerLevel.class.getDeclaredField("entityTickList"); field.setAccessible(true);
         EntityTickList original = (EntityTickList) field.get(world);
-        Boat first = new Boat(EntityType.BOAT, world), second = new Boat(EntityType.BOAT, world);
+        Boat first = Native117EntityContextTest.boat(world), second = Native117EntityContextTest.boat(world);
         original.add(first); original.add(second);
         NativeEntityHold hold = new NativeEntityHold();
         hold.hold(first);
@@ -39,7 +39,7 @@ public class NativeEntityTickGateTest {
 
     @Test public void joinBeforeNativeRegistrationIsStillHeldAndAllOtherOperationsDelegate() throws Exception {
         ServerLevel world = Native117EntityContextTest.world(Level.OVERWORLD);
-        Boat first = new Boat(EntityType.BOAT, world), other = new Boat(EntityType.BOAT, world);
+        Boat first = Native117EntityContextTest.boat(world), other = Native117EntityContextTest.boat(world);
         NativeEntityHold hold = new NativeEntityHold(); hold.hold(first);
         NativeEntityTickGate gate = NativeEntityTickGate.of(world);
         gate.add(first); gate.add(other);
@@ -53,7 +53,7 @@ public class NativeEntityTickGateTest {
 
     @Test public void overlappingHoldsReleaseOnlyTheirOwnNativeGate() throws Exception {
         ServerLevel world = Native117EntityContextTest.world(Level.OVERWORLD);
-        Boat boat = new Boat(EntityType.BOAT, world);
+        Boat boat = Native117EntityContextTest.boat(world);
         NativeEntityTickGate gate = NativeEntityTickGate.of(world); gate.add(boat);
         NativeEntityHold first = new NativeEntityHold(), second = new NativeEntityHold();
         first.hold(boat); second.hold(boat);

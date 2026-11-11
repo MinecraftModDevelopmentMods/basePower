@@ -4,13 +4,13 @@
   "minecraftVersion": "1.21.11",
   "forgeVersion": "61.1.0",
   "qualificationStatus": "EXPLORATORY_UNQUALIFIED",
-  "baseMetalsSourceCommit": "e6b869ffe7d6fd6a011a99f1844d2a7995394daf",
+  "baseMetalsSourceCommit": "616d527e50e4bf0137eeb9c44fa586e34a0452a0",
   "mods": [
     {
       "id": "basemetals",
       "version": "3.1.2.121111",
       "path": "../../../../BaseMetals/.verification-basemetals12111/Advantage shared hook/build/libs/BaseMetals-3.1.2.121111.jar",
-      "sha256": "6D24D760E8E025960095DE04C51E6B79CFF93071618FC0B6BF64E05C346CC097"
+      "sha256": "598D3FB0FF956EBCC67FE477A01CE393C75D0013AF0CE00A79E2072B63E9F2BA"
     },
     {
       "id": "orespawn",

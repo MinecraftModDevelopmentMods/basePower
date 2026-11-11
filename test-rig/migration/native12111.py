@@ -3,6 +3,7 @@
 import argparse
 import base64
 import gzip
+import hashlib
 import io
 import json
 import os
@@ -55,6 +56,9 @@ def log_findings(text):
     }
     unsafe = "java.lang.IllegalAccessException: symbolic reference class is not accessible: class jdk.internal.misc.Unsafe, from class io.netty.util.internal.PlatformDependent0 (module io.netty.common)"
     for block in blocks:
+        if any(re.search(r"Server empty for \d+ seconds, pausing", line) for line in block):
+            failures.extend(line for line in block if "Server empty for " in line)
+            continue
         match = header.fullmatch(block[0])
         body = [line for line in block[1:] if line.strip()]
         reason = probes.get((match[2], match[3])) if match and match[1] == "DEBUG" else None
@@ -124,7 +128,8 @@ def validate_hash(path, expected):
 
 def java21(executable):
     java = executable.resolve(strict=True)
-    result = subprocess.run([str(java), "-version"], capture_output=True, text=True, check=True, timeout=30)
+    result = subprocess.run([str(java), "-version"], env=native_launch_environment(),
+                            capture_output=True, text=True, check=True, timeout=30)
     version = (result.stderr or result.stdout).strip()
     if not re.search(r'version "21(?:\.|")', version):
         raise ValueError(f"Forge 61 test requires Java 21: {version}")
@@ -268,6 +273,7 @@ def stage(runtime, seed, inventory, mods, port):
     overrides = {
         "level-type": "minecraft:flat", "generator-settings": json.dumps(FLAT_SETTINGS, separators=(",", ":")),
         "server-port": port, "generate-structures": "false", "simulation-distance": 4, "allow-nether": "true",
+        "pause-when-empty-seconds": "-1",
     }
     existing = [line for line in settings.read_text().splitlines() if line.partition("=")[0] not in overrides]
     settings.write_text("\n".join(existing + [f"{key}={value}" for key, value in overrides.items()]) + "\n")
@@ -279,8 +285,88 @@ def stage(runtime, seed, inventory, mods, port):
     return expected
 
 
+def native_launch_environment(runtime=None, label=None, *, diagnostic_environment=None, diagnostic_environment_sha256=None):
+    """No inherited JVM options; sealed, runtime-bound mixin export is diagnostic only."""
+    environment = os.environ.copy()
+    for variable in ("JAVA_TOOL_OPTIONS", "JDK_JAVA_OPTIONS", "_JAVA_OPTIONS"):
+        if environment.get(variable, "").strip():
+            raise ValueError(f"Forge 61 cannot inherit JVM options or agents from {variable}")
+    if diagnostic_environment is None and diagnostic_environment_sha256 is None:
+        return environment
+    if diagnostic_environment is None or diagnostic_environment_sha256 is None:
+        raise ValueError("Diagnostic environment requires an explicit manifest and SHA-256 together")
+    if not isinstance(diagnostic_environment_sha256, str) or not re.fullmatch(r"[A-Fa-f0-9]{64}", diagnostic_environment_sha256):
+        raise ValueError("Diagnostic environment requires an exact SHA-256 pin")
+    if not isinstance(label, str) or not re.fullmatch(r"[A-Za-z0-9_.-]{1,100}", label) or label in (".", ".."):
+        raise ValueError("Unsafe diagnostic launch label")
+    if runtime is None:
+        raise ValueError("Diagnostic environment requires an explicit runtime")
+    runtime = Path(runtime).resolve(strict=True)
+    manifest = Path(diagnostic_environment).resolve(strict=True)
+    if not runtime.is_dir() or not manifest.is_file() or manifest.stat().st_size > 16384:
+        raise ValueError("Diagnostic manifest must be a bounded file for an existing runtime")
+    raw = manifest.read_bytes()
+    if len(raw) > 16384 or hashlib.sha256(raw).hexdigest().upper() != diagnostic_environment_sha256.upper():
+        raise ValueError("Diagnostic environment SHA-256 mismatch")
+
+    def unique_fields(pairs):
+        document = {}
+        for key, value in pairs:
+            if key in document:
+                raise ValueError(f"Duplicate diagnostic manifest field: {key}")
+            document[key] = value
+        return document
+
+    document = json.loads(raw, object_pairs_hook=unique_fields)
+    if (not isinstance(document, dict)
+            or set(document) != {"format", "purpose", "runtime", "label", "properties"}
+            or type(document["format"]) is not int or document["format"] != 1
+            or document["purpose"] != "NATIVE61_MIXIN_EXPORT_DIAGNOSTIC"
+            or document["runtime"] != str(runtime) or document["label"] != label):
+        raise ValueError("Diagnostic manifest must bind this native61 runtime, label and purpose")
+    properties = document["properties"]
+    allowed = {"mixin.debug.export", "mixin.debug.export.decompile", "mixin.debug.export.filter"}
+    if (not isinstance(properties, dict) or set(properties) - allowed
+            or properties.get("mixin.debug.export") is not True):
+        raise ValueError("Only an explicit mixin-export diagnostic may inject JVM properties")
+    options = ["-Dmixin.debug.export=true"]
+    if "mixin.debug.export.decompile" in properties:
+        decompile = properties["mixin.debug.export.decompile"]
+        if type(decompile) is not bool:
+            raise ValueError("Mixin export decompile must be a boolean")
+        options.append("-Dmixin.debug.export.decompile=" + str(decompile).lower())
+    if "mixin.debug.export.filter" in properties:
+        pattern = properties["mixin.debug.export.filter"]
+        if not isinstance(pattern, str) or not re.fullmatch(r"[A-Za-z0-9_.$*?]{1,256}", pattern):
+            raise ValueError("Unsafe mixin export filter")
+        options.append("-Dmixin.debug.export.filter=" + pattern)
+    injected = {"JAVA_TOOL_OPTIONS": " ".join(options)}
+    receipt = runtime / f"native61-launch-environment-{label}.json"
+    with receipt.open("x", encoding="utf-8") as output:
+        json.dump(dict(status="DIAGNOSTIC_NOT_QUALIFIED", qualificationAllowed=False,
+                       manifestSha256=diagnostic_environment_sha256.upper(),
+                       manifest=document, environment=injected), output, indent=2, sort_keys=True)
+        output.write("\n")
+    environment.update(injected)
+    return environment
+
+
 class Server(NativeLaunch):
     forge_version = FORGE_VERSION
+
+    def __init__(self, runtime, java, launcher, label, *, diagnostic_environment=None, diagnostic_environment_sha256=None):
+        self.diagnostic_environment = diagnostic_environment
+        self.diagnostic_environment_sha256 = diagnostic_environment_sha256
+        super().__init__(runtime, java, launcher, label)
+
+    def launch_environment(self):
+        return native_launch_environment(self.native_runtime, self.native_label,
+                                        diagnostic_environment=self.diagnostic_environment,
+                                        diagnostic_environment_sha256=self.diagnostic_environment_sha256)
+
+    @staticmethod
+    def unexpected_line(line):
+        return re.search(r"Server empty for \d+ seconds, pausing", line) is not None
 
     def logging_configuration(self, logging_jar):
         with ZipFile(logging_jar) as jar:

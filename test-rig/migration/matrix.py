@@ -71,7 +71,7 @@ class Server:
                 line = self.lines.get(timeout=0.5)
                 if token in line:
                     return
-                if any(failure in line for failure in ("Migration probe failed", "Actor probe failed", "Recipe probe failed", "Connected probe failed", "ADVRECIPES FAIL", "ADVPROGRESSION FAIL")):
+                if any(failure in line for failure in ("Migration probe failed", "Actor probe failed", "Recipe probe failed", "Connected probe failed", "ADVRECIPES FAIL", "ADVPROGRESSION FAIL")) or getattr(self, "unexpected_line", lambda value: False)(line):
                     raise RuntimeError(line.strip())
             except queue.Empty:
                 if self.process.poll() is not None:

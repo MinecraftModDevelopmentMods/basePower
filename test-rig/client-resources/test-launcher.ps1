@@ -62,6 +62,13 @@ function Test-GuiEvidenceRootContract([string]$RunnerSource) {
 }
 
 Test-GuiEvidenceRootContract (Get-Content -LiteralPath $script -Raw)
+$projectRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '../..')).Path
+$build = Get-Content -LiteralPath (Join-Path $projectRoot 'build.gradle') -Raw
+if (-not $build.Contains("'test-rig/profiles/native12111/dev-core.json'") -or
+    $build.Contains("'test-rig/profiles/native1211/dev-core.json'")) {
+    throw 'The production combined launch must default to native12111, not rely on a CLI profile override.'
+}
+$checks++
 
 if ($CrossVersionEvidenceRoots) {
     $workspace = if ($WorkspaceRoot) { (Resolve-Path -LiteralPath $WorkspaceRoot).Path }
@@ -76,33 +83,38 @@ if ($CrossVersionEvidenceRoots) {
 
 $native = @'
 modLoader="javafml"
-loaderVersion="[52,)" # native Forge
+loaderVersion="[61,)" # native Forge
 [[mods]] # mandatory header
 modId="basepower" # inline comment
-version="2.4.14.121011" # native candidate
+version="2.4.15.121111" # native candidate
 [[dependencies.basepower]]
 modId="minecraft"
 mandatory=true
-versionRange="[1.21.1]"
+versionRange="[1.21.11]"
 '@
 Assert-NativeMetadata $native 'basepower'
 $checks++
-Assert-Throws { Assert-NativeMetadata ($native.Replace('2.4.14.121011','2.4.4.113021')) 'basepower' }
-Assert-Throws { Assert-NativeMetadata ($native.Replace('2.4.14.121011','2.4.5.114041')) 'basepower' }
-Assert-Throws { Assert-NativeMetadata ($native.Replace('2.4.14.121011','2.4.5.115021')) 'basepower' }
-Assert-Throws { Assert-NativeMetadata ($native.Replace('[52,)','[50,)')) 'basepower' }
-Assert-Throws { Assert-NativeMetadata ($native.Replace('2.4.14.121011','2.4.7.116051')) 'basepower' }
-Assert-Throws { Assert-NativeMetadata ($native.Replace('2.4.14.121011','${version}')) 'basepower' }
+foreach ($old in '2.4.4.113021','2.4.5.114041','2.4.5.115021','2.4.7.116051','2.4.14.121011','${version}') {
+    Assert-Throws { Assert-NativeMetadata ($native.Replace('2.4.15.121111',$old)) 'basepower' }
+}
+Assert-Throws { Assert-NativeMetadata ($native.Replace('[61,)','[52,)')) 'basepower' }
 Assert-Throws { Assert-NativeMetadata $native 'baseelectric' }
 Assert-Throws { Assert-NativeMetadata '' 'basepower' }
 foreach ($id in 'basesteam','baseelectric') {
-    $expansion = $native.Replace('basepower', $id).Replace('2.4.14.121011','2.2.15.121011')
+    $expansion = $native.Replace('basepower', $id).Replace('2.4.15.121111','2.2.16.121111')
     Assert-NativeMetadata $expansion $id
     $checks++
-    Assert-Throws { Assert-NativeMetadata ($expansion.Replace('2.2.15.121011','2.2.6.115021')) $id }
+    Assert-Throws { Assert-NativeMetadata ($expansion.Replace('2.2.16.121111','2.2.6.115021')) $id }
+    Assert-Throws { Assert-NativeMetadata ($expansion.Replace('2.2.16.121111','2.2.15.121011')) $id }
 }
-$environment = @{ MC_VERSION = '1.21.1'; FORGE_VERSION = '52.1.0'; MCP_MAPPINGS = 'official_1.21.1'; MCP_VERSION = '20240808.132146'; target = 'fmluserdevclient' }
-$attributes = @{ 'org.eclipse.jdt.launching.PROGRAM_ARGUMENTS' = '--main net.minecraftforge.bootstrap.ForgeBootstrap --cache D:\native\1.21.1-52.1.0 -- --launchTarget forge_userdev_client --gameDir .'; 'org.eclipse.jdt.launching.MAIN_TYPE' = 'net.minecraftforge.launcher.Main' }
+foreach ($dependency in @{ basemetals='3.1.2.121111'; orespawn='4.1.0.121111' }.GetEnumerator()) {
+    $metadata = $native.Replace('basepower', $dependency.Key).Replace('2.4.15.121111', $dependency.Value)
+    Assert-NativeMetadata $metadata $dependency.Key
+    $checks++
+    Assert-Throws { Assert-NativeMetadata ($metadata.Replace($dependency.Value, $dependency.Value.Replace('121111','121011'))) $dependency.Key }
+}
+$environment = @{ MC_VERSION = '1.21.11'; FORGE_VERSION = '61.1.0'; MCP_MAPPINGS = 'official_1.21.11'; MCP_VERSION = '20251223.124241'; target = 'fmluserdevclient' }
+$attributes = @{ 'org.eclipse.jdt.launching.PROGRAM_ARGUMENTS' = '--main net.minecraftforge.bootstrap.ForgeBootstrap --cache D:\native\1.21.11-61.1.0 -- --launchTarget forge_userdev_client --gameDir .'; 'org.eclipse.jdt.launching.MAIN_TYPE' = 'net.minecraftforge.launcher.Main' }
 Assert-NativeLaunch $environment $attributes
 $checks++
 foreach ($key in 'MC_VERSION','FORGE_VERSION','MCP_MAPPINGS','MCP_VERSION','target') {
@@ -110,7 +122,7 @@ foreach ($key in 'MC_VERSION','FORGE_VERSION','MCP_MAPPINGS','MCP_VERSION','targ
     $invalid[$key] = 'legacy'
     Assert-Throws { Assert-NativeLaunch $invalid $attributes }
 }
-foreach ($argument in '--server localhost','--port 25565','--gameDir D:\protected','--world protected','--cache D:\native\1.14.4-28.2.26') {
+foreach ($argument in '--server localhost','--port 25565','--gameDir D:\protected','--world protected','--cache D:\native\1.14.4-28.2.26','--cache D:\native\1.21.1-52.1.0','--assetIndex {asset_index}','--assetsDir {assets_root}') {
     $invalid = $attributes.Clone()
     $invalid['org.eclipse.jdt.launching.PROGRAM_ARGUMENTS'] += ' ' + $argument
     Assert-Throws { Assert-NativeLaunch $environment $invalid }
@@ -118,9 +130,9 @@ foreach ($argument in '--server localhost','--port 25565','--gameDir D:\protecte
 $invalid = $attributes.Clone()
 $invalid['org.eclipse.jdt.launching.MAIN_TYPE'] = 'net.minecraft.client.main.Main'
 Assert-Throws { Assert-NativeLaunch $environment $invalid }
-Assert-NativeArchive 'D:\native\forge-1.21.1-52.1.0.jar'
+Assert-NativeArchive 'D:\native\forge-1.21.11-61.1.0.jar'
 $checks++
-foreach ($path in 'D:\PA114\client.jar','D:\PA113\client.jar','D:\PA116\client.jar','D:\native\forge-1.16.5-36.2.34.jar','D:\native\forge-1.14.4-28.2.26.jar','D:\native\client-extra-1.13.2.jar') {
+foreach ($path in 'D:\PA114\client.jar','D:\PA113\client.jar','D:\PA116\client.jar','D:\PA1211\client.jar','D:\native\forge-1.16.5-36.2.34.jar','D:\native\forge-1.14.4-28.2.26.jar','D:\native\client-extra-1.13.2.jar','D:\native\forge-1.21.1-52.1.0.jar','D:\native\client-extra-1.20.6.jar') {
     Assert-Throws { Assert-NativeArchive $path }
 }
 if ((Quote-Argument 'D:\native path\') -ne '"D:\native path\\"') { throw 'Trailing-backslash command-line quoting changed.' }
@@ -135,10 +147,23 @@ if ($StaticOnly) {
     return
 }
 $project = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
-$power = Join-Path $project 'build/libs/basePower-2.4.14.121011.jar'
+$power = Join-Path $project 'build/libs/basePower-2.4.15.121111.jar'
 Assert-NativeMetadata (Read-JarMetadata $power) 'basepower'
 $checks++
 [xml]$launch = Get-Content -LiteralPath (Join-Path $project 'runClientAllAdvantage.launch') -Raw
+$actualAttributes = @{}
+foreach ($entry in $launch.launchConfiguration.stringAttribute) { $actualAttributes[$entry.key] = $entry.value }
+$actualEnvironment = @{}
+foreach ($map in $launch.launchConfiguration.mapAttribute) {
+    if ($map.key -eq 'org.eclipse.debug.core.environmentVariables') {
+        foreach ($entry in $map.mapEntry) { $actualEnvironment[$entry.key] = $entry.value }
+    }
+}
+if ($actualAttributes['org.eclipse.jdt.launching.PROGRAM_ARGUMENTS'] -match '\{(?:asset_index|assets_root)\}') {
+    throw 'Generated combined Eclipse launch still contains unresolved native asset placeholders; concrete asset index/directory are required for manual handoff.'
+}
+Assert-NativeLaunch $actualEnvironment $actualAttributes
+$checks++
 $found = @{}
 foreach ($entry in ($launch.launchConfiguration.listAttribute | Where-Object { $_.key -eq 'org.eclipse.jdt.launching.CLASSPATH' }).listEntry) {
     [xml]$classpath = $entry.value

@@ -14,10 +14,17 @@ public class Native1201PackMetadataTest {
             assertNotNull(input);
             JsonObject pack = new JsonParser().parse(new InputStreamReader(input, StandardCharsets.UTF_8))
                     .getAsJsonObject().getAsJsonObject("pack");
-            assertTrue(pack.getAsJsonPrimitive("pack_format").isNumber());
-            assertEquals(32, pack.get("pack_format").getAsInt());
-            assertEquals(32, pack.get("forge:resource_pack_format").getAsInt());
-            assertEquals(41, pack.get("forge:data_pack_format").getAsInt());
+            assertFalse(pack.has("pack_format"));
+            assertFalse(pack.has("forge:resource_pack_format"));
+            assertFalse(pack.has("forge:data_pack_format"));
+            var section = net.minecraft.server.packs.metadata.pack.PackMetadataSection.forPackType(
+                    net.minecraft.server.packs.PackType.SERVER_DATA).codec()
+                    .parse(com.mojang.serialization.JsonOps.INSTANCE, pack).getOrThrow();
+            var formats = section.supportedFormats();
+            assertTrue(formats.isValueInRange(net.minecraft.server.packs.metadata.pack.PackFormat.of(94, 1)));
+            assertFalse(formats.isValueInRange(net.minecraft.server.packs.metadata.pack.PackFormat.of(75, 0)));
+            assertFalse(formats.isValueInRange(net.minecraft.server.packs.metadata.pack.PackFormat.of(94, 0)));
+            assertFalse(formats.isValueInRange(net.minecraft.server.packs.metadata.pack.PackFormat.of(95)));
         }
     }
 }

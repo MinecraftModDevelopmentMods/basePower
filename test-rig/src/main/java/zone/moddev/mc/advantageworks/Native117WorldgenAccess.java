@@ -5,7 +5,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import net.minecraft.core.BlockPos;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerChunkCache;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.TicketType;
@@ -16,8 +16,7 @@ import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraftforge.registries.ForgeRegistries;
 
 final class Native117WorldgenAccess implements WorldgenSamplingJob.WorldAccess {
-    private static final TicketType<ChunkPos> TICKET = TicketType.create(
-            "advantageworks_worldgen_sample", Comparator.comparingLong(ChunkPos::toLong));
+    private static final TicketType TICKET = new TicketType(TicketType.NO_TIMEOUT, TicketType.FLAG_LOADING);
     private final ServerLevel world;
     private final BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
     private final AsyncWorldgenChunks<LevelChunk> chunks;
@@ -28,7 +27,7 @@ final class Native117WorldgenAccess implements WorldgenSamplingJob.WorldAccess {
         chunks = new AsyncWorldgenChunks<>(new AsyncWorldgenChunks.Backend<LevelChunk>() {
             @Override public void retain(int x, int z) {
                 ChunkPos position = new ChunkPos(x, z);
-                source.addRegionTicket(TICKET, position, 0, position);
+                source.addTicketWithRadius(TICKET, position, 0);
             }
 
             @Override public CompletableFuture<LevelChunk> request(int x, int z) {
@@ -46,7 +45,7 @@ final class Native117WorldgenAccess implements WorldgenSamplingJob.WorldAccess {
 
             @Override public void release(int x, int z) {
                 ChunkPos position = new ChunkPos(x, z);
-                source.removeRegionTicket(TICKET, position, 0, position);
+                source.removeTicketWithRadius(TICKET, position, 0);
             }
         }, Executors.newSingleThreadExecutor(task -> {
             Thread thread = new Thread(task, "advantageworks-worldgen-dispatch");
@@ -55,7 +54,7 @@ final class Native117WorldgenAccess implements WorldgenSamplingJob.WorldAccess {
         }));
     }
 
-    @Override public int minBuildHeight() { return world.getMinBuildHeight(); }
+    @Override public int minBuildHeight() { return world.getMinY(); }
 
     @Override public boolean matchesBiome(String expected, int x, int y, int z) {
         return WorksController.matchesExpectedBiome(expected, world.getBiome(cursor.set(x, y, z)));
@@ -71,7 +70,7 @@ final class Native117WorldgenAccess implements WorldgenSamplingJob.WorldAccess {
             }
 
             @Override public String blockName(int blockX, int y, int blockZ) {
-                ResourceLocation id = ForgeRegistries.BLOCKS.getKey(
+                Identifier id = ForgeRegistries.BLOCKS.getKey(
                         chunk.getBlockState(cursor.set(blockX, y, blockZ)).getBlock());
                 return id == null ? null : id.toString();
             }

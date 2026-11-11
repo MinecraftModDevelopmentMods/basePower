@@ -77,6 +77,29 @@ public class ClientResourceContractTest {
         assertEquals("directory", source.get("type").getAsString());
         assertEquals("items", source.get("source").getAsString());
         assertEquals("items/", source.get("prefix").getAsString());
+        String build = Files.readString(Paths.get("build.gradle"), StandardCharsets.UTF_8);
+        assertTrue("Combined Eclipse defaults must select the native 1.21.11 profile",
+                build.contains("'test-rig/profiles/native12111/dev-core.json'"));
+        assertFalse("A CLI override must not hide a stale 1.21.1 default",
+                build.contains("'test-rig/profiles/native1211/dev-core.json'"));
+        JsonObject profile = read(Paths.get("test-rig/profiles/native12111/dev-core.json"));
+        assertEquals("development", profile.get("mode").getAsString());
+        assertEquals("1.21.11", profile.get("minecraftVersion").getAsString());
+        assertEquals("61.1.0", profile.get("forgeVersion").getAsString());
+        java.util.Properties pins = new java.util.Properties();
+        try (Reader reader = Files.newBufferedReader(Paths.get("gradle.properties"), StandardCharsets.UTF_8)) {
+            pins.load(reader);
+        }
+        assertEquals("The default development profile must pin the current Power player bytes",
+                pins.getProperty("release_player_sha256"), profile.get("powerDeobfSha256").getAsString());
+        var expansions = profile.getAsJsonArray("mods").asList().stream().map(JsonElement::getAsJsonObject).toList();
+        assertEquals(java.util.Set.of("basesteam", "baseelectric"),
+                expansions.stream().map(mod -> mod.get("id").getAsString()).collect(Collectors.toSet()));
+        assertEquals("No duplicate or test-only runtime candidate in the production profile", 2, expansions.size());
+        for (JsonObject mod : expansions) {
+            assertTrue("Missing exact expansion checksum", mod.get("sha256").getAsString().matches("[A-Fa-f0-9]{64}"));
+            assertEquals(pins.getProperty(mod.get("id").getAsString() + "_version"), mod.get("version").getAsString());
+        }
     }
 
     @Test public void everyLocaleRetainsLegacyNamesAndProvidesModernAliases() throws IOException {

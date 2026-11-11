@@ -18,7 +18,7 @@ import java.util.Map;
 import java.util.UUID;
 import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.advancements.CriteriaTriggers;
-import net.minecraft.advancements.critereon.InventoryChangeTrigger;
+import net.minecraft.advancements.criterion.InventoryChangeTrigger;
 import net.minecraft.commands.Commands;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.Item;
@@ -31,7 +31,7 @@ import net.minecraft.network.protocol.Packet;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayerGameMode;
 import net.minecraft.tags.ItemTags;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.player.PlayerEvent;
@@ -48,8 +48,8 @@ final class RecipeUnlockProbe {
     static void register() {
         if (MARKER.isFile()) {
             RecipeUnlockProbe probe = new RecipeUnlockProbe();
-            MinecraftForge.EVENT_BUS.addListener(probe::starting);
-            MinecraftForge.EVENT_BUS.addListener(probe::stopped);
+            RegisterCommandsEvent.BUS.addListener(probe::starting);
+            net.minecraftforge.event.server.ServerStoppedEvent.BUS.addListener(probe::stopped);
         }
     }
 
@@ -66,7 +66,7 @@ final class RecipeUnlockProbe {
 
     private void starting(RegisterCommandsEvent event) {
         event.getDispatcher().register(Commands.literal("advrecipes")
-                .requires(source -> source.hasPermission(4))
+                .requires(Commands.hasPermission(Commands.LEVEL_OWNERS))
                 .then(Commands.argument("operation", StringArgumentType.word())
                         .then(Commands.argument("label", StringArgumentType.word()).executes(context -> {
                             String operation = StringArgumentType.getString(context, "operation");
@@ -112,7 +112,7 @@ final class RecipeUnlockProbe {
                 JsonObject definition = element.getAsJsonObject();
                 String id = definition.get("id").getAsString();
                 AdvancementHolder advancement = advancement(server, id);
-                RecipeHolder<?> recipe = server.getRecipeManager().byKey(ResourceLocation.parse(id)).orElse(null);
+                RecipeHolder<?> recipe = server.getRecipeManager().byKey(recipeKey(id)).orElse(null);
                 JsonObject row = new JsonObject();
                 row.addProperty("id", id);
                 row.addProperty("recipeActive", recipe != null);
@@ -139,7 +139,7 @@ final class RecipeUnlockProbe {
                     player.getInventory().setItem(0, new ItemStack(choices.get(0)));
                     CriteriaTriggers.INVENTORY_CHANGED.trigger(player, player.getInventory(), player.getInventory().getItem(0));
                     require(player.getAdvancements().getOrStartProgress(advancement).isDone(), "Inventory event did not discover " + id);
-                    require(recipe == null || player.getRecipeBook().contains(recipe), "Reward failed for " + id);
+                    require(recipe == null || player.getRecipeBook().contains(recipe.id()), "Reward failed for " + id);
                     positives++;
                 }
                 // Also exercise /recipe-style discovery and its has_recipe criterion.
@@ -157,11 +157,11 @@ final class RecipeUnlockProbe {
         } else if (operation.equals("persist")) {
             for (JsonElement element : cases) {
                 String id = element.getAsJsonObject().get("id").getAsString();
-                reset(advancement(server, id), server.getRecipeManager().byKey(ResourceLocation.parse(id)).orElse(null));
+                reset(advancement(server, id), server.getRecipeManager().byKey(recipeKey(id)).orElse(null));
             }
             JsonArray kit = new JsonArray();
             for (JsonElement id : fixture.getAsJsonArray("materials")) {
-                ResourceLocation name = ResourceLocation.parse(id.getAsString());
+                Identifier name = Identifier.parse(id.getAsString());
                 if (!ForgeRegistries.ITEMS.containsKey(name)) continue;
                 discover(item(id.getAsString()));
                 kit.add(id.getAsString());
@@ -189,13 +189,13 @@ final class RecipeUnlockProbe {
             result.add("additionalMaterials", additions);
             verifyDiscovered(server, cases, rows);
         } else if (operation.equals("restore")) {
-            require(server.getPlayerList().load(player).isPresent(), "No saved test player");
+            Native117PlayerIo.load(server.getPlayerList(), player);
             require(transport.channel().isActive(), "Native recipe-login channel is not active");
             require(net.minecraftforge.network.NetworkContext.get(transport).getType()
                             == net.minecraftforge.network.ConnectionType.VANILLA,
                     "Server-only probe must not impersonate a remote modded-client handshake");
             // Dispatch the real Forge event to exercise all three namespaces' restoration.
-            MinecraftForge.EVENT_BUS.post(new PlayerEvent.PlayerLoggedInEvent(player));
+            PlayerEvent.PlayerLoggedInEvent.BUS.post(new PlayerEvent.PlayerLoggedInEvent(player));
             result.addProperty("nativeForgeLoginEvent", true);
             require(player.getInventory().isEmpty(), "Persistence test must not reacquire ingredients");
             verifyDiscovered(server, cases, rows);
@@ -213,8 +213,8 @@ final class RecipeUnlockProbe {
                 available |= !choices(criterion.getValue().getAsJsonObject()).isEmpty();
             boolean done = player.getAdvancements().getOrStartProgress(advancement(server, id)).isDone();
             require(!available || done, "Lost discovery: " + id);
-            RecipeHolder<?> recipe = server.getRecipeManager().byKey(ResourceLocation.parse(id)).orElse(null);
-            require(recipe == null || !available || player.getRecipeBook().contains(recipe), "Lost recipe reward: " + id);
+            RecipeHolder<?> recipe = server.getRecipeManager().byKey(recipeKey(id)).orElse(null);
+            require(recipe == null || !available || player.getRecipeBook().contains(recipe.id()), "Lost recipe reward: " + id);
             JsonObject row = new JsonObject();
             row.addProperty("id", id);
             row.addProperty("recipeActive", recipe != null);
@@ -238,8 +238,13 @@ final class RecipeUnlockProbe {
     }
 
     private static AdvancementHolder advancement(MinecraftServer server, String id) {
-        ResourceLocation name = ResourceLocation.parse(id);
-        return server.getAdvancements().get(ResourceLocation.fromNamespaceAndPath(name.getNamespace(), "recipes/" + name.getPath()));
+        Identifier name = Identifier.parse(id);
+        return server.getAdvancements().get(Identifier.fromNamespaceAndPath(name.getNamespace(), "recipes/" + name.getPath()));
+    }
+
+    static net.minecraft.resources.ResourceKey<net.minecraft.world.item.crafting.Recipe<?>> recipeKey(String id) {
+        return net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.RECIPE,
+                Identifier.parse(id));
     }
 
     private static boolean matchesInventory(InventoryChangeTrigger.TriggerInstance condition,
@@ -260,13 +265,13 @@ final class RecipeUnlockProbe {
         if (predicate.has("item")) return Collections.singletonList(item(predicate.get("item").getAsString()));
         List<Item> items = new ArrayList<>();
         for (var holder : net.minecraft.core.registries.BuiltInRegistries.ITEM.getTagOrEmpty(
-                ItemTags.create(ResourceLocation.parse(predicate.get("tag").getAsString())))) items.add(holder.value());
+                ItemTags.create(Identifier.parse(predicate.get("tag").getAsString())))) items.add(holder.value());
         items.sort(Comparator.comparing(candidate -> net.minecraftforge.registries.ForgeRegistries.ITEMS.getKey(candidate).toString()));
         return items;
     }
 
     private static Item item(String id) {
-        ResourceLocation name = ResourceLocation.parse(id);
+        Identifier name = Identifier.parse(id);
         Item item = ForgeRegistries.ITEMS.getValue(name);
         require(item != null, "Missing test ingredient: " + id);
         return item;

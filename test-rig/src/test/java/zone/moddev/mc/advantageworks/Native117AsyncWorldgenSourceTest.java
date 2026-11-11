@@ -5,11 +5,10 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import net.minecraft.server.level.ServerChunkCache;
 import net.minecraft.server.level.TicketType;
-import net.minecraft.world.level.ChunkPos;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
@@ -18,10 +17,20 @@ import org.objectweb.asm.Opcodes;
 import static org.junit.Assert.*;
 
 public class Native117AsyncWorldgenSourceTest {
+    @BeforeClass public static void bootstrap() {
+        net.minecraft.SharedConstants.tryDetectVersion();
+        net.minecraft.server.Bootstrap.bootStrap();
+    }
+
     @Test public void actualNativeUnknownTicketExpiresButDedicatedRegionTicketDoesNot() {
         assertEquals(1L, TicketType.UNKNOWN.timeout());
-        TicketType<ChunkPos> retained = TicketType.create("async-worldgen-unit", Comparator.comparingLong(ChunkPos::toLong));
+        assertTrue(TicketType.UNKNOWN.hasTimeout());
+        TicketType retained = new TicketType(TicketType.NO_TIMEOUT, TicketType.FLAG_LOADING);
         assertEquals(0L, retained.timeout());
+        assertFalse(retained.hasTimeout());
+        assertTrue(retained.doesLoad());
+        assertFalse(retained.doesSimulate());
+        assertFalse(retained.canExpireIfUnloaded());
     }
 
     @Test public void actualMappedNativeFutureApiHasBothBlockingAndOffThreadBranches() throws Exception {
@@ -58,8 +67,9 @@ public class Native117AsyncWorldgenSourceTest {
         String nativeSource = Files.readString(adapter, StandardCharsets.UTF_8);
         assertTrue(nativeSource.matches("(?s).*getChunkFuture\\(.*ChunkStatus\\.FULL,\\s*true\\).*"));
         assertTrue(nativeSource.contains("isLightCorrect()"));
-        assertTrue(nativeSource.contains("addRegionTicket(TICKET, position, 0, position)"));
-        assertTrue(nativeSource.contains("removeRegionTicket(TICKET, position, 0, position)"));
+        assertTrue(nativeSource.contains("new TicketType(TicketType.NO_TIMEOUT, TicketType.FLAG_LOADING)"));
+        assertTrue(nativeSource.contains("addTicketWithRadius(TICKET, position, 0)"));
+        assertTrue(nativeSource.contains("removeTicketWithRadius(TICKET, position, 0)"));
         assertFalse(nativeSource.contains(".join()"));
         assertFalse(nativeSource.contains("world.getChunk("));
     }

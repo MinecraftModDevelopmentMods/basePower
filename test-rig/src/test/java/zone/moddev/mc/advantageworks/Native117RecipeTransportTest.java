@@ -11,6 +11,11 @@ public class Native117RecipeTransportTest {
     @BeforeClass public static void bootstrap() {
         net.minecraft.SharedConstants.tryDetectVersion(); net.minecraft.server.Bootstrap.bootStrap();
     }
+    @Test public void nativeRecipeKeyRetainsTheExternalIdentifier() {
+        var key = RecipeUnlockProbe.recipeKey("basepower:starch_from_potato");
+        assertTrue(key.isFor(net.minecraft.core.registries.Registries.RECIPE));
+        assertEquals("basepower:starch_from_potato", key.identifier().toString());
+    }
     @Test public void nativeChannelActivationSuppliesRealConnectionAttributesWithoutASocket() {
         Connection connection = RecipeUnlockProbe.nativeTransport();
         EmbeddedChannel channel = (EmbeddedChannel) connection.channel();

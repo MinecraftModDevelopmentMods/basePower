@@ -3,7 +3,7 @@ package zone.moddev.mc.advantageworks;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -48,6 +48,10 @@ final class WorksDefinitionLoader {
 
     static WorksDefinition loadNative1211() {
         return load("/assets/advantageworkstest/works/works-1.21.1.json", "1.21.1");
+    }
+
+    static WorksDefinition loadNative12111() {
+        return load("/assets/advantageworkstest/works/works-1.21.11.json", "1.21.11");
     }
 
     static WorksDefinition load(String resource, String minecraft) {
@@ -260,7 +264,7 @@ final class WorksDefinitionLoader {
 
     private static void requireResource(String value, String label) {
         requireId(value, label);
-        ResourceLocation.parse(value);
+        Identifier.parse(value);
     }
 
     private static void validatePosition(WorksDefinition.Station station, int[] pos, String label) {

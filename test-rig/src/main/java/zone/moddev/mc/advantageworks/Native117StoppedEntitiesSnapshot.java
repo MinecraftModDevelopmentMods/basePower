@@ -20,6 +20,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.WeakHashMap;
 import net.minecraft.SharedConstants;
+import net.minecraft.core.UUIDUtil;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtIo;
 import net.minecraft.resources.ResourceKey;
@@ -31,7 +32,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.storage.LevelResource;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.eventbus.api.EventPriority;
+import net.minecraftforge.eventbus.api.listener.Priority;
 import net.minecraftforge.event.server.ServerStartingEvent;
 import net.minecraftforge.event.server.ServerStoppingEvent;
 import org.apache.logging.log4j.LogManager;
@@ -59,8 +60,8 @@ final class Native117StoppedEntitiesSnapshot {
     private static JsonObject header(MinecraftServer server, String boot, String phase) {
         JsonObject result = new JsonObject();
         result.addProperty("format", 1);
-        result.addProperty("minecraftVersion", SharedConstants.getCurrentVersion().getName());
-        result.addProperty("dataVersion", SharedConstants.getCurrentVersion().getDataVersion().getVersion());
+        result.addProperty("minecraftVersion", SharedConstants.getCurrentVersion().name());
+        result.addProperty("dataVersion", SharedConstants.getCurrentVersion().dataVersion().version());
         result.addProperty("worldName", server.getWorldData().getLevelName());
         result.addProperty("worldDirectory", server.getWorldPath(LevelResource.ROOT).toAbsolutePath().normalize().toString());
         result.addProperty("bootId", boot);
@@ -97,15 +98,15 @@ final class Native117StoppedEntitiesSnapshot {
             for (int id : new int[] {0, -1, 1}) {
                 ResourceKey<Level> key = Native117Worlds.key(id);
                 ServerLevel world = server.getLevel(key);
-                if (world == null) throw new IllegalStateException("Missing vanilla dimension: " + key.location());
+                if (world == null) throw new IllegalStateException("Missing vanilla dimension: " + key.identifier());
                 JsonArray entities = entities(world, world.getAllEntities(), seen);
                 JsonObject dimension = new JsonObject();
                 dimension.addProperty("dimension", id);
-                dimension.addProperty("worldDimensionKey", key.location().toString());
+                dimension.addProperty("worldDimensionKey", key.identifier().toString());
                 dimension.addProperty("gameTime", world.getGameTime());
                 dimension.addProperty("entityCount", entities.size());
                 dimension.add("entities", entities);
-                dimensions.add(key.location().toString(), dimension);
+                dimensions.add(key.identifier().toString(), dimension);
                 count += entities.size();
             }
             result.add("dimensions", dimensions);
@@ -133,15 +134,15 @@ final class Native117StoppedEntitiesSnapshot {
             if (entity.level() != world) throw new IllegalStateException("Enumerated entity belongs to another world");
             if (!seen.add(entity.getUUID())) throw new IllegalStateException("Duplicate enumerated entity UUID: " + entity.getUUID());
             CompoundTag nbt = serialized(entity);
-            if (!nbt.hasUUID("UUID") || !nbt.getUUID("UUID").equals(entity.getUUID())) {
+            if (!nbt.read("UUID", UUIDUtil.CODEC).orElseThrow().equals(entity.getUUID())) {
                 throw new IllegalStateException("Native serialization changed entity UUID");
             }
             ByteArrayOutputStream bytes = new ByteArrayOutputStream();
             NbtIo.writeCompressed(nbt, bytes);
             JsonObject entry = new JsonObject();
             entry.addProperty("uuid", entity.getUUID().toString());
-            entry.addProperty("id", nbt.getString("id"));
-            entry.addProperty("worldDimensionKey", world.dimension().location().toString());
+            entry.addProperty("id", nbt.getString("id").orElseThrow());
+            entry.addProperty("worldDimensionKey", world.dimension().identifier().toString());
             entry.addProperty("vehicleUuid", entity.getVehicle() == null ? null : entity.getVehicle().getUUID().toString());
             entry.addProperty("nbtBase64", Base64.getEncoder().encodeToString(bytes.toByteArray()));
             result.add(entry);
@@ -154,13 +155,11 @@ final class Native117StoppedEntitiesSnapshot {
         if (entity.isPassenger()) {
             // The native root-only writer rejects riding entities. This is its unprojected
             // saveWithoutId payload plus the same native registry ID, also used by DimensionEntityProbe.
-            CompoundTag nbt = entity.saveWithoutId(new CompoundTag());
+            CompoundTag nbt = NativeActorIo.saveWithoutId(entity);
             nbt.putString("id", EntityType.getKey(entity.getType()).toString());
             return nbt;
         }
-        CompoundTag nbt = new CompoundTag();
-        if (!entity.saveAsPassenger(nbt)) throw new IllegalStateException("Native entity writer refused " + entity.getUUID());
-        return nbt;
+        return NativeActorIo.saveAsPassenger(entity);
     }
 
     static void write(Path runtime, JsonObject document) throws IOException {

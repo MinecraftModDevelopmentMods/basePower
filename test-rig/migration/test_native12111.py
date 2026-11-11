@@ -117,18 +117,21 @@ class Native1211Test(unittest.TestCase):
             "Damage": 5, "Enchantments": [{"id": "basesteam:powderless", "lvl": 1}],
             "Witness": "legacy"}}
         after = {"id": "basesteam:musket", "count": 1, "Slot": 3, "components": {
-            "minecraft:damage": 5, "minecraft:enchantments": {"levels": {"basesteam:powderless": 1}},
+            "minecraft:damage": 5, "minecraft:enchantments": {"basesteam:powderless": 1},
             "minecraft:custom_data": {"Witness": "legacy"}}}
         self.assertEqual(after, components(before))
         witness = {"name": "chest", "x": 1, "y": 5, "z": 1, "actualName": "minecraft:chest",
                    "properties": {}, "nbtBase64": "fixture"}
-        with patch("native12111_upgrade.parse_nbt", side_effect=[{"Items": [before]}, {"Items": [after]}]):
+        with patch("native12111_upgrade.parse_nbt", side_effect=[{"Items": [before]}, {"Items": [after], "components": {}}]):
             self.assertEqual("PASS", comparison([witness], [witness], modern=True)["status"])
         extra = dict(after, components={**after["components"], "minecraft:repair_cost": 10})
-        with patch("native12111_upgrade.parse_nbt", side_effect=[{"Items": [before]}, {"Items": [extra]}]):
+        with patch("native12111_upgrade.parse_nbt", side_effect=[{"Items": [before]}, {"Items": [extra], "components": {}}]):
             self.assertEqual("FAIL", comparison([witness], [witness], modern=True)["status"])
-        with patch("native12111_upgrade.parse_nbt", side_effect=[{"Items": [before]}, {"Items": [dict(after, count=2)]}]):
+        with patch("native12111_upgrade.parse_nbt", side_effect=[{"Items": [before]}, {"Items": [dict(after, count=2)], "components": {}}]):
             self.assertEqual("FAIL", comparison([witness], [witness], modern=True)["status"])
+        for observed in ({"Items": [after]}, {"Items": [after], "components": {"other:unexpected": 1}}):
+            with patch("native12111_upgrade.parse_nbt", side_effect=[{"Items": [before]}, observed]):
+                self.assertEqual("FAIL", comparison([witness], [witness], modern=True)["status"])
 
     def test_requires_one_successful_shared_crushing_witness(self):
         row = {"id": "basemetals/native-power-crushing", "status": "PASS"}

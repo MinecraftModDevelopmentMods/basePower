@@ -17,7 +17,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegisterCommandsEvent;
-import net.minecraftforge.event.TickEvent;
+
 
 /** Observes native chunk readiness; never loads chunks, constructs actors or changes world state. */
 final class Native117Readiness {
@@ -34,12 +34,12 @@ final class Native117Readiness {
     static void register() {
         if (!MARKER.isFile()) return;
         Native117Readiness probe = new Native117Readiness();
-        MinecraftForge.EVENT_BUS.addListener(probe::commands);
-        MinecraftForge.EVENT_BUS.addListener(probe::tick);
+        RegisterCommandsEvent.BUS.addListener(probe::commands);
+        NativeTickEvents.listenLevel(probe::tick);
     }
 
     private void commands(RegisterCommandsEvent event) {
-        event.getDispatcher().register(Commands.literal("advreadiness").requires(source -> source.hasPermission(4))
+        event.getDispatcher().register(Commands.literal("advreadiness").requires(source -> source.permissions().hasPermission(net.minecraft.server.permissions.Permissions.COMMANDS_OWNER))
                 .then(Commands.literal("chunks")
                     .then(Commands.argument("minX", IntegerArgumentType.integer(-1875000, 1874999))
                     .then(Commands.argument("minZ", IntegerArgumentType.integer(-1875000, 1874999))
@@ -69,12 +69,12 @@ final class Native117Readiness {
         System.out.println("ADVREADINESS QUEUED " + label);
     }
 
-    private void tick(TickEvent.LevelTickEvent event) {
-        if (observation == null || event.phase != TickEvent.Phase.END || event.level != world) return;
+    private void tick(NativeTickEvents.LevelTickEvent event) {
+        if (observation == null || event.phase() != NativeTickEvents.Phase.END || event.level() != world) return;
         List<State> states = new ArrayList<>();
         for (int x = observation.bounds.minX; x <= observation.bounds.maxX; x++) {
             for (int z = observation.bounds.minZ; z <= observation.bounds.maxZ; z++) {
-                BlockPos pos = new BlockPos(x * 16, world.getMinBuildHeight(), z * 16);
+                BlockPos pos = new BlockPos(x * 16, world.getMinY(), z * 16);
                 states.add(new State(x, z, Native118ChunkTicking.withEntitiesLoaded(world, pos),
                         world.isPositionEntityTicking(pos)));
             }
@@ -82,8 +82,8 @@ final class Native117Readiness {
         if (!observation.observe(world.getGameTime(), System.nanoTime(), states)) return;
         JsonObject report = observation.report();
         report.addProperty("label", label);
-        report.addProperty("minecraft", net.minecraft.SharedConstants.getCurrentVersion().getName());
-        report.addProperty("dimension", world.dimension().location().toString());
+        report.addProperty("minecraft", net.minecraft.SharedConstants.getCurrentVersion().name());
+        report.addProperty("dimension", world.dimension().identifier().toString());
         try {
             Files.createDirectories(output.toPath().getParent());
             Files.writeString(output.toPath(), new GsonBuilder().setPrettyPrinting().create().toJson(report),

@@ -54,6 +54,10 @@ class CodeCustody:
 class NativeLaunch(HistoricalServer):
     forge_version = "1.17.1-37.1.1"
 
+    def launch_environment(self):
+        """None preserves legacy inheritance; native engines may return a pinned snapshot."""
+        return None
+
     def logging_configuration(self, logging_jar):
         return "jar:" + logging_jar.resolve().as_uri() + "!/log4j2.xml"
 
@@ -65,6 +69,7 @@ class NativeLaunch(HistoricalServer):
         runtime = Path(runtime)
         self.native_label = label
         self.native_runtime = runtime
+        environment = self.launch_environment()
         logging_jar = runtime / f"libraries/net/minecraftforge/fmlloader/{self.forge_version}/fmlloader-{self.forge_version}.jar"
         if not logging_jar.is_file(): raise FileNotFoundError("Missing pinned Forge logging configuration")
         logging_configuration = self.logging_configuration(logging_jar)
@@ -74,7 +79,7 @@ class NativeLaunch(HistoricalServer):
             [str(java), "-Xms512M", "-Xmx2G", "--add-opens", "java.base/java.lang.invoke=ALL-UNNAMED",
              "-Dlog4j.configurationFile=" + logging_configuration,
              "-Dfml.queryResult=confirm", "@" + str(launcher), "nogui"],
-            cwd=runtime, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+            cwd=runtime, env=environment, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
             text=True, encoding="utf-8", errors="replace", creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
         )
         self.thread = threading.Thread(target=self.read, daemon=True)
