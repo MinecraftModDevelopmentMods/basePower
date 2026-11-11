@@ -18,7 +18,7 @@ public class RecipeRegistrationThreadTest {
                 if (instruction instanceof MethodInsnNode call
                         && call.owner.equals(conditions) && call.name.equals("register")) {
                     assertEquals("Subscribe during mod construction, before the registry event", "<init>", method.name);
-                    assertEquals("(Lnet/minecraftforge/eventbus/api/IEventBus;)V", call.desc);
+                    assertEquals("(Lnet/minecraftforge/eventbus/api/bus/BusGroup;)V", call.desc);
                     subscriptions++;
                 }
             }
@@ -29,7 +29,7 @@ public class RecipeRegistrationThreadTest {
                 .findFirst().orElseThrow();
         assertTrue(java.util.Arrays.stream(register.instructions.toArray()).anyMatch(instruction ->
                 instruction instanceof MethodInsnNode call && call.owner.equals("net/minecraftforge/registries/DeferredRegister")
-                        && call.name.equals("register") && call.desc.equals("(Lnet/minecraftforge/eventbus/api/IEventBus;)V")));
+                        && call.name.equals("register") && call.desc.equals("(Lnet/minecraftforge/eventbus/api/bus/BusGroup;)V")));
         assertTrue(codecs.methods.stream().flatMap(method -> java.util.Arrays.stream(method.instructions.toArray()))
                 .anyMatch(instruction -> instruction instanceof org.objectweb.asm.tree.FieldInsnNode field
                         && field.owner.equals("net/minecraftforge/registries/ForgeRegistries$Keys")

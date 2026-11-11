@@ -1,5 +1,5 @@
 modLoader="javafml"
-loaderVersion="[52,53)"
+loaderVersion="[61,62)"
 license="LGPL-3.0-only"
 
 [[mods]]
@@ -7,25 +7,26 @@ modId="advantageworkstest"
 version="${version}"
 displayName="Advantage Works Test Harness"
 authors="Minecraft Mod Development"
+showAsResourcePack=false
 description='''Server-side commissioning harness for the Advantage family. Not for distribution.'''
 
 [[dependencies.advantageworkstest]]
 modId="basepower"
 mandatory=true
-versionRange="[2.4.14.121011,3.0.0)"
+versionRange="[2.4.15.121111,3.0.0)"
 ordering="AFTER"
 side="SERVER"
 
 [[dependencies.advantageworkstest]]
 modId="forge"
 mandatory=true
-versionRange="[52.1.0,53)"
+versionRange="[61.1.0,62)"
 ordering="NONE"
 side="SERVER"
 
 [[dependencies.advantageworkstest]]
 modId="minecraft"
 mandatory=true
-versionRange="[1.21.1]"
+versionRange="[1.21.11]"
 ordering="NONE"
 side="SERVER"

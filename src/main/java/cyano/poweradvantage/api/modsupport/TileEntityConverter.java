@@ -177,8 +177,8 @@ public abstract class TileEntityConverter extends TileEntitySimplePowerMachine {
 	@Override
 	protected void loadAdditional(final CompoundTag tagRoot, HolderLookup.Provider registries) {
 		super.loadAdditional(tagRoot, registries);
-		if (tagRoot.contains("Other", 99)) {
-			this.setOtherEnergy(tagRoot.getDouble("Other"));
+		if (zone.moddev.mc.basepower.util.NbtCompat.containsTag(tagRoot, "Other", 99)) {
+			this.setOtherEnergy(tagRoot.getDoubleOr("Other", 0D));
 		}
 	}
 

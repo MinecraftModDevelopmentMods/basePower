@@ -19,11 +19,11 @@ import net.minecraft.commands.Commands;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.core.BlockPos;
-import net.minecraft.world.level.GameRules;
+import net.minecraft.world.level.gamerules.GameRules;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegisterCommandsEvent;
-import net.minecraftforge.event.TickEvent;
+
 
 /** Natural world ticks and recorded finite resources; never drives tickUpdate directly. */
 final class MachineOperationalProbe {
@@ -48,10 +48,10 @@ final class MachineOperationalProbe {
     static void register() {
         if (!MARKER.isFile()) return;
         MachineOperationalProbe probe = new MachineOperationalProbe();
-        MinecraftForge.EVENT_BUS.addListener(probe::commands);
-        MinecraftForge.EVENT_BUS.addListener(probe::tick);
-        MinecraftForge.EVENT_BUS.addListener(probe::chunkLoaded);
-        MinecraftForge.EVENT_BUS.addListener(probe::entityJoining);
+        RegisterCommandsEvent.BUS.addListener(probe::commands);
+        NativeTickEvents.listenLevel(probe::tick);
+        net.minecraftforge.event.level.ChunkEvent.Load.BUS.addListener(probe::chunkLoaded);
+        net.minecraftforge.event.entity.EntityJoinLevelEvent.BUS.addListener(probe::entityJoining);
     }
 
     private void chunkLoaded(net.minecraftforge.event.level.ChunkEvent.Load event) {
@@ -72,7 +72,7 @@ final class MachineOperationalProbe {
     }
 
     private void commands(RegisterCommandsEvent event) {
-        event.getDispatcher().register(Commands.literal("advmachines").requires(source -> source.hasPermission(4))
+        event.getDispatcher().register(Commands.literal("advmachines").requires(source -> source.permissions().hasPermission(net.minecraft.server.permissions.Permissions.COMMANDS_OWNER))
                 .then(Commands.literal("run").then(Commands.argument("group", StringArgumentType.word())
                         .then(Commands.argument("label", StringArgumentType.word()).executes(context -> {
                             start(context.getSource().getLevel(), StringArgumentType.getString(context, "group"),
@@ -152,14 +152,14 @@ final class MachineOperationalProbe {
         } catch (Throwable failure) { fail(run, "setup", failure); }
     }
 
-    private void tick(TickEvent.LevelTickEvent event) {
-        if (event.level.isClientSide || !(event.level instanceof ServerLevel)
-                || event.level.dimension() != net.minecraft.world.level.Level.OVERWORLD) return;
-        ServerLevel current = (ServerLevel) event.level;
-        if (event.phase == TickEvent.Phase.START && paused) {
+    private void tick(NativeTickEvents.LevelTickEvent event) {
+        if (event.level().isClientSide() || !(event.level() instanceof ServerLevel)
+                || event.level().dimension() != net.minecraft.world.level.Level.OVERWORLD) return;
+        ServerLevel current = (ServerLevel) event.level();
+        if (event.phase() == NativeTickEvents.Phase.START && paused) {
             held.addAll(NativeBlockEntityTicks.drain(current));
             for (Entity entity : current.getAllEntities()) if (!(entity instanceof net.minecraft.world.entity.player.Player)) heldEntities.hold(entity);
-        } else if (event.phase == TickEvent.Phase.END) {
+        } else if (event.phase() == NativeTickEvents.Phase.END) {
             NativeBlockEntityTicks.restore(current, held); heldEntities.restore();
             if (current != world) return;
             if (inspectionCases != null) {

@@ -15,7 +15,7 @@ import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.core.Direction;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
-import zone.moddev.mc.basepower.init.Entities;
+
 import zone.moddev.mc.basepower.util.FluidHandlerHelper;
 
 /** Places stored fluid into the world or into a tank below. */
@@ -23,7 +23,7 @@ public class FluidDischargeTileEntity extends TileEntitySimpleFluidMachine {
     private int oldLevel = -1;
 
     public FluidDischargeTileEntity(net.minecraft.core.BlockPos pos, net.minecraft.world.level.block.state.BlockState state) {
-        super(Entities.FLUID_DISCHARGE, pos, state, FluidTank.BUCKET_VOLUME, "tile.basepower.fluid_discharge.name");
+        super(zone.moddev.mc.basepower.init.Entities.FLUID_DISCHARGE, pos, state, FluidTank.BUCKET_VOLUME, "tile.basepower.fluid_discharge.name");
     }
 
     @Override

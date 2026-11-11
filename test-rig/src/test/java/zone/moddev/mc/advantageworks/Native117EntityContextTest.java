@@ -5,11 +5,8 @@ import static org.junit.Assert.*;
 import com.google.gson.JsonObject;
 import java.lang.reflect.Field;
 import java.util.UUID;
-import java.util.function.Supplier;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.vehicle.Boat;
-import net.minecraft.util.profiling.InactiveProfiler;
-import net.minecraft.util.profiling.ProfilerFiller;
+import net.minecraft.world.entity.vehicle.boat.Boat;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.Bootstrap;
 import net.minecraft.world.level.Level;
@@ -22,7 +19,7 @@ public class Native117EntityContextTest {
 
     @Test public void observesActualRegistryKeyAndWorldIdentity() throws Exception {
         ServerLevel world = world(Level.NETHER);
-        Boat boat = new Boat(EntityType.BOAT, world);
+        Boat boat = boat(world);
         JsonObject actual = Native117EntityContext.observe(boat, world);
         assertEquals("minecraft:the_nether", actual.get("worldDimensionKey").getAsString());
         assertTrue(actual.get("sameWorld").getAsBoolean());
@@ -31,14 +28,14 @@ public class Native117EntityContextTest {
 
     @Test public void observesEndWithoutAnyExpectedFixtureDimension() throws Exception {
         ServerLevel world = world(Level.END);
-        Boat boat = new Boat(EntityType.BOAT, world);
+        Boat boat = boat(world);
         assertEquals("minecraft:the_end", Native117EntityContext.observe(boat, world).get("worldDimensionKey").getAsString());
     }
 
     @Test public void recordsActualPassengerWorldAndUuid() throws Exception {
         ServerLevel world = world(Level.NETHER);
-        Boat vehicle = new Boat(EntityType.BOAT, world), passenger = new Boat(EntityType.BOAT, world);
-        assertTrue(passenger.startRiding(vehicle, true));
+        Boat vehicle = boat(world), passenger = boat(world);
+        assertTrue(passenger.startRiding(vehicle, true, false));
         JsonObject actual = Native117EntityContext.observe(vehicle, world).getAsJsonObject("entityWorlds");
         assertEquals(2, actual.entrySet().size());
         assertEquals("minecraft:the_nether", actual.get(passenger.getUUID().toString()).getAsString());
@@ -46,13 +43,13 @@ public class Native117EntityContextTest {
 
     @Test public void rejectsDifferentWorldInstanceEvenWithSameRegistryKey() throws Exception {
         ServerLevel actual = world(Level.NETHER), other = world(Level.NETHER);
-        reject(new Boat(EntityType.BOAT, actual), other);
+        reject(boat(actual), other);
     }
 
     @Test public void rejectsPassengerWithDifferentActualWorld() throws Exception {
         ServerLevel world = world(Level.NETHER);
-        Boat vehicle = new Boat(EntityType.BOAT, world), passenger = new Boat(EntityType.BOAT, world);
-        assertTrue(passenger.startRiding(vehicle, true));
+        Boat vehicle = boat(world), passenger = boat(world);
+        assertTrue(passenger.startRiding(vehicle, true, false));
         Field level = net.minecraft.world.entity.Entity.class.getDeclaredField("level");
         level.setAccessible(true);
         level.set(passenger, world(Level.END));
@@ -61,15 +58,15 @@ public class Native117EntityContextTest {
 
     @Test public void rejectsDuplicatePassengerUuid() throws Exception {
         ServerLevel world = world(Level.NETHER);
-        Boat vehicle = new Boat(EntityType.BOAT, world), passenger = new Boat(EntityType.BOAT, world);
+        Boat vehicle = boat(world), passenger = boat(world);
         passenger.setUUID(vehicle.getUUID());
-        assertTrue(passenger.startRiding(vehicle, true));
+        assertTrue(passenger.startRiding(vehicle, true, false));
         reject(vehicle, world);
     }
 
     @Test public void observationDoesNotChangeEntityIdentityOrPassengers() throws Exception {
         ServerLevel world = world(Level.NETHER);
-        Boat boat = new Boat(EntityType.BOAT, world);
+        Boat boat = boat(world);
         UUID before = boat.getUUID();
         Native117EntityContext.observe(boat, world);
         assertEquals(before, boat.getUUID());
@@ -93,10 +90,13 @@ public class Native117EntityContextTest {
                 .invoke(field.get(null), EntityFixtureWorld.class);
         set(world, "dimension", key);
         set(world, "random", net.minecraft.util.RandomSource.create(0));
-        set(world, "profiler", (Supplier<ProfilerFiller>) () -> InactiveProfiler.INSTANCE);
         Field ticks = ServerLevel.class.getDeclaredField("entityTickList"); ticks.setAccessible(true);
         ticks.set(world, new net.minecraft.world.level.entity.EntityTickList());
         return world;
+    }
+
+    static Boat boat(ServerLevel world) {
+        return new Boat(EntityType.OAK_BOAT, world, () -> net.minecraft.world.item.Items.OAK_BOAT);
     }
 
     private static void set(ServerLevel world, String name, Object value) throws Exception {
@@ -104,7 +104,7 @@ public class Native117EntityContextTest {
     }
 
     private static final class EntityFixtureWorld extends ServerLevel {
-        private EntityFixtureWorld() { super(null, null, null, null, null, null, null, false, 0L, java.util.List.of(), false, null); }
+        private EntityFixtureWorld() { super(null, null, null, null, null, null, false, 0L, java.util.List.of(), false, null); }
 
         @Override public net.minecraft.world.flag.FeatureFlagSet enabledFeatures() {
             return net.minecraft.world.flag.FeatureFlags.DEFAULT_FLAGS;

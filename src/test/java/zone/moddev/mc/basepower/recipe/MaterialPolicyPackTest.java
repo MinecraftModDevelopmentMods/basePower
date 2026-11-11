@@ -6,7 +6,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 import java.util.Set;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.PackType;
 import org.junit.Test;
 import static org.junit.Assert.*;
@@ -41,24 +41,24 @@ public class MaterialPolicyPackTest {
 
     @Test public void policyOnlySuppliesServerDataAndHonoursResourceDiscovery() {
         MaterialPolicyPack pack = new MaterialPolicyPack(true, false);
-        ResourceLocation rubber = ResourceLocation.fromNamespaceAndPath("forge", "tags/item/rubber.json");
+        Identifier rubber = Identifier.fromNamespaceAndPath("forge", "tags/item/rubber.json");
         assertNotNull(pack.getResource(PackType.SERVER_DATA, rubber));
         assertNull(pack.getResource(PackType.CLIENT_RESOURCES, rubber));
-        assertEquals(Set.of(rubber, ResourceLocation.parse("forge:tags/item/ingots/rubber.json"),
-                ResourceLocation.parse("forge:tags/item/solder.json")), list(pack, PackType.SERVER_DATA, "forge"));
+        assertEquals(Set.of(rubber, Identifier.parse("forge:tags/item/ingots/rubber.json"),
+                Identifier.parse("forge:tags/item/solder.json")), list(pack, PackType.SERVER_DATA, "forge"));
         assertTrue(list(pack, PackType.SERVER_DATA, "basepower").isEmpty());
         assertTrue(list(pack, PackType.CLIENT_RESOURCES, "forge").isEmpty());
     }
 
-    private static Set<ResourceLocation> list(MaterialPolicyPack pack, PackType type, String namespace) {
-        Set<ResourceLocation> entries = new HashSet<>();
+    private static Set<Identifier> list(MaterialPolicyPack pack, PackType type, String namespace) {
+        Set<Identifier> entries = new HashSet<>();
         pack.listResources(type, namespace, "tags/item", (id, supplier) -> entries.add(id));
         return entries;
     }
 
     private static JsonObject read(MaterialPolicyPack pack, String path) throws Exception {
         try (InputStream stream = pack.getResource(PackType.SERVER_DATA,
-                ResourceLocation.fromNamespaceAndPath("forge", "tags/item/" + path + ".json")).get()) {
+                Identifier.fromNamespaceAndPath("forge", "tags/item/" + path + ".json")).get()) {
             return new JsonParser().parse(new String(stream.readAllBytes(), StandardCharsets.UTF_8)).getAsJsonObject();
         }
     }

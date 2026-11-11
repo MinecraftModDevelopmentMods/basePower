@@ -6,12 +6,8 @@
     " x"
   ],
   "key": {
-    "x": {
-      "tag": "forge:ingots/iron"
-    },
-    "*": {
-      "tag": "forge:sprockets"
-    }
+    "x": "#forge:ingots/iron",
+    "*": "#forge:sprockets"
   },
   "result": {
     "id": "basepower:rotator_tool"

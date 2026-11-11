@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Set;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.PackType;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -35,7 +35,7 @@ public class MaterialTagsTest {
     }
 
     private static Set<Item> resolve(MaterialPolicyPack pack, String path, String userEntries) throws Exception {
-        var resource = ResourceLocation.fromNamespaceAndPath("forge", "tags/item/" + path + ".json");
+        var resource = Identifier.fromNamespaceAndPath("forge", "tags/item/" + path + ".json");
         JsonObject policy;
         try (var reader = new InputStreamReader(pack.getResource(PackType.SERVER_DATA, resource).get(),
                 StandardCharsets.UTF_8)) {

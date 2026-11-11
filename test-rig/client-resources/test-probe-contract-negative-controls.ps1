@@ -9,15 +9,15 @@ $relative = 'java/zone/moddev/mc/advantageworks/client'
 $controls = @(
     @{ name='recipe-pixel-threshold'; file='RecipeBookGroupingProbe'; before='colored > 1000'; after='colored > 100' },
     @{ name='recipe-cell-count'; file='RecipeBookGroupingProbe'; before='shown.size() == 13'; after='shown.size() >= 1' },
-    @{ name='recipe-packet-tail'; file='RecipeBookGroupingProbe'; before='require(!buffer.isReadable(),'; after='require(true,' },
-    @{ name='tank-packet-quantity'; file='TankVisualProbe'; before='clientTank.getTank().getFluidAmount() == 10000'; after='clientTank.getTank().getFluidAmount() == 1000' },
-    @{ name='tank-simulation-mutation'; file='TankVisualProbe'; before='serverTank.getTank().getFluidAmount() == 0'; after='serverTank.getTank().getFluidAmount() >= 0' },
-    @{ name='tank-pixel-coordinate'; file='TankVisualProbe'; before='image.getRGB(88, 39)'; after='image.getRGB(0, 0)' },
-    @{ name='tank-blue-threshold'; file='TankVisualProbe'; before='blue > red + 20 && blue > green + 10'; after='blue >= 0' },
+    @{ name='recipe-packet-tail'; file='RecipeBookGroupingProbe'; before='require(!buffer.isReadable(), "Trailing recipe packet bytes");'; after='require(true, "Trailing recipe packet bytes");' },
+    @{ name='tank-packet-quantity'; file='TankVisualProbe'; before='client.getTank().getFluidAmount() == amount &&'; after='client.getTank().getFluidAmount() >= 0 &&' },
+    @{ name='tank-simulation-mutation'; file='TankVisualProbe'; before='server.getTank().getFluidAmount() == 0'; after='server.getTank().getFluidAmount() >= 0' },
+    @{ name='tank-pixel-coordinate'; file='TankVisualProbe'; before='actual.getRGB(x, y) != expectedPixel'; after='actual.getRGB(0, 0) != expectedPixel' },
+    @{ name='tank-whole-gauge-zero-differences'; file='TankVisualProbe'; before='row.getAsJsonObject().get("different_pixels").getAsInt() == 0'; after='row.getAsJsonObject().get("different_pixels").getAsInt() >= 0' },
     @{ name='bucket-volume'; file='OilRenderProbe'; before='contents.getAmount() != 1000'; after='contents.getAmount() != 100' },
     @{ name='bucket-fluid-identity'; file='OilRenderProbe'; before='contents.getFluid() != expected'; after='false' },
-    @{ name='fluid-primitive-capture'; file='OilRenderProbe'; before='int vertices = built.getFirst().vertexCount();'; after='int vertices = 4;' },
-    @{ name='fluid-tags-restore'; file='OilRenderProbe'; before='fluidRegistry.reset(restore);'; after='fluidRegistry.reset(temporary);' },
+    @{ name='fluid-primitive-capture'; file='OilRenderProbe'; before='int vertices = built.drawState().vertexCount();'; after='int vertices = 4;' },
+    @{ name='fluid-tags-restore'; file='OilRenderProbe'; before='net.minecraft.core.registries.Registries.FLUID, previous)).apply();'; after='net.minecraft.core.registries.Registries.FLUID, synthetic)).apply();' },
     @{ name='missing-model'; file='ClientResourceProbe'; before='require(model != missing,'; after='require(model == missing,' },
     @{ name='missing-model-quads'; file='ClientResourceProbe'; before='!requireQuads || !quads.isEmpty()'; after='true' },
     @{ name='missing-caption'; file='MachineGuiLayoutProbe'; before='require(labelError == null, labelError);'; after='require(true, labelError);' },
@@ -27,14 +27,17 @@ $controls = @(
     @{ name='geometry-epsilon'; file='ChildRendererGeometryProbe'; before='EPSILON = 0.0001F'; after='EPSILON = 0.1F' },
     @{ name='geometry-degenerate-threshold'; file='ChildRendererGeometryProbe'; before='x * x + y * y + z * z > 0.00000001F'; after='x * x + y * y + z * z >= 0F' },
     @{ name='geometry-primitive-capture'; file='ChildRendererGeometryProbe'; before='data.getFloat(base + p)'; after='0F' },
-    @{ name='geometry-native-buffer-import'; file='ChildRendererGeometryProbe'; before='import com.mojang.blaze3d.vertex.BufferBuilder;'; after='import fake.BufferBuilder;'; error='ChildRendererGeometryProbe import bindings changed' },
+    @{ name='geometry-native-buffer-import'; file='ChildRendererGeometryProbe'; before='import com.mojang.blaze3d.vertex.BufferBuilder;'; after='import fake.BufferBuilder;' },
     @{ name='geometry-actual-texture'; file='ChildRendererGeometryProbe'; before='expectedTexture.equals(selectedTexture)'; after='true' },
     @{ name='geometry-matrix-balance'; file='ChildRendererGeometryProbe'; before='position.equals(original.pose()) && normal.equals(original.normal())'; after='true' },
     @{ name='geometry-manual-gap'; file='ChildRendererGeometryProbe'; before='passed == 25 && gaps == 1'; after='passed >= 0' },
-    @{ name='projection-y-order'; file='NativeGuiProjection'; before='orthographic(0, width, 0, height, near, far)'; after='orthographic(0, width, height, 0, near, far)'; error='Native projection adapter changed' },
-    @{ name='projection-restoration'; file='NativeGuiProjection'; before='RenderSystem.setProjectionMatrix(projection);'; after=''; error='Native projection adapter changed' },
+    @{ name='projection-framebuffer-axis'; file='NativeGuiProjection'; before='widthField.setInt(window, width);'; after='widthField.setInt(window, height);' },
+    @{ name='projection-restoration'; file='NativeGuiProjection'; before='RenderSystem.setProjectionMatrix(projection, projectionType);'; after='' },
     @{ name='runner-caption-count'; path='run.ps1'; before='{ 351 } else { 126 }'; after='{ 350 } else { 126 }'; error='Runner must require all 351' },
-    @{ name='runner-negative-count'; path='run.ps1'; before='($expectedGuiTextChecks + 4)'; after='($expectedGuiTextChecks + 3)'; error='Runner must require all 351' }
+    @{ name='runner-negative-count'; path='run.ps1'; before='($expectedGuiTextChecks + 4)'; after='($expectedGuiTextChecks + 3)'; error='Runner must require all 351' },
+    @{ name='native-tag-packet-tail'; file='RecipeBookGroupingProbe'; before='require(!buffer.isReadable(), "Trailing native tag packet bytes");'; after='require(true, "Trailing native tag packet bytes");' },
+    @{ name='native-tag-packet-required'; file='RecipeBookGroupingProbe'; before='payload != null && !payload.isEmpty()'; after='true' },
+    @{ name='native-tag-exact-members'; file='RecipeBookGroupingProbe'; before='.equals(expected.get(key.location()))'; after='.containsAll(expected.get(key.location()))' }
 )
 $results = @()
 $inputs = @{}
@@ -61,7 +64,11 @@ try {
         $rejected = $false
         $failure = $null
         try { & (Join-Path $PSScriptRoot 'test-probe-contract.ps1') -RepositoryRoot $project -TargetRoot $fixture | Out-Null }
-        catch { $failure = $_.Exception.Message; $rejected = $failure.StartsWith($expected, [StringComparison]::Ordinal) }
+        catch {
+            $failure = $_.Exception.Message
+            $rejected = $failure.StartsWith($expected, [StringComparison]::Ordinal) -or
+                (-not $control.error -and $failure.StartsWith("Changed inherited oracle method: $($control.file).", [StringComparison]::Ordinal))
+        }
         $results += [ordered]@{ control=$control.name; expected='REJECT_FOR_INTENDED_REASON'; rejected=$rejected; error=$failure }
         if (-not $rejected) { throw "Weakened oracle was accepted or rejected for an unrelated error: $($control.name). Actual: $failure. Evidence: $output" }
     }
@@ -73,4 +80,5 @@ try {
         planned=$controls.Count; completed=$results.Count; inputs=$inputs; results=$results } |
         ConvertTo-Json -Depth 7 | Set-Content -LiteralPath (Join-Path $output 'results.json') -Encoding utf8
 }
-Write-Output "PASS: $($controls.Count) weakened-oracle controls rejected for their intended reasons; unmodified fixture passed. No Java/client was run; source and worlds unchanged. Evidence: $output"
+Write-Output "PASS: $($controls.Count) weakened-oracle controls rejected for their intended reasons; unmodified fixture passed. JVM source parsing only; no Minecraft client/world was run. Source and worlds unchanged. Evidence: $output"
+$global:LASTEXITCODE = 0

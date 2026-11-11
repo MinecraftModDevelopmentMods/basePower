@@ -62,8 +62,9 @@ public abstract class BlockSimplePowerConduit extends ConduitBlock {
     }
 
     @Override
-    public BlockState updateShape(BlockState state, Direction facing, BlockState facingState,
-            LevelAccessor world, BlockPos currentPos, BlockPos facingPos) {
+    public BlockState updateShape(BlockState state, net.minecraft.world.level.LevelReader world,
+            net.minecraft.world.level.ScheduledTickAccess ticks, BlockPos currentPos, Direction facing,
+            BlockPos facingPos, BlockState facingState, net.minecraft.util.RandomSource random) {
         return state.setValue(property(facing), canConnectTo(world, currentPos, state, facing, facingPos));
     }
 

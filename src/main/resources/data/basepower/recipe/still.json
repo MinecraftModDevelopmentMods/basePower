@@ -5,15 +5,9 @@
     " f "
   ],
   "key": {
-    "b": {
-      "item": "minecraft:bucket"
-    },
-    "p": {
-      "tag": "forge:pipes"
-    },
-    "f": {
-      "item": "minecraft:furnace"
-    }
+    "b": "minecraft:bucket",
+    "p": "#forge:pipes",
+    "f": "minecraft:furnace"
   },
   "result": {
     "id": "basepower:still"

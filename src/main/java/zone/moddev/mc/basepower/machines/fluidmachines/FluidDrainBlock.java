@@ -13,7 +13,7 @@ public class FluidDrainBlock extends BlockSimpleFluidMachine {
 
 
 	public FluidDrainBlock() {
-		super(machineProperties(3F));
+		super(zone.moddev.mc.basepower.init.Blocks.properties("fluid_drain", machineProperties(3F)));
 	}
 
 	@Override

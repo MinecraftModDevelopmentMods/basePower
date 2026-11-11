@@ -20,8 +20,10 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayerGameMode;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.permissions.Permissions;
+import static zone.moddev.mc.basepower.util.NbtCompat.containsTag;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.TickEvent;
+
 import net.minecraftforge.event.RegisterCommandsEvent;
 
 /** Real server player-file adapter and saved-entity witnesses; not a client login. */
@@ -34,9 +36,9 @@ final class ActorProbe {
     static void register() {
         if (!MARKER.isFile()) return;
         ActorProbe probe = new ActorProbe();
-        MinecraftForge.EVENT_BUS.addListener(probe::tick);
-        MinecraftForge.EVENT_BUS.addListener(probe::entityJoining);
-        MinecraftForge.EVENT_BUS.addListener(probe::starting);
+        NativeTickEvents.listenLevel(probe::tick);
+        net.minecraftforge.event.entity.EntityJoinLevelEvent.BUS.addListener(probe::entityJoining);
+        RegisterCommandsEvent.BUS.addListener(probe::starting);
     }
 
     private boolean frozen(net.minecraft.world.level.Level world) {
@@ -45,15 +47,15 @@ final class ActorProbe {
 
     static boolean witnessed(Entity entity) { return NativeEntityData.containsString(entity, "AdvWorksActor"); }
 
-    private void tick(TickEvent.LevelTickEvent event) {
-        if (!(event.level instanceof ServerLevel)) return;
-        if (event.phase == TickEvent.Phase.START && frozen(event.level)) {
-            NativeEntityHold held = heldActors.computeIfAbsent(event.level, key -> new NativeEntityHold());
-            Native117Worlds.entities((ServerLevel) event.level).filter(ActorProbe::witnessed)
+    private void tick(NativeTickEvents.LevelTickEvent event) {
+        if (!(event.level() instanceof ServerLevel)) return;
+        if (event.phase() == NativeTickEvents.Phase.START && frozen(event.level())) {
+            NativeEntityHold held = heldActors.computeIfAbsent(event.level(), key -> new NativeEntityHold());
+            Native117Worlds.entities((ServerLevel) event.level()).filter(ActorProbe::witnessed)
                     .forEach(held::hold);
-            heldActors.put(event.level, held);
-        } else if (event.phase == TickEvent.Phase.END) {
-            NativeEntityHold held = heldActors.remove(event.level);
+            heldActors.put(event.level(), held);
+        } else if (event.phase() == NativeTickEvents.Phase.END) {
+            NativeEntityHold held = heldActors.remove(event.level());
             if (held != null) held.restore();
         }
     }
@@ -67,7 +69,7 @@ final class ActorProbe {
 
     private void starting(RegisterCommandsEvent event) {
         for (String operation : new String[] {"snapshot", "read", "operate"}) {
-            event.getDispatcher().register(Commands.literal("advactors").requires(source -> source.hasPermission(4))
+            event.getDispatcher().register(Commands.literal("advactors").requires(source -> source.permissions().hasPermission(Permissions.COMMANDS_OWNER))
                     .then(Commands.literal(operation).then(Commands.argument("label", StringArgumentType.word()).executes(context -> {
                         try {
                             snapshot(context.getSource().getServer(), context.getSource().getLevel(),
@@ -96,8 +98,11 @@ final class ActorProbe {
         result.addProperty("frozen", frozen(world));
         result.addProperty("gameTime", world.getGameTime());
         try (java.io.FileInputStream input = new java.io.FileInputStream(new File("AdvantageWorksMigration/level.dat"))) {
-            CompoundTag data = NbtIo.readCompressed(input, net.minecraft.nbt.NbtAccounter.unlimitedHeap()).getCompound("Data");
-            if (data.contains("Player", 10)) result.add("embedded", encode(data.getCompound("Player")));
+            CompoundTag data = NbtIo.readCompressed(input, net.minecraft.nbt.NbtAccounter.unlimitedHeap()).getCompound("Data").orElseThrow();
+            if (data.contains("Player")) {
+                if (!containsTag(data, "Player", 10)) throw new IllegalStateException("Embedded player is not a compound");
+                result.add("embedded", encode(data.getCompound("Player").orElseThrow()));
+            }
         }
         boolean read = operation.equals("read");
         result.addProperty("playerAdapter", read);
@@ -105,18 +110,17 @@ final class ActorProbe {
             GameProfile profile = new GameProfile(UUID.fromString(definition.get("playerUuid").getAsString()),
                     definition.get("playerName").getAsString());
             ServerPlayer player = new ServerPlayer(server, world, profile, net.minecraft.server.level.ClientInformation.createDefault());
-            if (server.getPlayerList().load(player).isEmpty()) throw new IllegalStateException("No player file loaded");
-            result.add("player", encode(player.saveWithoutId(new CompoundTag())));
+            Native117PlayerIo.load(server.getPlayerList(), player);
+            result.add("player", encode(NativeActorIo.saveWithoutId(player)));
             Native117PlayerIo.save(server.getPlayerList(), player);
         }
         JsonArray entities = new JsonArray();
         for (Entity entity : Native117Worlds.entities(world).collect(java.util.stream.Collectors.toList())) {
             if (!witnessed(entity)) continue;
             if (operation.equals("operate")) entity.canUpdate(true);
-            CompoundTag nbt = new CompoundTag();
-            if (!entity.saveAsPassenger(nbt)) throw new IllegalStateException("Could not serialize actor");
+            CompoundTag nbt = NativeActorIo.saveAsPassenger(entity);
             JsonObject entry = encode(nbt);
-            entry.addProperty("witness", nbt.getCompound("ForgeData").getString("AdvWorksActor"));
+            entry.addProperty("witness", nbt.getCompound("ForgeData").orElseThrow().getString("AdvWorksActor").orElseThrow());
             entry.addProperty("ticksExisted", entity.tickCount);
             entities.add(entry);
         }

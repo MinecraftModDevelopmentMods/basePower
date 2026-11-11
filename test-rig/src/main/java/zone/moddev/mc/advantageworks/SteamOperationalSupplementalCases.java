@@ -9,7 +9,7 @@ import java.util.UUID;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.entity.animal.Cow;
+import net.minecraft.world.entity.animal.cow.Cow;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.network.protocol.Packet;
@@ -19,7 +19,7 @@ import net.minecraft.server.network.ServerGamePacketListenerImpl;
 import net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.level.GameType;
@@ -166,7 +166,7 @@ final class SteamOperationalSupplementalCases {
             }
         };
         shot.player.gameMode.changeGameModeForPlayer(GameType.SURVIVAL);
-        shot.player.moveTo(muzzle.getX() + 0.5, muzzle.getY(), muzzle.getZ() + 0.5, 0, 0);
+        shot.player.snapTo(muzzle.getX() + 0.5, muzzle.getY(), muzzle.getZ() + 0.5, 0, 0);
         shot.player.setDeltaMovement(Vec3.ZERO);
         shot.weapon = new ItemStack(item(c, "basesteam:musket"));
         shot.player.setItemInHand(InteractionHand.MAIN_HAND, shot.weapon);
@@ -183,7 +183,11 @@ final class SteamOperationalSupplementalCases {
         shot.impact = target(c, 16.5, 8.5, 16.5);
         c.record("impact/uuid", shot.impact.getUUID().toString());
         if (collateral) {
-            shot.collateral = target(c, 17.1, 8.5, 16.5);
+            // NoAI skips travel, not native collision pushes. Keep the stationary cows disjoint.
+            shot.collateral = target(c, 17.5, 8.5, 16.5);
+            boolean overlap = shot.impact.getBoundingBox().intersects(shot.collateral.getBoundingBox());
+            c.record("collateral/initialBoundsOverlap", overlap);
+            c.require(!overlap, "Stationary native targets do not accumulate collision impulses against each other");
             c.record("collateral/uuid", shot.collateral.getUUID().toString());
         }
         // Even a missed shot has an in-bay, nonflammable physical backstop.
@@ -191,12 +195,12 @@ final class SteamOperationalSupplementalCases {
     }
 
     private static Cow target(MachineContext c, double x, double y, double z) {
-        Cow target = EntityType.COW.create(c.world);
+        Cow target = EntityType.COW.create(c.world, net.minecraft.world.entity.EntitySpawnReason.COMMAND);
         c.require(target != null, "Native living target is available");
         BlockPos origin = c.at(0, 0, 0);
         target.getAttribute(Attributes.MAX_HEALTH).setBaseValue(1000);
         target.setHealth(1000);
-        target.moveTo(origin.getX() + x, origin.getY() + y, origin.getZ() + z, 0, 0);
+        target.snapTo(origin.getX() + x, origin.getY() + y, origin.getZ() + z, 0, 0);
         target.setNoAi(true); target.setNoGravity(true); target.setPersistenceRequired();
         c.require(c.world.addFreshEntity(target), "Target enters the actual server world");
         return target;
@@ -204,11 +208,11 @@ final class SteamOperationalSupplementalCases {
 
     private static void fire(MachineContext c, Shot shot) {
         Item weapon = shot.weapon.getItem();
-        c.require(weapon.use(c.world, shot.player, InteractionHand.MAIN_HAND).getResult() == InteractionResult.SUCCESS,
+        c.require(weapon.use(c.world, shot.player, InteractionHand.MAIN_HAND) == InteractionResult.SUCCESS,
                 "Native rapid reload interaction succeeds");
         c.require(shot.player.getInventory().getItem(1).getCount() == 1
-                && WorksItemData.read(shot.weapon).getByte("loaded") == 1, "Exactly one finite cartridge loads the chamber");
-        c.require(weapon.use(c.world, shot.player, InteractionHand.MAIN_HAND).getResult() == InteractionResult.SUCCESS
+                && WorksItemData.read(shot.weapon).getByte("loaded").orElseThrow() == 1, "Exactly one finite cartridge loads the chamber");
+        c.require(weapon.use(c.world, shot.player, InteractionHand.MAIN_HAND) == InteractionResult.SUCCESS
                 && shot.player.isUsingItem(), "Native use interaction enters the aiming lifecycle");
         shot.player.releaseUsingItem();
     }
@@ -226,7 +230,7 @@ final class SteamOperationalSupplementalCases {
                 "Unenchanted damage is exactly the configured direct impact");
         c.require(shot.weapon.getDamageValue() == 1 && shot.player.getInventory().getItem(1).getCount() == 1,
                 "Each shot consumes one durability and exactly one cartridge, without duplicating debit");
-        c.require(WorksItemData.read(shot.weapon).getByte("loaded") == 0, "Shot leaves an empty chamber");
+        c.require(WorksItemData.read(shot.weapon).getByte("loaded").orElseThrow() == 0, "Shot leaves an empty chamber");
         inside(c, shot.impact);
     }
 
@@ -240,14 +244,14 @@ final class SteamOperationalSupplementalCases {
     }
 
     private static Item item(MachineContext c, String id) {
-        Item item = ForgeRegistries.ITEMS.getValue(ResourceLocation.parse(id));
+        Item item = ForgeRegistries.ITEMS.getValue(Identifier.parse(id));
         c.require(item != null && item != net.minecraft.world.item.Items.AIR, "Registered item " + id);
         return item;
     }
 
     private static void enchant(MachineContext c, ItemStack stack, String id, int level) {
         var enchantment = c.world.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT)
-                .getOrThrow(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ENCHANTMENT, ResourceLocation.parse(id)));
+                .getOrThrow(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ENCHANTMENT, Identifier.parse(id)));
         c.require(level >= 1 && level <= enchantment.value().getMaxLevel(), "Registered supported enchantment " + id);
         stack.enchant(enchantment, level);
     }

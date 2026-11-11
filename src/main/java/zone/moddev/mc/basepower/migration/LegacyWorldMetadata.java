@@ -13,7 +13,7 @@ import net.minecraft.nbt.NbtIo;
 import net.minecraft.nbt.NbtAccounter;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraftforge.fml.ModList;
 
 /** Translate renamed mods before vanilla selects packs or Forge reads its saved mod list. */
@@ -38,39 +38,44 @@ public final class LegacyWorldMetadata {
     }
 
     static void remap(CompoundTag root, Predicate<String> loaded) {
-        CompoundTag forge = root.getCompound("fml");
-        CompoundTag registries = forge.getCompound("Registries");
-        if (registries.contains("minecraft:motive", Tag.TAG_COMPOUND)
+        CompoundTag forge = root.getCompoundOrEmpty("fml");
+        CompoundTag registries = forge.getCompoundOrEmpty("Registries");
+        if (zone.moddev.mc.basepower.util.NbtCompat.containsTag(registries, "minecraft:motive", Tag.TAG_COMPOUND)
                 && !registries.contains("minecraft:painting_variant")) {
             // The registry was renamed; keep its saved IDs, including modded entries.
-            registries.put("minecraft:painting_variant", registries.getCompound("minecraft:motive"));
+            registries.put("minecraft:painting_variant", registries.getCompoundOrEmpty("minecraft:motive"));
             registries.remove("minecraft:motive");
         }
-        ListTag mods = forge.getList("LoadingModList", Tag.TAG_COMPOUND);
+        ListTag mods = typedList(forge, "LoadingModList", CompoundTag.class);
         Set<String> recordedMods = new HashSet<>();
-        for (int i = 0; i < mods.size(); ++i) recordedMods.add(mods.getCompound(i).getString("ModId"));
+        for (int i = 0; i < mods.size(); ++i) recordedMods.add(mods.getCompoundOrEmpty(i).getStringOr("ModId", ""));
         for (int i = 0; i < mods.size(); ++i) {
-            CompoundTag mod = mods.getCompound(i);
-            String id = mod.getString("ModId");
+            CompoundTag mod = mods.getCompoundOrEmpty(i);
+            String id = mod.getStringOr("ModId", "");
             String target = target(id, loaded);
             if (target.equals(id)) continue;
             if (recordedMods.add(target)) mod.putString("ModId", target);
             else mods.remove(i--);
         }
 
-        CompoundTag packs = root.getCompound("Data").getCompound("DataPacks");
-        ListTag enabled = packs.getList("Enabled", Tag.TAG_STRING);
-        ListTag disabled = packs.getList("Disabled", Tag.TAG_STRING);
+        CompoundTag packs = root.getCompoundOrEmpty("Data").getCompoundOrEmpty("DataPacks");
+        ListTag enabled = typedList(packs, "Enabled", StringTag.class);
+        ListTag disabled = typedList(packs, "Disabled", StringTag.class);
         Set<String> recordedPacks = new HashSet<>();
-        enabled.forEach(pack -> recordedPacks.add(pack.getAsString()));
-        disabled.forEach(pack -> recordedPacks.add(pack.getAsString()));
+        enabled.forEach(pack -> recordedPacks.add(((StringTag)pack).value()));
+        disabled.forEach(pack -> recordedPacks.add(((StringTag)pack).value()));
         remapPacks(enabled, recordedPacks, loaded);
         remapPacks(disabled, recordedPacks, loaded);
     }
 
+    private static ListTag typedList(CompoundTag owner, String key, Class<? extends Tag> elementType) {
+        return owner.getList(key).filter(values -> values.stream().allMatch(elementType::isInstance))
+                .orElseGet(ListTag::new);
+    }
+
     private static void remapPacks(ListTag packs, Set<String> recorded, Predicate<String> loaded) {
         for (int i = 0; i < packs.size(); ++i) {
-            String pack = packs.getString(i);
+            String pack = packs.getStringOr(i, "");
             if (!pack.startsWith("mod:")) continue;
             String replacement = "mod:" + target(pack.substring(4), loaded);
             if (replacement.equals(pack)) continue;
@@ -81,7 +86,7 @@ public final class LegacyWorldMetadata {
 
     private static String target(String id, Predicate<String> loaded) {
         if (id.isEmpty() || id.indexOf(':') >= 0) return id;
-        ResourceLocation key = ResourceLocation.tryParse(id + ":metadata");
+        Identifier key = Identifier.tryParse(id + ":metadata");
         if (key == null) return id;
         String replacement = LegacyMigrationApi.registryTarget(key).getNamespace();
         return !replacement.equals(id) && loaded.test(replacement) && !loaded.test(id) ? replacement : id;

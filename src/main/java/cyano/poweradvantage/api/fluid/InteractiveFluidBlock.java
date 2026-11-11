@@ -32,7 +32,8 @@ public class InteractiveFluidBlock extends LiquidBlock {
     }
 
     @Override
-    public void entityInside(BlockState state, Level world, BlockPos pos, Entity entity) {
+    public void entityInside(BlockState state, Level world, BlockPos pos, Entity entity,
+            net.minecraft.world.entity.InsideBlockEffectApplier effects, boolean moving) {
         if (immersionEffect != null && entity instanceof LivingEntity) {
             immersionEffect.accept(world, (LivingEntity) entity);
         }

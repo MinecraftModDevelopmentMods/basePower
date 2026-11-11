@@ -21,7 +21,7 @@ import net.minecraft.world.level.Level;
  * @author DrCyano
  *
  */
-public class BlockPowerSwitch extends Block implements ITypedConduit {
+public class BlockPowerSwitch extends cyano.poweradvantage.api.ConduitBlock implements ITypedConduit {
 	/**
 	 * Blockstate peroperty. If true, conduct power, if false, don't
 	 */
@@ -47,8 +47,9 @@ public class BlockPowerSwitch extends Block implements ITypedConduit {
 	 * @param powerType Type of power to switch
 	 */
 	public BlockPowerSwitch(ConduitType powerType) {
-		this(powerType, Properties.of().mapColor(MapColor.STONE).pushReaction(PushReaction.BLOCK)
-				.forceSolidOn().strength(0.75F));
+		this(powerType, zone.moddev.mc.basepower.init.Blocks.properties("fluid_switch",
+                Properties.of().mapColor(MapColor.STONE).pushReaction(PushReaction.BLOCK)
+				.forceSolidOn().strength(0.75F)));
 	}
 
 	/**
@@ -163,7 +164,8 @@ public class BlockPowerSwitch extends Block implements ITypedConduit {
 	}
 
 	@Override
-	public void neighborChanged(BlockState state, Level world, BlockPos pos, Block block, BlockPos fromPos, boolean isMoving) {
+	public void neighborChanged(BlockState state, Level world, BlockPos pos, Block block,
+            net.minecraft.world.level.redstone.Orientation orientation, boolean isMoving) {
 		onNeighborChange(world, pos, pos);
 	}
 

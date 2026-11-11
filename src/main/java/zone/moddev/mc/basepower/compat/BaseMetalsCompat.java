@@ -3,7 +3,7 @@ package zone.moddev.mc.basepower.compat;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.registries.ForgeRegistries;
 import zone.moddev.mc.basepower.PowerAdvantage;
@@ -30,7 +30,7 @@ public final class BaseMetalsCompat {
     }
 
     public static ItemStack getSteelPlate() {
-        Item item = ForgeRegistries.ITEMS.getValue(ResourceLocation.fromNamespaceAndPath("basemetals", "steel_plate"));
+        Item item = ForgeRegistries.ITEMS.getValue(Identifier.fromNamespaceAndPath("basemetals", "steel_plate"));
         return item == null ? null : new ItemStack(item);
     }
 

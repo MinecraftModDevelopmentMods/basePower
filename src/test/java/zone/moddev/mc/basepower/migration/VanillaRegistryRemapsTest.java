@@ -5,7 +5,7 @@ import com.mojang.serialization.JsonOps;
 import net.minecraft.SharedConstants;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.datafix.DataFixers;
 import net.minecraft.util.datafix.fixes.References;
 import org.junit.Test;
@@ -14,17 +14,17 @@ import static org.junit.Assert.*;
 public class VanillaRegistryRemapsTest {
     @org.junit.Test public void trialSpawnerRenamesResolveToActualNativeSounds() {
         net.minecraft.SharedConstants.tryDetectVersion(); net.minecraft.server.Bootstrap.bootStrap();
-        var registry = net.minecraft.resources.ResourceLocation.parse("minecraft:sound_event");
+        var registry = net.minecraft.resources.Identifier.parse("minecraft:sound_event");
         for (String[] pair : new String[][] {
                 {"block.trial_spawner.ambient_charged", "block.trial_spawner.ambient_ominous"},
                 {"block.trial_spawner.charge_activate", "block.trial_spawner.ominous_activate"}}) {
             var actual = VanillaRegistryRemaps.replacement(registry,
-                    net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("minecraft", pair[0]));
-            assertEquals(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("minecraft", pair[1]), actual);
+                    net.minecraft.resources.Identifier.fromNamespaceAndPath("minecraft", pair[0]));
+            assertEquals(net.minecraft.resources.Identifier.fromNamespaceAndPath("minecraft", pair[1]), actual);
             assertTrue(net.minecraftforge.registries.ForgeRegistries.SOUND_EVENTS.containsKey(actual));
         }
         assertNull(VanillaRegistryRemaps.replacement(registry,
-                net.minecraft.resources.ResourceLocation.parse("othermod:block.trial_spawner.charge_activate")));
+                net.minecraft.resources.Identifier.parse("othermod:block.trial_spawner.charge_activate")));
     }
 
     @Test public void retainsBothGrassPathRegistrySnapshots() {
@@ -97,13 +97,13 @@ public class VanillaRegistryRemapsTest {
     }
 
     @Test public void onlyRetiresBiomeIndexesHandledByTheNativeDataFixer() {
-        ResourceLocation biomes = id("worldgen/biome");
+        Identifier biomes = id("worldgen/biome");
         assertEquals(id("desert"), VanillaRegistryRemaps.vanillaBiomeFixTarget(biomes, id("desert_hills")));
         assertEquals(id("desert"), VanillaRegistryRemaps.vanillaBiomeFixTarget(biomes, id("desert_lakes")));
         assertEquals(id("warm_ocean"), VanillaRegistryRemaps.vanillaBiomeFixTarget(biomes, id("deep_warm_ocean")));
         assertNull(VanillaRegistryRemaps.vanillaBiomeFixTarget(biomes, id("plains")));
         assertNull(VanillaRegistryRemaps.vanillaBiomeFixTarget(biomes, id("unknown_biome")));
-        assertNull(VanillaRegistryRemaps.vanillaBiomeFixTarget(biomes, ResourceLocation.parse("example:desert_hills")));
+        assertNull(VanillaRegistryRemaps.vanillaBiomeFixTarget(biomes, Identifier.parse("example:desert_hills")));
         assertNull(VanillaRegistryRemaps.vanillaBiomeFixTarget(id("block"), id("desert_hills")));
     }
 
@@ -121,7 +121,7 @@ public class VanillaRegistryRemapsTest {
     }
 
     @Test public void leavesOtherModsAndUnrecognizedVanillaEntriesAlone() {
-        assertNull(VanillaRegistryRemaps.replacement(id("item"), ResourceLocation.parse("othermod:zombie_pigman_spawn_egg")));
+        assertNull(VanillaRegistryRemaps.replacement(id("item"), Identifier.parse("othermod:zombie_pigman_spawn_egg")));
         assertNull(VanillaRegistryRemaps.replacement(id("item"), id("unknown_item")));
         assertNull(VanillaRegistryRemaps.replacement(id("sound_event"), id("music.unknown")));
     }
@@ -135,5 +135,5 @@ public class VanillaRegistryRemapsTest {
         assertEquals(id(to), VanillaRegistryRemaps.replacement(id(registry), id(from)));
     }
 
-    private static ResourceLocation id(String name) { return ResourceLocation.fromNamespaceAndPath("minecraft", name); }
+    private static Identifier id(String name) { return Identifier.fromNamespaceAndPath("minecraft", name); }
 }

@@ -12,8 +12,9 @@ import net.minecraft.world.level.BlockGetter;
 public class InfiniteEnergyBlock extends BlockSimplePowerMachine {
 
 	public InfiniteEnergyBlock(ConduitType energyType) {
-		super(Properties.of().mapColor(MapColor.METAL).forceSolidOn().strength(0.75F)
-				.noOcclusion().dynamicShape(), energyType);
+		super(zone.moddev.mc.basepower.init.Blocks.properties("infinite_" + energyType,
+                Properties.of().mapColor(MapColor.METAL).forceSolidOn().strength(0.75F)
+				.noOcclusion().dynamicShape()), energyType);
 	}
 
 	@Override

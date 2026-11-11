@@ -24,8 +24,9 @@ public class MachineGuiTitleTest {
         ChestBlockEntity tile = new ChestBlockEntity(net.minecraft.core.BlockPos.ZERO, Blocks.CHEST.defaultBlockState());
         var registries = net.minecraft.core.RegistryAccess.fromRegistryOfRegistries(net.minecraft.core.registries.BuiltInRegistries.REGISTRY);
         var tag = new net.minecraft.nbt.CompoundTag();
-        tag.putString("CustomName", Component.Serializer.toJson(Component.literal("John's oil tank"), registries));
-        tile.loadWithComponents(tag, registries);
+        tag.store("CustomName", net.minecraft.network.chat.ComponentSerialization.CODEC, Component.literal("John's oil tank"));
+        tile.loadWithComponents(net.minecraft.world.level.storage.TagValueInput.create(
+                net.minecraft.util.ProblemReporter.DISCARDING, registries, tag));
         assertEquals("John's oil tank", MachineGUIRegistry.menuTitle(tile, Blocks.CHEST).getString());
     }
 

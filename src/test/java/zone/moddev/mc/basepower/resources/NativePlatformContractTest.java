@@ -15,46 +15,47 @@ import org.objectweb.asm.tree.MethodNode;
 import static org.junit.Assert.*;
 
 public class NativePlatformContractTest {
-    @Test public void onlyPreDatafixMigrationStillUsesACoremod() throws Exception {
-        String json = new String(Files.readAllBytes(Paths.get("src/main/resources/META-INF/coremods.json")), StandardCharsets.UTF_8);
-        JsonObject coremods = new JsonParser().parse(json).getAsJsonObject();
-        assertEquals(1, coremods.size());
-        assertEquals("coremods/poweradvantage_118_migration.js", coremods.get("poweradvantage_118_migration").getAsString());
-        for (String removed : new String[] {"oil_renderer", "material_tags", "parts_loot"})
-            assertFalse(Files.exists(Paths.get("src/main/resources/coremods/poweradvantage_" + removed + ".js")));
+    @Test public void allMigrationHooksUseRequiredNativeMixinsAndNoJavaScriptCoremod() throws Exception {
+        assertFalse(Files.exists(Paths.get("src/main/resources/META-INF/coremods.json")));
+        JsonObject config = JsonParser.parseString(Files.readString(Paths.get("src/main/resources/basepower.mixins.json")))
+                .getAsJsonObject();
+        assertTrue(config.get("required").getAsBoolean());
+        assertEquals("JAVA_21", config.get("compatibilityLevel").getAsString());
+        assertEquals(1, config.getAsJsonObject("injectors").get("defaultRequire").getAsInt());
+        java.util.Set<String> hooks = new java.util.HashSet<>();
+        config.getAsJsonArray("mixins").forEach(value -> hooks.add(value.getAsString()));
+        assertEquals(java.util.Set.of("BlockStateDataMixin", "LevelStorageSourceMixin", "PlayerDataStorageMixin",
+                "SimpleRegionStorageMixin", "WorldGenRegionMixin"), hooks);
+        for (String name : hooks) assertNotNull(read("zone/moddev/mc/basepower/mixin/" + name));
     }
 
-    @Test public void pinnedForgeFiresTagEventAfterBindingNativeCollections() throws Exception {
+    @Test public void nativeRecipeAndAdvancementLoadingShareThePostponedTagContext() throws Exception {
         ClassNode node = read("net/minecraft/server/ReloadableServerResources");
-        MethodNode bind = node.methods.stream().filter(method -> method.name.equals("updateRegistryTags")
-                        && method.desc.contains("TagManager$LoadResult"))
+        MethodNode constructor = node.methods.stream().filter(method -> method.name.equals("<init>"))
                 .findFirst().orElseThrow();
-        assertTrue(java.util.Arrays.stream(bind.instructions.toArray()).anyMatch(instruction ->
-                instruction instanceof MethodInsnNode call && call.owner.equals("net/minecraft/core/Registry")
-                        && call.name.equals("bindTags")));
-        int events = 0;
-        for (MethodNode method : node.methods) {
-            boolean installed = false;
-            for (AbstractInsnNode instruction : method.instructions.toArray()) {
-                if (instruction instanceof MethodInsnNode) {
-                    MethodInsnNode call = (MethodInsnNode) instruction;
-                    if (call.owner.equals("java/lang/Iterable") || call.owner.equals("java/util/List")) {
-                        if (call.name.equals("forEach")) installed = true;
-                    }
+        int contexts = 0, recipes = 0, advancements = 0;
+        for (AbstractInsnNode instruction : constructor.instructions.toArray()) {
+            if (instruction instanceof MethodInsnNode call && call.name.equals("<init>")) {
+                if (call.owner.equals("net/minecraftforge/common/crafting/conditions/ConditionContext")) contexts++;
+                if (call.owner.equals("net/minecraft/world/item/crafting/RecipeManager")) {
+                    assertEquals(1, contexts);
+                    assertTrue(call.desc.contains("ICondition$IContext"));
+                    recipes++;
                 }
-                if (instruction instanceof MethodInsnNode call
-                        && call.owner.equals("net/minecraftforge/event/ForgeEventFactory")
-                        && call.name.equals("onTagsUpdated")) {
-                    assertTrue("Bind tags before notifying observers", installed);
-                    events++;
+                if (call.owner.equals("net/minecraft/server/ServerAdvancementManager")) {
+                    assertEquals(1, contexts);
+                    assertTrue(call.desc.contains("ICondition$IContext"));
+                    advancements++;
                 }
             }
         }
-        assertEquals(1, events);
+        assertEquals(1, contexts);
+        assertEquals(1, recipes);
+        assertEquals(1, advancements);
     }
 
     @Test public void nativeLootLoaderCallsForgeEventAndNotTheRemovedAdvantageBridge() throws Exception {
-        ClassNode node = read("net/minecraft/world/level/storage/loot/LootDataType");
+        ClassNode node = read("net/minecraftforge/common/ForgeHooks");
         int calls = 0;
         for (MethodNode method : node.methods) for (AbstractInsnNode instruction : method.instructions.toArray()) {
             if (instruction instanceof MethodInsnNode call) {

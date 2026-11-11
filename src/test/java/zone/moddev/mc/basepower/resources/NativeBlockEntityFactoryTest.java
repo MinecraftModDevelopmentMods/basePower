@@ -28,7 +28,7 @@ public class NativeBlockEntityFactoryTest {
         BlockConveyor block = new BlockConveyor(0.75F);
         BlockEntityType<TileEntityConveyor> old = Entities.CONVEYOR;
         try {
-            Entities.CONVEYOR = BlockEntityType.Builder.of(TileEntityConveyor::new, block).build(null);
+            Entities.CONVEYOR = new BlockEntityType<>(TileEntityConveyor::new, java.util.Set.of(block));
             BlockPos position = new BlockPos(37, 83, -41);
             BlockState state = block.defaultBlockState().setValue(BlockConveyor.FACING, net.minecraft.core.Direction.UP);
             TileEntityConveyor placed = (TileEntityConveyor)block.newBlockEntity(position, state);
@@ -40,8 +40,9 @@ public class NativeBlockEntityFactoryTest {
                 assertNotNull(block.getTicker(null, state, Entities.CONVEYOR));
                 net.minecraft.nbt.CompoundTag saved = new net.minecraft.nbt.CompoundTag();
                 saved.putInt("x", 0);
-                tile.loadWithComponents(saved,
-                        net.minecraft.core.RegistryAccess.fromRegistryOfRegistries(net.minecraft.core.registries.BuiltInRegistries.REGISTRY));
+                tile.loadWithComponents(net.minecraft.world.level.storage.TagValueInput.create(
+                        net.minecraft.util.ProblemReporter.DISCARDING,
+                        net.minecraft.core.RegistryAccess.fromRegistryOfRegistries(net.minecraft.core.registries.BuiltInRegistries.REGISTRY), saved));
                 assertEquals("NBT cannot replace the native factory's final position", position, tile.getBlockPos());
             }
             assertNull(block.getTicker(null, state, BlockEntityType.CHEST));

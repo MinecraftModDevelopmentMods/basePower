@@ -4,30 +4,27 @@ import com.mojang.datafixers.DSL;
 import com.mojang.datafixers.DataFixer;
 import com.mojang.datafixers.schemas.Schema;
 import com.mojang.serialization.Dynamic;
-import java.io.IOException;
-import java.io.InputStream;
-import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 import net.minecraft.SharedConstants;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtAccounter;
 import net.minecraft.nbt.NbtIo;
-import net.minecraft.nbt.Tag;
+import net.minecraft.nbt.NbtOps;
 import net.minecraft.server.Bootstrap;
 import net.minecraft.util.datafix.DataFixers;
+import net.minecraft.util.datafix.DataFixTypes;
 import net.minecraft.util.datafix.fixes.References;
-import net.minecraft.world.level.validation.DirectoryValidator;
-import net.minecraftforge.fml.ModList;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.FieldInsnNode;
 import org.objectweb.asm.tree.InsnList;
@@ -35,195 +32,203 @@ import org.objectweb.asm.tree.InsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.MethodNode;
 import static org.junit.Assert.*;
+import static zone.moddev.mc.basepower.migration.NativeMigrationMixinContract.*;
 
+/** Native redirect contracts and real handler execution; packaged tests prove live Mixin application. */
 public class LegacyPlayerTransformerTest {
-    private static final String NATIVE = "net/minecraft/util/datafix/DataFixTypes";
-    private static final String WRAPPER = "zone/moddev/mc/basepower/migration/LegacyPlayerDataFixes";
-    private static final String STORAGE = "net/minecraft/world/level/storage/";
-    private static final String TAG = "Lnet/minecraft/nbt/CompoundTag;";
-    private static final String DYNAMIC = "Lcom/mojang/serialization/Dynamic;";
-    private static final String FIXER = "Lcom/mojang/datafixers/DataFixer;";
-    private static final String READER_DESC = "(Ljava/nio/file/Path;" + FIXER + ")" + DYNAMIC;
-    private static final PlayerHook LOOSE = new PlayerHook("PlayerDataStorage", "legacy_player_file", TAG, "updateNativePlayer");
-    private static final PlayerHook EMBEDDED = new PlayerHook("LevelStorageSource", "legacy_world_info", DYNAMIC,
-            "updateNativeEmbeddedPlayer");
-    private static final List<PlayerHook> TARGETS = List.of(LOOSE, EMBEDDED);
-
     @Rule public final TemporaryFolder temp = new TemporaryFolder();
 
-    @Test public void exactNativeLoosePlayerLoadAndEmbeddedUpdateArePatched() throws Exception {
-        for (PlayerHook target : TARGETS) {
-            ClassNode node = target.read();
-            MethodNode containing = nativePlayerMethod(node, target);
-            assertTrue(containing.name, containing.name.startsWith(target == LOOSE ? "lambda$load$" : "lambda$readLevelDataTagFixed$"));
-            int otherNativeUpdates = target.nativeCalls(node).size() - 1;
-            target.transform(node);
-            assertEquals(otherNativeUpdates, target.nativeCalls(node).size());
-            assertEquals(1, LegacyTransformerOrderTest.calls(node, WRAPPER, target.wrapperName(), target.wrapperDesc()));
-            assertEquals(1, LegacyTransformerOrderTest.calls(containing, WRAPPER, target.wrapperName(), target.wrapperDesc()));
-        }
+    private static Binding loose() throws Exception {
+        return binding("basepower", "PlayerDataStorageMixin", "preservePlayer");
     }
 
-    @Test public void transformedNativeEmbeddedReaderExecutesAndDoesNotReconvertCurrentPlayer() throws Exception {
+    private static Binding embedded() throws Exception {
+        return binding("basepower", "LevelStorageSourceMixin", "preserveEmbeddedPlayer");
+    }
+
+    private static List<Binding> targets() throws Exception { return List.of(loose(), embedded()); }
+
+    @Test public void exactNativeLoosePlayerLoadAndEmbeddedUpdateAreRedirected() throws Exception {
+        for (Binding target : targets()) {
+            assertEquals("*", target.selector());
+            assertTrue(target.injector().desc.endsWith("/Redirect;"));
+            target.assertAt("INVOKE");
+            String payload = target.target().name.endsWith("PlayerDataStorage") ? TAG : DYNAMIC;
+            assertEquals("L" + FIX_TYPES + ";updateToCurrentVersion(" + FIXER + payload + "I)" + payload,
+                    target.invocation());
+            assertEquals("(L" + FIX_TYPES + ";" + FIXER + payload + "I)" + payload, target.handler().desc);
+            target.assertOnePlayerSite(target.target());
+            String wrapper = payload.equals(TAG) ? "updateNativePlayer" : "updateNativeEmbeddedPlayer";
+            assertEquals(1, calls(target.handler()).stream().filter(call -> call.owner.equals(
+                    "zone/moddev/mc/basepower/migration/LegacyPlayerDataFixes") && call.name.equals(wrapper)).count());
+        }
+        assertEquals(1, value(loose().injector(), "require", -1));
+        assertEquals(1, value(loose().injector(), "allow", -1));
+        // Other embedded data-fix types are deliberately redirected too, then forwarded unchanged.
+        assertEquals(4, embedded().invokeSites(embedded().target()));
+        assertEquals(1, loose().invokeSites(loose().target()));
+    }
+
+    @Test public void nativeEmbeddedRedirectExecutesAndDoesNotReconvertCurrentPlayer() throws Exception {
         SharedConstants.tryDetectVersion();
         Bootstrap.bootStrap();
-        ClassNode node = EMBEDDED.read();
-        EMBEDDED.transform(node);
-        byte[] transformed = bytes(node);
-        String name = node.name.replace('/', '.');
-        Class<?> storage = new ClassLoader(getClass().getClassLoader()) {
-            Class<?> define() { return defineClass(name, transformed, 0, transformed.length); }
-
-            @Override protected Class<?> loadClass(String requested, boolean resolve) throws ClassNotFoundException {
-                // Keep the native access object's nest in the transformed reader's loader.
-                if (!requested.startsWith(name + "$")) return super.loadClass(requested, resolve);
-                synchronized (getClassLoadingLock(requested)) {
-                    Class<?> type = findLoadedClass(requested);
-                    if (type == null) {
-                        try (InputStream input = LegacyTransformerOrderTest.resource("/" + requested.replace('.', '/') + ".class")) {
-                            byte[] data = input.readAllBytes();
-                            type = defineClass(requested, data, 0, data.length);
-                        } catch (IOException e) {
-                            throw new ClassNotFoundException(requested, e);
-                        }
-                    }
-                    if (resolve) resolveClass(type);
-                    return type;
-                }
-            }
-        }.define();
-        Path saves = temp.newFolder("saves").toPath();
         RecordingFixer fixer = new RecordingFixer(DataFixers.getDataFixer());
-        Object validator = storage.getMethod("parseValidator", Path.class).invoke(null, saves.resolve("allowed_symlinks.txt"));
-        Object source = storage.getConstructor(Path.class, Path.class, DirectoryValidator.class, DataFixer.class)
-                .newInstance(saves, saves.resolveSibling("backups"), validator, fixer);
+        Method redirect = redirect();
+        int current = SharedConstants.getCurrentVersion().dataVersion().version();
+        for (int old : new int[] {512, 1343}) {
+            Path file = temp.newFolder("legacy-" + old).toPath().resolve("level.dat");
+            CompoundTag original = levelData(old, legacyPlayer());
+            NbtIo.writeCompressed(original, file);
+            CompoundTag read = NbtIo.readCompressed(file, NbtAccounter.unlimitedHeap());
+            CompoundTag migrated = invoke(redirect, DataFixTypes.PLAYER, fixer,
+                    read.getCompoundOrEmpty("Data").getCompoundOrEmpty("Player"), old);
+            assertPlayerContents(migrated);
+            int boundary = 3465;
+            assertEquals(old < 704 ? List.of(old + "->704", "704->" + boundary, boundary + "->" + current)
+                    : List.of(old + "->" + boundary, boundary + "->" + current), fixer.playerCalls);
+            assertEquals(original, NbtIo.readCompressed(file, NbtAccounter.unlimitedHeap()));
+            CompoundTag saved = levelData(current, migrated);
+            NbtIo.writeCompressed(saved, file);
+            fixer.playerCalls.clear();
+            assertEquals(migrated, invoke(redirect, DataFixTypes.PLAYER, fixer, migrated, current));
+            assertTrue("Current player must not re-enter legacy DFU", fixer.playerCalls.isEmpty());
+            assertEquals(saved, NbtIo.readCompressed(file, NbtAccounter.unlimitedHeap()));
+        }
+        CompoundTag unrelated = new CompoundTag();
+        unrelated.putString("witness", "native-forwarding");
+        fixer.playerCalls.clear();
+        CompoundTag expected = DataFixTypes.LEVEL.updateToCurrentVersion(DataFixers.getDataFixer(),
+                unrelated.copy(), current);
+        assertEquals(expected, invoke(redirect, DataFixTypes.LEVEL, fixer, unrelated, current));
+        assertTrue("Unrelated types cannot enter the player wrapper", fixer.playerCalls.isEmpty());
+    }
 
-        // An empty native ModList supplies the metadata hook's normal loader context in plain JUnit.
-        ModList previous = ModList.get();
-        if (previous == null) ModList.of(List.of(), List.of());
-        try {
-            int current = SharedConstants.getCurrentVersion().getDataVersion().getVersion();
-            for (int old : new int[] {512, 1343}) {
-                String world = "legacy-" + old;
-                Path levelDat = saves.resolve(world).resolve("level.dat");
-                CompoundTag original = levelData(old, legacyPlayer());
-                CompoundTag migrated;
-                try (AutoCloseable access = openWorld(storage, source, world)) {
-                    NbtIo.writeCompressed(original, levelDat);
-                    fixer.playerCalls.clear();
-                    migrated = readPlayer(access);
-                    assertPlayerContents(migrated);
-                    int boundary = 3465; // Minecraft 1.20.1, before item components.
-                    assertEquals(old < 704 ? List.of(old + "->704", "704->" + boundary, boundary + "->" + current)
-                            : List.of(old + "->" + boundary, boundary + "->" + current), fixer.playerCalls);
-                    assertEquals(original, NbtIo.readCompressed(levelDat, NbtAccounter.unlimitedHeap()));
-                }
-                CompoundTag saved = levelData(current, migrated);
-                NbtIo.writeCompressed(saved, levelDat);
-                try (AutoCloseable access = openWorld(storage, source, world)) {
-                    fixer.playerCalls.clear();
-                    assertEquals(migrated, readPlayer(access));
-                    assertTrue("Current player data must not re-enter legacy DFU", fixer.playerCalls.isEmpty());
-                    assertEquals(saved, NbtIo.readCompressed(levelDat, NbtAccounter.unlimitedHeap()));
-                }
+    @Test public void renamedNativeLambdaNamesDoNotAffectWildcardMatching() throws Exception {
+        for (Binding target : targets()) {
+            ClassNode nativeClass = read(target.target().name);
+            target.assertOnePlayerSite(nativeClass).name = "renamedPlayerLambda";
+            assertEquals("renamedPlayerLambda", target.assertOnePlayerSite(nativeClass).name);
+        }
+    }
+
+    @Test public void absentCallFailsClosedWithoutAcceptingOtherOwnersOrNames() throws Exception {
+        for (Binding target : targets()) for (boolean owner : new boolean[] {true, false}) {
+            ClassNode nativeClass = read(target.target().name);
+            MethodInsnNode call = playerCall(target, nativeClass);
+            if (owner) call.owner = "other/UnrelatedNBTUtil";
+            else call.name = "renamedNativePlayerUpdate";
+            rejectedUnchanged(target, nativeClass);
+        }
+    }
+
+    @Test public void duplicateCallsInOneReaderFailClosed() throws Exception {
+        for (Binding target : targets()) {
+            ClassNode nativeClass = read(target.target().name);
+            MethodNode method = target.assertOnePlayerSite(nativeClass);
+            MethodNode copy = copy(method, method.name);
+            for (var insn : method.instructions.toArray()) {
+                if (insn.getOpcode() == Opcodes.ARETURN) method.instructions.set(insn, new InsnNode(Opcodes.POP));
             }
-        } finally {
-            if (previous == null) {
-                Field instance = ModList.class.getDeclaredField("INSTANCE");
-                instance.setAccessible(true);
-                instance.set(null, null);
-            }
+            method.instructions.add(copy.instructions);
+            assertEquals(2, target.playerMethods(nativeClass).size());
+            rejectedUnchanged(target, nativeClass);
         }
     }
 
-    @Test public void renamedPlayerCallAndNativeLambdaNamesDoNotAffectMatching() throws Exception {
-        for (PlayerHook target : TARGETS) {
-            ClassNode node = target.read();
-            MethodNode method = nativePlayerMethod(node, target);
-            nativePlayerCall(node, target).name = "renamedNativePlayerUpdate";
-            method.name = "renamedPlayerLambda";
-            target.transform(node);
-            assertEquals(1, LegacyTransformerOrderTest.calls(method, WRAPPER, target.wrapperName(), target.wrapperDesc()));
-        }
-    }
-
-    @Test public void absentCallFailsClosedWithoutPatchingOtherOwners() throws Exception {
-        for (PlayerHook target : TARGETS) {
-            ClassNode node = target.read();
-            nativePlayerCall(node, target).owner = "other/UnrelatedNBTUtil";
-            rejectedUnchanged(node, target);
-        }
-    }
-
-    @Test public void duplicateCallsFailClosedBeforeEitherIsRewritten() throws Exception {
-        for (PlayerHook target : TARGETS) {
-            ClassNode node = target.read();
-            MethodNode method = nativePlayerMethod(node, target);
-            MethodInsnNode call = nativePlayerCall(node, target);
-            method.instructions.insertBefore(call, new MethodInsnNode(call.getOpcode(), call.owner, call.name, call.desc, call.itf));
-            rejectedUnchanged(node, target);
-        }
-    }
-
-    @Test public void duplicateEmbeddedPlayerSitesFailClosedBeforeAnyReaderIsRewritten() throws Exception {
-        ClassNode node = EMBEDDED.read();
-        MethodNode original = nativePlayerMethod(node, EMBEDDED);
-        MethodNode extra = new MethodNode(original.access, "anotherPlayerReader", original.desc, original.signature, null);
-        original.accept(extra);
-        node.methods.add(extra);
-        rejectedUnchanged(node, EMBEDDED);
+    @Test public void duplicateEmbeddedPlayerReadersFailClosed() throws Exception {
+        Binding target = embedded();
+        ClassNode nativeClass = read(target.target().name);
+        nativeClass.methods.add(copy(target.assertOnePlayerSite(nativeClass), "anotherPlayerReader"));
+        rejectedUnchanged(target, nativeClass);
     }
 
     @Test public void wrongOverloadIsNotMistakenForTheThreeArgumentCall() throws Exception {
-        for (PlayerHook target : TARGETS) {
-            ClassNode node = target.read();
-            nativePlayerCall(node, target).desc = target.desc().replace(";I)", ";II)");
-            rejectedUnchanged(node, target);
+        for (Binding target : targets()) {
+            ClassNode nativeClass = read(target.target().name);
+            MethodInsnNode call = playerCall(target, nativeClass);
+            call.desc = call.desc.replace(";I)", ";II)");
+            rejectedUnchanged(target, nativeClass);
         }
     }
 
-    @Test public void embeddedScanCannotBorrowAnotherDataFixTypeAfterPlayer() throws Exception {
-        ClassNode node = EMBEDDED.read();
-        MethodNode method = nativePlayerMethod(node, EMBEDDED);
-        AbstractInsnNode playerType = Arrays.stream(method.instructions.toArray())
-                .filter(LegacyPlayerTransformerTest::loadsPlayerType).findFirst().orElseThrow();
-        InsnList changeType = new InsnList();
-        changeType.add(new InsnNode(Opcodes.POP));
-        changeType.add(new FieldInsnNode(Opcodes.GETSTATIC, NATIVE, "LEVEL", "L" + NATIVE + ";"));
-        method.instructions.insert(playerType, changeType);
-        rejectedUnchanged(node, EMBEDDED);
+    @Test public void embeddedReceiverCannotBorrowANearbyPlayerConstant() throws Exception {
+        Binding target = embedded();
+        ClassNode nativeClass = read(target.target().name);
+        MethodNode method = target.assertOnePlayerSite(nativeClass);
+        var player = Arrays.stream(method.instructions.toArray()).filter(insn -> insn instanceof FieldInsnNode f
+                && f.owner.equals(FIX_TYPES) && f.name.equals("PLAYER")).findFirst().orElseThrow();
+        InsnList change = new InsnList();
+        change.add(new InsnNode(Opcodes.POP));
+        change.add(new FieldInsnNode(Opcodes.GETSTATIC, FIX_TYPES, "LEVEL", "L" + FIX_TYPES + ";"));
+        method.instructions.insert(player, change);
+        rejectedUnchanged(target, nativeClass);
     }
 
-    @Test public void publicEmbeddedReadStillDelegatesToThePatchedNativeReader() throws Exception {
-        ClassNode node = EMBEDDED.read();
-        EMBEDDED.transform(node);
-        ClassNode access = LegacyTransformerOrderTest.nativeClass(STORAGE + "LevelStorageSource$LevelStorageAccess");
-        assertEquals(1, LegacyTransformerOrderTest.calls(access, node.name, "readLevelDataTagFixed", READER_DESC));
-        assertEquals(1, LegacyTransformerOrderTest.calls(node, WRAPPER, EMBEDDED.wrapperName(), EMBEDDED.wrapperDesc()));
+    @Test public void publicEmbeddedReadStillDelegatesToTheRedirectedNativeReader() throws Exception {
+        Binding target = embedded();
+        ClassNode access = read(STORAGE + "LevelStorageSource$LevelStorageAccess");
+        assertEquals(1, calls(access).stream().filter(call -> call.owner.equals(target.target().name)
+                && call.name.equals("readLevelDataTagFixed")
+                && call.desc.equals("(Ljava/nio/file/Path;" + FIXER + ")" + DYNAMIC)).count());
+        MethodNode nativeReader = method(target.target(), "readLevelDataTagFixed");
+        var updates = calls(nativeReader).stream().filter(call -> call.owner.equals("com/mojang/serialization/Dynamic")
+                && call.name.equals("update") && call.desc.equals(
+                        "(Ljava/lang/String;Ljava/util/function/Function;)Lcom/mojang/serialization/Dynamic;")).toList();
+        assertEquals("Player and WorldGenSettings are separate native updates", 2, updates.size());
+        var frames = new org.objectweb.asm.tree.analysis.Analyzer<>(
+                new org.objectweb.asm.tree.analysis.SourceInterpreter()).analyze(target.target().name, nativeReader);
+        var keys = new java.util.HashSet<String>();
+        for (var call : updates) {
+            var frame = frames[nativeReader.instructions.indexOf(call)];
+            var key = frame.getStack(frame.getStackSize() - 2);
+            assertEquals(1, key.insns.size());
+            String name = (String) ((org.objectweb.asm.tree.LdcInsnNode) key.insns.iterator().next()).cst;
+            keys.add(name);
+            if (!name.equals("Player")) continue;
+            var function = frame.getStack(frame.getStackSize() - 1);
+            assertEquals(1, function.insns.size());
+            var lambda = (org.objectweb.asm.tree.InvokeDynamicInsnNode) function.insns.iterator().next();
+            MethodNode reader = target.assertOnePlayerSite(target.target());
+            assertTrue("The Player key must use the exact PLAYER lambda", Arrays.stream(lambda.bsmArgs)
+                    .anyMatch(arg -> arg instanceof org.objectweb.asm.Handle handle
+                            && handle.getOwner().equals(target.target().name) && handle.getName().equals(reader.name)
+                            && handle.getDesc().equals(reader.desc)));
+        }
+        assertEquals(Set.of("Player", "WorldGenSettings"), keys);
+        assertTrue(target.assertOnePlayerSite(target.target()).name.startsWith("lambda$readLevelDataTagFixed$"));
     }
 
-    private static MethodNode nativePlayerMethod(ClassNode node, PlayerHook target) {
-        List<MethodNode> methods = node.methods.stream().filter(method ->
-                target.nativeCalls(method).size() == 1 && Arrays.stream(method.instructions.toArray()).anyMatch(
-                        LegacyPlayerTransformerTest::loadsPlayerType)).toList();
-        assertEquals("Expected one Forge 52 PLAYER reader in " + node.name, 1, methods.size());
-        return methods.getFirst();
+    private static Method redirect() throws Exception {
+        Class<?> mixin = Class.forName("zone.moddev.mc.basepower.mixin.LevelStorageSourceMixin");
+        Method method = mixin.getDeclaredMethod("basepower$preserveEmbeddedPlayer",
+                DataFixTypes.class, DataFixer.class, Dynamic.class, int.class);
+        method.setAccessible(true);
+        return method;
     }
 
-    private static MethodInsnNode nativePlayerCall(ClassNode node, PlayerHook target) {
-        return target.nativeCalls(nativePlayerMethod(node, target)).getFirst();
+    private static CompoundTag invoke(Method redirect, DataFixTypes type, DataFixer fixer,
+            CompoundTag input, int version) throws Exception {
+        CompoundTag before = input.copy();
+        Dynamic<?> result = (Dynamic<?>) redirect.invoke(null, type, fixer, new Dynamic<>(NbtOps.INSTANCE, input), version);
+        assertEquals("Native boundary cannot mutate its caller", before, input);
+        return (CompoundTag) result.getValue();
     }
 
-    private static boolean loadsPlayerType(AbstractInsnNode instruction) {
-        return instruction instanceof FieldInsnNode field && field.getOpcode() == Opcodes.GETSTATIC
-                && field.owner.equals(NATIVE) && field.name.equals("PLAYER");
+    private static MethodInsnNode playerCall(Binding binding, ClassNode nativeClass) throws Exception {
+        return calls(binding.assertOnePlayerSite(nativeClass)).stream().filter(binding::matches).findFirst().orElseThrow();
     }
 
-    private static void rejectedUnchanged(ClassNode node, PlayerHook target) throws Exception {
-        byte[] before = bytes(node);
-        LegacyTransformerOrderTest.expectRejection(() -> target.transform(node),
-                target == LOOSE ? "exactly one native player" : "embedded player");
-        assertArrayEquals("Rejection must precede any bytecode edit", before, bytes(node));
+    private static MethodNode copy(MethodNode source, String name) {
+        MethodNode result = new MethodNode(source.access, name, source.desc, source.signature, null);
+        source.accept(result);
+        return result;
+    }
+
+    private static void rejectedUnchanged(Binding target, ClassNode nativeClass) throws Exception {
+        byte[] before = bytes(nativeClass);
+        assertThrows("Unsupported native PLAYER ABI must fail the contract", AssertionError.class,
+                () -> target.assertOnePlayerSite(nativeClass));
+        assertArrayEquals("Contract checks cannot mutate native classes", before, bytes(nativeClass));
     }
 
     private static byte[] bytes(ClassNode node) {
@@ -233,16 +238,16 @@ public class LegacyPlayerTransformerTest {
     }
 
     private static CompoundTag levelData(int version, CompoundTag player) {
-        CompoundTag root = new CompoundTag();
         CompoundTag data = new CompoundTag();
         data.putInt("DataVersion", version);
         data.put("Player", player.copy());
+        CompoundTag root = new CompoundTag();
         root.put("Data", data);
         return root;
     }
 
     private static CompoundTag legacyPlayer() {
-        CompoundTag book = legacyStack("minecraft:enchanted_book", 4, 1, 0);
+        CompoundTag book = stack("minecraft:enchanted_book", 4, 1, 0);
         CompoundTag enchantment = new CompoundTag();
         enchantment.putString("id", "steamadvantage:steam_capacity");
         enchantment.putShort("lvl", (short) 3);
@@ -253,13 +258,13 @@ public class LegacyPlayerTransformerTest {
         book.put("tag", tag);
         ListTag inventory = new ListTag();
         inventory.add(book);
-        inventory.add(legacyStack("minecraft:wool", 7, 5, 14));
+        inventory.add(stack("minecraft:wool", 7, 5, 14));
         CompoundTag player = new CompoundTag();
         player.put("Inventory", inventory);
         return player;
     }
 
-    private static CompoundTag legacyStack(String id, int slot, int count, int damage) {
+    private static CompoundTag stack(String id, int slot, int count, int damage) {
         CompoundTag stack = new CompoundTag();
         stack.putString("id", id);
         stack.putByte("Slot", (byte) slot);
@@ -268,65 +273,30 @@ public class LegacyPlayerTransformerTest {
         return stack;
     }
 
-    private static CompoundTag readPlayer(AutoCloseable access) throws Exception {
-        Dynamic<?> fixed = (Dynamic<?>) access.getClass().getMethod("getDataTag").invoke(access);
-        return ((CompoundTag) fixed.getValue()).getCompound("Player");
-    }
-
-    private static AutoCloseable openWorld(Class<?> storage, Object source, String world) throws Exception {
-        return (AutoCloseable) storage.getMethod("createAccess", String.class).invoke(source, world);
-    }
-
     private static void assertPlayerContents(CompoundTag player) {
-        ListTag items = player.getList("Inventory", Tag.TAG_COMPOUND);
+        ListTag items = player.getListOrEmpty("Inventory");
         assertEquals(2, items.size());
-        CompoundTag book = items.getCompound(0);
-        assertEquals("minecraft:enchanted_book", book.getString("id"));
-        assertEquals(4, book.getByte("Slot"));
-        assertEquals(1, book.getInt("count"));
-        CompoundTag levels = book.getCompound("components").getCompound("minecraft:stored_enchantments").getCompound("levels");
-        assertEquals(3, levels.getInt("steamadvantage:steam_capacity"));
-        CompoundTag wool = items.getCompound(1);
-        assertEquals("minecraft:red_wool", wool.getString("id"));
-        assertEquals(7, wool.getByte("Slot"));
-        assertEquals(5, wool.getInt("count"));
-    }
-
-    private record PlayerHook(String nativeName, String coremodName, String payload, String wrapperName) {
-        String desc() { return "(" + FIXER + payload + "I)" + payload; }
-        String wrapperDesc() { return "(L" + NATIVE + ";" + desc().substring(1); }
-
-        ClassNode read() throws IOException {
-            return LegacyTransformerOrderTest.nativeClass(STORAGE + nativeName);
-        }
-
-        void transform(ClassNode node) throws Exception {
-            LegacyTransformerOrderTest.transform(node, coremodName, false);
-        }
-
-        List<MethodInsnNode> nativeCalls(MethodNode method) {
-            return Arrays.stream(method.instructions.toArray())
-                    .filter(insn -> insn instanceof MethodInsnNode call && call.getOpcode() == Opcodes.INVOKEVIRTUAL
-                            && call.owner.equals(NATIVE) && call.desc.equals(desc()))
-                    .map(MethodInsnNode.class::cast).toList();
-        }
-
-        List<MethodInsnNode> nativeCalls(ClassNode node) {
-            return node.methods.stream().flatMap(method -> nativeCalls(method).stream()).toList();
-        }
+        CompoundTag book = items.getCompoundOrEmpty(0);
+        assertEquals("minecraft:enchanted_book", book.getStringOr("id", ""));
+        assertEquals(4, book.getByteOr("Slot", (byte) 0));
+        assertEquals(1, book.getIntOr("count", 0));
+        CompoundTag levels = book.getCompoundOrEmpty("components").getCompoundOrEmpty("minecraft:stored_enchantments");
+        assertEquals(Set.of("steamadvantage:steam_capacity"), levels.keySet());
+        assertEquals(3, levels.getIntOr("steamadvantage:steam_capacity", 0));
+        CompoundTag wool = items.getCompoundOrEmpty(1);
+        assertEquals("minecraft:red_wool", wool.getStringOr("id", ""));
+        assertEquals(7, wool.getByteOr("Slot", (byte) 0));
+        assertEquals(5, wool.getIntOr("count", 0));
     }
 
     private static final class RecordingFixer implements DataFixer {
         private final DataFixer nativeFixer;
         private final List<String> playerCalls = new ArrayList<>();
-
         RecordingFixer(DataFixer nativeFixer) { this.nativeFixer = nativeFixer; }
-
         @Override public <T> Dynamic<T> update(DSL.TypeReference type, Dynamic<T> input, int from, int to) {
             if (type == References.PLAYER) playerCalls.add(from + "->" + to);
             return nativeFixer.update(type, input, from, to);
         }
-
         @Override public Schema getSchema(int version) { return nativeFixer.getSchema(version); }
     }
 }

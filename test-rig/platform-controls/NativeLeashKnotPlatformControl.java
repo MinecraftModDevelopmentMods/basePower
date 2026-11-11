@@ -1,76 +1,116 @@
 import com.google.gson.GsonBuilder;
-import java.io.InputStream;
-import java.lang.reflect.Field;
+import com.mojang.serialization.Codec;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.security.MessageDigest;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.TreeSet;
 import java.util.UUID;
-import java.util.function.Supplier;
 import net.minecraft.SharedConstants;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.UUIDUtil;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtIo;
 import net.minecraft.server.Bootstrap;
-import net.minecraft.server.level.ServerLevel;
-import net.minecraft.util.RandomSource;
-import net.minecraft.util.profiling.InactiveProfiler;
-import net.minecraft.util.profiling.ProfilerFiller;
+import net.minecraft.util.datafix.fixes.BlockStateData;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LightningBolt;
 import net.minecraft.world.entity.decoration.LeashFenceKnotEntity;
-import net.minecraft.world.level.Level;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 
-/** No-Power, no-server native storage-eligibility control. */
+/** No-Power, no-server, unticked native saveability and writer-eligibility control. */
 public final class NativeLeashKnotPlatformControl {
-    private static void field(ServerLevel world, String name, Object value) throws Exception {
-        Field field = Level.class.getDeclaredField(name); field.setAccessible(true); field.set(world, value);
-    }
-    private static String hash(Class<?> type) throws Exception {
-        try (InputStream input = type.getResourceAsStream("/" + type.getName().replace('.', '/') + ".class")) {
-            if (input == null) throw new AssertionError("No native class bytes");
-            StringBuilder result = new StringBuilder();
-            for (byte value : MessageDigest.getInstance("SHA-256").digest(input.readAllBytes())) result.append(String.format("%02X", value & 255));
-            return result.toString();
-        }
-    }
+    private static final UUID ID = UUID.fromString("ac980b6e-a321-4275-8d6e-47b2e2607794");
+
     public static void main(String[] args) throws Exception {
-        SharedConstants.tryDetectVersion(); Bootstrap.bootStrap();
+        NativePlatformSupport.requireIndependentClasspath();
+        SharedConstants.tryDetectVersion();
+        Bootstrap.bootStrap();
         zone.moddev.mc.advantageworks.unit.ForgeUnitRegistries.registerVanillaFluidTypes();
-        try {
-            Class.forName("zone.moddev.mc.basepower.migration.LegacyEntityDataFixes");
-            throw new AssertionError("Power must be absent from the native control");
-        } catch (ClassNotFoundException expected) { System.out.println("POWER_LEGACY_CLASS_ABSENT true"); }
-        Class<?> unsafe = Class.forName("sun.misc.Unsafe");
-        Field instance = unsafe.getDeclaredField("theUnsafe"); instance.setAccessible(true);
-        ServerLevel world = (ServerLevel) unsafe.getMethod("allocateInstance", Class.class).invoke(instance.get(null), ServerLevel.class);
-        field(world, "dimension", Level.NETHER); field(world, "random", RandomSource.create(0));
-        field(world, "profiler", (Supplier<ProfilerFiller>) () -> InactiveProfiler.INSTANCE);
-        LeashFenceKnotEntity knot = new LeashFenceKnotEntity(world, new BlockPos(154, 100, 8));
-        UUID identity = knot.getUUID();
-        CompoundTag before = knot.saveWithoutId(new CompoundTag()).copy();
-        boolean accepted = knot.saveAsPassenger(new CompoundTag());
-        CompoundTag observed = knot.saveWithoutId(new CompoundTag());
+        var world = NativePlatformSupport.context(false);
+        BlockPos attachment = new BlockPos(154, 100, 8);
+        LeashFenceKnotEntity knot = new LeashFenceKnotEntity(world, attachment);
+        knot.setUUID(ID);
+        CompoundTag before = NativePlatformSupport.observe(knot).copy();
+        var rootOutput = NativePlatformSupport.output(knot);
+        boolean rootAccepted = knot.save(rootOutput);
+        var passengerOutput = NativePlatformSupport.output(knot);
+        boolean passengerAccepted = knot.saveAsPassenger(passengerOutput);
+        CompoundTag observed = NativePlatformSupport.observe(knot);
+        boolean selected = knot.shouldBeSaved();
+        boolean encodable = knot.getEncodeId() != null;
         if (knot.getClass() != LeashFenceKnotEntity.class || knot.getType() != EntityType.LEASH_KNOT
-                || EntityType.LEASH_KNOT.canSerialize() || accepted || !identity.equals(knot.getUUID())
-                || !before.equals(observed) || knot.tickCount != 0 || knot.isRemoved()) throw new AssertionError("Native noSave contract differs");
-        Map<String,Object> proof = new LinkedHashMap<>();
-        proof.put("format", 1); proof.put("policy", "native1211-leash-knot-nosave-v1");
-        proof.put("minecraftVersion", SharedConstants.getCurrentVersion().getName());
-        proof.put("dataVersion", SharedConstants.getCurrentVersion().getDataVersion().getVersion());
+                || knot.getType().canSerialize() || rootAccepted || passengerAccepted || !selected || encodable
+                || !rootOutput.buildResult().isEmpty() || !passengerOutput.buildResult().isEmpty()
+                || !ID.equals(before.read("UUID", UUIDUtil.CODEC).orElseThrow()) || !ID.equals(knot.getUUID())
+                || !before.equals(observed) || knot.tickCount != 0 || knot.isRemoved() || knot.isPassenger()
+                || !knot.getPassengers().isEmpty() || !attachment.equals(knot.getPos())
+                || before.contains("id") || before.contains("Passengers") || before.contains("block_pos")
+                || before.contains("TileX") || before.contains("TileY") || before.contains("TileZ")) {
+            throw new AssertionError("Native noSave contract differs");
+        }
+        var position = observed.getList("Pos").orElseThrow();
+        if (position.size() != 3 || position.getDouble(0).orElseThrow() != 154.5
+                || position.getDouble(1).orElseThrow() != 100.375 || position.getDouble(2).orElseThrow() != 8.5) {
+            throw new AssertionError("Native observational position does not identify the actual attachment");
+        }
+
+        // Corroborate both sides of eligibility and reject any reporter that swallows codec errors.
+        ItemEntity persistent = new ItemEntity(world, 8.5, 80, 8.5, new ItemStack(Items.DIRT, 7));
+        var persistentOutput = NativePlatformSupport.output(persistent);
+        if (!persistent.getType().canSerialize() || !persistent.save(persistentOutput)
+                || !"minecraft:item".equals(persistentOutput.buildResult().getString("id").orElseThrow())) {
+            throw new AssertionError("Persistent native writer control failed");
+        }
+        LightningBolt otherNoSave = new LightningBolt(EntityType.LIGHTNING_BOLT, world);
+        if (otherNoSave.getType().canSerialize() || otherNoSave.save(NativePlatformSupport.output(otherNoSave))) {
+            throw new AssertionError("Unexpected native lightning writer eligibility");
+        }
+        try {
+            NativePlatformSupport.output(knot).store("invalid", Codec.intRange(0, 1), 7);
+            throw new AssertionError("Codec failure was discarded");
+        } catch (IllegalStateException expected) {
+            if (!expected.getMessage().contains("Native control codec failure")) throw expected;
+        }
+        if (!before.equals(NativePlatformSupport.observe(knot))) throw new AssertionError("Control mutated native helper state");
+
+        Map<String, Object> proof = new LinkedHashMap<>();
+        proof.put("format", 1);
+        proof.put("policy", "native12111-leash-knot-nosave-v1");
+        proof.put("minecraftVersion", SharedConstants.getCurrentVersion().name());
+        proof.put("dataVersion", SharedConstants.getCurrentVersion().dataVersion().version());
         proof.put("forgeVersion", net.minecraftforge.versions.forge.ForgeVersion.getVersion());
-        proof.put("nativeClass", knot.getClass().getName()); proof.put("registryId", EntityType.getKey(knot.getType()).toString());
-        proof.put("canSerialize", false); proof.put("rootWriterAccepted", false);
-        proof.put("observationalUuidPreserved", true); proof.put("observationalStateUnchanged", true);
-        proof.put("noPower", true); proof.put("noServer", true); proof.put("noTicks", true); proof.put("nativeMethodsUnmodified", true);
-        Map<String,String> classes = new LinkedHashMap<>();
-        for (Class<?> type : new Class<?>[] {Entity.class, EntityType.class, LeashFenceKnotEntity.class}) classes.put(type.getName(), hash(type));
-        proof.put("nativeClassSha256", classes);
-        Path root = Paths.get(args[0]); Files.createDirectory(root);
+        proof.put("nativeClass", knot.getClass().getName());
+        proof.put("registryId", EntityType.getKey(knot.getType()).toString());
+        proof.put("canSerialize", knot.getType().canSerialize());
+        proof.put("storageSelectorAccepts", selected);
+        proof.put("encodedIdPresent", encodable);
+        proof.put("rootWriterAccepted", rootAccepted);
+        proof.put("passengerWriterAccepted", passengerAccepted);
+        proof.put("refusedWritersLeaveNoPayload", rootOutput.buildResult().isEmpty() && passengerOutput.buildResult().isEmpty());
+        proof.put("observationalUuidPreserved", ID.equals(observed.read("UUID", UUIDUtil.CODEC).orElseThrow()));
+        proof.put("observationalStateUnchanged", before.equals(observed));
+        proof.put("observationalTagKeys", new TreeSet<>(observed.keySet()));
+        proof.put("noPower", true);
+        proof.put("powerAccessTransformerAbsent", true);
+        proof.put("noHarness", true);
+        proof.put("noServer", world.getServer() == null);
+        proof.put("noTicks", knot.tickCount == 0);
+        proof.put("nativeMethodsUnmodified", true);
+        proof.put("nativeClassSha256", NativePlatformSupport.classHashes(Entity.class, EntityType.class, LeashFenceKnotEntity.class, BlockStateData.class));
+        NativePlatformSupport.sourceEvidence(proof, Entity.class, EntityType.class, LeashFenceKnotEntity.class, BlockStateData.class);
+        Path root = Path.of(args[0]);
+        Files.createDirectory(root);
+        NbtIo.writeCompressed(before, root.resolve("helper-before.dat"));
+        NbtIo.writeCompressed(observed, root.resolve("helper-after.dat"));
+        NbtIo.writeCompressed(persistentOutput.buildResult(), root.resolve("persistent-control.dat"));
         String json = new GsonBuilder().setPrettyPrinting().create().toJson(proof) + "\n";
         Files.writeString(root.resolve("contract.json"), json);
         System.out.println("LEASH_KNOT_CONTROL " + json.replace('\n', ' '));
+        System.out.println("LEASH_KNOT_CONTRACT_SHA256 " + NativePlatformSupport.sha(json.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
         System.out.println("LEASH_KNOT_CONTROL_DONE no_server=true no_ticks=true native_entity_methods_unmodified=true");
     }
 }

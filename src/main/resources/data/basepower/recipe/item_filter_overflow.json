@@ -5,12 +5,8 @@
     "z"
   ],
   "key": {
-    "x": {
-      "item": "basepower:item_conveyor"
-    },
-    "z": {
-      "item": "minecraft:oak_pressure_plate"
-    }
+    "x": "basepower:item_conveyor",
+    "z": "minecraft:oak_pressure_plate"
   },
   "result": {
     "id": "basepower:item_filter_overflow"

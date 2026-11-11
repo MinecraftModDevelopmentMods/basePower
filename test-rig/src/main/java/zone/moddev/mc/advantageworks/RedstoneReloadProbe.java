@@ -26,14 +26,14 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.core.Direction;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Registry;
 import net.minecraft.world.level.Level;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegisterCommandsEvent;
-import net.minecraftforge.event.TickEvent;
+
 
 /** Separate cold-process experiment: finite earned work, never expected-state restoration. */
 final class RedstoneReloadProbe {
@@ -63,8 +63,8 @@ final class RedstoneReloadProbe {
     static void register() {
         if (!MARKER.isFile()) return;
         RedstoneReloadProbe probe = new RedstoneReloadProbe();
-        MinecraftForge.EVENT_BUS.addListener(probe::commands);
-        MinecraftForge.EVENT_BUS.addListener(probe::tick);
+        RegisterCommandsEvent.BUS.addListener(probe::commands);
+        NativeTickEvents.listenLevel(probe::tick);
     }
 
     private static List<Witness> definitions() {
@@ -80,7 +80,7 @@ final class RedstoneReloadProbe {
 
     private void commands(RegisterCommandsEvent event) {
         event.getDispatcher().register(Commands.literal("advredstonereload")
-                .requires(source -> source.hasPermission(4))
+                .requires(source -> source.permissions().hasPermission(net.minecraft.server.permissions.Permissions.COMMANDS_OWNER))
                 .then(Commands.argument("operation", StringArgumentType.word())
                         .then(Commands.argument("label", StringArgumentType.word()).executes(context -> {
                             if (!MARKER.isFile() || used) throw new IllegalStateException("Missing marker or reused probe");
@@ -112,10 +112,10 @@ final class RedstoneReloadProbe {
 
     private boolean paused() { return phase != Phase.SEEDING && phase != Phase.OPERATING; }
 
-    private void tick(TickEvent.LevelTickEvent event) {
-        if (!(event.level instanceof ServerLevel) || event.level.dimension() != Level.OVERWORLD) return;
-        ServerLevel current = (ServerLevel) event.level;
-        if (event.phase == TickEvent.Phase.START) {
+    private void tick(NativeTickEvents.LevelTickEvent event) {
+        if (!(event.level() instanceof ServerLevel) || event.level().dimension() != Level.OVERWORLD) return;
+        ServerLevel current = (ServerLevel) event.level();
+        if (event.phase() == NativeTickEvents.Phase.START) {
             tickStart = current.getGameTime();
             if (paused()) {
                 suspended.addAll(NativeBlockEntityTicks.drain(current));
@@ -138,7 +138,7 @@ final class RedstoneReloadProbe {
                 boolean ready = true;
                 for (Witness witness : witnesses) {
                     CompoundTag tag = WorksBlockData.save(tile(witness));
-                    ready &= tag.getShort("progress") > 0 && tag.contains("targetX", 99)
+                    ready &= tag.getShort("progress").orElseThrow() > 0 && zone.moddev.mc.basepower.util.NbtCompat.containsTag(tag, "targetX", 99)
                             && ((PoweredEntity) tile(witness)).getEnergy(new ConduitType("electricity")) > 24;
                 }
                 if (ready) freezeSeed();
@@ -218,7 +218,7 @@ final class RedstoneReloadProbe {
         force(witness);
         for (int dx = -1; dx <= 1; dx++) for (int dy = -1; dy <= 1; dy++) for (int dz = -1; dz <= 1; dz++)
             world.setBlock(witness.pos.offset(dx, dy, dz), Blocks.AIR.defaultBlockState(), 2);
-        Block block = net.minecraft.core.registries.BuiltInRegistries.BLOCK.get(ResourceLocation.parse("baseelectric:electric_drill"));
+        Block block = net.minecraft.core.registries.BuiltInRegistries.BLOCK.getValue(Identifier.parse("baseelectric:electric_drill"));
         if (block == Blocks.AIR) throw new IllegalStateException("Electric drill registry absent");
         world.setBlock(witness.pos, block.defaultBlockState().setValue(BlockStateProperties.FACING, Direction.NORTH), 2);
         for (int dx = -1; dx <= 1; dx++) for (int dy = -1; dy <= 1; dy++)
@@ -286,7 +286,7 @@ final class RedstoneReloadProbe {
             row.put("signal", world.hasNeighborSignal(witness.pos));
             row.put("holdBlock", net.minecraftforge.registries.ForgeRegistries.BLOCKS.getKey(world.getBlockState(witness.pos.above()).getBlock()).toString());
             row.put("energy", ((PoweredEntity) tile).getEnergy(new ConduitType("electricity")));
-            row.put("progress", (int) nbt.getShort("progress"));
+            row.put("progress", (int) nbt.getShort("progress").orElseThrow());
             row.put("nbt", nbt.toString());
             List<Map<String, Object>> targets = new ArrayList<>();
             for (int dx = -1; dx <= 1; dx++) for (int dy = -1; dy <= 1; dy++) {

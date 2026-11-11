@@ -16,9 +16,15 @@ final class PowerOperationalCases {
                 "Automation must not bypass a vanilla chest lock, at either end of the belt", 160,
                 c -> {
                     conveyor(c, "basepower:item_conveyor"); c.put(4, 2, 5, 0, "minecraft:dirt", 16);
-                    net.minecraft.nbt.CompoundTag lock = new net.minecraft.nbt.CompoundTag(); lock.putString("Lock", "Works key");
-                    c.seed(sourceLocked ? 4 : 6, 2, 5, lock);
+                    int lockedX = sourceLocked ? 4 : 6;
+                    c.seed(lockedX, 2, 5, nativeChestLock(c.world.registryAccess()));
+                    c.require(((net.minecraft.world.level.block.entity.BaseContainerBlockEntity)c.tile(lockedX, 2, 5)).isLocked(),
+                            "Vanilla installed the native lock before conveyor ticks");
+                    c.require(zone.moddev.mc.basepower.util.InventoryLocks.isLocked(c.inventory(lockedX, 2, 5)),
+                            "Automation observes the installed native chest lock");
                 }, c -> {
+                    c.require(((net.minecraft.world.level.block.entity.BaseContainerBlockEntity)c.tile(sourceLocked ? 4 : 6, 2, 5)).isLocked(),
+                            "Conveyor leaves the native chest lock installed");
                     c.require(c.count(6, 2, 5, "minecraft:dirt") == 0, "locked route delivers no stock");
                     c.require(c.count(4, 2, 5, "minecraft:dirt") + c.count(5, 2, 5, "minecraft:dirt") == 16,
                             "locked route retains every input item");
@@ -71,7 +77,7 @@ final class PowerOperationalCases {
                     for (int slot = 0; slot < c.inventory(6, 2, 5).getContainerSize(); slot++) {
                         ItemStack stack = c.inventory(6, 2, 5).getItem(slot);
                         if (stack.isEmpty()) continue;
-                        String witness = WorksItemData.read(stack).getString("Witness");
+                        String witness = WorksItemData.read(stack).getString("Witness").orElseThrow();
                         if (witness.equals("A")) a += stack.getCount();
                         else if (witness.equals("B")) b += stack.getCount();
                         else unknown += stack.getCount();
@@ -124,7 +130,7 @@ final class PowerOperationalCases {
                     c -> {
                         c.require(c.world.isEmptyBlock(c.at(5, 2, 5)), "native source collected");
                         c.require(c.fluidAmount(7, 1, 5) == 1000 && c.fluidAmount(5, 1, 5) == 0, "exact source volume delivered");
-                        c.require(c.nbt(7, 1, 5).getCompound("Tank").getString("FluidName").equals(fluid), "fluid registry identity retained");
+                        c.require(c.nbt(7, 1, 5).getCompound("Tank").orElseThrow().getString("FluidName").orElseThrow().equals(fluid), "fluid registry identity retained");
                     }));
         }
         cases.add(new MachineScenario("power/drain/non-source", "Flowing water without a source cannot create a bucket", 80,
@@ -169,6 +175,16 @@ final class PowerOperationalCases {
                 }));
     }
 
+    static net.minecraft.nbt.CompoundTag nativeChestLock(net.minecraft.core.HolderLookup.Provider registries) {
+        net.minecraft.world.LockCode lock = new net.minecraft.world.LockCode(
+                net.minecraft.advancements.criterion.ItemPredicate.Builder.item().of(
+                        registries.lookupOrThrow(net.minecraft.core.registries.Registries.ITEM), Items.STICK).build());
+        net.minecraft.nbt.CompoundTag patch = new net.minecraft.nbt.CompoundTag();
+        patch.put("lock", net.minecraft.world.LockCode.CODEC.encodeStart(
+                registries.createSerializationContext(net.minecraft.nbt.NbtOps.INSTANCE), lock).getOrThrow());
+        return patch;
+    }
+
     private static void stills(List<MachineScenario> cases) {
         for (String mode : new String[]{"production", "no-fuel", "invalid", "full", "one-space", "redstone"}) {
             final int output = mode.equals("full") ? 1000 : mode.equals("one-space") ? 999 : 0;
@@ -181,7 +197,7 @@ final class PowerOperationalCases {
                                 (zone.moddev.mc.basepower.machines.fluidmachines.StillTileEntity)c.tile(8, 4, 8);
                         still.getInputTank().setFluid(new cyano.poweradvantage.api.fluid.FluidStack(
                                 mode.equals("invalid") ? net.minecraft.world.level.material.Fluids.WATER
-                                        : net.minecraftforge.registries.ForgeRegistries.FLUIDS.getValue(net.minecraft.resources.ResourceLocation.parse("basepower:crude_oil")), 1000));
+                                        : net.minecraftforge.registries.ForgeRegistries.FLUIDS.getValue(net.minecraft.resources.Identifier.parse("basepower:crude_oil")), 1000));
                         if (!mode.equals("no-fuel")) c.put(8, 4, 8, 0, "minecraft:coal", 1);
                         if (output > 0) c.tank(8, 4, 8, "basepower:refined_oil", output);
                         if (mode.equals("redstone")) c.block(9, 4, 8, "minecraft:redstone_block");

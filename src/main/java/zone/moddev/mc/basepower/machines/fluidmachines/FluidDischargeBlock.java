@@ -15,7 +15,7 @@ import net.minecraft.world.level.Level;
 public class FluidDischargeBlock extends BlockSimpleFluidMachine {
 
 	public FluidDischargeBlock() {
-		super(machineProperties(3F));
+		super(zone.moddev.mc.basepower.init.Blocks.properties("fluid_discharge", machineProperties(3F)));
 	}
 
 	@Override

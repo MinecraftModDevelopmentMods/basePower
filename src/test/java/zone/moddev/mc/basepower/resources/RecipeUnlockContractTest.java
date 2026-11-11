@@ -131,7 +131,7 @@ public class RecipeUnlockContractTest {
         JsonObject predicate = criterion.getAsJsonObject("conditions").getAsJsonArray("items").get(0).getAsJsonObject();
         var registries = net.minecraft.core.RegistryAccess.fromRegistryOfRegistries(net.minecraft.core.registries.BuiltInRegistries.REGISTRY);
         var ops = registries.createSerializationContext(com.mojang.serialization.JsonOps.INSTANCE);
-        var nativePredicate = net.minecraft.advancements.critereon.ItemPredicate.CODEC.parse(ops, predicate).getOrThrow();
+        var nativePredicate = net.minecraft.advancements.criterion.ItemPredicate.CODEC.parse(ops, predicate).getOrThrow();
         assertTrue(nativePredicate.test(new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.POTATO)));
         assertFalse("An unrelated dirt stack must not satisfy the real native predicate",
                 nativePredicate.test(new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.DIRT)));
@@ -139,7 +139,14 @@ public class RecipeUnlockContractTest {
 
     private static void collect(JsonElement element, List<JsonObject> result) {
         if (element.isJsonArray()) for (JsonElement child : element.getAsJsonArray()) collect(child, result);
-        else result.add(element.getAsJsonObject());
+        else if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isString()) {
+            String selector = element.getAsString();
+            assertFalse("An empty native ingredient cannot unlock a recipe", selector.isBlank());
+            JsonObject value = new JsonObject();
+            value.addProperty(selector.startsWith("#") ? "tag" : "item",
+                    selector.startsWith("#") ? selector.substring(1) : selector);
+            result.add(value);
+        } else result.add(element.getAsJsonObject());
     }
 
     private static JsonObject read(Path file) throws IOException {

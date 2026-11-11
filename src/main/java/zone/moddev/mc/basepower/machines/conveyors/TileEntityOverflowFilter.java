@@ -5,10 +5,10 @@ import net.minecraft.world.Container;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.core.Direction;
-import zone.moddev.mc.basepower.init.Entities;
+
 
 public class TileEntityOverflowFilter extends TileEntityConveyorFilter {
-	public TileEntityOverflowFilter(net.minecraft.core.BlockPos pos, net.minecraft.world.level.block.state.BlockState state) { super(Entities.FILTER_OVERFLOW, pos, state, 1); }
+	public TileEntityOverflowFilter(net.minecraft.core.BlockPos pos, net.minecraft.world.level.block.state.BlockState state) { super(zone.moddev.mc.basepower.init.Entities.FILTER_OVERFLOW, pos, state, 1); }
 
 	@Override
 	public boolean matchesFilter(ItemStack item) {

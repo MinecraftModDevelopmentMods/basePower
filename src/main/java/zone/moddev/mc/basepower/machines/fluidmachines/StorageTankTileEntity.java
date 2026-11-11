@@ -8,13 +8,13 @@ import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluid;
 import cyano.poweradvantage.api.fluid.FluidStack;
 import cyano.poweradvantage.api.fluid.FluidTank;
-import zone.moddev.mc.basepower.init.Entities;
+
 
 @SuppressWarnings("deprecation")
 public class StorageTankTileEntity  extends TileEntitySimpleFluidMachine {
 
 	public StorageTankTileEntity(net.minecraft.core.BlockPos pos, net.minecraft.world.level.block.state.BlockState state) {
-		super(Entities.STORAGE_TANK, pos, state, FluidTank.BUCKET_VOLUME * 4, "tile.basepower.fluid_storage_tank.name");
+		super(zone.moddev.mc.basepower.init.Entities.STORAGE_TANK, pos, state, FluidTank.BUCKET_VOLUME * 4, "tile.basepower.fluid_storage_tank.name");
 	}
 
 	/**

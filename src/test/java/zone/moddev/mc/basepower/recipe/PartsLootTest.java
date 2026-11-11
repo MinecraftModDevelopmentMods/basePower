@@ -1,7 +1,7 @@
 package zone.moddev.mc.basepower.recipe;
 
 import java.util.List;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -25,6 +25,6 @@ public class PartsLootTest {
         }
     }
 
-    private static ResourceLocation parts(String mod) { return id(mod + ":chests/advantage_parts"); }
-    private static ResourceLocation id(String value) { return ResourceLocation.parse(value); }
+    private static Identifier parts(String mod) { return id(mod + ":chests/advantage_parts"); }
+    private static Identifier id(String value) { return Identifier.parse(value); }
 }

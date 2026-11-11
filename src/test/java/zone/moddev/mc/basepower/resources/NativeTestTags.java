@@ -6,7 +6,7 @@ import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.function.Function;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.tags.TagEntry;
 import net.minecraft.tags.TagFile;
 
@@ -15,12 +15,12 @@ import static org.junit.Assert.assertTrue;
 public final class NativeTestTags {
     private NativeTestTags() {}
 
-    public static <T> Set<T> resolve(Function<ResourceLocation, T> element,
-            Function<ResourceLocation, Collection<T>> tag, JsonElement... files) {
+    public static <T> Set<T> resolve(Function<Identifier, T> element,
+            Function<Identifier, Collection<T>> tag, JsonElement... files) {
         Set<T> values = new LinkedHashSet<>();
         TagEntry.Lookup<T> lookup = new TagEntry.Lookup<>() {
-            @Override public T element(ResourceLocation id) { return element.apply(id); }
-            @Override public Collection<T> tag(ResourceLocation id) { return tag.apply(id); }
+            @Override public T element(Identifier id, boolean required) { return element.apply(id); }
+            @Override public Collection<T> tag(Identifier id) { return tag.apply(id); }
         };
         for (JsonElement json : files) {
             TagFile file = TagFile.CODEC.parse(JsonOps.INSTANCE, json)

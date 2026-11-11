@@ -30,8 +30,8 @@ public class ConveyorTransferTest {
         for (int n = 0; n < 6; n++) assertTrue(TileEntityConveyor.transferItem(InventoryWrapper.wrap(source), Direction.EAST,
                 InventoryWrapper.wrap(target), Direction.WEST));
         assertTrue(source.isEmpty());
-        assertEquals(4, target.getItem(0).getCount()); assertEquals("A", zone.moddev.mc.basepower.util.ItemData.customData(target.getItem(0)).getString("Witness"));
-        assertEquals(3, target.getItem(1).getCount()); assertEquals("B", zone.moddev.mc.basepower.util.ItemData.customData(target.getItem(1)).getString("Witness"));
+        assertEquals(4, target.getItem(0).getCount()); assertEquals("A", zone.moddev.mc.basepower.util.ItemData.customData(target.getItem(0)).getString("Witness").orElseThrow());
+        assertEquals(3, target.getItem(1).getCount()); assertEquals("B", zone.moddev.mc.basepower.util.ItemData.customData(target.getItem(1)).getString("Witness").orElseThrow());
     }
 
     private static ItemStack tagged(int count, String value) {

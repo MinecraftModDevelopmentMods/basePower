@@ -1,3 +1,22 @@
+basePower 2.4.15.121111 (Minecraft 1.21.11)
+
+- Bring basePower to Forge 61 and Java 21, keeping the existing machine and world identities.
+- Use native value-based saves and migration Mixins while retaining the legacy API's saved fields.
+- Update recipes, item definitions, resource packs and fluid screens for the newer APIs.
+- Keep old-world upgrade checks separate from the machine, restart and visual checks.
+- Keep chunk-migration callbacks cooperative with Base Metals so old turbine and entity data is restored.
+- Handle vanilla's chain rename and retired registry indexes when upgrading newer saved worlds.
+- Keep machine and pipe item names translated with the native block-item naming rules.
+- Separate block and item atlas entries so the new renderer keeps machine textures visible.
+- Keep older biome registry snapshots from blocking upgrades through 1.13 saves. Minecraft still converts the saved biome names.
+- Translate older Forge registry names without dropping their entries, and keep an exact recovery copy of the retired enchantment index.
+- Recognise four removed vanilla sound indexes when upgrading older worlds.
+- Require Base Metals in Forge's dependency checks as well as on CurseForge.
+- Keep the release upload in step with the declared version.
+- Run wrapper validation on the current Minecraft branch as well as the main build and CodeQL checks.
+- Keep resource checks non-interactive in CI without hiding warnings or errors.
+- Complete machine, upgrade, graphical and two-world endurance checks against the current jars. Manual testing is accepted; publication remains a separate step.
+
 basePower 2.4.14.121011 (Minecraft 1.21.1)
 
 - Bring basePower to Forge 52 and Java 21, keeping existing blocks, items and machine data.

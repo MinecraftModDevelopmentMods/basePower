@@ -10,7 +10,6 @@ import java.util.Base64;
 import java.util.List;
 import net.minecraft.SharedConstants;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.HolderLookup;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtIo;
@@ -21,6 +20,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.ChestBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.storage.ValueOutput;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -71,7 +71,7 @@ public class ConnectedProbeObservationTest {
             assertEquals(before.toString(), row.get("nbt").getAsString());
             assertEquals(before, NbtIo.readCompressed(new ByteArrayInputStream(
                     Base64.getDecoder().decode(row.get("nbtBase64").getAsString())), NbtAccounter.unlimitedHeap()));
-            assertEquals(data == null ? "" : data.getString("AdvConnectedWitness"), row.get("witness").getAsString());
+            assertEquals(data == null ? "" : data.getStringOr("AdvConnectedWitness", ""), row.get("witness").getAsString());
             assertEquals(data != null, before.contains("ForgeData"));
         }
     }
@@ -92,17 +92,17 @@ public class ConnectedProbeObservationTest {
             if (persistentData == null) persistentData = new CompoundTag();
             return persistentData;
         }
-        @Override protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-            super.saveAdditional(tag, registries);
+        @Override protected void saveAdditional(ValueOutput output) {
+            super.saveAdditional(output);
             // Forge 50 no longer stores opaque ForgeData for vanilla tiles.
             // This extension fixture proves the probe observes, but never allocates, the legacy witness.
-            if (persistentData != null) tag.put("ForgeData", persistentData.copy());
+            if (persistentData != null) output.store("ForgeData", CompoundTag.CODEC, persistentData.copy());
         }
     }
 
     private static final class ObservationWorld extends ServerLevel {
         BlockEntity tile;
-        private ObservationWorld() { super(null, null, null, null, null, null, null, false, 0L, List.of(), false, null); }
+        private ObservationWorld() { super(null, null, null, null, null, null, false, 0L, List.of(), false, null); }
         @Override public BlockState getBlockState(BlockPos pos) { return Blocks.CHEST.defaultBlockState(); }
         @Override public BlockEntity getBlockEntity(BlockPos pos) { return tile; }
         @Override public RegistryAccess registryAccess() {

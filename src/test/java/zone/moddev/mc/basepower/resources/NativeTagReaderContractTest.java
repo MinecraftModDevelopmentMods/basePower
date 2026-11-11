@@ -8,7 +8,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.objectweb.asm.ClassReader;
@@ -27,7 +27,7 @@ public class NativeTagReaderContractTest {
         assertFalse("Do not silently ignore an obsolete optional array", json.has("optional"));
         assertTrue(NativeTestTags.<Item>resolve(id -> null, id -> null, json).isEmpty());
         var present = NativeTestTags.resolve(id ->
-                id.equals(ResourceLocation.parse("basemetals:steel_bars")) ? Items.IRON_BARS : null, id -> null, json);
+                id.equals(Identifier.parse("basemetals:steel_bars")) ? Items.IRON_BARS : null, id -> null, json);
         assertEquals(java.util.Set.of(Items.IRON_BARS), present);
     }
 

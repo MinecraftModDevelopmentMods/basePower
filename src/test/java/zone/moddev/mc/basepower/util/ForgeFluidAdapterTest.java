@@ -38,7 +38,7 @@ public class ForgeFluidAdapterTest {
         assertEquals(tag, offered.getTag());
         assertEquals(1, changes[0]);
         tank.tank.getFluid().tag.putString("Owner", "changed-in-tank");
-        assertEquals("preserve-me", offered.getTag().getString("Owner"));
+        assertEquals("preserve-me", offered.getTag().getString("Owner").orElseThrow());
     }
 
     @Test public void keepsSidedRestrictionsAndRejectsEmptyOrInvalidRequests() {
@@ -80,8 +80,8 @@ public class ForgeFluidAdapterTest {
         net.minecraftforge.fluids.FluidStack nativeStack = ForgeFluidAdapter.toForge(source);
         FluidStack copy = ForgeFluidAdapter.fromForge(nativeStack);
         copy.tag.putInt("batch", 8);
-        assertEquals(7, source.tag.getInt("batch"));
-        assertEquals(7, nativeStack.getTag().getInt("batch"));
+        assertEquals(7, source.tag.getInt("batch").orElseThrow().intValue());
+        assertEquals(7, nativeStack.getTag().getInt("batch").orElseThrow().intValue());
         assertNull(ForgeFluidAdapter.fromForge(net.minecraftforge.fluids.FluidStack.EMPTY));
         assertTrue(ForgeFluidAdapter.toForge(null).isEmpty());
     }

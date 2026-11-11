@@ -13,7 +13,7 @@ import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.core.Direction;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Registry;
 import net.minecraft.world.level.LevelAccessor;
@@ -21,7 +21,7 @@ import net.minecraft.world.level.LevelReader;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
+
 import net.minecraftforge.fluids.FluidType;
 import net.minecraftforge.fluids.ForgeFlowingFluid;
 import net.minecraftforge.fml.common.Mod;
@@ -30,7 +30,6 @@ import net.minecraftforge.registries.RegisterEvent;
 import zone.moddev.mc.basepower.PowerAdvantage;
 
 /** Native Forge fluids and their persistent PowerAdvantage conduit identities. */
-@Mod.EventBusSubscriber(modid = PowerAdvantage.MODID, bus = Mod.EventBusSubscriber.Bus.MOD)
 public final class Fluids {
     public static final ConduitType fluidConduit_general = new ConduitType("fluid");
     private static final Map<Fluid, ConduitType> FLUID_TYPES = new IdentityHashMap<>();
@@ -54,8 +53,6 @@ public final class Fluids {
         fluidConduit_lava = registerNewFluid(net.minecraft.world.level.material.Fluids.LAVA);
         initialized = true;
     }
-
-    @SubscribeEvent
     public static void registerFluids(RegisterEvent event) {
         if (ForgeRegistries.Keys.FLUID_TYPES.equals(event.getRegistryKey())) {
             crudeOilType = oilType("crude_oil", 850, 6000);
@@ -84,8 +81,8 @@ public final class Fluids {
         refined_oil = new PowerFluid.Source(Kind.REFINED);
     }
 
-    private static ResourceLocation id(String name) {
-        return ResourceLocation.fromNamespaceAndPath(PowerAdvantage.MODID, name);
+    private static Identifier id(String name) {
+        return Identifier.fromNamespaceAndPath(PowerAdvantage.MODID, name);
     }
 
     private static FluidType oilType(String name, int density, int viscosity) {
@@ -93,15 +90,15 @@ public final class Fluids {
                 .density(density).viscosity(viscosity).temperature(300)) {
             @Override public void initializeClient(Consumer<IClientFluidTypeExtensions> consumer) {
                 consumer.accept(new IClientFluidTypeExtensions() {
-                    @Override public ResourceLocation getStillTexture() { return id("blocks/" + name + "_still"); }
-                    @Override public ResourceLocation getFlowingTexture() { return id("blocks/" + name + "_flow"); }
+                    @Override public Identifier getStillTexture() { return id("blocks/" + name + "_still"); }
+                    @Override public Identifier getFlowingTexture() { return id("blocks/" + name + "_flow"); }
                 });
             }
         };
     }
 
     public static ConduitType registerNewFluid(Fluid fluid) {
-        ResourceLocation id = ForgeRegistries.FLUIDS.getKey(fluid);
+        Identifier id = ForgeRegistries.FLUIDS.getKey(fluid);
         ConduitType type = new ConduitType(id == null ? "unknown_fluid" : id.toString());
         FLUID_TYPES.put(fluid, type);
         return type;
@@ -125,16 +122,16 @@ public final class Fluids {
 
     public static Fluid byName(String name) {
         if (name == null || name.trim().isEmpty()) return null;
-        ResourceLocation id = name.indexOf(':') >= 0 ? ResourceLocation.parse(name)
-                : ResourceLocation.fromNamespaceAndPath(PowerAdvantage.MODID, name);
+        Identifier id = name.indexOf(':') >= 0 ? Identifier.parse(name)
+                : Identifier.fromNamespaceAndPath(PowerAdvantage.MODID, name);
         Fluid fluid = registeredFluid(id);
         if (fluid == null && name.indexOf(':') < 0) {
-            fluid = registeredFluid(ResourceLocation.fromNamespaceAndPath("minecraft", name));
+            fluid = registeredFluid(Identifier.fromNamespaceAndPath("minecraft", name));
         }
         return fluid;
     }
 
-    private static Fluid registeredFluid(ResourceLocation id) {
+    private static Fluid registeredFluid(Identifier id) {
         // Forge's defaulted fluid registry returns EMPTY, not null, for unknown names.
         // Do not let a missing basepower:water hide the legacy vanilla fallback.
         return net.minecraftforge.registries.ForgeRegistries.FLUIDS.containsKey(id)

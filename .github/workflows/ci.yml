@@ -1,16 +1,16 @@
-name: basePower 1.21.1 CI
+name: basePower 1.21.11 CI
 
 on:
   push:
-    branches: [master-1.21.1, 'feature/**']
+    branches: [master-1.21.11, 'feature/**']
   pull_request:
-    branches: [master-1.21.1]
+    branches: [master-1.21.11]
 
 permissions:
   contents: read
 
 concurrency:
-  group: basepower-1.21.1-${{ github.workflow }}-${{ github.ref }}
+  group: basepower-1.21.11-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -23,7 +23,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Test target-derived dependency guards
         run: bash .github/test-base-metals-pin.sh
-      - name: Require the Base Metals pin on upstream master-1.21.1
+      - name: Require the Base Metals pin on upstream master-1.21.11
         id: base-metals-pin
         env:
           GH_TOKEN: ${{ github.token }}
@@ -34,13 +34,13 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           repository: MinecraftModDevelopmentMods/OreSpawn
-          ref: 62c08169c71f4d4fd8f107289e63fd2a4c7c655c
+          ref: ecad75b24309a344f712d898d717c6a8823fc9f2
           path: .ci-dependencies/OreSpawn
       - name: Check out pinned Base Metals
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           repository: MinecraftModDevelopmentMods/BaseMetals
-          ref: 327c197bcdd0bb5e883d844bb6a6c8791bc580b7
+          ref: 616d527e50e4bf0137eeb9c44fa586e34a0452a0
           path: .ci-dependencies/BaseMetals
       - name: Install pinned Java 25 Mavenizer runtime
         uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
@@ -78,8 +78,8 @@ jobs:
           (cd "$basemetals" && bash gradle/stage-orespawn-release.sh "$mirror")
           (cd "$orespawn" && bash gradlew $MMD_GRADLE_TOOLCHAINS jar --no-daemon --stacktrace)
           (cd "$basemetals" && bash gradlew $MMD_GRADLE_TOOLCHAINS jar -PorespawnVerificationRepository="$mirror" --no-daemon --stacktrace)
-          osjar="$orespawn/build/libs/OreSpawn-4.1.0.121011.jar"
-          bmjar="$basemetals/build/libs/BaseMetals-3.1.2.121011.jar"
+          osjar="$orespawn/build/libs/OreSpawn-4.1.0.121111.jar"
+          bmjar="$basemetals/build/libs/BaseMetals-3.1.2.121111.jar"
           test -f "$osjar" && test -f "$bmjar"
           echo "orespawn=$osjar" >> "$GITHUB_OUTPUT"
           echo "basemetals=$bmjar" >> "$GITHUB_OUTPUT"
@@ -90,25 +90,23 @@ jobs:
           writeReleaseChecksums verifyEclipseProductionClasspath
           -PbaseMetalsDeobfJar=${{ steps.dependencies.outputs.basemetals }}
           -PoreSpawnDeobfJar=${{ steps.dependencies.outputs.orespawn }}
-          -Pforge52MavenizerJar=${{ steps.dependencies.outputs.mavenizer }}
+          -Pforge61MavenizerJar=${{ steps.dependencies.outputs.mavenizer }}
           --no-daemon --stacktrace
       - name: Upload audited release candidate
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: basePower-1.21.1-${{ github.sha }}
+          name: basePower-1.21.11-${{ github.sha }}
           if-no-files-found: error
           retention-days: 30
           path: |
-            build/libs/basePower-2.4.14.121011.jar
-            build/libs/basePower-2.4.14.121011-sources.jar
-            build/libs/basePower-2.4.14.121011-javadoc.jar
+            build/libs/basePower-*.jar
             build/release/SHA256SUMS
             CHANGELOG.txt
       - name: Upload diagnostics on failure
         if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: basePower-1.21.1-diagnostics-${{ github.sha }}
+          name: basePower-1.21.11-diagnostics-${{ github.sha }}
           if-no-files-found: ignore
           retention-days: 14
           path: |

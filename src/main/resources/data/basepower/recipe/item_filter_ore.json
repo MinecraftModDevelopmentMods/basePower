@@ -6,15 +6,9 @@
     "z"
   ],
   "key": {
-    "x": {
-      "item": "basepower:item_conveyor"
-    },
-    "y": {
-      "tag": "forge:ingots/gold"
-    },
-    "z": {
-      "item": "minecraft:oak_pressure_plate"
-    }
+    "x": "basepower:item_conveyor",
+    "y": "#forge:ingots/gold",
+    "z": "minecraft:oak_pressure_plate"
   },
   "result": {
     "id": "basepower:item_filter_ore"

@@ -5,7 +5,7 @@ import cyano.poweradvantage.api.ConduitType;
 import cyano.poweradvantage.api.simple.TileEntitySimplePowerMachine;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
-import zone.moddev.mc.basepower.init.Entities;
+
 
 public class InfiniteEnergyTileEntity extends TileEntitySimplePowerMachine {
 
@@ -14,12 +14,12 @@ public class InfiniteEnergyTileEntity extends TileEntitySimplePowerMachine {
 	private final ConduitType[] type = new ConduitType[1];
 
 	public InfiniteEnergyTileEntity(net.minecraft.core.BlockPos pos, net.minecraft.world.level.block.state.BlockState state, ConduitType energyType) {
-		super(Entities.INFINITE_ENERGY, pos, state, energyType, 1000f, "tile.basepower.infinite_energy_source.name");
+		super(zone.moddev.mc.basepower.init.Entities.INFINITE_ENERGY, pos, state, energyType, 1000f, "tile.basepower.infinite_energy_source.name");
 		this.type[0] = energyType;
 	}
 
 	public InfiniteEnergyTileEntity(net.minecraft.core.BlockPos pos, net.minecraft.world.level.block.state.BlockState state) {
-		super(Entities.INFINITE_ENERGY, pos, state, new ConduitType("power"), 1000f, "tile.basepower.infinite_energy_source.name");
+		super(zone.moddev.mc.basepower.init.Entities.INFINITE_ENERGY, pos, state, new ConduitType("power"), 1000f, "tile.basepower.infinite_energy_source.name");
 		this.type[0] = new ConduitType("power");
 	}
 
@@ -98,8 +98,8 @@ public class InfiniteEnergyTileEntity extends TileEntitySimplePowerMachine {
 	@Override
 	protected void loadAdditional(final CompoundTag tagRoot, HolderLookup.Provider registries) {
 		super.loadAdditional(tagRoot, registries);
-		if (tagRoot.contains("InfType", 8)) {
-			this.type[0] = new ConduitType(tagRoot.getString("InfType"));
+		if (zone.moddev.mc.basepower.util.NbtCompat.containsTag(tagRoot, "InfType", 8)) {
+			this.type[0] = new ConduitType(tagRoot.getStringOr("InfType", ""));
 		}
 	}
 }

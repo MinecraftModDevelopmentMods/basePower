@@ -9,7 +9,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.BlockItem;
-import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.eventbus.api.bus.BusGroup;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import zone.moddev.mc.basepower.PowerAdvantage;
@@ -41,7 +41,7 @@ public final class ItemGroups {
 		return item;
 	}
 
-	public static void register(IEventBus bus) {
+	public static void register(BusGroup bus) {
 		TABS.register(bus);
 	}
 

@@ -5,7 +5,7 @@ import cyano.poweradvantage.api.simple.BlockSimplePowerMachine;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import zone.moddev.mc.basepower.PowerAdvantage;
 import zone.moddev.mc.basepower.blocks.BlockPowerSwitch;
 import zone.moddev.mc.basepower.machines.conveyors.BlockConveyor;
@@ -87,7 +87,7 @@ public final class AdvantageLegacyMigrations {
         return block.defaultBlockState();
     }
 
-    private static ResourceLocation id(String path) {
-        return ResourceLocation.fromNamespaceAndPath(PowerAdvantage.MODID, path);
+    private static Identifier id(String path) {
+        return Identifier.fromNamespaceAndPath(PowerAdvantage.MODID, path);
     }
 }

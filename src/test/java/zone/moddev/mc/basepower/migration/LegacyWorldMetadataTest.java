@@ -26,7 +26,7 @@ public class LegacyWorldMetadataTest {
         root.put("fml", forge);
         LegacyWorldMetadata.remap(root, id -> false);
         assertFalse(registries.contains("minecraft:motive"));
-        assertEquals(snapshot, registries.getCompound("minecraft:painting_variant"));
+        assertEquals(snapshot, registries.getCompoundOrEmpty("minecraft:painting_variant"));
         CompoundTag once = root.copy();
         LegacyWorldMetadata.remap(root, id -> false);
         assertEquals(once, root);

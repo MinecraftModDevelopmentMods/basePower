@@ -16,7 +16,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.TickEvent;
+
 import net.minecraftforge.event.RegisterCommandsEvent;
 import zone.moddev.mc.advantageworks.connected.ConnectedSession;
 
@@ -29,9 +29,9 @@ final class ConnectedProbe implements ConnectedSession.Port {
     static void register() {
         if (!new File("advantage-connected.allow").isFile()) return;
         ConnectedProbe probe = new ConnectedProbe();
-        MinecraftForge.EVENT_BUS.addListener(probe::tick);
-        MinecraftForge.EVENT_BUS.addListener(probe::chunkLoaded);
-        MinecraftForge.EVENT_BUS.addListener(probe::starting);
+        NativeTickEvents.listenLevel(probe::tick);
+        net.minecraftforge.event.level.ChunkEvent.Load.BUS.addListener(probe::chunkLoaded);
+        RegisterCommandsEvent.BUS.addListener(probe::starting);
     }
 
     private ConnectedSession get(ServerLevel current) throws Exception {
@@ -43,11 +43,11 @@ final class ConnectedProbe implements ConnectedSession.Port {
         return session;
     }
 
-    private void tick(TickEvent.LevelTickEvent event) {
-        if (event.level.isClientSide || Native117Worlds.legacyId(event.level.dimension()) != 0) return;
+    private void tick(NativeTickEvents.LevelTickEvent event) {
+        if (event.level().isClientSide() || Native117Worlds.legacyId(event.level().dimension()) != 0) return;
         try {
-            ConnectedSession current = get((ServerLevel) event.level);
-            if (event.phase == TickEvent.Phase.START) current.start(); else current.end();
+            ConnectedSession current = get((ServerLevel) event.level());
+            if (event.phase() == NativeTickEvents.Phase.START) current.start(); else current.end();
         } catch (Exception ex) { throw new IllegalStateException("Connected probe failed", ex); }
     }
 
@@ -60,7 +60,7 @@ final class ConnectedProbe implements ConnectedSession.Port {
     }
 
     private void starting(RegisterCommandsEvent event) {
-        event.getDispatcher().register(Commands.literal("advconnected").requires(s -> s.hasPermission(4))
+        event.getDispatcher().register(Commands.literal("advconnected").requires(s -> s.permissions().hasPermission(net.minecraft.server.permissions.Permissions.COMMANDS_OWNER))
                 .then(Commands.literal("snapshot").then(Commands.argument("label", StringArgumentType.word()).executes(c -> {
                     execute(c.getSource().getLevel(), "snapshot", StringArgumentType.getString(c, "label"), 0); return 1;
                 })))
@@ -113,7 +113,8 @@ final class ConnectedProbe implements ConnectedSession.Port {
                 entry.addProperty("nbt", tag.toString());
                 entry.addProperty("nbtBase64", java.util.Base64.getEncoder().encodeToString(bytes.toByteArray()));
                 entry.addProperty("objectIdentity", System.identityHashCode(tile));
-                entry.addProperty("witness", tag.getCompound("ForgeData").getString("AdvConnectedWitness"));
+                entry.addProperty("witness", tag.getCompound("ForgeData")
+                        .flatMap(data -> data.getString("AdvConnectedWitness")).orElse(""));
             }
             result.add(entry);
         }

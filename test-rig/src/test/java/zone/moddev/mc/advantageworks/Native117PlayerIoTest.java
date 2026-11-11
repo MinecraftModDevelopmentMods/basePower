@@ -10,6 +10,7 @@ import java.nio.file.Files;
 import java.util.UUID;
 import java.util.List;
 import net.minecraft.core.RegistryAccess;
+import net.minecraft.core.UUIDUtil;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.NbtAccounter;
 import net.minecraft.nbt.NbtOps;
@@ -17,6 +18,8 @@ import net.minecraft.world.item.enchantment.Enchantment;
 import com.mojang.serialization.Dynamic;
 import net.minecraft.util.datafix.fixes.References;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.EntityEquipment;
+import net.minecraft.world.ItemStackWithSlot;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
@@ -29,6 +32,9 @@ import net.minecraft.SharedConstants;
 import net.minecraft.util.datafix.DataFixers;
 import net.minecraft.server.Bootstrap;
 import net.minecraft.world.level.storage.PlayerDataStorage;
+import net.minecraft.world.level.storage.TagValueOutput;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
@@ -54,7 +60,7 @@ public class Native117PlayerIoTest {
                 net.minecraft.core.Registry.register(enchantments, holder.key(), holder.value()));
         // Only the item-codec fixture definitions are synthetic; live tests load Steam's data pack.
         for (String name : List.of("high_explosive", "powderless", "rapid_reload", "recoil")) {
-            var id = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("basesteam", name);
+            var id = net.minecraft.resources.Identifier.fromNamespaceAndPath("basesteam", name);
             var enchantment = Enchantment.enchantment(Enchantment.definition(
                     net.minecraft.core.HolderSet.direct(net.minecraft.world.item.Items.BOW.builtInRegistryHolder()),
                     1, 1, Enchantment.constantCost(1), Enchantment.constantCost(2), 1,
@@ -105,8 +111,9 @@ public class Native117PlayerIoTest {
         Native117PlayerIo.save(players(data(directory), false), first);
         HeadlessPlayer second = player(9, 8);
         PlayerDataStorage reopened = data(directory);
-        CompoundTag saved = reopened.load(second).orElseThrow();
+        CompoundTag saved = reopened.load(second.nameAndId()).orElseThrow();
         assertNotNull(saved);
+        NativeActorIo.load(second, saved);
         assertSaved(saved, second, 1, 0);
         Native117PlayerIo.save(players(reopened, false), second);
         assertEquals(saved, readCompressed(new File(directory, ID + ".dat")));
@@ -138,31 +145,43 @@ public class Native117PlayerIoTest {
         }
     }
 
+    @Test public void nativeStorageIoFailureCannotReportASuccessfulSave() throws Exception {
+        File blocked = temporary.newFile("not-a-directory");
+        try {
+            Native117PlayerIo.save(players(data(blocked), false), player(1, 0));
+            fail("Native storage I/O failure was hidden");
+        } catch (IllegalStateException expected) {
+            assertEquals("Native player save failed", expected.getMessage());
+        }
+    }
+
     private static void assertSaved(CompoundTag saved, HeadlessPlayer player, int count, int slot) throws Exception {
-        assertEquals(SharedConstants.getCurrentVersion().getDataVersion().getVersion(), saved.getInt("DataVersion"));
-        assertEquals(ID, saved.getUUID("UUID"));
+        assertEquals(SharedConstants.getCurrentVersion().dataVersion().version(), (int) saved.getInt("DataVersion").orElseThrow());
+        assertEquals(ID, saved.read("UUID", UUIDUtil.CODEC).orElseThrow());
         assertFalse(saved.contains("UUIDMost"));
         assertFalse(saved.contains("UUIDLeast"));
-        ListTag inventory = saved.getList("Inventory", 10);
+        ListTag inventory = saved.getList("Inventory").orElseThrow();
         assertEquals(1, inventory.size());
-        CompoundTag stack = inventory.getCompound(0);
-        assertEquals("minecraft:enchanted_book", stack.getString("id"));
-        assertEquals(count, stack.getInt("count"));
-        assertEquals(slot, stack.getByte("Slot"));
+        CompoundTag stack = inventory.getCompound(0).orElseThrow();
+        assertEquals("minecraft:enchanted_book", stack.getString("id").orElseThrow());
+        assertEquals(count, (int) stack.getInt("count").orElseThrow());
+        assertEquals(slot, (int) stack.getByte("Slot").orElseThrow());
         assertFalse(stack.contains("Damage"));
-        ItemStack decoded = ItemStack.parse(registries, stack).orElseThrow();
+        ItemStack decoded = ItemStack.CODEC.parse(registries.createSerializationContext(NbtOps.INSTANCE), stack).getOrThrow();
         var stored = decoded.get(net.minecraft.core.component.DataComponents.STORED_ENCHANTMENTS);
         assertNotNull(stack.toString(), stored);
         var levels = new java.util.HashMap<String, Integer>();
         stored.entrySet().forEach(entry -> levels.put(
-                entry.getKey().unwrapKey().orElseThrow().location().toString(), entry.getIntValue()));
+                entry.getKey().unwrapKey().orElseThrow().identifier().toString(), entry.getIntValue()));
         assertEquals(stack.toString(), 5, levels.size());
         assertEquals(Integer.valueOf(3), levels.get("minecraft:efficiency"));
         for (String id : List.of("high_explosive", "powderless", "rapid_reload", "recoil")) {
             assertEquals(Integer.valueOf(1), levels.get("basesteam:" + id));
         }
         assertTrue(ItemStack.matches(decoded, player.items.getItem(slot)));
-        assertEquals(inventory, player.items.save(new ListTag()));
+        TagValueOutput output = TagValueOutput.createWithContext(NativeActorIo.reporter("inventory test"), registries);
+        player.items.save(output.list("Inventory", ItemStackWithSlot.CODEC));
+        assertEquals(inventory, output.buildResult().getList("Inventory").orElseThrow());
     }
 
     private static CompoundTag legacy(int version) throws Exception {
@@ -180,7 +199,7 @@ public class Native117PlayerIoTest {
     }
 
     private static CompoundTag book(int count) throws Exception {
-        CompoundTag stack = TagParser.parseTag("{id:\"minecraft:enchanted_book\",Count:1b,tag:{StoredEnchantments:["
+        CompoundTag stack = TagParser.parseCompoundFully("{id:\"minecraft:enchanted_book\",Count:1b,tag:{StoredEnchantments:["
                 + "{id:\"minecraft:efficiency\",lvl:3s},{id:\"basesteam:high_explosive\",lvl:1s},"
                 + "{id:\"basesteam:powderless\",lvl:1s},{id:\"basesteam:rapid_reload\",lvl:1s},"
                 + "{id:\"basesteam:recoil\",lvl:1s}]}}");
@@ -191,11 +210,12 @@ public class Native117PlayerIoTest {
     private static HeadlessPlayer player(int count, int slot) throws Exception {
         HeadlessPlayer player = allocate(HeadlessPlayer.class);
         player.setUUID(ID);
-        player.items = new Inventory(player);
+        set(net.minecraft.world.entity.player.Player.class, player, "gameProfile", new GameProfile(ID, "Headless"));
+        player.items = new Inventory(player, new EntityEquipment());
         CompoundTag nativeBook = (CompoundTag) DataFixers.getDataFixer().update(References.ITEM_STACK,
                 new Dynamic<>(NbtOps.INSTANCE, book(count)), 3465,
-                SharedConstants.getCurrentVersion().getDataVersion().getVersion()).getValue();
-        player.items.setItem(slot, ItemStack.parse(registries, nativeBook).orElseThrow());
+                SharedConstants.getCurrentVersion().dataVersion().version()).getValue();
+        player.items.setItem(slot, ItemStack.CODEC.parse(registries.createSerializationContext(NbtOps.INSTANCE), nativeBook).getOrThrow());
         return player;
     }
 
@@ -235,20 +255,19 @@ public class Native117PlayerIoTest {
         Inventory items;
         private HeadlessPlayer() { super(null, null, new GameProfile(ID, "Headless"), net.minecraft.server.level.ClientInformation.createDefault()); }
         @Override public RegistryAccess registryAccess() { return registries; }
-        @Override public CompoundTag saveWithoutId(CompoundTag root) {
-            root.putInt("DataVersion", SharedConstants.getCurrentVersion().getDataVersion().getVersion());
-            root.putUUID("UUID", getUUID());
-            root.put("Inventory", items.save(new ListTag()));
-            return root;
+        @Override public void saveWithoutId(ValueOutput root) {
+            root.putInt("DataVersion", SharedConstants.getCurrentVersion().dataVersion().version());
+            root.store("UUID", UUIDUtil.CODEC, getUUID());
+            items.save(root.list("Inventory", ItemStackWithSlot.CODEC));
         }
-        @Override public void load(CompoundTag root) {
-            setUUID(root.getUUID("UUID"));
-            items.load(root.getList("Inventory", 10));
+        @Override public void load(ValueInput root) {
+            setUUID(root.read("UUID", UUIDUtil.CODEC).orElseThrow());
+            items.load(root.list("Inventory", ItemStackWithSlot.CODEC).orElseThrow());
         }
     }
 
     private static class HeadlessPlayerList extends PlayerList {
-        private HeadlessPlayerList() { super(null, null, null, 0); }
+        private HeadlessPlayerList() { super(null, null, null, null); }
     }
 
     private static final class CountingPlayerList extends HeadlessPlayerList {

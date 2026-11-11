@@ -6,13 +6,13 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import cyano.poweradvantage.api.simple.SimpleMachineGUI;
 import zone.moddev.mc.basepower.machines.fluidmachines.StillTileEntity;
 import zone.moddev.mc.basepower.math.Integer2D;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import cyano.poweradvantage.api.fluid.FluidStack;
 
 public class StillGUI extends SimpleMachineGUI {
 
 
-	public StillGUI(ResourceLocation image) {
+	public StillGUI(Identifier image) {
 		super(image,
 				Integer2D.fromCoordinates(80, 52));
 	}

@@ -6,7 +6,7 @@ import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.item.context.BlockPlaceContext;
-import net.minecraft.world.level.block.state.properties.DirectionProperty;
+import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.core.Direction;
@@ -19,12 +19,12 @@ import zone.moddev.mc.basepower.PowerAdvantage;
 
 /** Horizontal conveyor filter block retaining its legacy metadata codec. */
 public class BlockConveyorFilter extends GUIBlock {
-    public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
+    public static final EnumProperty<Direction> FACING = HorizontalDirectionalBlock.FACING;
     private final Class<? extends TileEntityConveyor> tileEntityClass;
 
-    public BlockConveyorFilter(float hardness,
+    public BlockConveyorFilter(String id, float hardness,
             Class<? extends TileEntityConveyor> tileEntityClass) {
-        super(machineProperties(hardness).sound(SoundType.METAL));
+        super(zone.moddev.mc.basepower.init.Blocks.properties(id, machineProperties(hardness).sound(SoundType.METAL)));
         this.tileEntityClass = tileEntityClass;
         registerDefaultState(getStateDefinition().any().setValue(FACING, Direction.NORTH));
     }

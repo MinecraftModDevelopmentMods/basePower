@@ -97,10 +97,10 @@ public abstract class FluidPoweredEntity extends PoweredEntity implements IAdvan
 	@Override
 	protected void loadAdditional(final CompoundTag tagRoot, HolderLookup.Provider registries) {
 		super.loadAdditional(tagRoot, registries);
-		if (tagRoot.contains("Tank", 10)) {
-			CompoundTag tankTag = tagRoot .getCompound("Tank");
+		if (zone.moddev.mc.basepower.util.NbtCompat.containsTag(tagRoot, "Tank", 10)) {
+			CompoundTag tankTag = tagRoot .getCompoundOrEmpty("Tank");
 			getTank().readFromNBT(tankTag);
-			if (tankTag.contains("Empty", 1)) {
+			if (zone.moddev.mc.basepower.util.NbtCompat.containsTag(tankTag, "Empty", 1)) {
 				// empty the tank if NBT says its empty (not default behavior of Tank.readFromNBT(...) )
 				getTank().setFluid(null);
 			}

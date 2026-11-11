@@ -24,8 +24,9 @@ public class StillBlock extends BlockSimpleFluidMachine {
 	public static final BooleanProperty ACTIVE = BooleanProperty.create("active");
 
 	public StillBlock() {
-		super(Properties.of().mapColor(MapColor.STONE).pushReaction(PushReaction.BLOCK).forceSolidOn()
-                .strength(3F).lightLevel(state -> state.getValue(ACTIVE) ? 12 : 0));
+		super(zone.moddev.mc.basepower.init.Blocks.properties("still", Properties.of().mapColor(MapColor.STONE)
+                .pushReaction(PushReaction.BLOCK).forceSolidOn().strength(3F)
+                .lightLevel(state -> state.getValue(ACTIVE) ? 12 : 0)));
 		this.registerDefaultState(defaultBlockState().setValue(ACTIVE, false));
 	}
 

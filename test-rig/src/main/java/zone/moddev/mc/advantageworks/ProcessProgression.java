@@ -25,7 +25,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.FurnaceBlockEntity;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraftforge.registries.ForgeRegistries;
@@ -78,8 +78,8 @@ final class ProcessProgression {
         attempt.addProperty("recipe", recipe);
         attempt.addProperty("sourceUuid", source.getUUID().toString());
         attempt.addProperty("accepted", accepted);
-        attempt.addProperty("inputNbt", input.saveOptional(world.registryAccess()).toString());
-        attempt.addProperty("expectedNbt", expected.saveOptional(world.registryAccess()).toString());
+        attempt.addProperty("inputNbt", stackNbt(world, input));
+        attempt.addProperty("expectedNbt", stackNbt(world, expected));
         JsonObject before = hammerSnapshot(world, player, pos, area, source);
         attempt.add("before", before);
         attempt.addProperty("sourceMatchesInput", ItemStack.matches(source.getItem(), input));
@@ -95,7 +95,7 @@ final class ProcessProgression {
                 new UseOnContext(player, InteractionHand.MAIN_HAND, new net.minecraft.world.phys.BlockHitResult(
                         new net.minecraft.world.phys.Vec3(pos.getX() + 0.5D, pos.getY() + 1D, pos.getZ() + 0.5D),
                         Direction.UP, pos, false)));
-        attempt.addProperty("action", action.name());
+        attempt.addProperty("action", action == InteractionResult.CONSUME ? "CONSUME" : action.toString());
         attempt.addProperty("success", action == InteractionResult.CONSUME);
         attempt.addProperty("sourceConsumed", source.getItem().isEmpty());
         attempt.addProperty("damageIsOne", player.getMainHandItem().getDamageValue() == 1);
@@ -121,26 +121,27 @@ final class ProcessProgression {
             String requestedRecipe) {
         JsonObject selection = new JsonObject();
         selection.addProperty("selector", "RecipeManager.getRecipeFor(basemetals:crushing)");
-        selection.addProperty("inputNbt", input.saveOptional(world.registryAccess()).toString());
-        selection.addProperty("recipeManagerIdentity", System.identityHashCode(world.getRecipeManager()));
+        selection.addProperty("inputNbt", stackNbt(world, input));
+        selection.addProperty("recipeManagerIdentity", System.identityHashCode(world.recipeAccess()));
         selection.addProperty("requestedIdPresent",
-                world.getRecipeManager().byKey(ResourceLocation.parse(requestedRecipe)).isPresent());
+                world.recipeAccess().byKey(RecipeUnlockProbe.recipeKey(requestedRecipe)).isPresent());
         try {
             Class<?> hammerClass = hammer.getItem().getClass();
             if (!hammerClass.getName().equals("zone.moddev.mc.basemetals.content.CrackhammerItem"))
                 throw new IllegalStateException("Unexpected hammer class " + hammerClass.getName());
             RecipeType<?> type = net.minecraft.core.registries.BuiltInRegistries.RECIPE_TYPE
-                    .getOptional(ResourceLocation.fromNamespaceAndPath("basemetals", "crushing")).orElseThrow();
-            net.minecraft.world.item.crafting.RecipeHolder<?> selected = world.getRecipeManager().getRecipeFor(
+                    .getOptional(Identifier.fromNamespaceAndPath("basemetals", "crushing")).orElseThrow();
+            var selected = world.recipeAccess().getRecipeFor(
                     (RecipeType<Recipe<net.minecraft.world.item.crafting.SingleRecipeInput>>) type,
                     new net.minecraft.world.item.crafting.SingleRecipeInput(input.copy()), world).orElse(null);
             selection.addProperty("status", selected == null ? "NO_MATCH" : "MATCH");
             selection.addProperty("matched", selected != null);
             if (selected != null) {
-                selection.addProperty("id", selected.id().toString());
+                selection.addProperty("id", selected.id().identifier().toString());
                 selection.addProperty("class", selected.value().getClass().getName());
-                selection.addProperty("resultNbt", selected.value().getResultItem(world.registryAccess())
-                        .saveOptional(world.registryAccess()).toString());
+                selection.addProperty("resultNbt", stackNbt(world,
+                        selected.value().assemble(new net.minecraft.world.item.crafting.SingleRecipeInput(input.copy()),
+                                world.registryAccess())));
             }
         } catch (RuntimeException | LinkageError error) {
             selection.addProperty("status", "OBSERVER_ERROR");
@@ -154,22 +155,22 @@ final class ProcessProgression {
     private static JsonObject hammerSnapshot(ServerLevel world, ServerPlayer player, BlockPos pos,
             AABB area, ItemEntity source) {
         JsonObject sample = new JsonObject();
-        sample.addProperty("dimension", world.dimension().location().toString());
+        sample.addProperty("dimension", world.dimension().identifier().toString());
         sample.addProperty("gameTime", world.getGameTime());
         sample.addProperty("area", area.toString());
         sample.addProperty("sourceRemoved", source.isRemoved());
         sample.addProperty("sourceBounds", source.getBoundingBox().toString());
         sample.addProperty("sourceIntersectsArea", source.getBoundingBox().intersects(area));
-        sample.addProperty("sourceNbt", source.getItem().saveOptional(world.registryAccess()).toString());
+        sample.addProperty("sourceNbt", stackNbt(world, source.getItem()));
         sample.addProperty("uuidLookupIsSource", world.getEntity(source.getUUID()) == source);
         sample.addProperty("entitiesLoaded", world.areEntitiesLoaded(net.minecraft.world.level.ChunkPos.asLong(pos)));
         sample.addProperty("blockAndEntitiesTicking", Native118ChunkTicking.withEntitiesLoaded(world, pos));
         sample.addProperty("entityTicking", world.isPositionEntityTicking(pos));
-        sample.addProperty("clientSide", world.isClientSide);
+        sample.addProperty("clientSide", world.isClientSide());
         sample.addProperty("creative", player.isCreative());
         sample.addProperty("shift", player.isShiftKeyDown());
         sample.addProperty("hammerClass", player.getMainHandItem().getItem().getClass().getName());
-        sample.addProperty("hammerNbt", player.getMainHandItem().saveOptional(world.registryAccess()).toString());
+        sample.addProperty("hammerNbt", stackNbt(world, player.getMainHandItem()));
         sample.addProperty("hammerDamage", player.getMainHandItem().getDamageValue());
         sample.addProperty("hammerMaxDamage", player.getMainHandItem().getMaxDamage());
         JsonArray items = new JsonArray();
@@ -181,12 +182,18 @@ final class ProcessProgression {
             item.addProperty("isSource", entity == source);
             item.addProperty("removed", entity.isRemoved());
             item.addProperty("bounds", entity.getBoundingBox().toString());
-            item.addProperty("stackNbt", entity.getItem().saveOptional(world.registryAccess()).toString());
+            item.addProperty("stackNbt", stackNbt(world, entity.getItem()));
             items.add(item);
         }
         sample.addProperty("sourceInAabb", sourceInAabb);
         sample.add("items", items);
         return sample;
+    }
+
+    private static String stackNbt(ServerLevel world, ItemStack stack) {
+        return ItemStack.OPTIONAL_CODEC.encodeStart(
+                world.registryAccess().createSerializationContext(net.minecraft.nbt.NbtOps.INSTANCE), stack)
+                .getOrThrow().toString();
     }
 
     static boolean canCrush(Map<String, JsonObject> known, ItemStack input) {
@@ -225,9 +232,12 @@ final class ProcessProgression {
                 BlockPos pos = new BlockPos(16390, 80, 16384);
                 fresh(world, fixture, pos, fluid);
                 player.getInventory().clearContent();
-                player.absMoveTo(pos.getX() + 0.5D, pos.getY() + 2, pos.getZ() + 0.5D, 0, 90);
+                player.absSnapTo(pos.getX() + 0.5D, pos.getY() + 2, pos.getZ() + 0.5D, 0, 90);
                 player.setItemInHand(InteractionHand.MAIN_HAND, stack("minecraft:bucket"));
-                ItemStack output = player.getMainHandItem().getItem().use(world, player, InteractionHand.MAIN_HAND).getObject();
+                InteractionResult action = player.getMainHandItem().getItem().use(world, player, InteractionHand.MAIN_HAND);
+                require(action instanceof InteractionResult.Success, "Native world-fluid pickup failed: " + fluid);
+                ItemStack output = ((InteractionResult.Success) action).heldItemTransformedTo();
+                require(output != null, "Native world-fluid pickup did not return a filled bucket: " + fluid);
                 require(!output.isEmpty() && id(output).equals(bucket), "Native world-fluid pickup changed identity: " + fluid);
                 require(world.getFluidState(pos).isEmpty(), "Bucket pickup left its source behind");
                 changed |= acquire(known, player, output, "bucket_collect:" + fluid, Collections.singletonList("minecraft:bucket"));
@@ -323,7 +333,7 @@ final class ProcessProgression {
                 && p[i] <= bounds.getAsJsonArray("max").get(i).getAsInt(), "Machine fixture escaped its bounds");
         world.setBlockAndUpdate(pos, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState());
         world.removeBlockEntity(pos);
-        net.minecraft.world.level.block.Block material = ForgeRegistries.BLOCKS.getValue(ResourceLocation.parse(block));
+        net.minecraft.world.level.block.Block material = ForgeRegistries.BLOCKS.getValue(Identifier.parse(block));
         require(material != null, "Missing machine/fluid " + block);
         world.setBlockAndUpdate(pos, material.defaultBlockState());
         BlockEntity clean = world.getBlockEntity(pos);

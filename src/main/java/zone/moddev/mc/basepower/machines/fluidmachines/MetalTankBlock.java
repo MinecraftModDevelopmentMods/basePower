@@ -12,7 +12,7 @@ import net.minecraft.world.level.BlockGetter;
 public class MetalTankBlock extends BlockSimpleFluidMachine {
 
 	public MetalTankBlock() {
-		super(machineProperties(3F));
+		super(zone.moddev.mc.basepower.init.Blocks.properties("fluid_metal_tank", machineProperties(3F)));
 	}
 
 	@Override

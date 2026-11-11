@@ -27,7 +27,7 @@ import net.minecraft.server.level.ServerPlayerGameMode;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.core.Direction;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.phys.shapes.BooleanOp;
@@ -44,12 +44,12 @@ final class NativeHarvestProbe {
     private static final BlockPos POS = new BlockPos(1200, 8, 1024);
 
     static void register() {
-        if (MARKER.isFile()) MinecraftForge.EVENT_BUS.addListener(new NativeHarvestProbe()::starting);
+        if (MARKER.isFile()) RegisterCommandsEvent.BUS.addListener(new NativeHarvestProbe()::starting);
     }
 
     private void starting(RegisterCommandsEvent event) {
         event.getDispatcher().register(Commands.literal("advharvest")
-                .requires(source -> source.hasPermission(4))
+                .requires(source -> source.permissions().hasPermission(net.minecraft.server.permissions.Permissions.COMMANDS_OWNER))
                 .then(Commands.argument("label", StringArgumentType.word()).executes(context -> {
                     WorksController.getInstance().requireAuthorizedWorld(context.getSource().getServer());
                     try { run(context.getSource().getLevel(), StringArgumentType.getString(context, "label")); }
@@ -77,7 +77,7 @@ final class NativeHarvestProbe {
         JsonArray dropEvidence = new JsonArray();
         row.add("dropEvidence", dropEvidence);
         try {
-            ResourceLocation key = ResourceLocation.parse(blockId);
+            Identifier key = Identifier.parse(blockId);
             require(ForgeRegistries.BLOCKS.containsKey(key), "Missing real block: " + blockId);
             Block block = ForgeRegistries.BLOCKS.getValue(key);
             player.gameMode.changeGameModeForPlayer(GameType.SURVIVAL);
@@ -204,7 +204,7 @@ final class NativeHarvestProbe {
         JsonObject solar = new JsonObject();
         solar.addProperty("id", "solar/native-solidity");
         try {
-            Block block = ForgeRegistries.BLOCKS.getValue(ResourceLocation.parse("baseelectric:photovoltaic_generator"));
+            Block block = ForgeRegistries.BLOCKS.getValue(Identifier.parse("baseelectric:photovoltaic_generator"));
             require(block != null && block != net.minecraft.world.level.block.Blocks.AIR, "Missing native photovoltaic block");
             world.setBlock(POS, block.defaultBlockState(), 2);
             require(world.getBlockState(POS).canOcclude(), "Legacy photovoltaic solid=true was lost");
@@ -219,7 +219,7 @@ final class NativeHarvestProbe {
         harvestDrops(world, new AABB(POS).inflate(2)).forEach(ItemEntity::discard);
         JsonObject report = new JsonObject();
         report.addProperty("label", label);
-        report.addProperty("minecraft", net.minecraft.SharedConstants.getCurrentVersion().getName());
+        report.addProperty("minecraft", net.minecraft.SharedConstants.getCurrentVersion().name());
         report.addProperty("worldTime", world.getGameTime());
         report.addProperty("fixtureIsolation", "native117-live-drops-v1");
         report.addProperty("status", java.util.stream.StreamSupport.stream(rows.spliterator(), false)

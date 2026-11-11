@@ -6,18 +6,10 @@
     " x "
   ],
   "key": {
-    "x": {
-      "tag": "forge:bars"
-    },
-    "w": {
-      "tag": "forge:plates/steel"
-    },
-    "#": {
-      "tag": "forge:frames/steel"
-    },
-    "p": {
-      "tag": "forge:pipes"
-    }
+    "x": "#forge:bars",
+    "w": "#forge:plates/steel",
+    "#": "#forge:frames/steel",
+    "p": "#forge:pipes"
   },
   "result": {
     "id": "basepower:fluid_discharge"

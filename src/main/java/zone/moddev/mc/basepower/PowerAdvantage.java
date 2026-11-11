@@ -17,7 +17,7 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.DistExecutor;
 
 import net.minecraftforge.fml.ModList;
-import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.eventbus.api.bus.BusGroup;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
@@ -42,7 +42,7 @@ import zone.moddev.mc.basepower.migration.BaseMetalsLegacyMigration;
 public final class PowerAdvantage {
     public static final String MODID = "basepower";
     public static final String NAME = "basePower";
-    public static final String VERSION = "2.4.14.121011";
+    public static final String VERSION = "2.4.15.121111";
     public static final Logger LOGGER = LogManager.getLogger(MODID);
 
     private static PowerAdvantage instance;
@@ -73,17 +73,22 @@ public final class PowerAdvantage {
 
     public PowerAdvantage(FMLJavaModLoadingContext context) {
         instance = this;
-        IEventBus modBus = context.getModEventBus();
+        BusGroup modBus = context.getModBusGroup();
 
         AdvantageLegacyMigrations.registerPowerAdvantage();
         zone.moddev.mc.basepower.migration.VanillaRegistryRemaps.register();
-        MinecraftForge.EVENT_BUS.addListener(ConduitRegistry.getInstance()::onChunkLoad);
-        MinecraftForge.EVENT_BUS.addListener(ConduitRegistry.getInstance()::onChunkUnload);
-        MinecraftForge.EVENT_BUS.addListener(RecipeDiscovery::onPlayerLogin);
-        MinecraftForge.EVENT_BUS.addListener(zone.moddev.mc.basepower.init.Villages::onTrades);
-        modBus.addListener(
+        net.minecraftforge.event.level.ChunkEvent.Load.BUS.addListener(ConduitRegistry.getInstance()::onChunkLoad);
+        net.minecraftforge.event.level.ChunkEvent.Unload.BUS.addListener(ConduitRegistry.getInstance()::onChunkUnload);
+        net.minecraftforge.event.entity.player.PlayerEvent.PlayerLoggedInEvent.BUS.addListener(RecipeDiscovery::onPlayerLogin);
+        net.minecraftforge.event.village.VillagerTradesEvent.BUS.addListener(zone.moddev.mc.basepower.init.Villages::onTrades);
+        net.minecraftforge.event.AddPackFindersEvent.BUS.addListener(
                 zone.moddev.mc.basepower.recipe.MaterialTags::registerPack);
-        modBus.addListener(MachineGUIRegistry::registerTypes);
+        net.minecraftforge.registries.RegisterEvent.getBus(modBus).addListener(zone.moddev.mc.basepower.init.Blocks::registerBlocks);
+        net.minecraftforge.registries.RegisterEvent.getBus(modBus).addListener(zone.moddev.mc.basepower.init.Blocks::registerBlockItems);
+        net.minecraftforge.registries.RegisterEvent.getBus(modBus).addListener(zone.moddev.mc.basepower.init.Items::register);
+        net.minecraftforge.registries.RegisterEvent.getBus(modBus).addListener(zone.moddev.mc.basepower.init.Fluids::registerFluids);
+        net.minecraftforge.registries.RegisterEvent.getBus(modBus).addListener(zone.moddev.mc.basepower.init.Entities::register);
+        net.minecraftforge.registries.RegisterEvent.getBus(modBus).addListener(MachineGUIRegistry::registerTypes);
 
         Fluids.init();
         ItemGroups.register(modBus);
@@ -93,11 +98,12 @@ public final class PowerAdvantage {
         migrateLegacyOreSpawnConfiguration();
         migrateLegacyConfiguration();
         context.registerConfig(ModConfig.Type.COMMON, PowerAdvantageConfig.SPEC);
-        modBus.addListener(PowerAdvantageConfig::onConfigLoading);
-        modBus.addListener(this::commonSetup);
+        net.minecraftforge.fml.event.config.ModConfigEvent.Loading.getBus(modBus).addListener(PowerAdvantageConfig::onConfigLoading);
+        net.minecraftforge.fml.event.config.ModConfigEvent.Reloading.getBus(modBus).addListener(PowerAdvantageConfig::onConfigLoading);
+        FMLCommonSetupEvent.getBus(modBus).addListener(this::commonSetup);
 
         DistExecutor.runWhenOn(Dist.CLIENT, () -> () -> {
-            modBus.addListener(
+            net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent.getBus(modBus).addListener(
                     (net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent event) ->
                             event.enqueueWork(() -> {
                                 MachineGUIRegistry.registerScreens();

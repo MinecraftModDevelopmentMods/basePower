@@ -10,7 +10,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import zone.moddev.mc.basepower.PowerAdvantage;
 import net.minecraft.world.level.material.Fluid;
 import cyano.poweradvantage.api.fluid.FluidStack;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.core.Registry;
 import zone.moddev.mc.basepower.init.Fluids;
 
@@ -137,7 +137,7 @@ public class DistillationRecipeRegistry {
 	}
 
 	private static String id(Fluid fluid) {
-		ResourceLocation id = net.minecraftforge.registries.ForgeRegistries.FLUIDS.getKey(fluid);
+		Identifier id = net.minecraftforge.registries.ForgeRegistries.FLUIDS.getKey(fluid);
 		return id == null ? "unknown" : id.toString();
 	}
 	

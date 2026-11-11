@@ -33,6 +33,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.Ingredient;
+import net.minecraft.world.item.crafting.PlacementInfo;
+import net.minecraft.world.item.crafting.SingleRecipeInput;
 import net.minecraft.network.protocol.PacketFlow;
 import net.minecraft.server.network.ServerGamePacketListenerImpl;
 import net.minecraft.network.Connection;
@@ -40,7 +42,7 @@ import net.minecraft.network.protocol.Packet;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayerGameMode;
 import net.minecraft.tags.ItemTags;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.storage.loot.LootContext;
@@ -58,11 +60,11 @@ final class ProgressionProbe {
     private static final File MARKER = new File("advantage-progression.allow");
 
     static void register() {
-        if (MARKER.isFile()) MinecraftForge.EVENT_BUS.addListener(new ProgressionProbe()::starting);
+        if (MARKER.isFile()) RegisterCommandsEvent.BUS.addListener(new ProgressionProbe()::starting);
     }
 
     private void starting(RegisterCommandsEvent event) {
-        event.getDispatcher().register(Commands.literal("advprogression").requires(source -> source.hasPermission(4))
+        event.getDispatcher().register(Commands.literal("advprogression").requires(Commands.hasPermission(Commands.LEVEL_OWNERS))
                 .then(Commands.argument("label", StringArgumentType.word()).executes(context -> {
                     String label = StringArgumentType.getString(context, "label");
                     try { audit(context.getSource().getServer(), context.getSource().getLevel(), label); }
@@ -91,14 +93,14 @@ final class ProgressionProbe {
                 player.getAdvancements().revoke(advancement, criterion);
         }
         List<RecipeHolder<?>> oldBook = new ArrayList<>();
-        for (RecipeHolder<?> recipe : server.getRecipeManager().getRecipes()) if (owned(recipe.id())) oldBook.add(recipe);
+        for (RecipeHolder<?> recipe : server.getRecipeManager().getRecipes()) if (owned(recipe.id().identifier())) oldBook.add(recipe);
         player.resetRecipes(oldBook);
         ProcessProgression.reset();
         Map<String, JsonObject> known = new LinkedHashMap<>();
         Set<String> executed = new LinkedHashSet<>();
         for (JsonElement seed : fixture.getAsJsonArray("naturalResources")) {
             String id = seed.getAsString();
-            Item item = ForgeRegistries.ITEMS.getValue(ResourceLocation.parse(id));
+            Item item = ForgeRegistries.ITEMS.getValue(Identifier.parse(id));
             if (item != null) acquire(known, player, new ItemStack(item), "natural_resource", Collections.emptyList());
         }
         JsonArray loot = new JsonArray();
@@ -125,7 +127,7 @@ final class ProgressionProbe {
             }
         }
         List<RecipeHolder<?>> recipes = new ArrayList<>(server.getRecipeManager().getRecipes());
-        recipes.sort(Comparator.comparing(recipe -> recipe.id().toString()));
+        recipes.sort(Comparator.comparing(recipe -> recipe.id().identifier().toString()));
         boolean changed = true;
         int rounds = 0;
         while (changed) {
@@ -133,7 +135,8 @@ final class ProgressionProbe {
             changed = false;
             for (RecipeHolder<?> holder : recipes) {
                 Recipe<?> recipe = holder.value();
-                if (executed.contains(holder.id().toString()) || recipe.getIngredients().isEmpty()) continue;
+                Identifier recipeId = holder.id().identifier();
+                if (executed.contains(recipeId.toString())) continue;
                 String type = net.minecraft.core.registries.BuiltInRegistries.RECIPE_TYPE.getKey(recipe.getType()).toString();
                 boolean crafting = recipe.getType() == RecipeType.CRAFTING;
                 boolean smelting = recipe.getType() == RecipeType.SMELTING;
@@ -141,18 +144,10 @@ final class ProgressionProbe {
                 if (!crafting && !smelting && !crushing) continue;
                 if (smelting && (!known.containsKey("minecraft:furnace") || !known.containsKey("minecraft:coal"))) continue;
                 if (crushing && known.keySet().stream().noneMatch(key -> key.startsWith("basemetals:") && key.endsWith("_crackhammer"))) continue;
-                List<ItemStack> ingredients = new ArrayList<>();
-                boolean possible = true;
-                for (Ingredient ingredient : recipe.getIngredients()) {
-                    if (ingredient == Ingredient.EMPTY) { ingredients.add(ItemStack.EMPTY); continue; }
-                    ItemStack chosen = ItemStack.EMPTY;
-                    for (ItemStack candidate : ingredient.getItems()) {
-                        if (!candidate.isEmpty() && known.containsKey(id(candidate))) { chosen = candidate.copy(); chosen.setCount(1); break; }
-                    }
-                    if (chosen.isEmpty()) { possible = false; break; }
-                    ingredients.add(chosen);
-                }
-                if (!possible) continue;
+                // Special crushing recipes deliberately have no recipe-book placement information.
+                List<ItemStack> ingredients = crushing ? knownSingleInput(recipe, known.keySet(), world)
+                        : knownIngredients(recipe.placementInfo(), known.keySet());
+                if (ingredients == null || ingredients.isEmpty()) continue;
                 if (crushing && !ProcessProgression.canCrush(known, ingredients.get(0))) continue;
                 ItemStack result = ItemStack.EMPTY;
                 if (crafting) {
@@ -174,20 +169,20 @@ final class ProgressionProbe {
                     result = matchedResult(recipe, grid, world);
                 }
                 if (result.isEmpty()) continue;
-                if (owned(holder.id()) && !crushing) {
-                    AdvancementHolder unlock = server.getAdvancements().get(ResourceLocation.fromNamespaceAndPath(
-                            holder.id().getNamespace(), "recipes/" + holder.id().getPath()));
+                if (owned(recipeId) && !crushing) {
+                    AdvancementHolder unlock = server.getAdvancements().get(Identifier.fromNamespaceAndPath(
+                            recipeId.getNamespace(), "recipes/" + recipeId.getPath()));
                     require(unlock != null && player.getAdvancements().getOrStartProgress(unlock).isDone()
-                            && player.getRecipeBook().contains(holder), "Manufacture lacks ingredient discovery: " + holder.id());
+                            && player.getRecipeBook().contains(holder.id()), "Manufacture lacks ingredient discovery: " + recipeId);
                 }
-                if (owned(holder.id()) && smelting)
-                    ProcessProgression.smelt(world, fixture, holder.id().toString(), ingredients.get(0), result);
-                if (owned(holder.id()) && crushing && !(ingredients.get(0).getItem() instanceof net.minecraft.world.item.BlockItem))
-                    ProcessProgression.hammer(world, player, known, fixture, holder.id().toString(), ingredients.get(0), result);
-                executed.add(holder.id().toString());
+                if (owned(recipeId) && smelting)
+                    ProcessProgression.smelt(world, fixture, recipeId.toString(), ingredients.get(0), result);
+                if (owned(recipeId) && crushing && !(ingredients.get(0).getItem() instanceof net.minecraft.world.item.BlockItem))
+                    ProcessProgression.hammer(world, player, known, fixture, recipeId.toString(), ingredients.get(0), result);
+                executed.add(recipeId.toString());
                 List<String> inputs = new ArrayList<>();
                 for (ItemStack ingredient : ingredients) if (!ingredient.isEmpty()) inputs.add(id(ingredient));
-                changed |= acquire(known, player, result, holder.id().toString(), inputs);
+                changed |= acquire(known, player, result, recipeId.toString(), inputs);
             }
             changed |= ProcessProgression.advance(world, player, known, fixture);
         }
@@ -215,9 +210,9 @@ final class ProgressionProbe {
         JsonArray missingRecipes = new JsonArray();
         for (RecipeHolder<?> holder : recipes) {
             Recipe<?> recipe = holder.value();
-            if (!owned(holder.id()) || (recipe.getType() != RecipeType.CRAFTING
+            if (!owned(holder.id().identifier()) || (recipe.getType() != RecipeType.CRAFTING
                     && recipe.getType() != RecipeType.SMELTING)) continue;
-            if (!executed.contains(holder.id().toString())) missingRecipes.add(holder.id().toString());
+            if (!executed.contains(holder.id().identifier().toString())) missingRecipes.add(holder.id().identifier().toString());
         }
         if (missingRecipes.size() > 0) blocked += missingRecipes.size();
         report.addProperty("status", blocked == 0 ? "PASS" : "FAIL");
@@ -236,7 +231,7 @@ final class ProgressionProbe {
         JsonObject tags = new JsonObject();
         for (String name : new String[] {"wires", "dusts/carbon", "rubber", "plastic", "circuit_boards", "solder"}) {
             List<String> members = new ArrayList<>();
-            for (var item : net.minecraft.core.registries.BuiltInRegistries.ITEM.getTagOrEmpty(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", name))))
+            for (var item : net.minecraft.core.registries.BuiltInRegistries.ITEM.getTagOrEmpty(ItemTags.create(Identifier.fromNamespaceAndPath("forge", name))))
                 members.add(net.minecraftforge.registries.ForgeRegistries.ITEMS.getKey(item.value()).toString());
             Collections.sort(members);
             tags.add(name, JSON.toJsonTree(members));
@@ -264,14 +259,48 @@ final class ProgressionProbe {
         return result;
     }
 
+    static List<ItemStack> knownIngredients(PlacementInfo placement, Set<String> known) {
+        if (placement.isImpossibleToPlace()) return Collections.emptyList();
+        List<ItemStack> slots = new ArrayList<>();
+        for (int index : placement.slotsToIngredientIndex()) {
+            if (index == PlacementInfo.EMPTY_SLOT) {
+                slots.add(ItemStack.EMPTY);
+                continue;
+            }
+            Ingredient ingredient = placement.ingredients().get(index);
+            ItemStack chosen = ItemStack.EMPTY;
+            for (String id : known) {
+                ItemStack candidate = stack(id);
+                if (!candidate.isEmpty() && ingredient.test(candidate)) {
+                    chosen = candidate;
+                    break;
+                }
+            }
+            if (chosen.isEmpty()) return null;
+            slots.add(chosen);
+        }
+        return slots;
+    }
+
+    @SuppressWarnings("unchecked")
+    static List<ItemStack> knownSingleInput(Recipe<?> recipe, Set<String> known, ServerLevel world) {
+        Recipe<SingleRecipeInput> typed = (Recipe<SingleRecipeInput>) recipe;
+        for (String id : known) {
+            ItemStack candidate = stack(id);
+            if (!candidate.isEmpty() && typed.matches(new SingleRecipeInput(candidate), world))
+                return Collections.singletonList(candidate);
+        }
+        return Collections.emptyList();
+    }
+
     static ItemStack stack(String id) {
-        Item item = ForgeRegistries.ITEMS.getValue(ResourceLocation.parse(id));
+        Item item = ForgeRegistries.ITEMS.getValue(Identifier.parse(id));
         return item == null ? ItemStack.EMPTY : new ItemStack(item);
     }
 
     private static net.minecraft.world.level.storage.loot.LootTable lootTable(MinecraftServer server, String id) {
         return server.reloadableRegistries().getLootTable(net.minecraft.resources.ResourceKey.create(
-                net.minecraft.core.registries.Registries.LOOT_TABLE, ResourceLocation.parse(id)));
+                net.minecraft.core.registries.Registries.LOOT_TABLE, Identifier.parse(id)));
     }
 
     private static LootParams chestParams(ServerLevel world) {
@@ -289,7 +318,7 @@ final class ProgressionProbe {
     }
 
     private static boolean advantage(ItemStack stack) { return !stack.isEmpty() && owned(net.minecraftforge.registries.ForgeRegistries.ITEMS.getKey(stack.getItem())); }
-    private static boolean owned(ResourceLocation id) {
+    private static boolean owned(Identifier id) {
         return id != null && (id.getNamespace().equals("basepower") || id.getNamespace().equals("basesteam")
                 || id.getNamespace().equals("baseelectric"));
     }

@@ -1,6 +1,7 @@
 modLoader="javafml"
 loaderVersion="${loader_version_range}"
 license="LGPL-3.0-only"
+showAsResourcePack=false
 issueTrackerURL="https://github.com/MinecraftModDevelopmentMods/basePower/issues"
 
 [[mods]]
@@ -13,15 +14,15 @@ description='''API and shared machines for pressure, electricity, quantum power,
 
 [[dependencies.basepower]]
 modId="basemetals"
-mandatory=false
-versionRange="[3.1.2.120061,4.0.0)"
+mandatory=true
+versionRange="[3.1.2.121111,4.0.0)"
 ordering="AFTER"
 side="BOTH"
 
 [[dependencies.basepower]]
 modId="orespawn"
 mandatory=true
-versionRange="[4.1.0.120061,5.0.0)"
+versionRange="[4.1.0.121111,5.0.0)"
 ordering="AFTER"
 side="BOTH"
 

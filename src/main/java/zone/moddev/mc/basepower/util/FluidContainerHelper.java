@@ -25,7 +25,7 @@ public final class FluidContainerHelper {
 
     public static boolean interact(Player player, InteractionHand hand,
             IAdvantageFluidHandler handler, Direction face) {
-        if (player.level().isClientSide) return false;
+        if (player.level().isClientSide()) return false;
         ItemStack held = player.getItemInHand(hand);
         if (held.isEmpty()) return false;
         IFluidHandlerItem container = itemHandler(held.copyWithCount(1)).orElse(null);

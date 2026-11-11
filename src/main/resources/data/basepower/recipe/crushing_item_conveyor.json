@@ -1,8 +1,6 @@
 {
   "type": "basemetals:crushing",
-  "ingredient": {
-    "item": "basepower:item_conveyor"
-  },
+  "ingredient": "basepower:item_conveyor",
   "result": {
     "id": "basemetals:steel_plate",
     "count": 1

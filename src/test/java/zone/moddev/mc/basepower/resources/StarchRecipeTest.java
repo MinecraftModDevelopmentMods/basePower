@@ -40,7 +40,25 @@ public class StarchRecipeTest {
     }
     private static Set<String> items(JsonArray values) {
         Set<String> items = new HashSet<>();
-        values.forEach(value -> items.add(value.getAsJsonObject().get("item").getAsString()));
+        values.forEach(value -> {
+            assertTrue("Forge 61 requires native string ingredient selectors", value.isJsonPrimitive()
+                    && value.getAsJsonPrimitive().isString());
+            items.add(value.getAsString());
+        });
         return items;
+    }
+
+    @Test public void nativeIngredientCodecAcceptsBothPotatoesAndRejectsDirt() throws Exception {
+        net.minecraft.SharedConstants.tryDetectVersion();
+        net.minecraft.server.Bootstrap.bootStrap();
+        zone.moddev.mc.advantageworks.unit.ForgeUnitRegistries.registerIngredientSerializers();
+        var registries = net.minecraft.core.RegistryAccess.fromRegistryOfRegistries(
+                net.minecraft.core.registries.BuiltInRegistries.REGISTRY);
+        var ops = registries.createSerializationContext(com.mojang.serialization.JsonOps.INSTANCE);
+        var value = net.minecraft.world.item.crafting.Ingredient.CODEC.parse(ops,
+                read("starch_from_potato").getAsJsonArray("ingredients").get(0)).getOrThrow();
+        assertTrue(value.test(new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.POTATO)));
+        assertTrue(value.test(new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.POISONOUS_POTATO)));
+        assertFalse(value.test(new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.DIRT)));
     }
 }

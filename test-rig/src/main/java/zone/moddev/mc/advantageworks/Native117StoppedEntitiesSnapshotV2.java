@@ -2,6 +2,7 @@ package zone.moddev.mc.advantageworks;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -18,6 +19,7 @@ import java.util.UUID;
 import java.util.WeakHashMap;
 import net.minecraft.SharedConstants;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.UUIDUtil;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtIo;
 import net.minecraft.server.MinecraftServer;
@@ -28,29 +30,45 @@ import net.minecraft.world.entity.decoration.LeashFenceKnotEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.storage.LevelResource;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.eventbus.api.EventPriority;
+import net.minecraftforge.eventbus.api.listener.Priority;
 import net.minecraftforge.event.server.ServerStartingEvent;
 import net.minecraftforge.event.server.ServerStoppingEvent;
 import org.apache.logging.log4j.LogManager;
 
 /** Versioned stop-boundary observation. Native no-save helpers are never saved-state witnesses. */
 final class Native117StoppedEntitiesSnapshotV2 {
-    static final String CONTRACT = "native1211-helper-contract.json";
-    static final String POLICY = "native1211-leash-knot-nosave-v1";
+    static final String CONTRACT = "native12111-helper-contract.json";
+    static final String POLICY = "native12111-leash-knot-nosave-v1";
     private static final Map<MinecraftServer, String> BOOTS = Collections.synchronizedMap(new WeakHashMap<>());
 
     private Native117StoppedEntitiesSnapshotV2() {}
 
     static void register() {
-        MinecraftForge.EVENT_BUS.addListener(EventPriority.LOWEST, Native117StoppedEntitiesSnapshotV2::starting);
-        MinecraftForge.EVENT_BUS.addListener(EventPriority.LOWEST, Native117StoppedEntitiesSnapshotV2::stopping);
+        ServerStartingEvent.BUS.addListener(Priority.LOWEST, Native117StoppedEntitiesSnapshotV2::starting);
+        ServerStoppingEvent.BUS.addListener(Priority.LOWEST, Native117StoppedEntitiesSnapshotV2::stopping);
     }
 
     static byte[] contract() throws IOException {
         try (InputStream input = Native117StoppedEntitiesSnapshotV2.class.getResourceAsStream(
                 "/assets/advantageworkstest/" + CONTRACT)) {
             if (input == null) throw new IOException("Missing native helper control evidence");
-            return input.readAllBytes();
+            byte[] bytes = input.readAllBytes();
+            validateContract(bytes);
+            return bytes;
+        }
+    }
+
+    static void validateContract(byte[] bytes) throws IOException {
+        try {
+            JsonObject control = JsonParser.parseString(new String(bytes, java.nio.charset.StandardCharsets.UTF_8)).getAsJsonObject();
+            if (control.get("format").getAsInt() != 1 || !POLICY.equals(control.get("policy").getAsString())
+                    || !SharedConstants.getCurrentVersion().name().equals(control.get("minecraftVersion").getAsString())
+                    || SharedConstants.getCurrentVersion().dataVersion().version() != control.get("dataVersion").getAsInt()
+                    || !"61.1.0".equals(control.get("forgeVersion").getAsString())) {
+                throw new IOException("Native helper control does not describe this pinned engine");
+            }
+        } catch (RuntimeException error) {
+            throw new IOException("Invalid native helper control", error);
         }
     }
 
@@ -63,8 +81,8 @@ final class Native117StoppedEntitiesSnapshotV2 {
     private static JsonObject header(MinecraftServer server, String boot, String phase) throws Exception {
         JsonObject result = new JsonObject();
         result.addProperty("format", 2);
-        result.addProperty("minecraftVersion", SharedConstants.getCurrentVersion().getName());
-        result.addProperty("dataVersion", SharedConstants.getCurrentVersion().getDataVersion().getVersion());
+        result.addProperty("minecraftVersion", SharedConstants.getCurrentVersion().name());
+        result.addProperty("dataVersion", SharedConstants.getCurrentVersion().dataVersion().version());
         result.addProperty("worldName", server.getWorldData().getLevelName());
         result.addProperty("worldDirectory", server.getWorldPath(LevelResource.ROOT).toAbsolutePath().normalize().toString());
         result.addProperty("bootId", boot);
@@ -107,7 +125,7 @@ final class Native117StoppedEntitiesSnapshotV2 {
                 if (world == null) throw new IllegalStateException("Missing vanilla dimension: " + id);
                 JsonObject dimension = partition(world, world.getAllEntities(), seen);
                 dimension.addProperty("gameTime", world.getGameTime());
-                dimensions.add(world.dimension().location().toString(), dimension);
+                dimensions.add(world.dimension().identifier().toString(), dimension);
                 persistent += dimension.get("entityCount").getAsInt();
                 helpers += dimension.get("nonpersistentHelperCount").getAsInt();
             }
@@ -144,9 +162,9 @@ final class Native117StoppedEntitiesSnapshotV2 {
                     && !entity.getType().canSerialize() && !entity.isRemoved() && !entity.isPassenger()
                     && entity.getPassengers().isEmpty()) {
                 if (!seen.add(entity.getUUID())) throw new IllegalStateException("Duplicate enumerated UUID: " + diagnostic(entity));
-                CompoundTag nbt = entity.saveWithoutId(new CompoundTag());
+                CompoundTag nbt = NativeActorIo.saveWithoutId(entity);
                 nbt.putString("id", EntityType.getKey(entity.getType()).toString());
-                if (!nbt.hasUUID("UUID") || !entity.getUUID().equals(nbt.getUUID("UUID")))
+                if (!entity.getUUID().equals(nbt.read("UUID", UUIDUtil.CODEC).orElseThrow()))
                     throw new IllegalStateException("Helper writer changed UUID: " + diagnostic(entity));
                 ByteArrayOutputStream bytes = new ByteArrayOutputStream();
                 NbtIo.writeCompressed(nbt, bytes);
@@ -154,7 +172,7 @@ final class Native117StoppedEntitiesSnapshotV2 {
                 helper.addProperty("uuid", entity.getUUID().toString());
                 helper.addProperty("id", "minecraft:leash_knot");
                 helper.addProperty("nativeClass", entity.getClass().getName());
-                helper.addProperty("worldDimensionKey", world.dimension().location().toString());
+                helper.addProperty("worldDimensionKey", world.dimension().identifier().toString());
                 helper.addProperty("canSerialize", false);
                 helper.addProperty("removed", false);
                 helper.addProperty("passenger", false);
@@ -178,7 +196,7 @@ final class Native117StoppedEntitiesSnapshotV2 {
         }
         JsonObject result = new JsonObject();
         result.addProperty("dimension", Native117Worlds.legacyId(world.dimension()));
-        result.addProperty("worldDimensionKey", world.dimension().location().toString());
+        result.addProperty("worldDimensionKey", world.dimension().identifier().toString());
         result.addProperty("entityCount", persistent.size());
         result.addProperty("nonpersistentHelperCount", helpers.size());
         result.addProperty("observedEntityCount", persistent.size() + helpers.size());

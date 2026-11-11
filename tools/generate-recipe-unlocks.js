@@ -14,6 +14,8 @@ const ignored = new Set(['item:minecraft:stick', 'item:minecraft:string',
 
 function choices(value) {
   if (Array.isArray(value)) return value.flatMap(choices);
+  if (typeof value === 'string') return value.startsWith('#')
+    ? [{tag: value.slice(1)}] : [{item: value}];
   if (value && value.tag) return [{tag: value.tag}];
   if (value && value.item) return [{item: value.item}];
   throw new Error('Unsupported recipe ingredient: ' + JSON.stringify(value));

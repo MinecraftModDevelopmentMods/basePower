@@ -31,7 +31,7 @@ final class WorksResultWriter {
         Map<String, Object> document = new LinkedHashMap<>();
         document.put("format", 1);
         document.put("recordedAtUtc", utcNow());
-        document.put("minecraft", net.minecraft.SharedConstants.getCurrentVersion().getName());
+        document.put("minecraft", net.minecraft.SharedConstants.getCurrentVersion().name());
         document.put("forge", net.minecraftforge.versions.forge.ForgeVersion.getVersion());
         document.put("mods", loadedMods());
         document.put("station", stationId);

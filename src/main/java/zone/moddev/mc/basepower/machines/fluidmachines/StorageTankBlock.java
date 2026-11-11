@@ -28,7 +28,7 @@ import zone.moddev.mc.basepower.util.ItemData;
 
 /** Portable tank block. FluidID and Volume remain unchanged for old item stacks. */
 public class StorageTankBlock extends BlockSimpleFluidMachine {
-    public StorageTankBlock() { super(machineProperties(3F)); }
+    public StorageTankBlock() { super(zone.moddev.mc.basepower.init.Blocks.properties("fluid_storage_tank", machineProperties(3F))); }
 
     @Override public PoweredEntity newBlockEntity(net.minecraft.core.BlockPos pos, net.minecraft.world.level.block.state.BlockState state) { return new StorageTankTileEntity(pos, state); }
     @Override public boolean hasAnalogOutputSignal(BlockState state) { return true; }
@@ -45,11 +45,11 @@ public class StorageTankBlock extends BlockSimpleFluidMachine {
         super.setPlacedBy(world, pos, state, placer, stack);
         CompoundTag tag = ItemData.customData(stack);
         BlockEntity tile = world.getBlockEntity(pos);
-        if (tag.contains("FluidID", 8) && tag.contains("Volume", 99)
+        if (zone.moddev.mc.basepower.util.NbtCompat.containsTag(tag, "FluidID", 8) && zone.moddev.mc.basepower.util.NbtCompat.containsTag(tag, "Volume", 99)
                 && tile instanceof StorageTankTileEntity) {
-            net.minecraft.world.level.material.Fluid fluid = Fluids.byName(tag.getString("FluidID"));
+            net.minecraft.world.level.material.Fluid fluid = Fluids.byName(tag.getStringOr("FluidID", ""));
             if (fluid != null) ((StorageTankTileEntity) tile).getTank()
-                    .setFluid(new FluidStack(fluid, tag.getInt("Volume")));
+                    .setFluid(new FluidStack(fluid, tag.getIntOr("Volume", 0)));
         }
     }
 
@@ -57,7 +57,7 @@ public class StorageTankBlock extends BlockSimpleFluidMachine {
         ItemStack stack = new ItemStack(this);
         if (tile.getTank().getFluidAmount() > 0) {
             CompoundTag tag = new CompoundTag();
-            net.minecraft.resources.ResourceLocation id = net.minecraftforge.registries.ForgeRegistries.FLUIDS
+            net.minecraft.resources.Identifier id = net.minecraftforge.registries.ForgeRegistries.FLUIDS
                     .getKey(tile.getTank().getFluid().getFluid());
             if (id != null) tag.putString("FluidID", id.toString());
             tag.putInt("Volume", tile.getTank().getFluidAmount());
@@ -66,16 +66,16 @@ public class StorageTankBlock extends BlockSimpleFluidMachine {
         return stack;
     }
 
-    @Override
     public void appendHoverText(ItemStack stack, Item.TooltipContext context,
-            List<Component> tooltip, TooltipFlag flag) {
+            net.minecraft.world.item.component.TooltipDisplay display,
+            java.util.function.Consumer<Component> tooltip, TooltipFlag flag) {
         CompoundTag tag = ItemData.customData(stack);
-        if (!tag.contains("FluidID", 8) || !tag.contains("Volume", 99)) {
-            tooltip.add(Component.translatable("tooltip.basepower.empty"));
+        if (!zone.moddev.mc.basepower.util.NbtCompat.containsTag(tag, "FluidID", 8) || !zone.moddev.mc.basepower.util.NbtCompat.containsTag(tag, "Volume", 99)) {
+            tooltip.accept(Component.translatable("tooltip.basepower.empty"));
             return;
         }
-        float buckets = tag.getInt("Volume") / (float) FluidTank.BUCKET_VOLUME;
-        tooltip.add(Component.literal(buckets + " buckets of " + tag.getString("FluidID")));
+        float buckets = tag.getIntOr("Volume", 0) / (float) FluidTank.BUCKET_VOLUME;
+        tooltip.accept(Component.literal(buckets + " buckets of " + tag.getStringOr("FluidID", "")));
     }
 
     /** Retained for callers from the 1.12 implementation. */

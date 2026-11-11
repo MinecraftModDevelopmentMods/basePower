@@ -9,7 +9,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.datafix.DataFixers;
 import net.minecraft.util.datafix.fixes.References;
 import net.minecraft.world.item.Item;
@@ -27,27 +27,33 @@ public final class ItemData {
     }
 
     public static ItemStack readStack(HolderLookup.Provider registries, CompoundTag saved) {
-        if (saved.contains("Count", 99)) {
+        if (zone.moddev.mc.basepower.util.NbtCompat.containsTag(saved, "Count", 99)) {
             // Vanilla does not descend into arbitrary mod block-entity inventories.
             saved = withLegacyWear(saved, registries.lookupOrThrow(Registries.ITEM));
             saved = (CompoundTag) DataFixers.getDataFixer().update(References.ITEM_STACK,
                     new Dynamic<>(NbtOps.INSTANCE, saved), LAST_PORT_DATA_VERSION,
-                    net.minecraft.SharedConstants.getCurrentVersion().getDataVersion().getVersion()).getValue();
+                    net.minecraft.SharedConstants.getCurrentVersion().dataVersion().version()).getValue();
         }
-        return ItemStack.parseOptional(registries, saved);
+        return ItemStack.CODEC.parse(registries.createSerializationContext(NbtOps.INSTANCE), saved)
+                .result().orElse(ItemStack.EMPTY);
+    }
+
+    public static CompoundTag writeStack(ItemStack stack, HolderLookup.Provider registries) {
+        return (CompoundTag) ItemStack.CODEC.encodeStart(registries.createSerializationContext(NbtOps.INSTANCE), stack)
+                .getOrThrow();
     }
 
     public static CompoundTag withLegacyWear(CompoundTag saved, HolderGetter<Item> items) {
-        if (!saved.contains("Damage", Tag.TAG_ANY_NUMERIC) || saved.getInt("Damage") <= 0
-                || saved.getCompound("tag").contains("Damage", Tag.TAG_ANY_NUMERIC)) return saved;
-        ResourceLocation id = ResourceLocation.tryParse(saved.getString("id"));
+        if (!zone.moddev.mc.basepower.util.NbtCompat.containsTag(saved, "Damage", 99) || saved.getIntOr("Damage", 0) <= 0
+                || NbtCompat.containsTag(saved.getCompoundOrEmpty("tag"), "Damage", 99)) return saved;
+        Identifier id = Identifier.tryParse(saved.getStringOr("id", ""));
         if (id == null || id.getNamespace().equals("minecraft") || items.get(ResourceKey.create(Registries.ITEM, id))
                 .filter(holder -> holder.value().components().has(DataComponents.MAX_DAMAGE)).isEmpty()) return saved;
         // The native component fixer reads wear from tag.Damage; it cannot infer
         // pre-flattening metadata semantics for a modded item.
         CompoundTag copy = saved.copy();
-        CompoundTag tag = copy.getCompound("tag");
-        tag.putInt("Damage", copy.getInt("Damage"));
+        CompoundTag tag = copy.getCompoundOrEmpty("tag");
+        tag.putInt("Damage", copy.getIntOr("Damage", 0));
         copy.put("tag", tag);
         return copy;
     }

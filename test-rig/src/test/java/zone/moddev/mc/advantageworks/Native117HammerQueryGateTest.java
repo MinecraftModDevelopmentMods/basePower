@@ -91,6 +91,7 @@ public class Native117HammerQueryGateTest {
         assertTrue(body.indexOf("ADVHAMMER BEFORE") < body.indexOf("HammerQueryGate.ready("));
         assertTrue(body.indexOf("HammerQueryGate.ready(") < body.indexOf(".useOn("));
         assertTrue(body.indexOf(".useOn(") < body.indexOf("ADVHAMMER AFTER"));
+        assertTrue(body.contains("attempt.addProperty(\"action\", action == InteractionResult.CONSUME ? \"CONSUME\" : action.toString())"));
         assertTrue(body.contains("action == InteractionResult.CONSUME && source.getItem().isEmpty()"));
         assertTrue(body.contains("player.getMainHandItem().getDamageValue() == 1, \"Live hammer failed \""));
         assertTrue(body.contains("id(entity.getItem()).equals(id(expected))"));

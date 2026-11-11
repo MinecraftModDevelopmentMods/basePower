@@ -6,15 +6,9 @@
     "xxx"
   ],
   "key": {
-    "x": {
-      "tag": "forge:plates/steel"
-    },
-    "g": {
-      "tag": "forge:sprockets"
-    },
-    "h": {
-      "item": "minecraft:hopper"
-    }
+    "x": "#forge:plates/steel",
+    "g": "#forge:sprockets",
+    "h": "minecraft:hopper"
   },
   "result": {
     "id": "basepower:item_conveyor",

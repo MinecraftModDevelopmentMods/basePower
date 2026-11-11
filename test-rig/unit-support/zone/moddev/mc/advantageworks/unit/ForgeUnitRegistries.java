@@ -21,18 +21,30 @@ public final class ForgeUnitRegistries {
 
     public static synchronized void registerVanillaFluidTypes() throws ReflectiveOperationException {
         if (ForgeRegistries.FLUID_TYPES.get() == null) {
+            initializeRegistry(ForgeRegistries.Keys.FLUID_TYPES);
+        }
+        registerForgeEntries("VANILLA_FLUID_TYPES", ForgeRegistries.Keys.FLUID_TYPES, ForgeRegistries.FLUID_TYPES.get());
+    }
+
+    public static synchronized void registerIngredientSerializers() throws ReflectiveOperationException {
+        if (ForgeRegistries.INGREDIENT_SERIALIZERS.get() == null) {
+            initializeRegistry(ForgeRegistries.Keys.INGREDIENT_SERIALIZERS);
+        }
+        registerForgeEntries("INGREDIENT_SERIALIZERS", ForgeRegistries.Keys.INGREDIENT_SERIALIZERS,
+                ForgeRegistries.INGREDIENT_SERIALIZERS.get());
+    }
+
+    private static void initializeRegistry(ResourceKey<?> key) throws ReflectiveOperationException {
             Field registries = ForgeRegistries.class.getDeclaredField("registries");
             registries.setAccessible(true);
             DeferredRegister<?> types = ((List<?>) registries.get(null)).stream().map(DeferredRegister.class::cast)
-                    .filter(entry -> ForgeRegistries.Keys.FLUID_TYPES.equals(entry.getRegistryKey()))
-                    .findFirst().orElseThrow(() -> new IllegalStateException("Missing native fluid-type registry"));
+                    .filter(entry -> key.equals(entry.getRegistryKey()))
+                    .findFirst().orElseThrow(() -> new IllegalStateException("Missing native registry " + key));
             NewRegistryEvent event = new NewRegistryEvent();
             dispatch(types, "createRegistry", NewRegistryEvent.class, event);
             Method fill = NewRegistryEvent.class.getDeclaredMethod("fill");
             fill.setAccessible(true);
             fill.invoke(event);
-        }
-        registerForgeEntries("VANILLA_FLUID_TYPES", ForgeRegistries.Keys.FLUID_TYPES, ForgeRegistries.FLUID_TYPES.get());
     }
 
     public static synchronized void registerForgeEntries(String name, ResourceKey<?> key, IForgeRegistry<?> registry)

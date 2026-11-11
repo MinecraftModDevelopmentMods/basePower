@@ -6,12 +6,8 @@
     " x "
   ],
   "key": {
-    "x": {
-      "tag": "forge:ingots/steel"
-    },
-    "/": {
-      "tag": "forge:rods"
-    }
+    "x": "#forge:ingots/steel",
+    "/": "#forge:rods"
   },
   "result": {
     "id": "basepower:sprocket",

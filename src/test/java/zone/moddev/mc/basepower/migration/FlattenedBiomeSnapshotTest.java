@@ -8,9 +8,9 @@ import static org.junit.Assert.*;
 public class FlattenedBiomeSnapshotTest {
     @Test public void preservesEveryNumericIdAndUnknownModEntry() {
         CompoundTag root = root(1631);
-        CompoundTag original = registries(root).getCompound("minecraft:biomes").copy();
+        CompoundTag original = registries(root).getCompoundOrEmpty("minecraft:biomes").copy();
         assertTrue(LegacyWorldDataHook.renameFlattenedBiomeRegistry(root));
-        assertEquals(original, registries(root).getCompound("minecraft:worldgen/biome"));
+        assertEquals(original, registries(root).getCompoundOrEmpty("minecraft:worldgen/biome"));
         assertFalse(registries(root).contains("minecraft:biomes"));
     }
 
@@ -35,7 +35,7 @@ public class FlattenedBiomeSnapshotTest {
         root.put("FML", archive);
         CompoundTag before = archive.copy();
         assertTrue(LegacyWorldDataHook.renameFlattenedBiomeRegistry(root));
-        assertEquals(before, root.getCompound("FML"));
+        assertEquals(before, root.getCompoundOrEmpty("FML"));
     }
 
     @Test public void refusesConflictingSnapshotsWithoutChangingEither() {
@@ -52,7 +52,7 @@ public class FlattenedBiomeSnapshotTest {
 
     @Test public void coalescesOnlyAnIdenticalDuplicate() {
         CompoundTag root = root(2230);
-        registries(root).put("minecraft:worldgen/biome", registries(root).getCompound("minecraft:biomes").copy());
+        registries(root).put("minecraft:worldgen/biome", registries(root).getCompoundOrEmpty("minecraft:biomes").copy());
         assertTrue(LegacyWorldDataHook.renameFlattenedBiomeRegistry(root));
         assertFalse(registries(root).contains("minecraft:biomes"));
     }
@@ -84,6 +84,6 @@ public class FlattenedBiomeSnapshotTest {
     }
 
     private static CompoundTag registries(CompoundTag root) {
-        return root.getCompound("fml").getCompound("Registries");
+        return root.getCompoundOrEmpty("fml").getCompoundOrEmpty("Registries");
     }
 }

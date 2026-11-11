@@ -46,10 +46,10 @@ final class SteamReloadControlCases {
                     c.put(X, Y, Z, 0, "minecraft:stone", 1);
                     CompoundTag tag = new CompoundTag(); tag.putShort("progress", (short)106); c.seed(X, Y, Z, tag);
                     c.power(X, Y, Z, "steam", steam);
-                    c.require(c.nbt(X, Y, Z).getShort("progress") == 106, "Loaded work is 106 before the first native tick");
+                    c.require(c.nbt(X, Y, Z).getShort("progress").orElseThrow() == 106, "Loaded work is 106 before the first native tick");
                 }, holding(new int[]{X}, c -> {
                     int expected = signalled || steam == 0 ? 105 : 107;
-                    int actual = c.nbt(X, Y, Z).getShort("progress");
+                    int actual = c.nbt(X, Y, Z).getShort("progress").orElseThrow();
                     float remaining = c.energy(X, Y, Z, "steam");
                     float wanted = steam == 0 ? 0 : signalled ? 39.9375F : 38.4375F;
                     c.record("firstLoaded.progress", actual);
@@ -72,9 +72,9 @@ final class SteamReloadControlCases {
                     CompoundTag tag = new CompoundTag();
                     tag.putIntArray("Data", new int[]{Float.floatToRawIntBits(.25F), 0, 0, 10, 10, Float.floatToRawIntBits(1000)});
                     c.seed(X, Y, Z, tag); c.power(X, Y, Z, "steam", 40);
-                    c.require(c.nbt(X, Y, Z).getIntArray("Data")[3] == 10, "Loaded burning state exists before any tick");
+                    c.require(c.nbt(X, Y, Z).getIntArray("Data").orElseThrow()[3] == 10, "Loaded burning state exists before any tick");
                 }, holding(new int[]{X}, c -> {
-                    int[] data = c.nbt(X, Y, Z).getIntArray("Data");
+                    int[] data = c.nbt(X, Y, Z).getIntArray("Data").orElseThrow();
                     c.require(data.length == 6, "Furnace reports all native process fields");
                     float heat = Float.intBitsToFloat(data[5]), progress = Float.intBitsToFloat(data[0]);
                     float expectedHeat = signalled ? 989.5F : 1027F;

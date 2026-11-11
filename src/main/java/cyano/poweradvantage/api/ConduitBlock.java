@@ -39,21 +39,30 @@ public abstract class ConduitBlock extends net.minecraft.world.level.block.Block
 	/**
 	 * This method is called when the block is removed from the world by an entity.
 	 */
-	@Override
 	public void onRemove(BlockState state, Level w, BlockPos coord, BlockState newState, boolean isMoving) {
 		if (state.getBlock() != newState.getBlock()) {
 			ConduitRegistry.getInstance().conduitBlockRemovedEvent(w, coord, getTypes());
 		}
-		super.onRemove(state, w, coord, newState, isMoving);
 	}
+
+    @Override
+    protected void affectNeighborsAfterRemoval(BlockState state, net.minecraft.server.level.ServerLevel world,
+            BlockPos pos, boolean moving) {
+        onRemove(state, world, pos, world.getBlockState(pos), moving);
+        super.affectNeighborsAfterRemoval(state, world, pos, moving);
+    }
 
 	/**
 	 * This method is called when the block is destroyed by an explosion.
 	 */
-	@Override
 	public void wasExploded(Level w, BlockPos coord, Explosion boom) {
-		super.wasExploded(w, coord, boom);
 		ConduitRegistry.getInstance().conduitBlockRemovedEvent(w, coord, getTypes());
 	}
+
+    @Override
+    public void wasExploded(net.minecraft.server.level.ServerLevel world, BlockPos pos, Explosion explosion) {
+        super.wasExploded(world, pos, explosion);
+        wasExploded((Level) world, pos, explosion);
+    }
 
 }

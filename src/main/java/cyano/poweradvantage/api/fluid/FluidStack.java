@@ -4,7 +4,7 @@ import javax.annotation.Nullable;
 
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.core.Registry;
 import zone.moddev.mc.basepower.init.Fluids;
 
@@ -37,7 +37,7 @@ public final class FluidStack {
     }
 
     public CompoundTag writeToNBT(CompoundTag nbt) {
-        ResourceLocation id = net.minecraftforge.registries.ForgeRegistries.FLUIDS.getKey(fluid);
+        Identifier id = net.minecraftforge.registries.ForgeRegistries.FLUIDS.getKey(fluid);
         if (id != null) nbt.putString("FluidName", id.toString());
         nbt.putInt("Amount", amount);
         if (tag != null) nbt.put("Tag", tag.copy());
@@ -46,11 +46,11 @@ public final class FluidStack {
 
     @Nullable
     public static FluidStack loadFluidStackFromNBT(CompoundTag nbt) {
-        if (nbt == null || !nbt.contains("FluidName", 8)) return null;
-        Fluid fluid = Fluids.byName(nbt.getString("FluidName"));
+        if (nbt == null || !zone.moddev.mc.basepower.util.NbtCompat.containsTag(nbt, "FluidName", 8)) return null;
+        Fluid fluid = Fluids.byName(nbt.getStringOr("FluidName", ""));
         if (fluid == null) return null;
-        FluidStack stack = new FluidStack(fluid, nbt.getInt("Amount"));
-        if (nbt.contains("Tag", 10)) stack.tag = nbt.getCompound("Tag").copy();
+        FluidStack stack = new FluidStack(fluid, nbt.getIntOr("Amount", 0));
+        if (zone.moddev.mc.basepower.util.NbtCompat.containsTag(nbt, "Tag", 10)) stack.tag = nbt.getCompoundOrEmpty("Tag").copy();
         return stack;
     }
 }

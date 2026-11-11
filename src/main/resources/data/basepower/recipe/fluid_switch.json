@@ -5,15 +5,9 @@
     "pfp"
   ],
   "key": {
-    "l": {
-      "item": "minecraft:lever"
-    },
-    "p": {
-      "tag": "forge:pipes"
-    },
-    "f": {
-      "tag": "forge:frames/steel"
-    }
+    "l": "minecraft:lever",
+    "p": "#forge:pipes",
+    "f": "#forge:frames/steel"
   },
   "result": {
     "id": "basepower:fluid_switch"

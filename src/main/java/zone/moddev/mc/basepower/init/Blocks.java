@@ -16,10 +16,10 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.effect.MobEffectInstance;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegisterEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
+
 import net.minecraftforge.fml.common.Mod;
 import zone.moddev.mc.basepower.PowerAdvantage;
 import zone.moddev.mc.basepower.blocks.BlockFrame;
@@ -44,7 +44,6 @@ import zone.moddev.mc.basepower.machines.fluidmachines.StorageTankBlock;
 import zone.moddev.mc.basepower.machines.fluidmachines.modsupport.TerminalFluidPipeBlock;
 
 /** Stable block and block-item registry for the 1.13 port. */
-@Mod.EventBusSubscriber(modid = PowerAdvantage.MODID, bus = Mod.EventBusSubscriber.Bus.MOD)
 public final class Blocks {
     private static final float STEEL_BLAST_RESISTANCE = 37.5f;
     private static final Map<String, Block> ALL_BLOCKS = new LinkedHashMap<>();
@@ -89,8 +88,8 @@ public final class Blocks {
         fluid_pipe = add(new FluidPipeBlock(), "fluid_pipe");
         fluid_pipe_terminal = add(new TerminalFluidPipeBlock(), "fluid_pipe_terminal");
         fluid_switch = add(new BlockPowerSwitch(Fluids.fluidConduit_general), "fluid_switch");
-        steel_frame = add(new BlockFrame(GUIBlock.machineProperties(0.75F)
-                .strength(0.75F, STEEL_BLAST_RESISTANCE)), "steel_frame");
+        steel_frame = add(new BlockFrame(properties("steel_frame", GUIBlock.machineProperties(0.75F)
+                .strength(0.75F, STEEL_BLAST_RESISTANCE))), "steel_frame");
 
         final float hardness = 0.75F;
         item_conveyor = (GUIBlock) add(new BlockConveyor(hardness), "item_conveyor");
@@ -108,10 +107,10 @@ public final class Blocks {
         infinite_quantum = (GUIBlock) add(new InfiniteEnergyBlock(new ConduitType("quantum")), "infinite_quantum");
 
         refined_oil_block = (LiquidBlock) add(new InteractiveFluidBlock(() -> Fluids.refined_oil,
-                oilProperties(), true, (world, entity) -> entity.addEffect(new MobEffectInstance(MobEffects.CONFUSION, 200))),
+                properties("refined_oil", oilProperties()), true, (world, entity) -> entity.addEffect(new MobEffectInstance(MobEffects.NAUSEA, 200))),
                 "refined_oil");
         crude_oil_block = (LiquidBlock) add(new InteractiveFluidBlock(() -> Fluids.crude_oil,
-                oilProperties(), true, (world, entity) -> entity.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 200, 2))),
+                properties("crude_oil", oilProperties()), true, (world, entity) -> entity.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, 200, 2))),
                 "crude_oil");
 
         ModSupport.initBlocks();
@@ -120,38 +119,54 @@ public final class Blocks {
 
     private static GUIBlock filter(String id, Class<? extends zone.moddev.mc.basepower.machines.conveyors.TileEntityConveyor> type,
             float hardness) {
-        return (GUIBlock) add(new BlockConveyorFilter(hardness, type), id);
+        return (GUIBlock) add(new BlockConveyorFilter(id, hardness, type), id);
     }
 
     private static Block.Properties oilProperties() {
-        return Block.Properties.of().mapColor(MapColor.WATER).replaceable().liquid().noCollission()
-                .strength(100.0F).dynamicShape().pushReaction(PushReaction.DESTROY).noLootTable().sound(SoundType.EMPTY);
+        return Block.Properties.of().mapColor(MapColor.WATER).replaceable().liquid().noCollision()
+                .strength(100.0F).dynamicShape().pushReaction(PushReaction.DESTROY).noLootTable().sound(SoundType.EMPTY).noOcclusion();
+    }
+
+    public static Block.Properties properties(String id, Block.Properties properties) {
+        return properties.setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.BLOCK,
+                Identifier.fromNamespaceAndPath(PowerAdvantage.MODID, id)));
     }
 
     public static Block add(Block block, String id) {
         ALL_BLOCKS.put(id, block);
         return block;
     }
-
-    @SubscribeEvent
     public static void registerBlocks(RegisterEvent event) {
         if (!ForgeRegistries.Keys.BLOCKS.equals(event.getRegistryKey())) return;
         init();
         event.register(ForgeRegistries.Keys.BLOCKS, helper -> ALL_BLOCKS.forEach((id, block) ->
-                helper.register(ResourceLocation.fromNamespaceAndPath(PowerAdvantage.MODID, id), block)));
+                helper.register(Identifier.fromNamespaceAndPath(PowerAdvantage.MODID, id), block)));
     }
-
-    @SubscribeEvent
     public static void registerBlockItems(RegisterEvent event) {
         if (!ForgeRegistries.Keys.ITEMS.equals(event.getRegistryKey())) return;
         init();
         event.register(ForgeRegistries.Keys.ITEMS, helper -> ALL_BLOCKS.forEach((id, block) -> {
-            BlockItem item = new BlockItem(block, new Item.Properties());
+            BlockItem item = new BlockItem(block, itemProperties(id)) {
+                @Override
+                public void appendHoverText(net.minecraft.world.item.ItemStack stack, Item.TooltipContext context,
+                        net.minecraft.world.item.component.TooltipDisplay display,
+                        java.util.function.Consumer<net.minecraft.network.chat.Component> tooltip,
+                        net.minecraft.world.item.TooltipFlag flag) {
+                    super.appendHoverText(stack, context, display, tooltip, flag);
+                    if (block instanceof StorageTankBlock tank) tank.appendHoverText(stack, context, display, tooltip, flag);
+                }
+            };
             if (!"fluid_pipe_terminal".equals(id) && !(block instanceof LiquidBlock)) {
                 ItemGroups.show(item);
             }
-            helper.register(ResourceLocation.fromNamespaceAndPath(PowerAdvantage.MODID, id), item);
+            helper.register(Identifier.fromNamespaceAndPath(PowerAdvantage.MODID, id), item);
         }));
+    }
+
+    static Item.Properties itemProperties(String id) {
+        return new Item.Properties().setId(net.minecraft.resources.ResourceKey.create(
+                net.minecraft.core.registries.Registries.ITEM, Identifier.fromNamespaceAndPath(PowerAdvantage.MODID, id)))
+                .useBlockDescriptionPrefix();
     }
 
     public static Map<String, Block> getModBlockRegistry() {

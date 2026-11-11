@@ -28,16 +28,12 @@ final class NativeTicketGeometry {
                 if (ChunkLevel.fullStatus(level) == FullChunkStatus.ENTITY_TICKING)
                     entityTickingLevel = level;
             }
-            ServerChunkCache provider = world.getChunkSource();
-            DistanceManager manager = ObfuscationReflectionHelper.getPrivateValue(
-                    ServerChunkCache.class, provider, "f_8327_");
-            // Forge 36 adds a second map, forcedTickets; observe the vanilla tickets map only.
-            Long2ObjectOpenHashMap<?> tickets = ObfuscationReflectionHelper.getPrivateValue(
-                    DistanceManager.class, manager, "f_140761_");
+            net.minecraft.world.level.TicketStorage tickets = world.getDataStorage().get(
+                    net.minecraft.world.level.TicketStorage.TYPE);
+            if (tickets == null) throw new IllegalStateException("Native chunk ticket storage is missing");
             Set<Integer> forcedLevels = new TreeSet<>();
-            for (Object value : tickets.values()) {
-                for (Object entry : (Iterable<?>) value) {
-                    Ticket<?> ticket = (Ticket<?>) entry;
+            for (long chunk : tickets.getForceLoadedChunks()) {
+                for (Ticket ticket : tickets.getTickets(chunk)) {
                     if (ticket.getType() == TicketType.FORCED) forcedLevels.add(ticket.getTicketLevel());
                 }
             }

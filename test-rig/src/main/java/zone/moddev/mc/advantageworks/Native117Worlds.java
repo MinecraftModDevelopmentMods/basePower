@@ -23,7 +23,7 @@ final class Native117Worlds {
         if (key.equals(Level.NETHER)) return -1;
         if (key.equals(Level.OVERWORLD)) return 0;
         if (key.equals(Level.END)) return 1;
-        throw new IllegalArgumentException("Unsupported native fixture dimension: " + key.location());
+        throw new IllegalArgumentException("Unsupported native fixture dimension: " + key.identifier());
     }
 
     static Stream<Entity> entities(ServerLevel world) {

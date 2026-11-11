@@ -32,7 +32,11 @@ public class Native1201TestFlatTest {
         var base = RegistryLayer.createRegistryAccess();
         try (var resources = new MultiPackResourceManager(PackType.SERVER_DATA,
                 List.of(ServerPacksSource.createVanillaPackSource()))) {
-            var worldgen = RegistryDataLoader.load(resources, base.compositeAccess(),
+            var pendingTags = net.minecraft.tags.TagLoader.loadTagsForExistingRegistries(
+                    resources, base.getLayer(RegistryLayer.STATIC));
+            var lookups = net.minecraft.tags.TagLoader.buildUpdatedLookups(
+                    base.getAccessForLoading(RegistryLayer.WORLDGEN), pendingTags);
+            var worldgen = RegistryDataLoader.load(resources, lookups,
                     RegistryDataLoader.WORLDGEN_REGISTRIES);
             registries = base.replaceFrom(RegistryLayer.WORLDGEN, worldgen).compositeAccess();
         }
@@ -44,12 +48,13 @@ public class Native1201TestFlatTest {
             assertNotNull("Missing shared flat settings", input);
             json = JsonParser.parseReader(new InputStreamReader(input, StandardCharsets.UTF_8)).getAsJsonObject();
         }
-        Class<?> type = Class.forName("net.minecraft.server.dedicated.DedicatedServerProperties$WorldDimensionData");
-        var constructor = type.getDeclaredConstructor(JsonObject.class, String.class);
-        constructor.setAccessible(true);
-        var create = type.getDeclaredMethod("create", RegistryAccess.class);
-        create.setAccessible(true);
-        var dimensions = (WorldDimensions) create.invoke(constructor.newInstance(json, "minecraft:flat"), registries);
+        var properties = new java.util.Properties();
+        properties.setProperty("generator-settings", json.toString());
+        properties.setProperty("level-type", "minecraft:flat");
+        properties.setProperty("level-seed", "42");
+        properties.setProperty("generate-structures", "false");
+        var settings = new net.minecraft.server.dedicated.DedicatedServerProperties(properties);
+        var dimensions = settings.createDimensions(registries);
         var generator = (FlatLevelSource) dimensions.overworld();
         var flat = generator.settings();
         assertEquals(3, flat.getLayersInfo().size());
@@ -58,7 +63,7 @@ public class Native1201TestFlatTest {
         assertEquals(0, flat.structureOverrides().orElseThrow().size());
 
         JsonObject saved = WorldGenSettings.CODEC.encodeStart(RegistryOps.create(JsonOps.INSTANCE, registries),
-                new WorldGenSettings(new WorldOptions(42L, false, false), dimensions))
+                new WorldGenSettings(settings.worldOptions, dimensions))
                 .getOrThrow(AssertionError::new).getAsJsonObject();
         assertEquals(42L, saved.get("seed").getAsLong());
         assertFalse(saved.get("generate_features").getAsBoolean());

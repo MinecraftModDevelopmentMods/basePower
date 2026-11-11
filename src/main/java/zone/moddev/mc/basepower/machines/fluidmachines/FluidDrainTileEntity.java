@@ -16,13 +16,13 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.core.Direction;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
-import zone.moddev.mc.basepower.init.Entities;
+
 import zone.moddev.mc.basepower.util.FluidHandlerHelper;
 
 /** Pulls source blocks or adjacent Advantage tanks into the pipe network. */
 public class FluidDrainTileEntity extends TileEntitySimpleFluidMachine {
     public FluidDrainTileEntity(net.minecraft.core.BlockPos pos, net.minecraft.world.level.block.state.BlockState state) {
-        super(Entities.FLUID_DRAIN, pos, state, FluidTank.BUCKET_VOLUME, "tile.basepower.fluid_drain.name");
+        super(zone.moddev.mc.basepower.init.Entities.FLUID_DRAIN, pos, state, FluidTank.BUCKET_VOLUME, "tile.basepower.fluid_drain.name");
     }
 
     @Override

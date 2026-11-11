@@ -13,7 +13,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 import zone.moddev.mc.basepower.PowerAdvantage;
-import zone.moddev.mc.basepower.init.Entities;
+
 
 public abstract class TileEntityConveyorFilter extends TileEntityConveyor {
 
@@ -26,7 +26,7 @@ public abstract class TileEntityConveyorFilter extends TileEntityConveyor {
 	@Override
 	public void tick() {
 		Level w = getLevel();
-		if (w.isClientSide) return;
+		if (w.isClientSide()) return;
 		if (transferCooldown > 0) transferCooldown--;
 		if (transferCooldown == 0) {
 			// do tick update

@@ -17,7 +17,7 @@ import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.ItemInteractionResult;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.BlockHitResult;
@@ -52,6 +52,13 @@ public abstract class GUIBlock extends Block implements EntityBlock {
 	protected GUIBlock(Block.Properties properties) {
 		super(properties);
 	}
+
+    public int getAnalogOutputSignal(BlockState state, Level world, BlockPos pos) { return 0; }
+
+    @Override
+    protected int getAnalogOutputSignal(BlockState state, Level world, BlockPos pos, Direction side) {
+        return getAnalogOutputSignal(state, world, pos);
+    }
 
     @Override
     protected boolean triggerEvent(BlockState state, Level level, BlockPos pos, int id, int data) {
@@ -156,7 +163,7 @@ public abstract class GUIBlock extends Block implements EntityBlock {
     public InteractionResult use(BlockState bs, Level w, BlockPos coord,
                                     Player player, InteractionHand hand, net.minecraft.world.phys.BlockHitResult hit) {
         Direction facing = hit.getDirection();
-        if (w.isClientSide) {
+        if (w.isClientSide()) {
             return InteractionResult.SUCCESS;
         }
         final BlockEntity tileEntity = w.getBlockEntity(coord);
@@ -181,31 +188,35 @@ public abstract class GUIBlock extends Block implements EntityBlock {
     }
 
     @Override
-    protected ItemInteractionResult useItemOn(ItemStack item, BlockState state, Level level,
+    protected InteractionResult useItemOn(ItemStack item, BlockState state, Level level,
             BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-        return switch (use(state, level, pos, player, hand, hit)) {
-            case SUCCESS, SUCCESS_NO_ITEM_USED -> ItemInteractionResult.SUCCESS;
-            case CONSUME -> ItemInteractionResult.CONSUME;
-            case CONSUME_PARTIAL -> ItemInteractionResult.CONSUME_PARTIAL;
-            case FAIL -> ItemInteractionResult.FAIL;
-            case PASS -> ItemInteractionResult.SKIP_DEFAULT_BLOCK_INTERACTION;
-        };
+        return use(state, level, pos, player, hand, hit);
     }
 
     
    
-	@Override
 	public void onRemove(BlockState state, Level world, BlockPos pos, BlockState newState,
 			boolean isMoving) {
 		if (state.getBlock() != newState.getBlock()) {
-			BlockEntity te = world.getBlockEntity(pos);
-			if (te instanceof Container) {
-				Containers.dropContents(world, pos, (Container) te);
-				((Container) te).clearContent();
-				world .updateNeighbourForOutputSignal(pos, this);
-			}
-			super.onRemove(state, world, pos, newState, isMoving);
+			world.updateNeighbourForOutputSignal(pos, this);
 		}
 	}
+
+    @Override
+    protected void affectNeighborsAfterRemoval(BlockState state, net.minecraft.server.level.ServerLevel world,
+            BlockPos pos, boolean moving) {
+        // Native BlockEntity.preRemoveSideEffects drops inventories before this callback.
+        onRemove(state, world, pos, world.getBlockState(pos), moving);
+        super.affectNeighborsAfterRemoval(state, world, pos, moving);
+    }
+
+    public void wasExploded(Level world, BlockPos pos, net.minecraft.world.level.Explosion explosion) {}
+
+    @Override
+    public void wasExploded(net.minecraft.server.level.ServerLevel world, BlockPos pos,
+            net.minecraft.world.level.Explosion explosion) {
+        super.wasExploded(world, pos, explosion);
+        wasExploded((Level) world, pos, explosion);
+    }
 
 }

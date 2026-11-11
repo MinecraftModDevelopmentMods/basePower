@@ -1,6 +1,6 @@
 package cyano.poweradvantage.api.fluid;
 
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 /**
  * Legacy description of a colored fluid.
@@ -14,11 +14,11 @@ import net.minecraft.resources.ResourceLocation;
 public final class ColoredFluid {
 
     private final String fluidName;
-    private final ResourceLocation still;
-    private final ResourceLocation flowing;
+    private final Identifier still;
+    private final Identifier flowing;
     private final int color;
 
-    public ColoredFluid(String fluidName, ResourceLocation still, ResourceLocation flowing, int tintARGB) {
+    public ColoredFluid(String fluidName, Identifier still, Identifier flowing, int tintARGB) {
         this.fluidName = fluidName;
         this.still = still;
         this.flowing = flowing;
@@ -29,11 +29,11 @@ public final class ColoredFluid {
         return fluidName;
     }
 
-    public ResourceLocation getStill() {
+    public Identifier getStill() {
         return still;
     }
 
-    public ResourceLocation getFlowing() {
+    public Identifier getFlowing() {
         return flowing;
     }
 

@@ -5,6 +5,11 @@ param(
 $ErrorActionPreference = 'Stop'
 $RepositoryRoot = (Resolve-Path -LiteralPath $RepositoryRoot).Path
 $TargetRoot = (Resolve-Path -LiteralPath $TargetRoot).Path
+$targetMetadata = Get-Content -LiteralPath (Join-Path $TargetRoot 'resources/META-INF/mods.toml') -Raw
+if ($targetMetadata.Contains('loaderVersion="[61,62)"')) {
+    & (Join-Path $PSScriptRoot 'test-native-probe-contract.ps1') -RepositoryRoot $RepositoryRoot -TargetRoot $TargetRoot
+    return
+}
 $baseline = 'c310d0ca63ad9a8408dd4bba75172afafa5c71b7'
 $relative = 'java/zone/moddev/mc/advantageworks/client'
 $referenceHashes = [ordered]@{

@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.Set;
 
 import net.minecraft.world.level.material.Fluid;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.core.Registry;
 
 /**
@@ -46,7 +46,7 @@ public final class FluidCategoryRegistry {
     /** Returns true when the fluid's registry name belongs to the category. */
     public static synchronized boolean matches(String category, Fluid fluid) {
         if (fluid == null) return false;
-        ResourceLocation id = net.minecraftforge.registries.ForgeRegistries.FLUIDS.getKey(fluid);
+        Identifier id = net.minecraftforge.registries.ForgeRegistries.FLUIDS.getKey(fluid);
         return id != null && matches(category, id.toString());
     }
 
