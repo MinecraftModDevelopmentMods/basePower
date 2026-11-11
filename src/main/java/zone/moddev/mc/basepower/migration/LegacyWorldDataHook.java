@@ -9,6 +9,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -108,10 +109,51 @@ public final class LegacyWorldDataHook {
             }
             boolean changed = removeRetiredVanillaProfessionRegistry(root);
             changed |= renameFlattenedBiomeRegistry(root);
-            if (changed) writeWithBackup(levelDat, root);
+            changed |= archiveDataDrivenEnchantmentIndex(root);
+            if (changed) {
+                preserveRetiredRegistryArchive(levelDat, root.getCompound("basepower:legacy_registry_indexes"));
+                writeWithBackup(levelDat, root);
+            }
         } catch (IOException exception) {
-            throw new IllegalStateException("Could not prepare the old villager registry in " + levelDat, exception);
+            throw new IllegalStateException("Could not prepare historical Forge registry indexes in " + levelDat, exception);
         }
+    }
+
+    static boolean archiveDataDrivenEnchantmentIndex(CompoundTag root) {
+        // Flattened items use named enchantments. Forge 52 no longer has this
+        // static registry; keep its exact index for recovery, not in GameData.
+        // Uppercase pre-flattening FML remains untouched for numeric-ID migration.
+        CompoundTag registries = root.getCompound("fml").getCompound("Registries");
+        String key = "minecraft:enchantment";
+        if (!registries.contains(key, Tag.TAG_COMPOUND)) return false;
+        CompoundTag snapshot = registries.getCompound(key);
+        CompoundTag archive = root.getCompound("basepower:legacy_registry_indexes");
+        if (archive.contains(key) && !snapshot.equals(archive.get(key))) {
+            throw new IllegalStateException("Conflicting historical enchantment registry indexes; keep the world backup");
+        }
+        archive.put(key, snapshot.copy());
+        root.put("basepower:legacy_registry_indexes", archive);
+        registries.remove(key);
+        return true;
+    }
+
+    private static void preserveRetiredRegistryArchive(File levelDat, CompoundTag archive) throws IOException {
+        if (archive.isEmpty()) return;
+        Path target = levelDat.toPath().resolveSibling("basepower-retired-registry-indexes.dat");
+        if (Files.exists(target)) {
+            if (!archive.equals(NbtIo.readCompressed(target, NbtAccounter.unlimitedHeap()))) {
+                throw new IOException("Conflicting retained registry indexes in " + target);
+            }
+            return;
+        }
+        Path temporary = Files.createTempFile(target.getParent(), "basepower-registry-indexes-", ".tmp");
+        NbtIo.writeCompressed(archive, temporary);
+        try {
+            Files.move(temporary, target, StandardCopyOption.ATOMIC_MOVE);
+        } catch (java.nio.file.AtomicMoveNotSupportedException unsupported) {
+            Files.move(temporary, target);
+        }
+        PowerAdvantage.LOGGER.info("Retained historical Forge registry indexes in {}", target);
     }
 
     static boolean renameFlattenedBiomeRegistry(CompoundTag root) {

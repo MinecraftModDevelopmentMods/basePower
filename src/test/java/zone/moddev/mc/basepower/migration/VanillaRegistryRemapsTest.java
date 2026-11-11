@@ -12,6 +12,21 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 public class VanillaRegistryRemapsTest {
+    @org.junit.Test public void trialSpawnerRenamesResolveToActualNativeSounds() {
+        net.minecraft.SharedConstants.tryDetectVersion(); net.minecraft.server.Bootstrap.bootStrap();
+        var registry = net.minecraft.resources.ResourceLocation.parse("minecraft:sound_event");
+        for (String[] pair : new String[][] {
+                {"block.trial_spawner.ambient_charged", "block.trial_spawner.ambient_ominous"},
+                {"block.trial_spawner.charge_activate", "block.trial_spawner.ominous_activate"}}) {
+            var actual = VanillaRegistryRemaps.replacement(registry,
+                    net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("minecraft", pair[0]));
+            assertEquals(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("minecraft", pair[1]), actual);
+            assertTrue(net.minecraftforge.registries.ForgeRegistries.SOUND_EVENTS.containsKey(actual));
+        }
+        assertNull(VanillaRegistryRemaps.replacement(registry,
+                net.minecraft.resources.ResourceLocation.parse("othermod:block.trial_spawner.charge_activate")));
+    }
+
     @Test public void retainsBothGrassPathRegistrySnapshots() {
         expect("block", "grass_path", "dirt_path");
         expect("item", "grass_path", "dirt_path");

@@ -4,6 +4,7 @@ basePower 2.4.14.121011 (Minecraft 1.21.1)
 - Use the new recipe, advancement, loot and tag folders without changing their in-game names.
 - Update fluid gauges to the current renderer while keeping the full texture visible.
 - Preserve custom attributes on old modded entities when Minecraft upgrades their save format.
+- Handle the new data-driven painting and enchantment registries when upgrading 1.20.6 worlds. Keep a recovery copy of the old enchantment indexes and map the renamed trial-spawner sounds.
 - Keep the shared Base Metals upgrade hook for old Advantage and released base* worlds.
 - This is a local test candidate. It has not been pushed or published.
 

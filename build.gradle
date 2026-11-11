@@ -1252,7 +1252,7 @@ tasks.register('prepareCombinedEclipseLaunch') {
     dependsOn tasks.named('deobfJar')
     doLast {
         File inputProfile = file(providers.gradleProperty('advantageDevelopmentProfile').getOrElse(
-                'test-rig/profiles/native1206/dev-core.json'))
+                'test-rig/profiles/native1211/dev-core.json'))
         def profile = new JsonSlurper().parse(inputProfile)
         if (profile.powerDeobfSha256) {
             File powerJar = tasks.named('jar', Jar).get().archiveFile.get().asFile

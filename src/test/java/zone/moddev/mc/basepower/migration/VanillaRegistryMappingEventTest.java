@@ -100,6 +100,17 @@ public class VanillaRegistryMappingEventTest {
         }
     }
 
+    @Test public void movedPaintingsRetireOnlyTheirKnownStaticIndexes() {
+        IForgeRegistry<Entry> active = registry(null, false, "minecraft:painting_variant");
+        for (String id : new String[] {"minecraft:alban", "minecraft:aztec", "minecraft:unknown", "othermod:alban"}) {
+            var mapping = new MissingMappingsEvent.Mapping<>(active, active, ResourceLocation.parse(id), 42);
+            VanillaRegistryRemaps.remap(event(active, mapping), active);
+            assertEquals(id, id.equals("minecraft:alban") || id.equals("minecraft:aztec")
+                    ? MissingMappingsEvent.Action.IGNORE : MissingMappingsEvent.Action.DEFAULT, property(mapping, "action"));
+            assertNull(property(mapping, "target"));
+        }
+    }
+
     private static MissingMappingsEvent event(IForgeRegistry<Entry> staging, MissingMappingsEvent.Mapping<Entry> mapping) {
         return new MissingMappingsEvent(staging.getRegistryKey(), staging, Collections.singletonList(mapping));
     }

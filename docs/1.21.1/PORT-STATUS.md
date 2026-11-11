@@ -29,6 +29,15 @@ data-driven. A regression first demonstrated loss of a modded entity's swim
 speed, then verified the repair through the native entity reader. Saved tool
 checks now verify the loaded enchantment level, not just the stored JSON/NBT.
 
+The 1.20.6 upgrade check exposed old Forge painting indexes and two renamed
+trial-spawner sounds. The port retires only the 30 vanilla painting indexes
+whose names still exist in the native data-pack registry, and maps those two
+sounds to their current names. The obsolete static enchantment index is
+archived in `basepower-retired-registry-indexes.dat`, without changing any
+item enchantments or the pre-flattening numeric-ID archive. The original
+`level.dat` is backed up before changes. Unknown painting entries are not
+silently discarded.
+
 ## Validation Gates
 
 - Power unit, dependency, identity, resource, archive and Eclipse audits: passed.

@@ -1,6 +1,7 @@
 package zone.moddev.mc.basepower.migration;
 
 import java.util.function.UnaryOperator;
+import java.util.Set;
 import cyano.poweradvantage.api.migration.LegacyMigrationApi;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
@@ -24,6 +25,10 @@ import zone.moddev.mc.basepower.PowerAdvantage;
 /** Vanilla's data fixers rename saved data, but not Forge's registry snapshot. */
 public final class VanillaRegistryRemaps {
     private static final ResourceLocation BIOME_REGISTRY = ResourceLocation.parse("minecraft:worldgen/biome");
+    private static final Set<String> LEGACY_PAINTINGS = Set.of("kebab", "aztec", "alban", "aztec2", "bomb",
+            "plant", "wasteland", "pool", "courbet", "sea", "sunset", "creebet", "wanderer", "graham",
+            "match", "bust", "stage", "void", "skull_and_roses", "wither", "fighters", "pointer", "pigscene",
+            "burning_skull", "skeleton", "donkey_kong", "earth", "wind", "water", "fire");
 
     private VanillaRegistryRemaps() {}
 
@@ -40,6 +45,7 @@ public final class VanillaRegistryRemaps {
         MinecraftForge.EVENT_BUS.addListener(EventPriority.HIGHEST, VanillaRegistryRemaps::potions);
         MinecraftForge.EVENT_BUS.addListener(EventPriority.HIGHEST, VanillaRegistryRemaps::menus);
         MinecraftForge.EVENT_BUS.addListener(EventPriority.HIGHEST, VanillaRegistryRemaps::recipeSerializers);
+        MinecraftForge.EVENT_BUS.addListener(EventPriority.HIGHEST, VanillaRegistryRemaps::paintings);
     }
 
     private static void blocks(MissingMappingsEvent event) {
@@ -56,6 +62,7 @@ public final class VanillaRegistryRemaps {
                 id -> ResourceLocation.parse(LegacyMigrationApi.entityTarget(id.toString())));
     }
     private static void sounds(MissingMappingsEvent event) { remap(event, ForgeRegistries.SOUND_EVENTS); }
+    private static void paintings(MissingMappingsEvent event) { remap(event, ForgeRegistries.PAINTING_VARIANTS); }
     private static void biomes(MissingMappingsEvent event) { remap(event, ForgeRegistries.BIOMES); }
     private static void memories(MissingMappingsEvent event) { remap(event, ForgeRegistries.MEMORY_MODULE_TYPES); }
     private static void pointsOfInterest(MissingMappingsEvent event) { remap(event, ForgeRegistries.POI_TYPES); }
@@ -89,6 +96,12 @@ public final class VanillaRegistryRemaps {
 
     static <T> void remap(MissingMappingsEvent event, IForgeRegistry<T> active) {
         for (MissingMappingsEvent.Mapping<T> mapping : event.getMappings(active.getRegistryKey(), "minecraft")) {
+            if (retiredPaintingIndex(active.getRegistryName(), mapping.getKey())) {
+                // These names still exist in the native data-pack registry. Only
+                // Forge's old numeric index is retired; entity variant NBT is unchanged.
+                mapping.ignore();
+                continue;
+            }
             if (active.getRegistryName().equals(ResourceLocation.parse("minecraft:potion"))
                     && mapping.getKey().equals(ResourceLocation.parse("minecraft:empty"))) {
                 // An absent potion is now represented by empty potion contents, not a registry entry.
@@ -128,6 +141,11 @@ public final class VanillaRegistryRemaps {
             mapping.remap(target);
             PowerAdvantage.LOGGER.info("Migrated vanilla registry entry {} to {}", mapping.getKey(), replacement);
         }
+    }
+
+    static boolean retiredPaintingIndex(ResourceLocation registry, ResourceLocation old) {
+        return registry.equals(ResourceLocation.parse("minecraft:painting_variant"))
+                && old.getNamespace().equals("minecraft") && LEGACY_PAINTINGS.contains(old.getPath());
     }
 
     static boolean retiredTransientMemory(ResourceLocation registry, ResourceLocation old) {
@@ -178,6 +196,8 @@ public final class VanillaRegistryRemaps {
         } else if (registry.equals(ResourceLocation.parse("minecraft:worldgen/biome")) && old.getPath().equals("nether")) {
             target = "nether_wastes";
         } else if (registry.equals(ResourceLocation.parse("minecraft:sound_event"))) {
+            if (old.getPath().equals("block.trial_spawner.ambient_charged")) target = "block.trial_spawner.ambient_ominous";
+            if (old.getPath().equals("block.trial_spawner.charge_activate")) target = "block.trial_spawner.ominous_activate";
             for (String sound : new String[] {"ambient", "angry", "death", "hurt"}) {
                 if (old.getPath().equals("entity.zombie_pigman." + sound)) target = "entity.zombified_piglin." + sound;
             }
