@@ -55,26 +55,40 @@ public final class NativePackResourceProof {
         Path javaExecutable = Path.of(System.getProperty("java.home"), "bin", "java");
         if (!Files.isExecutable(javaExecutable)) javaExecutable = javaExecutable.resolveSibling("java.exe");
         Path log = evidence.resolve("forge-resources.log");
-        Process process = new ProcessBuilder(javaExecutable.toString(), "-XX:ActiveProcessorCount=4", "-Xmx512m",
-                "--add-opens", "java.base/java.lang.invoke=ALL-UNNAMED", "-cp", classpath,
-                NativePackResourceProof.class.getName(), Path.of("build/resources/main").toAbsolutePath().toString(),
-                evidence.toString()).directory(evidence.toFile())
-                .redirectErrorStream(true).redirectOutput(log.toFile()).start();
+        Process process = proofProcess(javaExecutable, classpath,
+                Path.of("build/resources/main").toAbsolutePath(), evidence, log).start();
         if (!process.waitFor(90, TimeUnit.SECONDS)) {
             process.destroyForcibly().waitFor();
             throw new AssertionError("Native Forge resource proof timed out: " + log);
         }
         String output = Files.readString(log);
         if (process.exitValue() != 0) throw new AssertionError("Native Forge resource proof failed: " + log + "\n" + output);
-        if (java.util.regex.Pattern.compile("(?m)(?:\\[[^\\r\\n]*\\b(?:WARN|ERROR|FATAL)\\b[^\\r\\n]*\\]|\\bmain (?:WARN|ERROR|FATAL)\\b)")
-                .matcher(output).find()) {
-            throw new AssertionError("Native Forge resource diagnostic in " + log + "\n" + output);
-        }
+        requireCleanOutput(output, log);
         receipt = JsonParser.parseString(Files.readString(evidence.resolve("receipt.json"))).getAsJsonObject();
         return receipt.deepCopy();
     }
 
+    static ProcessBuilder proofProcess(Path javaExecutable, String classpath, Path resources, Path evidence, Path log) {
+        // The child has redirected output, not an interactive terminal. Disable only JLine, never diagnostics.
+        ProcessBuilder builder = new ProcessBuilder(javaExecutable.toString(), "-XX:ActiveProcessorCount=4", "-Xmx512m",
+                "-Dterminal.jline=false", "--add-opens", "java.base/java.lang.invoke=ALL-UNNAMED", "-cp", classpath,
+                NativePackResourceProof.class.getName(), resources.toString(), evidence.toString())
+                .directory(evidence.toFile()).redirectErrorStream(true).redirectOutput(log.toFile());
+        builder.environment().put("TERM", "dumb");
+        return builder;
+    }
+
+    static void requireCleanOutput(String output, Path log) {
+        if (java.util.regex.Pattern.compile("(?m)(?:\\[[^\\r\\n]*\\b(?:WARN|ERROR|FATAL)\\b[^\\r\\n]*\\]|\\bmain (?:WARN|ERROR|FATAL)\\b)")
+                .matcher(output).find()) {
+            throw new AssertionError("Native Forge resource diagnostic in " + log + "\n" + output);
+        }
+    }
+
     public static void main(String[] args) throws Exception {
+        if (!"false".equals(System.getProperty("terminal.jline"))) {
+            throw new AssertionError("The redirected proof child must not initialise an interactive terminal");
+        }
         SharedConstants.tryDetectVersion();
         Bootstrap.bootStrap();
         Path resources = Path.of(args[0]);
@@ -105,6 +119,7 @@ public final class NativePackResourceProof {
         var logger = (org.apache.logging.log4j.core.Logger)LogManager.getRootLogger();
         logger.addAppender(appender);
         JsonObject result = new JsonObject();
+        result.addProperty("interactiveTerminalDisabled", true);
         JsonArray dependencies = new JsonArray();
         for (var dependency : mod.getModInfos().getFirst().getDependencies()) {
             JsonObject entry = new JsonObject();
@@ -191,6 +206,6 @@ public final class NativePackResourceProof {
         result.add("warningsAndErrors", messages);
         Files.writeString(evidence.resolve("receipt.json"), result.toString(), StandardCharsets.UTF_8);
         if (!diagnostics.isEmpty()) throw new AssertionError("Native Forge resource diagnostics: " + diagnostics);
-        System.out.println("BASESTEAM_NATIVE_PACK_RESOURCES_PASS " + result);
+        System.out.println("BASEPOWER_NATIVE_PACK_RESOURCES_PASS " + result);
     }
 }
