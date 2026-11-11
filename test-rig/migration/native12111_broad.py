@@ -1,4 +1,4 @@
-"""Commission all 21 bays and prove twelve native drill witnesses across restart."""
+"""Commission all 21 supported BaseMetals-present bays and twelve native drill witnesses."""
 
 import argparse
 from pathlib import Path
@@ -10,6 +10,14 @@ from native117 import output_path, require_disjoint
 from native117_broad import DRILL_BAYS, campaign_document, drill_cases, run_profile
 from native117_readiness import await_ready
 import native12111 as native
+
+
+def supported_mode(value):
+    if value != "packaged-current":
+        raise argparse.ArgumentTypeError(
+            f"{value!r} is unsupported for Minecraft 1.21.11: BaseMetals is mandatory. "
+            "Use packaged-current with the complete pinned family profile.")
+    return value
 
 
 class Adapter:
@@ -66,14 +74,15 @@ def main():
     parser.add_argument("--inventory-sha256", required=True)
     parser.add_argument("--port", type=int, required=True)
     parser.add_argument("--run-seconds", type=int, default=8)
-    parser.add_argument("--mode", choices=("both", "packaged-current", "packaged-decoupled"), default="both")
+    parser.add_argument("--mode", type=supported_mode, default="packaged-current", metavar="packaged-current",
+                        help="Supported BaseMetals-present profile (default); both/packaged-decoupled are refused")
     args = parser.parse_args()
     if not 1 <= args.run_seconds <= 60 or not 1024 <= args.port < 65535:
-        parser.error("Use a bounded duration and consecutive unprivileged localhost ports")
-    output = output_path(args.output)
+        parser.error("Use a bounded duration and an unprivileged localhost port")
     seed, inventory, mods = native.read_family_target(args.profile, args.seed, args.inventory, args.inventory_sha256)
     if "basemetals" not in mods:
-        raise ValueError("The shared profile is the source of both shared and decoupled pins")
+        parser.error("BaseMetals is mandatory for Minecraft 1.21.11; pin it in the packaged-current profile")
+    output = output_path(args.output)
     java, version = native.java21(args.java)
     for path in (args.profile, seed, args.inventory, java, *(item[1] for item in mods.values())):
         require_disjoint(output, path)
@@ -84,7 +93,7 @@ def main():
     stations = native.read_json(spec)["stations"]
     if len(stations) != 21:
         raise AssertionError("The complete 21-bay definition is required")
-    names = ("packaged-current", "packaged-decoupled") if args.mode == "both" else (args.mode,)
+    names = (args.mode,)
     proof = dict(qualificationStatus=native.EXPLORATORY, minecraft=native.MINECRAFT, forge=native.FORGE,
                  profileSha256=digest(args.profile), inventorySha256=digest(args.inventory),
                  stationDefinitionSha256=digest(spec), javaVersion=version, javaSha256=digest(java),
@@ -100,8 +109,7 @@ def main():
         except Exception:
             results[name] = dict(status="FAIL", profile=name, error=traceback.format_exc())
         try:
-            expected = {item["file"]: item["sha256"] for key, item in entries.items()
-                        if name != "packaged-decoupled" or key != "basemetals"}
+            expected = {item["file"]: item["sha256"] for item in entries.values()}
             native.verify_runtime(output / name, inventory, expected)
         except Exception:
             results[name].update(status="FAIL", custodyError=traceback.format_exc())

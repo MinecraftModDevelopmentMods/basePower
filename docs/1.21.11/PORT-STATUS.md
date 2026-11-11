@@ -21,22 +21,33 @@ hidden by changing the data format.
 
 ## Current Candidate
 
-The latest local registry repair has player SHA-256
-`D5FFE26E4BD6432E1DED087B83DCC4DA2E1717048CA2BFCC998D4F1AC6ED4747`.
-Its full release suite and all 274 unit tests pass, including fresh Eclipse
-compiler output. Two additional chained 1.13 dimension upgrades now pass their
-payload and full-restart checks. Earlier failed attempts are retained.
+The dependency-corrected Power jar has player SHA-256
+`C98D2CF163BE2480D9AFB0023BBD2D92D401AE0D50BEF73191235BF3F83774A7`.
+Its full release suite and all 276 unit tests pass, including fresh Eclipse
+compiler output. Against the preceding registry-repair jar, only
+`META-INF/mods.toml` changed; all gameplay classes and other resources are exact.
+The preceding registry repair passed two additional chained 1.13 dimension
+upgrades through full restart. Those earlier results and failures are retained
+under their own artifact hashes, not relabelled as final combined qualification.
 
 This is still **not ready for manual acceptance or release**. Final dependency
 pins and the full combined machine, client and endurance rerun remain. The
-expansions currently retain their separately checked intermediate Power pin.
-Do not transfer C2's results to a newer jar or describe that intermediate pin
-as the final dependency set.
+expansions now pin the dependency-corrected Power source. Do not transfer C2's
+results to a newer jar or describe the dependency checks as full gameplay
+qualification.
 
 Base Metals is required by all three mods on both client and server, matching
 their CurseForge requirements. The previous Forge-optional flags were leftover
-metadata and are being corrected. The no-Base-Metals robustness run below is
+metadata and have been corrected. The no-Base-Metals robustness run below is
 not a supported installation or a release qualification requirement.
+
+Native Forge parser tests verify the requirement in all three mods. A packaged
+server starts, saves and stops with the matching Base Metals installed. Without
+it, Forge reports the three missing-dependency errors before mod construction
+or world creation. Minecraft handles this early failure with process exit 0,
+so the negative control checks the exact dependency errors and absence of a
+world rather than treating an exit code alone as proof. These are dependency
+checks, not a replacement for the remaining gameplay and endurance runs.
 
 ## Completed C2 Checks
 

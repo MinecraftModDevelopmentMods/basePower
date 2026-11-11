@@ -206,8 +206,8 @@ def read_family_target(profile, seed, inventory_file, inventory_sha256):
         validate_hash(path, item["sha256"])
         jar_identity(path, identity, version)
         mods[identity] = (version, path, item["sha256"])
-    if not {"basepower", "advantageworkstest", "basesteam", "baseelectric", "orespawn"} <= mods.keys():
-        raise ValueError("A full family profile must pin Power, Steam, Electric, OreSpawn and Advantage Works")
+    if not {"basepower", "advantageworkstest", "basesteam", "baseelectric", "basemetals", "orespawn"} <= mods.keys():
+        raise ValueError("A full family profile must pin Power, Steam, Electric, mandatory BaseMetals, OreSpawn and Advantage Works")
     verify_compile_pin(mods["advantageworkstest"][1], mods["basepower"][2])
     return seed, inventory, mods
 
