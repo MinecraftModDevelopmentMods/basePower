@@ -54,7 +54,9 @@ public final class VanillaRegistryRemaps {
     private static final Set<String> SPLIT_ENTITY_INDEXES = Set.of("boat", "chest_boat", "potion");
     private static final Set<String> REMOVED_SOUND_INDEXES = Set.of("entity.goat.screaming.horn_break",
             "entity.leash_knot.break", "entity.leash_knot.place", "entity.puffer_fish.ambient",
-            "entity.wolf.howl", "item.goat_horn.play");
+            "entity.wolf.howl", "item.goat_horn.play", "entity.parrot.imitate.enderman",
+            "entity.parrot.imitate.polar_bear", "entity.parrot.imitate.wolf",
+            "entity.parrot.imitate.zombie_pigman");
 
     private VanillaRegistryRemaps() {}
 

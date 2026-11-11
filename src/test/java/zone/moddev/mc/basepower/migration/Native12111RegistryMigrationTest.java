@@ -71,6 +71,18 @@ public class Native12111RegistryMigrationTest {
         assertAction("entity_type", "other:boat", MissingMappingsEvent.Action.DEFAULT);
     }
 
+    @Test public void removedNeutralParrotImitationsDoNotBlockHistoricalRegistrySnapshots() {
+        for (String mob : new String[] {"enderman", "polar_bear", "wolf", "zombie_pigman"}) {
+            String name = "entity.parrot.imitate." + mob;
+            assertFalse("No native sound target exists for " + name, ForgeRegistries.SOUND_EVENTS.containsKey(id(name)));
+            assertAction("sound_event", name, MissingMappingsEvent.Action.IGNORE);
+            assertAction("item", name, MissingMappingsEvent.Action.DEFAULT);
+            assertAction("sound_event", "other:" + name, MissingMappingsEvent.Action.DEFAULT);
+        }
+        assertAction("sound_event", "entity.parrot.imitate.unknown", MissingMappingsEvent.Action.DEFAULT);
+        assertAction("sound_event", "entity.parrot.imitate.creeper", MissingMappingsEvent.Action.DEFAULT);
+    }
+
     @Test public void onlyExactRemovedSoundIndexesAreRetired() {
         for (String name : new String[] {"entity.goat.screaming.horn_break", "entity.leash_knot.break",
                 "entity.leash_knot.place", "entity.puffer_fish.ambient", "entity.wolf.howl", "item.goat_horn.play"}) {
