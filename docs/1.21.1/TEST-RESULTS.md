@@ -1,8 +1,8 @@
 # 1.21.1 Local Test Results
 
-The coordinated port is ready for manual testing. These results were recorded
-on 11 November 2026 using Forge 52.1.0 and Java 21. No port commits have been
-pushed or published.
+The coordinated port passed automated qualification and manual acceptance.
+These results were recorded on 11 November 2026 using Forge 52.1.0 and Java 21.
+Release checks still verify the merged artifact and public downloads separately.
 
 ## Frozen Candidates
 
@@ -12,8 +12,8 @@ pushed or published.
 | baseSteam | 2.2.15.121011 | `EA305B9060BC2A84021C7299249AA79AA593EA8A37665C18D0B3483902F1046A` |
 | baseElectric | 2.2.15.121011 | `CFE7EF9CDAB3BD4DB0342562B2D9CEBAA19E78119C4D4AAD4B637B5BF0A59560` |
 
-The dependencies are OreSpawn 4.1.0.121011 and the local Base Metals
-3.1.2.121011 migration-hook build. The latter is not a public release.
+The dependencies are OreSpawn 4.1.0.121011 and Base Metals
+3.1.2.121011, which includes the shared migration hook.
 The complete input hashes, source commits and receipt hashes are in
 `D:\PowerAdvantage\_verification\base-1211-port-20261111\final-qualification.json`.
 
@@ -89,7 +89,7 @@ LED light observation, and a tick-freeze barrier only while priming endurance
 inputs. Normal processing is measured with ticks running. The mining and
 conservation expectations were not reduced to make those runs pass.
 
-## Still Manual
+## Manual And Modpack Checks
 
 Use [the combined Eclipse launch](../../runClientAllAdvantage.launch) in the
 PA1211 workspace, or the exact jars in the local `manual-test-jars` folder.
@@ -102,5 +102,6 @@ server tests use the frozen player jars. Neither qualifies third-party resource
 packs or an entire modpack. No full Sylvester-world qualification was performed
 in this pass. Only disposable fixture copies were loaded.
 
-Manual acceptance, publication of the Base Metals dependency patch, hosted CI,
-PRs, tags and release uploads remain separate gates.
+Manual acceptance is complete. Dependency publication, hosted CI, tags and
+release uploads are checked separately; acceptance does not itself establish
+public availability.

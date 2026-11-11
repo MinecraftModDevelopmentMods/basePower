@@ -21,6 +21,8 @@ jobs:
     steps:
       - name: Check out PowerAdvantage
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Test target-derived dependency guards
+        run: bash .github/test-base-metals-pin.sh
       - name: Require the Base Metals pin on upstream master-1.21.11
         id: base-metals-pin
         env:
@@ -74,9 +76,8 @@ jobs:
           mavenizer="$orespawn/ci-fixtures/tools/minecraft-mavenizer-0.5.21-orespawn-compat.jar"
           mirror="$RUNNER_TEMP/orespawn-mirror"
           (cd "$basemetals" && bash gradle/stage-orespawn-release.sh "$mirror")
-          chmod +x "$orespawn/gradlew" "$basemetals/gradlew"
-          (cd "$orespawn" && ./gradlew $MMD_GRADLE_TOOLCHAINS jar --no-daemon --stacktrace)
-          (cd "$basemetals" && ./gradlew $MMD_GRADLE_TOOLCHAINS jar -PorespawnVerificationRepository="$mirror" --no-daemon --stacktrace)
+          (cd "$orespawn" && bash gradlew $MMD_GRADLE_TOOLCHAINS jar --no-daemon --stacktrace)
+          (cd "$basemetals" && bash gradlew $MMD_GRADLE_TOOLCHAINS jar -PorespawnVerificationRepository="$mirror" --no-daemon --stacktrace)
           osjar="$orespawn/build/libs/OreSpawn-4.1.0.121111.jar"
           bmjar="$basemetals/build/libs/BaseMetals-3.1.2.121111.jar"
           test -f "$osjar" && test -f "$bmjar"

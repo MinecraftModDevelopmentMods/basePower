@@ -21,6 +21,8 @@ jobs:
     steps:
       - name: Check out PowerAdvantage
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Test target-derived dependency guards
+        run: bash .github/test-base-metals-pin.sh
       - name: Require the Base Metals pin on upstream master-1.21.11
         id: base-metals-pin
         env:
