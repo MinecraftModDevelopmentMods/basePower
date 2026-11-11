@@ -1,4 +1,4 @@
-basePower 2.4.15.121111 (Minecraft 1.21.11, local candidate)
+basePower 2.4.15.121111 (Minecraft 1.21.11)
 
 - Bring basePower to Forge 61 and Java 21, keeping the existing machine and world identities.
 - Use native value-based saves and migration Mixins while retaining the legacy API's saved fields.
@@ -14,6 +14,7 @@ basePower 2.4.15.121111 (Minecraft 1.21.11, local candidate)
 - Require Base Metals in Forge's dependency checks as well as on CurseForge.
 - Keep the release upload in step with the declared version.
 - Run wrapper validation on the current Minecraft branch as well as the main build and CodeQL checks.
+- Keep resource checks non-interactive in CI without hiding warnings or errors.
 - Complete machine, upgrade, graphical and two-world endurance checks against the current jars. Manual testing is accepted; publication remains a separate step.
 
 basePower 2.4.14.121011 (Minecraft 1.21.1)
