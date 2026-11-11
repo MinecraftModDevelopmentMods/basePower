@@ -17,15 +17,15 @@ public abstract class GUI {
 
 		Blocks.init();
 
-		Blocks.fluid_drain.setGuiID(MachineGUIRegistry.addGUI(new FluidTankGUI(new ResourceLocation(PowerAdvantage.MODID + ":" + "textures/gui/container/fluid_drain_gui.png"))), PowerAdvantage.getInstance());
+		Blocks.fluid_drain.setGuiID(MachineGUIRegistry.addGUI(new FluidTankGUI(ResourceLocation.parse(PowerAdvantage.MODID + ":" + "textures/gui/container/fluid_drain_gui.png"))), PowerAdvantage.getInstance());
 
-		Blocks.fluid_discharge.setGuiID(MachineGUIRegistry.addGUI(new FluidTankGUI(new ResourceLocation(PowerAdvantage.MODID + ":" + "textures/gui/container/fluid_discharge_gui.png"))), PowerAdvantage.getInstance());
+		Blocks.fluid_discharge.setGuiID(MachineGUIRegistry.addGUI(new FluidTankGUI(ResourceLocation.parse(PowerAdvantage.MODID + ":" + "textures/gui/container/fluid_discharge_gui.png"))), PowerAdvantage.getInstance());
 
-		Blocks.storage_tank.setGuiID(MachineGUIRegistry.addGUI(new FluidTankGUI(new ResourceLocation(PowerAdvantage.MODID + ":" + "textures/gui/container/fluid_storage_tank_gui.png"))), PowerAdvantage.getInstance());
+		Blocks.storage_tank.setGuiID(MachineGUIRegistry.addGUI(new FluidTankGUI(ResourceLocation.parse(PowerAdvantage.MODID + ":" + "textures/gui/container/fluid_storage_tank_gui.png"))), PowerAdvantage.getInstance());
 
-		Blocks.metal_storage_tank.setGuiID(MachineGUIRegistry.addGUI(new FilteredFluidTankGUI(new ResourceLocation(PowerAdvantage.MODID + ":" + "textures/gui/container/fluid_metal_tank_gui.png"))), PowerAdvantage.getInstance());
+		Blocks.metal_storage_tank.setGuiID(MachineGUIRegistry.addGUI(new FilteredFluidTankGUI(ResourceLocation.parse(PowerAdvantage.MODID + ":" + "textures/gui/container/fluid_metal_tank_gui.png"))), PowerAdvantage.getInstance());
 
-		Blocks.still.setGuiID(MachineGUIRegistry.addGUI(new StillGUI(new ResourceLocation(PowerAdvantage.MODID + ":" + "textures/gui/container/still_gui.png"))), PowerAdvantage.getInstance());
+		Blocks.still.setGuiID(MachineGUIRegistry.addGUI(new StillGUI(ResourceLocation.parse(PowerAdvantage.MODID + ":" + "textures/gui/container/still_gui.png"))), PowerAdvantage.getInstance());
 
 		Blocks.item_conveyor.setGuiID(MachineGUIRegistry.addGUI(new SimpleMachineGUI(
 				PowerAdvantage.MODID + ":textures/gui/container/item_conveyor.png",

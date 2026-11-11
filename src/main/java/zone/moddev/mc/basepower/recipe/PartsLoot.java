@@ -44,9 +44,9 @@ public final class PartsLoot extends LootModifier {
     protected ObjectArrayList<ItemStack> doApply(ObjectArrayList<ItemStack> loot, LootContext context) {
         ResourceLocation table = context.getQueriedLootTableId();
         if (!isChest(table) || PowerAdvantage.chestLootFactor <= 0 || hasAdditionalLootTables()) return loot;
-        // Forge 50 fires LootTableLoadEvent for all packs and doesn't include the source.
+        // Keep data-pack replacements authoritative instead of adding parts to their loot.
         var resourceManager = context.getLevel().getServer().getResourceManager();
-        String source = resourceManager.getResource(table.withPath(path -> "loot_tables/" + path + ".json"))
+        String source = resourceManager.getResource(table.withPath(path -> "loot_table/" + path + ".json"))
                 .map(Resource::sourcePackId).orElse("");
         for (ResourceLocation extra : partTables(table, source, ModList.get()::isLoaded)) {
             var key = ResourceKey.create(Registries.LOOT_TABLE, extra);

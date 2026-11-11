@@ -29,21 +29,30 @@ import zone.moddev.mc.basepower.machines.conveyors.TileEntityConveyor;
 import static org.junit.Assert.*;
 
 public class LegacyMachineItemsTest {
+    private static net.minecraft.core.HolderLookup.Provider registryLookup;
+
     @BeforeClass public static void bootstrap() {
         net.minecraft.SharedConstants.tryDetectVersion(); net.minecraft.server.Bootstrap.bootStrap();
+        net.minecraftforge.registries.GameData.unfreezeData();
+        registryLookup = net.minecraft.data.registries.VanillaRegistries.createLookup();
         AdvantageLegacyMigrations.registerPowerAdvantage();
     }
 
     @Test public void colouredWoolSurvivesAnActualConveyorInventoryLoad() {
         CompoundTag tile = convertedTile(stack("minecraft:wool", 14, 7));
-        TileEntityConveyor conveyor = new TileEntityConveyor(net.minecraft.core.BlockPos.ZERO, Blocks.HOPPER.defaultBlockState());
-        conveyor.loadWithComponents(tile, registries());
-        assertSame(Items.RED_WOOL, conveyor.getItem(0).getItem());
-        assertEquals(7, conveyor.getItem(0).getCount());
+        var previous = zone.moddev.mc.basepower.init.Entities.CONVEYOR;
+        try {
+            zone.moddev.mc.basepower.init.Entities.CONVEYOR = net.minecraft.world.level.block.entity.BlockEntityType.Builder
+                    .of(TileEntityConveyor::new, Blocks.HOPPER).build(null);
+            TileEntityConveyor conveyor = new TileEntityConveyor(net.minecraft.core.BlockPos.ZERO, Blocks.HOPPER.defaultBlockState());
+            conveyor.loadWithComponents(tile, registries());
+            assertSame(Items.RED_WOOL, conveyor.getItem(0).getItem());
+            assertEquals(7, conveyor.getItem(0).getCount());
+        } finally { zone.moddev.mc.basepower.init.Entities.CONVEYOR = previous; }
     }
 
-    private static net.minecraft.core.RegistryAccess registries() {
-        return net.minecraft.core.RegistryAccess.fromRegistryOfRegistries(net.minecraft.core.registries.BuiltInRegistries.REGISTRY);
+    private static net.minecraft.core.HolderLookup.Provider registries() {
+        return registryLookup;
     }
 
     @Test public void preservesVanillaMetadataVariantsInMachineSlots() {
@@ -80,6 +89,9 @@ public class LegacyMachineItemsTest {
         assertEquals(1, loaded.getCount());
         assertEquals(17, loaded.getDamageValue());
         assertEquals("Survey Pick", loaded.getHoverName().getString());
+        var efficiency = registries().lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT)
+                .getOrThrow(net.minecraft.world.item.enchantment.Enchantments.EFFICIENCY);
+        assertEquals(3, net.minecraft.world.item.enchantment.EnchantmentHelper.getItemEnchantmentLevel(efficiency, loaded));
     }
 
     @Test public void nestedStoredItemsAreConvertedWithoutChangingMachineState() {

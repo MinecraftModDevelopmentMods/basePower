@@ -1,3 +1,12 @@
+basePower 2.4.14.121011 (Minecraft 1.21.1)
+
+- Bring basePower to Forge 52 and Java 21, keeping existing blocks, items and machine data.
+- Use the new recipe, advancement, loot and tag folders without changing their in-game names.
+- Update fluid gauges to the current renderer while keeping the full texture visible.
+- Preserve custom attributes on old modded entities when Minecraft upgrades their save format.
+- Keep the shared Base Metals upgrade hook for old Advantage and released base* worlds.
+- This is a local test candidate. It has not been pushed or published.
+
 basePower 2.4.13.120061 (Minecraft 1.20.6)
 
 - Bring basePower to Forge 50 and Java 21 without changing the names of existing machines or items.

@@ -18,7 +18,7 @@ public class VanillaRegistryRemapsTest {
         assertNull(VanillaRegistryRemaps.replacement(id("entity_type"), id("grass_path")));
     }
 
-    @Test public void retainsVanillaBlockItemAndEnchantmentRenamesThroughForge50() {
+    @Test public void retainsVanillaBlockItemAndEnchantmentRenamesThroughForge52() {
         expect("block", "grass", "short_grass");
         expect("item", "grass", "short_grass");
         expect("item", "scute", "turtle_scute");
@@ -88,7 +88,7 @@ public class VanillaRegistryRemapsTest {
         assertEquals(id("warm_ocean"), VanillaRegistryRemaps.vanillaBiomeFixTarget(biomes, id("deep_warm_ocean")));
         assertNull(VanillaRegistryRemaps.vanillaBiomeFixTarget(biomes, id("plains")));
         assertNull(VanillaRegistryRemaps.vanillaBiomeFixTarget(biomes, id("unknown_biome")));
-        assertNull(VanillaRegistryRemaps.vanillaBiomeFixTarget(biomes, new ResourceLocation("example:desert_hills")));
+        assertNull(VanillaRegistryRemaps.vanillaBiomeFixTarget(biomes, ResourceLocation.parse("example:desert_hills")));
         assertNull(VanillaRegistryRemaps.vanillaBiomeFixTarget(id("block"), id("desert_hills")));
     }
 
@@ -106,7 +106,7 @@ public class VanillaRegistryRemapsTest {
     }
 
     @Test public void leavesOtherModsAndUnrecognizedVanillaEntriesAlone() {
-        assertNull(VanillaRegistryRemaps.replacement(id("item"), new ResourceLocation("othermod:zombie_pigman_spawn_egg")));
+        assertNull(VanillaRegistryRemaps.replacement(id("item"), ResourceLocation.parse("othermod:zombie_pigman_spawn_egg")));
         assertNull(VanillaRegistryRemaps.replacement(id("item"), id("unknown_item")));
         assertNull(VanillaRegistryRemaps.replacement(id("sound_event"), id("music.unknown")));
     }
@@ -120,5 +120,5 @@ public class VanillaRegistryRemapsTest {
         assertEquals(id(to), VanillaRegistryRemaps.replacement(id(registry), id(from)));
     }
 
-    private static ResourceLocation id(String name) { return new ResourceLocation("minecraft", name); }
+    private static ResourceLocation id(String name) { return ResourceLocation.fromNamespaceAndPath("minecraft", name); }
 }

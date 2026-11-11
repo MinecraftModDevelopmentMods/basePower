@@ -57,7 +57,7 @@ public final class LegacyMigrationApi {
 
     public static synchronized ResourceLocation registryTarget(ResourceLocation id) {
         String current = NAMESPACE_ALIASES.get(id.getNamespace());
-        return current == null ? id : new ResourceLocation(current, id.getPath());
+        return current == null ? id : ResourceLocation.fromNamespaceAndPath(current, id.getPath());
     }
 
     public static synchronized void registerBlockAlias(ResourceLocation legacyId, ResourceLocation currentId) {

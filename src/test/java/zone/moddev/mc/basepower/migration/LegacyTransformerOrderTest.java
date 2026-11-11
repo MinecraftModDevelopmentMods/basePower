@@ -20,7 +20,7 @@ import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.MethodNode;
 import static org.junit.Assert.*;
 
-/** Applies both real migration scripts to the exact native Forge 50 classes. */
+/** Applies both real migration scripts to the exact native Forge 52 classes. */
 public class LegacyTransformerOrderTest {
     private static final String WORLD = "net/minecraft/world/level/storage/LevelStorageSource";
     private static final String CHUNK = "net/minecraft/world/level/chunk/storage/ChunkStorage";
@@ -87,7 +87,11 @@ public class LegacyTransformerOrderTest {
         }
         applyBoth(chunk, "legacy_chunk_status", baseFirst);
         assertBoth(chunk, "prepareLegacyChunk", "(" + NBT + ")V");
-        assertBoth(chunk, "finalizeLegacyChunk", "(" + NBT + ")" + NBT);
+        int returns = (int) Arrays.stream(upgrade.instructions.toArray())
+                .filter(instruction -> instruction.getOpcode() == Opcodes.ARETURN).count();
+        assertEquals("Review each native Forge 52 chunk-upgrade return", 2, returns);
+        assertEquals(returns, calls(upgrade, POWER, "finalizeLegacyChunk", "(" + NBT + ")" + NBT));
+        assertEquals(returns, calls(upgrade, METALS, "finalizeLegacyChunk", "(" + NBT + ")" + NBT));
         assertEquals(1, calls(upgrade, POWER, "prepareLegacyEntities", "(" + NBT + ")V"));
         assertEquals(1, calls(read, POWER, "copyChunkReadForMigration",
                 "(Ljava/util/concurrent/CompletableFuture;)Ljava/util/concurrent/CompletableFuture;"));

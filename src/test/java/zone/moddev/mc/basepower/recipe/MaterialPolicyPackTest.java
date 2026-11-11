@@ -41,24 +41,24 @@ public class MaterialPolicyPackTest {
 
     @Test public void policyOnlySuppliesServerDataAndHonoursResourceDiscovery() {
         MaterialPolicyPack pack = new MaterialPolicyPack(true, false);
-        ResourceLocation rubber = new ResourceLocation("forge", "tags/items/rubber.json");
+        ResourceLocation rubber = ResourceLocation.fromNamespaceAndPath("forge", "tags/item/rubber.json");
         assertNotNull(pack.getResource(PackType.SERVER_DATA, rubber));
         assertNull(pack.getResource(PackType.CLIENT_RESOURCES, rubber));
-        assertEquals(Set.of(rubber, new ResourceLocation("forge:tags/items/ingots/rubber.json"),
-                new ResourceLocation("forge:tags/items/solder.json")), list(pack, PackType.SERVER_DATA, "forge"));
+        assertEquals(Set.of(rubber, ResourceLocation.parse("forge:tags/item/ingots/rubber.json"),
+                ResourceLocation.parse("forge:tags/item/solder.json")), list(pack, PackType.SERVER_DATA, "forge"));
         assertTrue(list(pack, PackType.SERVER_DATA, "basepower").isEmpty());
         assertTrue(list(pack, PackType.CLIENT_RESOURCES, "forge").isEmpty());
     }
 
     private static Set<ResourceLocation> list(MaterialPolicyPack pack, PackType type, String namespace) {
         Set<ResourceLocation> entries = new HashSet<>();
-        pack.listResources(type, namespace, "tags/items", (id, supplier) -> entries.add(id));
+        pack.listResources(type, namespace, "tags/item", (id, supplier) -> entries.add(id));
         return entries;
     }
 
     private static JsonObject read(MaterialPolicyPack pack, String path) throws Exception {
         try (InputStream stream = pack.getResource(PackType.SERVER_DATA,
-                new ResourceLocation("forge", "tags/items/" + path + ".json")).get()) {
+                ResourceLocation.fromNamespaceAndPath("forge", "tags/item/" + path + ".json")).get()) {
             return new JsonParser().parse(new String(stream.readAllBytes(), StandardCharsets.UTF_8)).getAsJsonObject();
         }
     }

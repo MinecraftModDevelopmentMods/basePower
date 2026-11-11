@@ -14,8 +14,8 @@ public class BlockPos4DTest {
     @BeforeClass public static void bootstrap() { net.minecraft.SharedConstants.tryDetectVersion(); net.minecraft.server.Bootstrap.bootStrap(); }
 
     @Test public void customDimensionKeysNeverShareCoordinates() {
-        ResourceKey<Level> first = ResourceKey.create(Registries.DIMENSION, new ResourceLocation("test:first"));
-        ResourceKey<Level> second = ResourceKey.create(Registries.DIMENSION, new ResourceLocation("test:second"));
+        ResourceKey<Level> first = ResourceKey.create(Registries.DIMENSION, ResourceLocation.parse("test:first"));
+        ResourceKey<Level> second = ResourceKey.create(Registries.DIMENSION, ResourceLocation.parse("test:second"));
         BlockPos4D pos = new BlockPos4D(first, new BlockPos(-17, 80, 32));
         assertNotEquals(pos, new BlockPos4D(second, pos.pos));
         assertEquals(pos, BlockPos4D.fromNBT(pos.toNBT()));

@@ -49,13 +49,13 @@ public class LegacyRegistryArchiveTest {
         Files.write(region, header);
         try {
             assertEquals(1, LegacyWorldDataHook.indexLegacyChunks(world.toFile()));
-            var nether = new ResourceLocation("the_nether");
+            var nether = ResourceLocation.parse("the_nether");
             assertTrue(LegacyWorldDataHook.isProtectedChunk(nether, new BlockPos(0, 0, 0)));
             assertTrue(LegacyWorldDataHook.isProtectedChunk(nether, new BlockPos(0, 255, 0)));
             assertFalse(LegacyWorldDataHook.isProtectedChunk(nether, new BlockPos(0, -1, 0)));
             assertFalse(LegacyWorldDataHook.isProtectedChunk(nether, new BlockPos(0, 256, 0)));
             assertFalse(LegacyWorldDataHook.isProtectedChunk(nether, new BlockPos(16, 64, 0)));
-            assertFalse(LegacyWorldDataHook.isProtectedChunk(new ResourceLocation("overworld"), new BlockPos(0, 64, 0)));
+            assertFalse(LegacyWorldDataHook.isProtectedChunk(ResourceLocation.parse("overworld"), new BlockPos(0, 64, 0)));
         } finally {
             LegacyWorldDataHook.indexLegacyChunks(temporary.newFolder());
         }

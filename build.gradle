@@ -14,7 +14,7 @@ plugins {
     id 'net.minecraftforge.gradle' version '7.0.34'
 }
 
-apply from: 'gradle/forge50-mavenizer.gradle'
+apply from: 'gradle/forge52-mavenizer.gradle'
 
 group = project.mod_group
 version = project.mod_version
@@ -133,7 +133,7 @@ sourceSets.main.resources {
 def forgeRunModClassesDirectory = layout.buildDirectory.dir('forge-run-mod-classes/main')
 def prepareForgeRunModClasses = tasks.register('prepareForgeRunModClasses', Sync) {
     group = 'ide'
-    description = 'Merges classes and processed resources for Forge 1.20.6 launches.'
+    description = 'Merges classes and processed resources for Forge 1.21.1 launches.'
     dependsOn tasks.named('classes')
     from sourceSets.main.output
     into forgeRunModClassesDirectory
@@ -173,7 +173,7 @@ def baseMetalsDeobfJar = file(providers.gradleProperty('baseMetalsJar')
                 + "BaseMetals-${project.basemetals_version}.jar"))
 def oreSpawnDeobfJar = file(providers.gradleProperty('oreSpawnJar')
         .orElse(providers.gradleProperty('oreSpawnDeobfJar'))
-        .getOrElse('../../../MinecraftMineralogy/OS1206/OreSpawn/build/libs/'
+        .getOrElse('../../../MinecraftMineralogy/OS1211/OreSpawn/build/libs/'
                 + "OreSpawn-${project.orespawn_version}.jar"))
 
 dependencies {
@@ -252,7 +252,7 @@ tasks.named('jar', Jar) {
     }
 }
 
-// Forge 50 uses the official names at runtime, so the same jar serves both uses.
+// Forge 52 uses the official names at runtime, so the same jar serves both uses.
 def releaseJar = tasks.named('jar', Jar)
 
 tasks.register('deobfJar') {
@@ -305,17 +305,17 @@ tasks.register('verifyReleaseConfiguration') {
     description = 'Validates release identity, target metadata, and optional integration policy.'
     doLast {
         def pack = new JsonSlurper().parse(file('src/main/resources/pack.mcmeta')).pack
-        if (pack.pack_format != 32 || pack.supported_formats != [min_inclusive: 32, max_inclusive: 41]) {
-            throw new GradleException('Minecraft 1.20.6 requires resource format 32 and data format 41')
+        if (pack.pack_format != 34 || pack.supported_formats != [min_inclusive: 34, max_inclusive: 48]) {
+            throw new GradleException('Minecraft 1.21.1 requires resource format 34 and data format 48')
         }
-        if (project.mod_version != '2.4.13.120061') {
+        if (project.mod_version != '2.4.14.121011') {
             throw new GradleException("Unexpected PowerAdvantage release version: ${project.mod_version}")
         }
-        if (project.minecraft_version != '1.20.6'
-                || project.forge_version != '50.2.0'
+        if (project.minecraft_version != '1.21.1'
+                || project.forge_version != '52.1.0'
                 || project.mapping_channel != 'official'
-                || project.mapping_version != '1.20.6'
-                || project.mcp_version != '20240429.135109') {
+                || project.mapping_version != '1.21.1'
+                || project.mcp_version != '20240808.132146') {
             throw new GradleException('Unexpected Minecraft, Forge, or mappings target')
         }
         if (project.loader_name != 'forge' || project.loader_code != '1'
@@ -332,19 +332,19 @@ tasks.register('verifyReleaseConfiguration') {
         }
         if (project.cf_requirements != 'base-metals,mmd-orespawn'
                 || project.cf_optionals != 'additional-loot-tables'
-                || project.cf_versions != '1.20.6') {
+                || project.cf_versions != '1.21.1') {
             throw new GradleException('Unexpected CurseForge dependency or game-version metadata')
         }
-        if (project.basemetals_version != '3.1.2.120061'
-                || project.orespawn_version != '4.1.0.120061'
+        if (project.basemetals_version != '3.1.2.121011'
+                || project.orespawn_version != '4.1.0.121011'
                 || !(project.basemetals_source_commit ==~ /[a-f0-9]{40}/)
-                || project.orespawn_source_commit != '4085315345ff043448b316d75e03f4b8da45402d') {
+                || project.orespawn_source_commit != '62c08169c71f4d4fd8f107289e63fd2a4c7c655c') {
             throw new GradleException('Unexpected Base Metals or OreSpawn dependency identity')
         }
         String mainSource = file(
                 'src/main/java/zone/moddev/mc/basepower/PowerAdvantage.java').getText('UTF-8')
         if (!mainSource.contains('MODID = "basepower"')
-                || !mainSource.contains('VERSION = "2.4.13.120061"')
+                || !mainSource.contains('VERSION = "2.4.14.121011"')
                 || !mainSource.contains('@Mod(PowerAdvantage.MODID)')) {
             throw new GradleException('PowerAdvantage source identity changed')
         }
@@ -376,7 +376,7 @@ tasks.register('verifyReleaseConfiguration') {
             throw new GradleException('Base Metals must remain Forge-optional; CurseForge installs it for players')
         }
         String steelBarsTag = file(
-                'src/main/resources/data/forge/tags/items/bars/steel.json').getText('UTF-8')
+                'src/main/resources/data/forge/tags/item/bars/steel.json').getText('UTF-8')
         if (!steelBarsTag.contains('"required": false') || !steelBarsTag.contains('"basemetals:steel_bars"')) {
             throw new GradleException('Steel bars must use Forge optional tag entries when Base Metals is absent')
         }
@@ -391,7 +391,7 @@ tasks.register('verifyReleaseConfiguration') {
                 'rods/copper', 'rods/wooden', 'stone',
                 'storage_blocks/diamond', 'storage_blocks/steel'
         ].each { tagPath ->
-            if (!file("src/main/resources/data/forge/tags/items/${tagPath}.json").isFile()) {
+            if (!file("src/main/resources/data/forge/tags/item/${tagPath}.json").isFile()) {
                 throw new GradleException("Missing decoupled Forge item tag declaration: ${tagPath}")
             }
         }
@@ -542,8 +542,8 @@ tasks.register('verifyReleaseArtifacts') {
              'cyano/poweradvantage/api/PoweredEntity.class',
              'cyano/poweradvantage/api/fluid/FluidNetworkApi.class',
              'assets/basepower/lang/en_us.json',
-             'data/basepower/recipes/fluid_drain.json',
-             'data/basepower/advancements/recipes/sprocket_rod_normal.json'].each { required ->
+             'data/basepower/recipe/fluid_drain.json',
+             'data/basepower/advancement/recipes/sprocket_rod_normal.json'].each { required ->
                 if (!names.contains(required)) {
                     throw new GradleException("Release jar is missing ${required}")
                 }
@@ -1009,7 +1009,7 @@ tasks.register('verifyEclipseProductionClasspath') {
             if (main != 'net.minecraftforge.launcher.Main'
                     || !program.startsWith('--main net.minecraftforge.bootstrap.ForgeBootstrap ')
                     || !program.contains(" -- --launchTarget ${target} ")) {
-                throw new GradleException("${name} does not start the Forge 50 bootstrap")
+                throw new GradleException("${name} does not start the Forge 52 bootstrap")
             }
             ['--cache', '--metadata', '--to-srg', '--to-obf'].each { option ->
                 def argument = program =~ /(?:^|\s)${option}\s+(?:"([^"]+)"|([^"\s]+))(?=\s+--|$)/
@@ -1155,7 +1155,7 @@ tasks.register('verifyModelAssets') {
 tasks.register('verifyRecipeTagGuards') {
     group = 'verification'
     description = 'Rejects recipes that can collapse when a Forge material tag is empty.'
-    File recipeRoot = file("src/main/resources/data/${project.mod_id}/recipes")
+    File recipeRoot = file("src/main/resources/data/${project.mod_id}/recipe")
     inputs.dir(recipeRoot)
     doLast {
         Closure collectTags
@@ -1240,9 +1240,9 @@ tasks.register('clientResourceProbeJar', Jar) {
 // The expansion jars are runtime inputs, never release contents or compile dependencies.
 def advantageExtensionJars = [
         basesteam: file(providers.gradleProperty('steamAdvantageDeobfJar').getOrElse(
-                '../SteamAdvantage/SteamAdvantage/build/libs/baseSteam-2.2.14.120061.jar')),
+                '../SteamAdvantage/SteamAdvantage/build/libs/baseSteam-2.2.15.121011.jar')),
         baseelectric: file(providers.gradleProperty('electricAdvantageDeobfJar').getOrElse(
-                '../ElectricAdvantage/ElectricAdvantage/build/libs/baseElectric-2.2.14.120061.jar'))
+                '../ElectricAdvantage/ElectricAdvantage/build/libs/baseElectric-2.2.15.121011.jar'))
 ]
 
 tasks.register('prepareCombinedEclipseLaunch') {

@@ -43,7 +43,7 @@ import zone.moddev.mc.basepower.PowerAdvantage;
  * worlds. Add-ons contribute their identities through {@link LegacyMigrationApi}.
  */
 public final class LegacyWorldDataHook {
-    private static final ResourceLocation BLOCK_REGISTRY = new ResourceLocation("minecraft", "blocks");
+    private static final ResourceLocation BLOCK_REGISTRY = ResourceLocation.fromNamespaceAndPath("minecraft", "blocks");
     private static final Set<String> PREPARED_WORLDS = ConcurrentHashMap.newKeySet();
     private static final String REGISTRY_SIDECAR = "basepower-legacy-registry.dat";
     private static final BitSet LEGACY_BLOCK_IDS = new BitSet();
@@ -525,9 +525,9 @@ public final class LegacyWorldDataHook {
 
     static int indexLegacyChunks(File worldDirectory) {
         LEGACY_CHUNKS.clear();
-        return indexLegacyChunks(new ResourceLocation("overworld"), new File(worldDirectory, "region"))
-                + indexLegacyChunks(new ResourceLocation("the_nether"), new File(worldDirectory, "DIM-1/region"))
-                + indexLegacyChunks(new ResourceLocation("the_end"), new File(worldDirectory, "DIM1/region"));
+        return indexLegacyChunks(ResourceLocation.parse("overworld"), new File(worldDirectory, "region"))
+                + indexLegacyChunks(ResourceLocation.parse("the_nether"), new File(worldDirectory, "DIM-1/region"))
+                + indexLegacyChunks(ResourceLocation.parse("the_end"), new File(worldDirectory, "DIM1/region"));
     }
 
     private static int indexLegacyChunks(ResourceLocation dimension, File regionDirectory) {
@@ -621,7 +621,7 @@ public final class LegacyWorldDataHook {
     }
 
     private static ResourceLocation safeId(String value) {
-        try { return value == null || value.isEmpty() ? null : new ResourceLocation(value.toLowerCase(Locale.ROOT)); }
+        try { return value == null || value.isEmpty() ? null : ResourceLocation.parse(value.toLowerCase(Locale.ROOT)); }
         catch (RuntimeException ignored) { return null; }
     }
 

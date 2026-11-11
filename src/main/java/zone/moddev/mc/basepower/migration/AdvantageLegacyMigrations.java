@@ -88,6 +88,6 @@ public final class AdvantageLegacyMigrations {
     }
 
     private static ResourceLocation id(String path) {
-        return new ResourceLocation(PowerAdvantage.MODID, path);
+        return ResourceLocation.fromNamespaceAndPath(PowerAdvantage.MODID, path);
     }
 }

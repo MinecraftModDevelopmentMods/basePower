@@ -6,6 +6,7 @@ import zone.moddev.mc.basepower.math.Integer2D;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.BufferUploader;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
@@ -83,9 +84,9 @@ public class FluidTankGUI extends SimpleMachineGUI {
 		var pose = guiContainer.getMatrices().last().pose();
 		RenderSystem.setShaderTexture(0, sprite.atlasLocation());
 		Tesselator tessellator = Tesselator.getInstance();
-		BufferBuilder vertexbuffer = tessellator.getBuilder();
 		RenderSystem.setShader(net.minecraft.client.renderer.GameRenderer::getPositionTexColorShader);
-		vertexbuffer.begin(com.mojang.blaze3d.vertex.VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
+		BufferBuilder vertexbuffer = tessellator.begin(com.mojang.blaze3d.vertex.VertexFormat.Mode.QUADS,
+				DefaultVertexFormat.POSITION_TEX_COLOR);
 		final int tileSize = 16;
 		for (int dy = 0; dy < height; dy += tileSize) {
 			int tileHeight = Math.min(tileSize, height - dy);
@@ -94,13 +95,13 @@ public class FluidTankGUI extends SimpleMachineGUI {
 				// Sprite coordinates are fractions of the tile, even when drawing only part of it.
 				float u0 = sprite.getU0(), u1 = sprite.getU((float) tileWidth / tileSize);
 				float v0 = sprite.getV0(), v1 = sprite.getV((float) tileHeight / tileSize);
-				vertexbuffer.vertex(pose, x + dx, y + dy + tileHeight, zLevel).uv(u0, v1).color(red, green, blue, 1F).endVertex();
-				vertexbuffer.vertex(pose, x + dx + tileWidth, y + dy + tileHeight, zLevel).uv(u1, v1).color(red, green, blue, 1F).endVertex();
-				vertexbuffer.vertex(pose, x + dx + tileWidth, y + dy, zLevel).uv(u1, v0).color(red, green, blue, 1F).endVertex();
-				vertexbuffer.vertex(pose, x + dx, y + dy, zLevel).uv(u0, v0).color(red, green, blue, 1F).endVertex();
+				vertexbuffer.addVertex(pose, x + dx, y + dy + tileHeight, zLevel).setUv(u0, v1).setColor(red, green, blue, 1F);
+				vertexbuffer.addVertex(pose, x + dx + tileWidth, y + dy + tileHeight, zLevel).setUv(u1, v1).setColor(red, green, blue, 1F);
+				vertexbuffer.addVertex(pose, x + dx + tileWidth, y + dy, zLevel).setUv(u1, v0).setColor(red, green, blue, 1F);
+				vertexbuffer.addVertex(pose, x + dx, y + dy, zLevel).setUv(u0, v0).setColor(red, green, blue, 1F);
 			}
 		}
-		tessellator.end();
+		BufferUploader.drawWithShader(vertexbuffer.buildOrThrow());
 	}
 
 }

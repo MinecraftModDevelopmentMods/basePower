@@ -138,7 +138,7 @@ public final class Blocks {
         if (!ForgeRegistries.Keys.BLOCKS.equals(event.getRegistryKey())) return;
         init();
         event.register(ForgeRegistries.Keys.BLOCKS, helper -> ALL_BLOCKS.forEach((id, block) ->
-                helper.register(new ResourceLocation(PowerAdvantage.MODID, id), block)));
+                helper.register(ResourceLocation.fromNamespaceAndPath(PowerAdvantage.MODID, id), block)));
     }
 
     @SubscribeEvent
@@ -150,7 +150,7 @@ public final class Blocks {
             if (!"fluid_pipe_terminal".equals(id) && !(block instanceof LiquidBlock)) {
                 ItemGroups.show(item);
             }
-            helper.register(new ResourceLocation(PowerAdvantage.MODID, id), item);
+            helper.register(ResourceLocation.fromNamespaceAndPath(PowerAdvantage.MODID, id), item);
         }));
     }
 

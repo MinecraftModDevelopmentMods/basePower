@@ -50,7 +50,7 @@ public final class MachineGUIRegistry {
     public static void registerTypes(RegisterEvent event) {
         if (!ForgeRegistries.Keys.MENU_TYPES.equals(event.getRegistryKey())) return;
         TYPE = IForgeMenuType.create(MachineGUIRegistry::createClientContainer);
-        event.register(ForgeRegistries.Keys.MENU_TYPES, new ResourceLocation(PowerAdvantage.MODID, "machine"), () -> TYPE);
+        event.register(ForgeRegistries.Keys.MENU_TYPES, ResourceLocation.fromNamespaceAndPath(PowerAdvantage.MODID, "machine"), () -> TYPE);
     }
 
     private static SimpleMachineGUI.Container createClientContainer(

@@ -6,6 +6,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.core.Direction;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
@@ -16,14 +20,28 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import zone.moddev.mc.basepower.machines.fluidmachines.MetalTankTileEntity;
+import zone.moddev.mc.basepower.machines.conveyors.TileEntityConveyor;
+import zone.moddev.mc.basepower.init.Entities;
 import static org.junit.Assert.*;
 
 public class MachineCapabilitiesLifecycleTest {
+    private static BlockEntityType<MetalTankTileEntity> previousTank;
+    private static BlockEntityType<TileEntityConveyor> previousConveyor;
+
     @BeforeClass public static void nativeCapabilityTokens() throws Exception {
         net.minecraft.SharedConstants.tryDetectVersion(); net.minecraft.server.Bootstrap.bootStrap();
         assertNotNull(ForgeCapabilities.FLUID_HANDLER);
         assertNotNull(ForgeCapabilities.ITEM_HANDLER);
         assertNotNull(ForgeCapabilities.ENERGY);
+        previousTank = Entities.METAL_TANK;
+        previousConveyor = Entities.CONVEYOR;
+        Entities.METAL_TANK = BlockEntityType.Builder.of(MetalTankTileEntity::new, Blocks.IRON_BLOCK).build(null);
+        Entities.CONVEYOR = BlockEntityType.Builder.of(TileEntityConveyor::new, Blocks.HOPPER).build(null);
+    }
+
+    @AfterClass public static void restoreNativeTypes() {
+        Entities.METAL_TANK = previousTank;
+        Entities.CONVEYOR = previousConveyor;
     }
 
     @Test public void chunkUnloadCannotRecreateAdaptersOnAnUnremovedTile() {
@@ -138,7 +156,12 @@ public class MachineCapabilitiesLifecycleTest {
     }
 
     private static final class TestConverter extends cyano.poweradvantage.api.modsupport.rf.TileEntityRFConverter {
-        TestConverter() { super(null, net.minecraft.core.BlockPos.ZERO, net.minecraft.world.level.block.Blocks.IRON_BLOCK.defaultBlockState(), new cyano.poweradvantage.api.ConduitType("test-power"), 100, 1000, "test"); }
+        private static final BlockEntityType<TestConverter> TYPE =
+                BlockEntityType.Builder.of(TestConverter::new, Blocks.IRON_BLOCK).build(null);
+        TestConverter() { this(BlockPos.ZERO, Blocks.IRON_BLOCK.defaultBlockState()); }
+        TestConverter(BlockPos pos, BlockState state) {
+            super(TYPE, pos, state, new cyano.poweradvantage.api.ConduitType("test-power"), 100, 1000, "test");
+        }
         void reviveNow() { reviveCaps(); }
     }
 }

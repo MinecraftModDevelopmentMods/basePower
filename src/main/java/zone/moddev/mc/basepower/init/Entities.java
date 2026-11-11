@@ -85,7 +85,7 @@ public final class Entities {
             RegisterEvent event, String id,
             BlockEntityType.BlockEntitySupplier<T> factory, net.minecraft.world.level.block.Block... validBlocks) {
         BlockEntityType<T> type = BlockEntityType.Builder.<T>of(factory, validBlocks).build(null);
-        event.register(ForgeRegistries.Keys.BLOCK_ENTITY_TYPES, new ResourceLocation(PowerAdvantage.MODID, id), () -> type);
+        event.register(ForgeRegistries.Keys.BLOCK_ENTITY_TYPES, ResourceLocation.fromNamespaceAndPath(PowerAdvantage.MODID, id), () -> type);
         return type;
     }
 }

@@ -51,6 +51,7 @@ public class LegacyForgeAttributeRegistryTest {
             LegacyEntityDataFixes.prepare(root); LegacyEntityDataFixes.finish(root);
             CompoundTag expected = before.copy();
             expected.getList("Attributes", 10).getCompound(0).putString("Name", alias[1]);
+            expected = nativeAttributeRecord(expected);
             assertEquals(alias[0], expected, fixedEntity(root));
             assertEquals(before, source);
         }
@@ -66,14 +67,14 @@ public class LegacyForgeAttributeRegistryTest {
                     SharedConstants.getCurrentVersion().getDataVersion().getVersion()).getValue();
             Wolf negative = new Wolf(EntityType.WOLF, world); negative.load(raw);
             AttributeInstance old = negative.getAttribute(ForgeRegistries.ATTRIBUTES.getHolder(
-                    new net.minecraft.resources.ResourceLocation(ALIASES[index][1])).orElseThrow());
+                    ResourceLocation.parse(ALIASES[index][1])).orElseThrow());
             assertNotEquals(ALIASES[index][0], values[index], old.getBaseValue(), 0D);
             CompoundTag root = chunk(source);
             LegacyEntityDataFixes.prepare(root); LegacyEntityDataFixes.finish(root);
             Wolf positive = new Wolf(EntityType.WOLF, world); positive.load(fixedEntity(root));
             AttributeInstance actual = positive.getAttribute(old.getAttribute());
             assertEquals(ALIASES[index][0], values[index], actual.getBaseValue(), 0D);
-            assertEquals(0.125D, actual.getModifier(new UUID(17L, 19L)).amount(), 0D);
+            assertEquals(0.125D, actual.getModifier(modifierId()).amount(), 0D);
             assertEquals(values[index] + 0.125D, actual.getValue(), 0D);
         }
     }
@@ -82,16 +83,16 @@ public class LegacyForgeAttributeRegistryTest {
         CompoundTag source = entity("generic.reachDistance", 7.5D), before = source.copy();
         CompoundTag actual = LegacyPlayerDataFixes.update(DataFixers.getDataFixer(),
                 DataFixTypes.PLAYER, source, 1343);
-        CompoundTag value = actual.getList("Attributes", 10).getCompound(0);
-        assertEquals("minecraft:player.block_interaction_range", value.getString("Name"));
+        CompoundTag value = actual.getList("attributes", 10).getCompound(0);
+        assertEquals("minecraft:player.block_interaction_range", value.getString("id"));
         var reach = net.minecraft.world.entity.ai.attributes.Attributes.BLOCK_INTERACTION_RANGE;
         assertSame(reach.value(), ForgeRegistries.ATTRIBUTES.getValue(
-                new net.minecraft.resources.ResourceLocation(value.getString("Name"))));
+                ResourceLocation.parse(value.getString("id"))));
         AttributeInstance nativeAttribute = new AttributeInstance(reach, unused -> {});
         nativeAttribute.load(value);
         assertEquals(7.5D, nativeAttribute.getBaseValue(), 0D);
         assertEquals(7.625D, nativeAttribute.getValue(), 0D);
-        assertEquals(0.125D, nativeAttribute.getModifier(new UUID(17L, 19L)).amount(), 0D);
+        assertEquals(0.125D, nativeAttribute.getModifier(modifierId()).amount(), 0D);
         assertEquals(before, source);
     }
 
@@ -121,9 +122,9 @@ public class LegacyForgeAttributeRegistryTest {
             CompoundTag fixedVehicle = actual.getCompound("RootVehicle").getCompound("Entity");
             for (CompoundTag item : new CompoundTag[] {actual, fixedVehicle,
                     fixedVehicle.getList("Passengers", 10).getCompound(0)}) {
-                assertEquals(alias[1], item.getList("Attributes", 10).getCompound(0).getString("Name"));
-                assertEquals(0.125D, item.getList("Attributes", 10).getCompound(0)
-                        .getList("Modifiers", 10).getCompound(0).getDouble("Amount"), 0D);
+                assertEquals(alias[1], item.getList("attributes", 10).getCompound(0).getString("id"));
+                assertEquals(0.125D, item.getList("attributes", 10).getCompound(0)
+                        .getList("modifiers", 10).getCompound(0).getDouble("amount"), 0D);
             }
             assertEquals(before.getCompound("PrivateData"), actual.getCompound("PrivateData"));
             assertEquals(before, source);
@@ -146,8 +147,41 @@ public class LegacyForgeAttributeRegistryTest {
             root.putInt("DataVersion", SharedConstants.getCurrentVersion().getDataVersion().getVersion());
             CompoundTag before = root.copy(); LegacyEntityDataFixes.prepare(root); assertEquals(before, root);
             root = chunk(entity(alias[0] + ".private", 7D)); before = root.copy();
+            before.getCompound("Level").getList("Entities", 10).set(0,
+                    nativeAttributeRecord(before.getCompound("Level").getList("Entities", 10).getCompound(0)));
             LegacyEntityDataFixes.prepare(root); LegacyEntityDataFixes.finish(root); assertEquals(before, root);
         }
+    }
+
+    private static ResourceLocation modifierId() {
+        return ResourceLocation.fromNamespaceAndPath("minecraft", new UUID(17L, 19L).toString());
+    }
+
+    static CompoundTag nativeAttributeRecord(CompoundTag source) {
+        CompoundTag fields = new CompoundTag();
+        fields.put("Attributes", source.get("Attributes").copy());
+        CompoundTag nativeFields = DataFixTypes.PLAYER.updateToCurrentVersion(
+                DataFixers.getDataFixer(), fields, 1343);
+        CompoundTag expected = source.copy();
+        expected.remove("Attributes");
+        expected.put("attributes", nativeFields.get("attributes").copy());
+        return expected;
+    }
+
+    @Test public void unknownModEntityRetainsItsAttributesInTheNativeSaveFormat() throws Exception {
+        CompoundTag source = entity("forge.swimSpeed", 2D), original = source.copy();
+        source.put("PrivateData", original.copy());
+        CompoundTag root = chunk(source);
+        LegacyEntityDataFixes.prepare(root);
+        LegacyEntityDataFixes.finish(root);
+        CompoundTag converted = fixedEntity(root);
+        Wolf nativeReader = new Wolf(EntityType.WOLF, NativeWolfTestWorld.create());
+        nativeReader.load(converted);
+        AttributeInstance speed = nativeReader.getAttribute(ForgeMod.SWIM_SPEED.getHolder().orElseThrow());
+        assertEquals(2D, speed.getBaseValue(), 0D);
+        assertNotNull(speed.getModifier(modifierId()));
+        assertEquals(2.125D, speed.getValue(), 0D);
+        assertEquals(original, converted.getCompound("PrivateData"));
     }
 
     private static CompoundTag entity(String name, double base) {

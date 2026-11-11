@@ -1,5 +1,6 @@
 {
   "parent": "block/block",
+  "render_type": "minecraft:cutout",
   "textures": {
         "face": "basepower:blocks/steel_frame",
         "particle": "basepower:materials/steel"

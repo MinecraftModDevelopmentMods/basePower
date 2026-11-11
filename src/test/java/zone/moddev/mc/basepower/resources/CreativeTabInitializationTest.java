@@ -40,7 +40,7 @@ public class CreativeTabInitializationTest {
                 event.newInstance(Registries.CREATIVE_MODE_TAB, null, registry));
         ItemGroups.show(Items.IRON_INGOT);
         ItemGroups.show(Items.STICK);
-        var id = new ResourceLocation("basepower:machines");
+        var id = ResourceLocation.parse("basepower:machines");
         assertEquals(Set.of(id), registry.keySet());
         var tab = ItemGroups.tab_powerAdvantage;
         assertSame(tab, registry.get(id));

@@ -206,7 +206,7 @@ public class LegacyPlayerTransformerTest {
         List<MethodNode> methods = node.methods.stream().filter(method ->
                 target.nativeCalls(method).size() == 1 && Arrays.stream(method.instructions.toArray()).anyMatch(
                         LegacyPlayerTransformerTest::loadsPlayerType)).toList();
-        assertEquals("Expected one Forge 50 PLAYER reader in " + node.name, 1, methods.size());
+        assertEquals("Expected one Forge 52 PLAYER reader in " + node.name, 1, methods.size());
         return methods.getFirst();
     }
 

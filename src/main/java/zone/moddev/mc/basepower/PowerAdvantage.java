@@ -17,7 +17,7 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.DistExecutor;
 
 import net.minecraftforge.fml.ModList;
-import net.minecraftforge.fml.ModLoadingContext;
+import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
@@ -42,7 +42,7 @@ import zone.moddev.mc.basepower.migration.BaseMetalsLegacyMigration;
 public final class PowerAdvantage {
     public static final String MODID = "basepower";
     public static final String NAME = "basePower";
-    public static final String VERSION = "2.4.13.120061";
+    public static final String VERSION = "2.4.14.121011";
     public static final Logger LOGGER = LogManager.getLogger(MODID);
 
     private static PowerAdvantage instance;
@@ -71,8 +71,9 @@ public final class PowerAdvantage {
     /** Retained for source compatibility; the labelled converter now uses Forge Energy. */
     @Deprecated public static boolean detectedTechReborn = true;
 
-    public PowerAdvantage() {
+    public PowerAdvantage(FMLJavaModLoadingContext context) {
         instance = this;
+        IEventBus modBus = context.getModEventBus();
 
         AdvantageLegacyMigrations.registerPowerAdvantage();
         zone.moddev.mc.basepower.migration.VanillaRegistryRemaps.register();
@@ -80,23 +81,23 @@ public final class PowerAdvantage {
         MinecraftForge.EVENT_BUS.addListener(ConduitRegistry.getInstance()::onChunkUnload);
         MinecraftForge.EVENT_BUS.addListener(RecipeDiscovery::onPlayerLogin);
         MinecraftForge.EVENT_BUS.addListener(zone.moddev.mc.basepower.init.Villages::onTrades);
-        FMLJavaModLoadingContext.get().getModEventBus().addListener(
+        modBus.addListener(
                 zone.moddev.mc.basepower.recipe.MaterialTags::registerPack);
-        FMLJavaModLoadingContext.get().getModEventBus().addListener(MachineGUIRegistry::registerTypes);
+        modBus.addListener(MachineGUIRegistry::registerTypes);
 
         Fluids.init();
-        ItemGroups.register(FMLJavaModLoadingContext.get().getModEventBus());
-        RecipeConditions.register(FMLJavaModLoadingContext.get().getModEventBus());
-        zone.moddev.mc.basepower.recipe.PartsLoot.register(FMLJavaModLoadingContext.get().getModEventBus());
+        ItemGroups.register(modBus);
+        RecipeConditions.register(modBus);
+        zone.moddev.mc.basepower.recipe.PartsLoot.register(modBus);
 
         migrateLegacyOreSpawnConfiguration();
         migrateLegacyConfiguration();
-        ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, PowerAdvantageConfig.SPEC);
-        FMLJavaModLoadingContext.get().getModEventBus().addListener(PowerAdvantageConfig::onConfigLoading);
-        FMLJavaModLoadingContext.get().getModEventBus().addListener(this::commonSetup);
+        context.registerConfig(ModConfig.Type.COMMON, PowerAdvantageConfig.SPEC);
+        modBus.addListener(PowerAdvantageConfig::onConfigLoading);
+        modBus.addListener(this::commonSetup);
 
         DistExecutor.runWhenOn(Dist.CLIENT, () -> () -> {
-            FMLJavaModLoadingContext.get().getModEventBus().addListener(
+            modBus.addListener(
                     (net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent event) ->
                             event.enqueueWork(() -> {
                                 MachineGUIRegistry.registerScreens();

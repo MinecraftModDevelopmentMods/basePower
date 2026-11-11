@@ -58,7 +58,7 @@ public final class Items {
         if (!ForgeRegistries.Keys.ITEMS.equals(event.getRegistryKey())) return;
         init();
         event.register(ForgeRegistries.Keys.ITEMS, helper -> allItems.forEach((id, item) ->
-                helper.register(new ResourceLocation(PowerAdvantage.MODID, id), ItemGroups.show(item))));
+                helper.register(ResourceLocation.fromNamespaceAndPath(PowerAdvantage.MODID, id), ItemGroups.show(item))));
     }
 
     public static Item getItemByName(String id) { return allItems.get(id); }
