@@ -12,7 +12,8 @@ basePower 2.4.15.121111 (Minecraft 1.21.11, local candidate)
 - Translate older Forge registry names without dropping their entries, and keep an exact recovery copy of the retired enchantment index.
 - Recognise four removed vanilla sound indexes when upgrading older worlds.
 - Require Base Metals in Forge's dependency checks as well as on CurseForge.
-- This version is still being tested locally and has not been published.
+- Keep the release upload in step with the declared version.
+- Complete machine, upgrade, graphical and two-world endurance checks against the current jars. Manual testing is accepted; publication remains a separate step.
 
 basePower 2.4.14.121011 (Minecraft 1.21.1)
 

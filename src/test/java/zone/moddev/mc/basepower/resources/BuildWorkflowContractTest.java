@@ -14,6 +14,20 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
 
 public class BuildWorkflowContractTest {
+    @Test public void candidateUploadFollowsTheAuditedVersionInsteadOfAHardCodedFilename() throws Exception {
+        String workflow = Files.readString(Paths.get(".github/workflows/ci.yml"), StandardCharsets.UTF_8);
+        Pattern hardCodedJar = Pattern.compile("build/libs/basePower-[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+");
+        assertTrue(hardCodedJar.matcher("build/libs/basePower-2.4.14.121111.jar").find());
+        assertFalse("A version bump must not leave the candidate upload pointing at old jars",
+                hardCodedJar.matcher(workflow).find());
+        assertTrue(workflow.contains("build/libs/basePower-*.jar"));
+        assertTrue(workflow.contains("if-no-files-found: error"));
+        int audit = workflow.indexOf("- name: Build and audit release artifacts");
+        int upload = workflow.indexOf("- name: Upload audited release candidate");
+        assertTrue(audit >= 0 && upload > audit);
+        assertTrue(workflow.contains("verifyReleaseArtifacts"));
+    }
+
     @Test public void testFixturesDoNotImportRestrictedUnsafeTypes() throws Exception {
         Pattern restrictedImport = Pattern.compile("(?m)^\\s*import\\s+(?:static\\s+)?sun\\.misc\\.Unsafe\\b");
         assertTrue(restrictedImport.matcher("import sun.misc.Unsafe;").find());

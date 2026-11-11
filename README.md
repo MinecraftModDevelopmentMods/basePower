@@ -2,9 +2,15 @@
 
 **Minecraft 1.21.11 (Forge), version 2.4.15.121111.**
 
-This is a local port candidate, not a published release. See the
-[1.21.11 port record](docs/1.21.11/PORT-STATUS.md) for the current checks.
-Results from earlier versions do not qualify this build.
+This version has passed automated qualification and manual testing. See the
+[1.21.11 port record](docs/1.21.11/PORT-STATUS.md) for the checks and remaining
+coverage limits. Release publication is handled separately; results from
+earlier versions do not qualify this build.
+
+The current Base Metals-installed test set has passed its automated machine,
+upgrade, graphical and two-world 30-minute endurance checks. Manual testing has
+also been accepted. See the [qualification record](docs/1.21.11/QUALIFICATION.md)
+for the exact jars, results and remaining human checks.
 
 For the combined Eclipse test, use `runClientAllAdvantage.launch` in this
 project. It loads the matching baseSteam and baseElectric candidates. The
@@ -18,9 +24,9 @@ fluids and item transport for baseSteam and baseElectric.
 
 - Install [MMD OreSpawn 4.1.0.121111](https://www.curseforge.com/minecraft/mc-mods/mmd-orespawn/files/9268464) on both client and server.
 - Base Metals is required on both client and server. Use the matching Forge
-  1.21.11 build `3.1.2.121111`. That dependency patch is local-only at present,
-  so this candidate must not be distributed as a release. Older public Base
-  Metals builds do not have the shared upgrade hook.
+  1.21.11 build `3.1.2.121111`. Older Base Metals builds do not have the shared
+  upgrade hook. The matching dependency must be published before the base*
+  releases; a local test result alone does not establish public availability.
 - baseSteam and baseElectric are separate mods. Use only their matching
   1.21.11 builds. Additional Loot Tables is not needed for the built-in loot.
 

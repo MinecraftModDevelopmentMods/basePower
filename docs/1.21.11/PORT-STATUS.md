@@ -1,7 +1,9 @@
 # Minecraft 1.21.11
 
-This is a local integration candidate, not a released version or a completed
-qualification. It targets Forge 61.1.0, Java 21 and data version 4671.
+This version has passed automated qualification and manual testing. Publication
+is tracked separately from acceptance; see the
+[current qualification record](QUALIFICATION.md). It targets Forge 61.1.0,
+Java 21 and data version 4671.
 
 ## What Changed
 
@@ -23,18 +25,19 @@ hidden by changing the data format.
 
 The dependency-corrected Power jar has player SHA-256
 `C98D2CF163BE2480D9AFB0023BBD2D92D401AE0D50BEF73191235BF3F83774A7`.
-Its full release suite and all 276 unit tests pass, including fresh Eclipse
-compiler output. Against the preceding registry-repair jar, only
+Its full release suite passes. The qualification run passed 276 unit tests,
+including fresh Eclipse compiler output. Release preparation adds a passing
+277th test for the CI artifact upload path. Against the preceding registry-repair jar, only
 `META-INF/mods.toml` changed; all gameplay classes and other resources are exact.
 The preceding registry repair passed two additional chained 1.13 dimension
 upgrades through full restart. Those earlier results and failures are retained
 under their own artifact hashes, not relabelled as final combined qualification.
 
-This is still **not ready for manual acceptance or release**. Final dependency
-pins and the full combined machine, client and endurance rerun remain. The
-expansions now pin the dependency-corrected Power source. Do not transfer C2's
-results to a newer jar or describe the dependency checks as full gameplay
-qualification.
+The current family is **manually accepted**. Its own
+machine, migration, graphical and two-world endurance reruns now pass, including
+independent exact stopped-save replay. The expansions pin the same Power
+source. These are new results for the current hashes, not transferred C2
+results or an expanded claim based on the dependency smoke test.
 
 Base Metals is required by all three mods on both client and server, matching
 their CurseForge requirements. The previous Forge-optional flags were leftover
@@ -47,7 +50,8 @@ it, Forge reports the three missing-dependency errors before mod construction
 or world creation. Minecraft handles this early failure with process exit 0,
 so the negative control checks the exact dependency errors and absence of a
 world rather than treating an exit code alone as proof. These are dependency
-checks, not a replacement for the remaining gameplay and endurance runs.
+checks, not a replacement for the separate, now-completed gameplay and
+endurance qualification.
 
 ## Completed C2 Checks
 
@@ -116,16 +120,17 @@ produces the exact expected item totals and 30,000 mB of distilled output.
 The source world and server seed remain unchanged. Independent stopped-save
 replay confirms all 66 batches and their 1,056 station snapshots, but its exact
 final comparison fails because timers and buffers kept ticking before the save.
-The harness now freezes ticks across that final checkpoint/save boundary; the
-corrected protocol still needs a new run. No retrospective source seal is
-claimed to have existed before the completed run.
+The harness now freezes ticks across that final checkpoint/save boundary.
+The separate current run in the qualification record passes the corrected
+protocol with a genuine pre-run seal. No retrospective source seal is claimed
+to have existed before the older C2 run.
 
 Both actual migration-transformer orders also pass conversion, restart and
 operation. That test uses a bounded seventh test mod and audits the woven
 callback order. It is separate from the normal six-jar profile, does not change
 the production jars and is not a production launch mode.
 
-## Still Required
+## Historical Failures And Manual Checks
 
 The old no-Base-Metals robustness profile failed during OreSpawn's startup tag
 lookup with `IllegalStateException: Tags not bound`. Its failure is retained,
@@ -140,8 +145,9 @@ including all four Steam enchantments with their levels and inventory slots.
 The complete enchantment index is archived, not discarded; uppercase FML and
 numeric-ID archives remain untouched. Conflict, malformed-input, idempotence
 and byte-exact backup controls pass. Four precisely identified removed vanilla
-sound indexes are retired; unknown names still remain unresolved. The final
-aggregate remains pending final dependency pins and the supported full-suite gates.
+sound indexes are retired; unknown names still remain unresolved. The separate
+current aggregate now passes the supported automated gates; the earlier failed
+receipts remain unchanged.
 
 Manual inspection is still needed for normal play and the in-world hydroelectric
 turbine's animation and orientation. Its geometry checks do not replace seeing
@@ -165,6 +171,7 @@ or station supply chest as proof of gameplay:
 These are missing witnesses, not confirmed defects. The finite machine,
 save/restart and rendering results above retain their narrower, tested scope.
 
-The Base Metals 3.1.2.121111 shared migration hook is local-only. Do not
-publish this candidate against the older public dependency or describe it
-as ready for release. Always protect the original save and test a copy.
+The Base Metals 3.1.2.121111 shared migration hook was local-only during
+qualification. It must be published first; do not substitute the older
+dependency. Always protect the original save and test a copy. Source merge,
+CurseForge, Maven and GitHub publication have their own verification gates.

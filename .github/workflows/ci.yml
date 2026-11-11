@@ -99,9 +99,7 @@ jobs:
           if-no-files-found: error
           retention-days: 30
           path: |
-            build/libs/basePower-2.4.14.121111.jar
-            build/libs/basePower-2.4.14.121111-sources.jar
-            build/libs/basePower-2.4.14.121111-javadoc.jar
+            build/libs/basePower-*.jar
             build/release/SHA256SUMS
             CHANGELOG.txt
       - name: Upload diagnostics on failure
