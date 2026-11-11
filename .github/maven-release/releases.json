@@ -106,6 +106,15 @@
       "archiveSha256": "fa50308821f363ea1ead0218576658a46423d41549c4cb3ca1524e14392a6902",
       "mainSha256": "e6835ecb04d3f2d5f54731694f7b8d87f06b4a0a9ddb18aa5edd70ee0e1b099a"
     },
+    "2.4.14.121011": {
+      "branch": "master-1.21.1",
+      "commit": "8d9937b3c0c9ef28a231b90fc2ff6adfea1af733",
+      "tag": "2.4.14.121011",
+      "runId": 43041098294,
+      "artifactId": 13866706260,
+      "archiveSha256": "0adff03c3cef5d4f17973b82b67a917407ee7140e63b3f5fdf94613193cb7663",
+      "mainSha256": "f91a613eb5faa218aad2dc3c881dec7b897a5ee874215282a439e34b915c1ae6"
+    },
     "2.4.13.120061": {
       "branch": "master-1.20.6",
       "commit": "d1cdc73d19551786ab4524879cb9abca8c881251",
