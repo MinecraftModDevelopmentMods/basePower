@@ -3,6 +3,7 @@ package zone.moddev.mc.basepower.migration;
 import java.util.function.UnaryOperator;
 import java.util.Set;
 import cyano.poweradvantage.api.migration.LegacyMigrationApi;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.item.Item;
@@ -12,9 +13,11 @@ import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.util.datafix.fixes.CavesAndCliffsRenames;
 import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.biome.Biomes;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.listener.Priority;
 import net.minecraftforge.registries.MissingMappingsEvent;
@@ -25,6 +28,25 @@ import zone.moddev.mc.basepower.PowerAdvantage;
 /** Vanilla's data fixers rename saved data, but not Forge's registry snapshot. */
 public final class VanillaRegistryRemaps {
     private static final Identifier BIOME_REGISTRY = Identifier.parse("minecraft:worldgen/biome");
+    // Data-registry keys only: Forge's static biome registry has no bound native objects.
+    private static final Set<ResourceKey<Biome>> NATIVE_BIOMES = Set.of(
+            Biomes.THE_VOID, Biomes.PLAINS, Biomes.SUNFLOWER_PLAINS, Biomes.SNOWY_PLAINS,
+            Biomes.ICE_SPIKES, Biomes.DESERT, Biomes.SWAMP, Biomes.MANGROVE_SWAMP,
+            Biomes.FOREST, Biomes.FLOWER_FOREST, Biomes.BIRCH_FOREST, Biomes.DARK_FOREST,
+            Biomes.PALE_GARDEN, Biomes.OLD_GROWTH_BIRCH_FOREST, Biomes.OLD_GROWTH_PINE_TAIGA,
+            Biomes.OLD_GROWTH_SPRUCE_TAIGA, Biomes.TAIGA, Biomes.SNOWY_TAIGA, Biomes.SAVANNA,
+            Biomes.SAVANNA_PLATEAU, Biomes.WINDSWEPT_HILLS, Biomes.WINDSWEPT_GRAVELLY_HILLS,
+            Biomes.WINDSWEPT_FOREST, Biomes.WINDSWEPT_SAVANNA, Biomes.JUNGLE, Biomes.SPARSE_JUNGLE,
+            Biomes.BAMBOO_JUNGLE, Biomes.BADLANDS, Biomes.ERODED_BADLANDS, Biomes.WOODED_BADLANDS,
+            Biomes.MEADOW, Biomes.CHERRY_GROVE, Biomes.GROVE, Biomes.SNOWY_SLOPES,
+            Biomes.FROZEN_PEAKS, Biomes.JAGGED_PEAKS, Biomes.STONY_PEAKS, Biomes.RIVER,
+            Biomes.FROZEN_RIVER, Biomes.BEACH, Biomes.SNOWY_BEACH, Biomes.STONY_SHORE,
+            Biomes.WARM_OCEAN, Biomes.LUKEWARM_OCEAN, Biomes.DEEP_LUKEWARM_OCEAN, Biomes.OCEAN,
+            Biomes.DEEP_OCEAN, Biomes.COLD_OCEAN, Biomes.DEEP_COLD_OCEAN, Biomes.FROZEN_OCEAN,
+            Biomes.DEEP_FROZEN_OCEAN, Biomes.MUSHROOM_FIELDS, Biomes.DRIPSTONE_CAVES,
+            Biomes.LUSH_CAVES, Biomes.DEEP_DARK, Biomes.NETHER_WASTES, Biomes.WARPED_FOREST,
+            Biomes.CRIMSON_FOREST, Biomes.SOUL_SAND_VALLEY, Biomes.BASALT_DELTAS, Biomes.THE_END,
+            Biomes.END_HIGHLANDS, Biomes.END_MIDLANDS, Biomes.SMALL_END_ISLANDS, Biomes.END_BARRENS);
     private static final Set<String> LEGACY_PAINTINGS = Set.of("kebab", "aztec", "alban", "aztec2", "bomb",
             "plant", "wasteland", "pool", "courbet", "sea", "sunset", "creebet", "wanderer", "graham",
             "match", "bust", "stage", "void", "skull_and_roses", "wither", "fighters", "pointer", "pigscene",
@@ -135,10 +157,10 @@ public final class VanillaRegistryRemaps {
                         mapping.getKey(), active.getRegistryName());
                 continue;
             }
-            Identifier updatedBiome = vanillaBiomeFixTarget(active.getRegistryName(), mapping.getKey());
-            if (updatedBiome != null && active.containsKey(updatedBiome)) {
-                // Vanilla fixes biome names in chunks and world settings. Several
-                // old entries share one target; do not assign it multiple numeric IDs.
+            Identifier updatedBiome = vanillaBiomeIndexTarget(active.getRegistryName(), mapping.getKey());
+            if (updatedBiome != null) {
+                // Native data registries retain current names and DFU fixes old names
+                // in terrain/settings. Retire only Forge's obsolete numeric index.
                 mapping.ignore();
                 PowerAdvantage.LOGGER.info("Retired vanilla biome registry index {} (data fixer: {})",
                         mapping.getKey(), updatedBiome);
@@ -182,9 +204,17 @@ public final class VanillaRegistryRemaps {
     static Identifier vanillaBiomeFixTarget(Identifier registry, Identifier old) {
         if (!BIOME_REGISTRY.equals(registry) || !"minecraft".equals(old.getNamespace())) return null;
         String name = old.toString();
-        String updated = name.equals("minecraft:deep_warm_ocean") ? "minecraft:warm_ocean"
+        String updated = name.equals("minecraft:nether") ? Biomes.NETHER_WASTES.identifier().toString()
+                : name.equals("minecraft:deep_warm_ocean") ? Biomes.WARM_OCEAN.identifier().toString()
                 : CavesAndCliffsRenames.RENAMES.get(name);
         return updated == null ? null : Identifier.parse(updated);
+    }
+
+    private static Identifier vanillaBiomeIndexTarget(Identifier registry, Identifier old) {
+        if (!BIOME_REGISTRY.equals(registry) || !"minecraft".equals(old.getNamespace())) return null;
+        Identifier renamed = vanillaBiomeFixTarget(registry, old);
+        Identifier target = renamed == null ? old : renamed;
+        return NATIVE_BIOMES.contains(ResourceKey.create(Registries.BIOME, target)) ? target : null;
     }
 
     static Identifier replacement(Identifier registry, Identifier old) {
