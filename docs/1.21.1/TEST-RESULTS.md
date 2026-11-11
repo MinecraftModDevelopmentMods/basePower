@@ -66,6 +66,19 @@ fluid, energy, structural and restart assertions are what passed.
 
 ## Repairs And Failed Evidence
 
+An Eclipse follow-up found that Power's default Base Metals location still
+pointed at the previous version's checkout. Earlier qualification commands
+supplied the correct jar explicitly, so they did not test that local default.
+The default now points at the 1.21.1 migration-hook build, and ordinary
+`compileJava` checks the dependency hashes before compiling. Local IDE setup
+must also be checked without dependency-path overrides; an override-only pass
+does not qualify the defaults. The follow-up passed the default build and
+Eclipse generation without dependency overrides, both Eclipse compiler scopes,
+and the combined client using Eclipse output and its bundled Java 21.0.12.
+A wrong dependency was rejected before compilation. The player jar remains
+byte-for-byte identical to the qualified candidate, so this build-only repair
+does not replace or invalidate its machine and endurance receipts.
+
 The port fixes the loss of old modded-entity attributes and handles the
 vanilla registry changes encountered when opening 1.20.6 worlds. The old
 enchantment registry index is archived rather than silently discarded.

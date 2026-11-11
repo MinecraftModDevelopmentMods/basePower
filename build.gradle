@@ -169,7 +169,7 @@ repositories {
 // build to a drive letter. CI and other layouts can override either path.
 def baseMetalsDeobfJar = file(providers.gradleProperty('baseMetalsJar')
         .orElse(providers.gradleProperty('baseMetalsDeobfJar'))
-        .getOrElse('../../../BaseMetals/.verification-basemetals1206/Advantage shared hook/build/libs/'
+        .getOrElse('../../../BaseMetals/.verification-basemetals1211/Advantage shared hook/build/libs/'
                 + "BaseMetals-${project.basemetals_version}.jar"))
 def oreSpawnDeobfJar = file(providers.gradleProperty('oreSpawnJar')
         .orElse(providers.gradleProperty('oreSpawnDeobfJar'))
@@ -448,6 +448,11 @@ tasks.register('verifyReleaseDependencies') {
             throw new GradleException("Obsolete energy APIs leaked onto runtimeClasspath: ${obsoleteRuntimeMods}")
         }
     }
+}
+
+// IDE synchronization and plain compileJava must audit the same pins as a release build.
+tasks.named('compileJava') {
+    dependsOn tasks.named('verifyReleaseDependencies')
 }
 
 tasks.register('verifyDevelopmentRuntimeArchives') {
