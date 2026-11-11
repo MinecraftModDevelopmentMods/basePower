@@ -2,8 +2,17 @@
 set -euo pipefail
 
 verify="$(cd "$(dirname "$0")" && pwd)/verify-base-metals-pin.sh"
-scratch="$(mktemp -d)"
-trap 'rm -rf -- "$scratch"' EXIT
+temporary_root="$(cd "${TMPDIR:-/tmp}" && pwd -P)"
+scratch="$(mktemp -d "$temporary_root/basepower-pin.XXXXXXXX")"
+cleanup() {
+  local resolved
+  resolved="$(cd "$scratch" && pwd -P)"
+  case "$resolved" in
+    "$temporary_root"/basepower-pin.*) rm -rf -- "$resolved" ;;
+    *) echo 'Refusing to clear an unexpected test directory' >&2; return 1 ;;
+  esac
+}
+trap cleanup EXIT
 mkdir -p "$scratch/bin" "$scratch/project"
 cat > "$scratch/bin/gh" <<'MOCK'
 #!/usr/bin/env bash
