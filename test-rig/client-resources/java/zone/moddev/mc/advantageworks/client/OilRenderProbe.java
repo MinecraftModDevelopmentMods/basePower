@@ -105,13 +105,13 @@ final class OilRenderProbe {
                 return 0x3F76E4; // Vanilla plains water tint for this read-only witness.
             }
         };
-        BufferBuilder buffer = new BufferBuilder(4096);
-        buffer.begin(com.mojang.blaze3d.vertex.VertexFormat.Mode.QUADS, DefaultVertexFormat.BLOCK);
+        try (var storage = new com.mojang.blaze3d.vertex.ByteBufferBuilder(4096)) {
+        BufferBuilder buffer = new BufferBuilder(storage, com.mojang.blaze3d.vertex.VertexFormat.Mode.QUADS, DefaultVertexFormat.BLOCK);
         minecraft.getBlockRenderer().renderLiquid(
                 BlockPos.ZERO, world, buffer, world.getBlockState(BlockPos.ZERO), state);
-        BufferBuilder.RenderedBuffer built = buffer.end();
+        try (var built = buffer.buildOrThrow()) {
         int vertices = built.drawState().vertexCount();
-        TextureAtlasSprite sprite = minecraft.getTextureAtlas(TextureAtlas.LOCATION_BLOCKS).apply(new ResourceLocation(texture));
+        TextureAtlasSprite sprite = minecraft.getTextureAtlas(TextureAtlas.LOCATION_BLOCKS).apply(ResourceLocation.parse(texture));
         require(vertices >= 4, "Native fluid renderer emitted no top face for " + state);
         ByteBuffer data = built.vertexBuffer();
         int uvOffset = elementOffset(VertexFormatElement.Usage.UV, 0);
@@ -130,14 +130,15 @@ final class OilRenderProbe {
         entry.addProperty("vertex_rgb", String.format("%06X", rgb));
         entry.addProperty("vertices", vertices);
         cases.add(entry);
-        built.release();
         return correctSprite && correctTint;
+        }
+        }
     }
 
     private static int elementOffset(VertexFormatElement.Usage usage, int index) {
         for (int i = 0; i < DefaultVertexFormat.BLOCK.getElements().size(); i++) {
             VertexFormatElement element = DefaultVertexFormat.BLOCK.getElements().get(i);
-            if (element.getUsage() == usage && element.getIndex() == index) return DefaultVertexFormat.BLOCK.getOffset(i);
+            if (element.usage() == usage && element.index() == index) return DefaultVertexFormat.BLOCK.getOffset(i);
         }
         throw new IllegalStateException("Native block vertex format lacks " + usage + " " + index);
     }

@@ -46,6 +46,10 @@ final class WorksDefinitionLoader {
         return load("/assets/advantageworkstest/works/works-1.20.6.json", "1.20.6");
     }
 
+    static WorksDefinition loadNative1211() {
+        return load("/assets/advantageworkstest/works/works-1.21.1.json", "1.21.1");
+    }
+
     static WorksDefinition load(String resource, String minecraft) {
         JsonObject target = readResource(resource);
         if (target.get("format").getAsInt() != 1 || !minecraft.equals(target.get("minecraft").getAsString())
@@ -256,7 +260,7 @@ final class WorksDefinitionLoader {
 
     private static void requireResource(String value, String label) {
         requireId(value, label);
-        new ResourceLocation(value);
+        ResourceLocation.parse(value);
     }
 
     private static void validatePosition(WorksDefinition.Station station, int[] pos, String label) {

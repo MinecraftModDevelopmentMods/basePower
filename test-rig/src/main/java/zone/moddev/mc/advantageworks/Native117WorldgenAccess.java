@@ -36,7 +36,7 @@ final class Native117WorldgenAccess implements WorldgenSamplingJob.WorldAccess {
                 return source.getChunkFuture(x, z, ChunkStatus.FULL, true).thenApply(result -> {
                     net.minecraft.world.level.chunk.ChunkAccess access = result.orElseThrow(() ->
                             new IllegalStateException("Native FULL chunk unavailable: " + result.getError()));
-                    if (!(access instanceof LevelChunk) || access.getStatus() != ChunkStatus.FULL
+                    if (!(access instanceof LevelChunk) || access.getPersistedStatus() != ChunkStatus.FULL
                             || !access.isLightCorrect() || !access.getPos().equals(new ChunkPos(x, z))) {
                         throw new IllegalStateException("Native chunk was not FULL, lit, and at the requested position");
                     }

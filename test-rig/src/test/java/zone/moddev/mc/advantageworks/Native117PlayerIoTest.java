@@ -47,24 +47,25 @@ public class Native117PlayerIoTest {
     @BeforeClass public static void bootstrap() {
         SharedConstants.tryDetectVersion();
         Bootstrap.bootStrap();
-        var enchantments = (net.minecraftforge.registries.ForgeRegistry<Enchantment>)
-                net.minecraftforge.registries.ForgeRegistries.ENCHANTMENTS;
-        boolean locked = enchantments.isLocked();
-        if (locked) enchantments.unfreeze();
-        var vanillaView = (net.minecraft.core.MappedRegistry<Enchantment>) BuiltInRegistries.ENCHANTMENT;
-        vanillaView.unfreeze();
-        try {
-            // Forge's item component codec resolves these IDs in its native registry.
-            for (String name : List.of("high_explosive", "powderless", "rapid_reload", "recoil")) {
-                enchantments.register("basesteam:" + name, new Enchantment(Enchantment.definition(
-                        net.minecraft.tags.ItemTags.MINING_ENCHANTABLE, 1, 1, Enchantment.constantCost(1),
-                        Enchantment.constantCost(2), 1, net.minecraft.world.entity.EquipmentSlot.MAINHAND)));
-            }
-        } finally {
-            vanillaView.freeze();
-            if (locked) enchantments.freeze();
+        var enchantments = new net.minecraft.core.MappedRegistry<Enchantment>(
+                net.minecraft.core.registries.Registries.ENCHANTMENT, com.mojang.serialization.Lifecycle.stable());
+        var vanilla = net.minecraft.data.registries.VanillaRegistries.createLookup();
+        vanilla.lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT).listElements().forEach(holder ->
+                net.minecraft.core.Registry.register(enchantments, holder.key(), holder.value()));
+        // Only the item-codec fixture definitions are synthetic; live tests load Steam's data pack.
+        for (String name : List.of("high_explosive", "powderless", "rapid_reload", "recoil")) {
+            var id = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("basesteam", name);
+            var enchantment = Enchantment.enchantment(Enchantment.definition(
+                    net.minecraft.core.HolderSet.direct(net.minecraft.world.item.Items.BOW.builtInRegistryHolder()),
+                    1, 1, Enchantment.constantCost(1), Enchantment.constantCost(2), 1,
+                    net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)).build(id);
+            net.minecraft.core.Registry.register(enchantments, id, enchantment);
         }
-        registries = RegistryAccess.fromRegistryOfRegistries(BuiltInRegistries.REGISTRY);
+        enchantments.freeze();
+        registries = new RegistryAccess.ImmutableRegistryAccess(java.util.stream.Stream.concat(
+                RegistryAccess.fromRegistryOfRegistries(BuiltInRegistries.REGISTRY).registries(),
+                java.util.stream.Stream.of(new RegistryAccess.RegistryEntry<>(
+                        net.minecraft.core.registries.Registries.ENCHANTMENT, enchantments)))).freeze();
     }
 
     @Test public void realForgePlayerListSaveWithoutConnectionLeavesLegacyBytesUnchanged() throws Exception {

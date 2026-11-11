@@ -6,6 +6,11 @@ This is a local port candidate, not a published release. See the
 [1.21.1 port record](docs/1.21.1/PORT-STATUS.md) for the current checks.
 Results from earlier versions do not qualify this build.
 
+For the combined Eclipse test, use `runClientAllAdvantage.launch` in this
+project. It loads the matching baseSteam and baseElectric candidates. The
+[port record](docs/1.21.1/PORT-STATUS.md) separates the automated checks from
+the remaining manual gameplay and visual checks.
+
 basePower continues DrCyano's Power Advantage. It provides shared power,
 fluids and item transport for baseSteam and baseElectric.
 

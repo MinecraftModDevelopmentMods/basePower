@@ -63,13 +63,13 @@ final class ChildRendererGeometryProbe {
             drill(minecraft, cases);
             turret(minecraft, cases);
             run(cases, "hydroturbine-registration", row -> {
-                EntityType<?> type = ForgeRegistries.ENTITY_TYPES.getValue(new ResourceLocation("baseelectric:hydroturbine"));
+                EntityType<?> type = ForgeRegistries.ENTITY_TYPES.getValue(ResourceLocation.parse("baseelectric:hydroturbine"));
                 require(type != null, "Missing registered hydroturbine type");
                 EntityRenderer<?> renderer = minecraft.getEntityRenderDispatcher().renderers.get(type);
                 require(renderer != null && TURBINE_RENDERER.equals(renderer.getClass().getName()), "Missing production hydroturbine renderer");
                 row.addProperty("renderer", renderer.getClass().getName());
                 ResourceLocation texture = (ResourceLocation) valueOfType(renderer, ResourceLocation.class);
-                require(new ResourceLocation("baseelectric:textures/entity/hydroturbine.png").equals(texture), "Wrong hydroturbine texture");
+                require(ResourceLocation.parse("baseelectric:textures/entity/hydroturbine.png").equals(texture), "Wrong hydroturbine texture");
                 texture(minecraft, texture, row);
                 row.addProperty("status", "MANUAL_GAP_WORLD_REQUIRED");
                 row.addProperty("gap", "HydroturbineEntity constructor reads World.rand; orientation/spin vertices require a fresh disposable client world. No entity was constructed, no render invoked, and no geometry pass is claimed.");
@@ -175,7 +175,7 @@ final class ChildRendererGeometryProbe {
     }
 
     private static BlockEntity tile(String id) {
-        BlockEntityType<?> type = ForgeRegistries.BLOCK_ENTITY_TYPES.getValue(new ResourceLocation(id));
+        BlockEntityType<?> type = ForgeRegistries.BLOCK_ENTITY_TYPES.getValue(ResourceLocation.parse(id));
         require(type != null, "Missing registered tile type " + id);
         net.minecraft.world.level.block.state.BlockState state = ForgeRegistries.BLOCKS.getValues().stream()
                 .map(net.minecraft.world.level.block.Block::defaultBlockState).filter(type::isValid).findFirst()
@@ -195,7 +195,7 @@ final class ChildRendererGeometryProbe {
         PoseStack.Pose original = matrices.last();
         org.joml.Matrix4f position = new org.joml.Matrix4f(original.pose());
         org.joml.Matrix3f normal = new org.joml.Matrix3f(original.normal());
-        Capture buffers = new Capture(minecraft, new ResourceLocation(expectedTexture), row);
+        Capture buffers = new Capture(minecraft, ResourceLocation.parse(expectedTexture), row);
         boolean balanced;
         Throwable renderFailure = null;
         try {
@@ -226,6 +226,7 @@ final class ChildRendererGeometryProbe {
         private final ResourceLocation expectedTexture;
         private final JsonArray batches = new JsonArray();
         private final Map<RenderType, BufferBuilder> buffers = new LinkedHashMap<>();
+        private final List<com.mojang.blaze3d.vertex.ByteBufferBuilder> storage = new ArrayList<>();
         private final List<float[]> vertices = new ArrayList<>();
 
         Capture(Minecraft minecraft, ResourceLocation expectedTexture, JsonObject row) {
@@ -239,17 +240,19 @@ final class ChildRendererGeometryProbe {
             BufferBuilder buffer = buffers.get(type);
             if (buffer == null) {
                 require(buffers.size() < 8, "Renderer requested too many buffers");
-                buffer = new BufferBuilder(4096);
-                buffer.begin(type.mode(), type.format());
+                var allocation = new com.mojang.blaze3d.vertex.ByteBufferBuilder(4096);
+                storage.add(allocation);
+                buffer = new BufferBuilder(allocation, type.mode(), type.format());
                 buffers.put(type, buffer);
             }
             return buffer;
         }
 
         void finish() throws Exception {
+            try {
             for (Map.Entry<RenderType, BufferBuilder> entry : buffers.entrySet()) {
                 BufferBuilder buffer = entry.getValue();
-                BufferBuilder.RenderedBuffer built = buffer.end();
+                try (var built = buffer.buildOrThrow()) {
                 int count = built.drawState().vertexCount();
                 JsonObject batch = new JsonObject();
                 batches.add(batch);
@@ -285,8 +288,9 @@ final class ChildRendererGeometryProbe {
                 batch.addProperty("texture", selectedTexture.toString());
                 require(expectedTexture.equals(selectedTexture), "Production renderer selected the wrong texture");
                 texture(minecraft, selectedTexture, batch);
-                built.release();
+                }
             }
+            } finally { storage.forEach(com.mojang.blaze3d.vertex.ByteBufferBuilder::close); }
         }
     }
 
@@ -360,7 +364,7 @@ final class ChildRendererGeometryProbe {
     private static int offset(VertexFormat format, VertexFormatElement.Usage usage, int index) {
         for (int i = 0; i < format.getElements().size(); i++) {
             VertexFormatElement element = format.getElements().get(i);
-            if (element.getUsage() == usage && element.getIndex() == index) return format.getOffset(i);
+            if (element.usage() == usage && element.index() == index) return format.getOffset(i);
         }
         throw new IllegalStateException("Native vertex format lacks " + usage + " " + index);
     }

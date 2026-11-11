@@ -1,4 +1,15 @@
-# Advantage Works 1.18.2 Test Rig
+# Advantage Works 1.21.1 Test Rig
+
+The current target is Minecraft 1.21.1, Forge 52.1.0 and Java 21. Start with
+the [native test instructions](profiles/native1211/README.md) and the
+[port record](../docs/1.21.1/PORT-STATUS.md). Use only the current hash-pinned
+inputs in disposable worlds. Earlier results do not qualify a rebuilt jar.
+
+The rig checks real machine operation, saved state, migration, recipes,
+partial network unloading, moving drills and endurance. Client rendering
+checks are separate. Manual gameplay and visual acceptance remain required.
+
+## Retained 1.18.2 Reference
 
 Use Java 17, Forge 40.3.0 and the exact jars in
 [`profiles/native118/`](profiles/native118/). These profiles exercise

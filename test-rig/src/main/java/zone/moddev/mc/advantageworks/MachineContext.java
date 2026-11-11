@@ -92,7 +92,7 @@ final class MachineContext {
     }
 
     void block(int x, int y, int z, String id) {
-        ResourceLocation name = new ResourceLocation(id);
+        ResourceLocation name = ResourceLocation.parse(id);
         if (!ForgeRegistries.BLOCKS.containsKey(name)) throw new IllegalArgumentException("Missing block " + id);
         mutation("block", at(x, y, z), id);
         world.setBlock(at(x, y, z), ForgeRegistries.BLOCKS.getValue(name).defaultBlockState(), 3);
@@ -128,7 +128,7 @@ final class MachineContext {
     }
 
     void put(int x, int y, int z, int slot, String item, int count) {
-        ResourceLocation id = new ResourceLocation(item);
+        ResourceLocation id = ResourceLocation.parse(item);
         if (!ForgeRegistries.ITEMS.containsKey(id) || count < 0 || count > 64) throw new IllegalArgumentException("Invalid stock " + item);
         mutation("inventory", at(x, y, z), slot + ":" + item + ":" + count);
         Container inventory = inventory(x, y, z);
@@ -138,8 +138,8 @@ final class MachineContext {
     }
 
     int count(int x, int y, int z, String item) {
-        Item expected = ForgeRegistries.ITEMS.getValue(new ResourceLocation(item));
-        if (!ForgeRegistries.ITEMS.containsKey(new ResourceLocation(item))) throw new IllegalArgumentException("Missing item " + item);
+        Item expected = ForgeRegistries.ITEMS.getValue(ResourceLocation.parse(item));
+        if (!ForgeRegistries.ITEMS.containsKey(ResourceLocation.parse(item))) throw new IllegalArgumentException("Missing item " + item);
         Container inventory = inventory(x, y, z);
         int total = 0;
         for (int slot = 0; slot < inventory.getContainerSize(); slot++) {
@@ -180,7 +180,7 @@ final class MachineContext {
     }
 
     void tank(int x, int y, int z, String fluid, int amount) {
-        ResourceLocation id = new ResourceLocation(fluid);
+        ResourceLocation id = ResourceLocation.parse(fluid);
         if (!ForgeRegistries.FLUIDS.containsKey(id) || amount < 0) throw new IllegalArgumentException("Invalid fluid reserve");
         mutation("tank", at(x, y, z), fluid + ":" + amount);
         cyano.poweradvantage.api.fluid.FluidTank tank = ((TileEntitySimpleFluidMachine) tile(x, y, z)).getTank();

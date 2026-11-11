@@ -28,7 +28,7 @@ import net.minecraft.world.level.Level;
 import net.minecraftforge.registries.ForgeRegistries;
 import zone.moddev.mc.advantageworks.unit.ForgeUnitRegistries;
 
-/** Native load/save control: no Advantage classes, server, entity ticks or DFU. */
+/** Independent native controls: no Advantage classes, server or entity ticks. */
 public final class NativeWolfPlatformControl {
     private static final UUID OWNER = UUID.fromString("a614e658-6270-33c3-9297-7ce80908964f");
     private static final UUID ID = UUID.fromString("a6ea8abd-6ab3-4e66-8ef5-d713aabbccdd");
@@ -87,6 +87,36 @@ public final class NativeWolfPlatformControl {
         System.out.println("WOLF_CONTROL " + new Gson().toJson(row));
     }
 
+    private static void legacyControl(Path root, ServerLevel world, int version) throws Exception {
+        CompoundTag before = net.minecraft.nbt.TagParser.parseTag("{id:\"" + (version == 512 ? "Wolf" : "minecraft:wolf")
+                + "\",Health:8f,Attributes:[{Name:\"generic.maxHealth\",Base:20d}],Pos:[0d,100d,0d],"
+                + "Motion:[0d,0d,0d],Rotation:[0f,0f]}");
+        before.putLong("UUIDMost", ID.getMostSignificantBits());
+        before.putLong("UUIDLeast", ID.getLeastSignificantBits());
+        before.putString("OwnerUUID", OWNER.toString());
+        var fixed = net.minecraft.util.datafix.DataFixers.getDataFixer().update(
+                net.minecraft.util.datafix.fixes.References.ENTITY,
+                new com.mojang.serialization.Dynamic<>(net.minecraft.nbt.NbtOps.INSTANCE, before.copy()),
+                version, SharedConstants.getCurrentVersion().getDataVersion().getVersion());
+        CompoundTag nativeTag = (CompoundTag) fixed.getValue();
+        Wolf loaded = wolf(world);
+        loaded.load(nativeTag);
+        CompoundTag saved = loaded.saveWithoutId(new CompoundTag());
+        NbtIo.writeCompressed(before, root.resolve("legacy-" + version + "-source.dat"));
+        NbtIo.writeCompressed(nativeTag, root.resolve("legacy-" + version + "-dfu.dat"));
+        NbtIo.writeCompressed(saved, root.resolve("legacy-" + version + "-saved.dat"));
+        if (loaded.getHealth() != 16 || loaded.getMaxHealth() != 40 || !ID.equals(loaded.getUUID())
+                || !OWNER.equals(loaded.getOwnerUUID())) throw new AssertionError("Unexpected native legacy-wolf conversion");
+        Map<String, Object> row = new LinkedHashMap<>();
+        row.put("sourceDataVersion", version); row.put("targetDataVersion", 3955);
+        row.put("sourceHealth", 8); row.put("savedHealth", loaded.getHealth());
+        row.put("sourceMaxHealth", 20); row.put("savedMaxHealth", loaded.getMaxHealth());
+        row.put("uuidPreserved", true); row.put("ownerPreserved", true); row.put("noPower", true);
+        String json = new Gson().toJson(row);
+        Files.writeString(root.resolve("legacy-" + version + "-receipt.json"), json + "\n");
+        System.out.println("WOLF_LEGACY_DFU_CONTROL " + json);
+    }
+
     public static void main(String[] args) throws Exception {
         SharedConstants.tryDetectVersion(); Bootstrap.bootStrap();
         ForgeUnitRegistries.registerVanillaFluidTypes();
@@ -99,6 +129,7 @@ public final class NativeWolfPlatformControl {
         System.out.println("NATIVE_WOLF_CODE " + Wolf.class.getProtectionDomain().getCodeSource().getLocation());
         ServerLevel world = context();
         control(root, world, true, 8); control(root, world, true, 20); control(root, world, false, 8);
+        legacyControl(root, world, 512); legacyControl(root, world, 1343);
         System.out.println("WOLF_CONTROL_DONE no_server=true no_ticks=true native_entity_methods_unmodified=true");
     }
 }

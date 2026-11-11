@@ -233,7 +233,7 @@ final class LifecycleProbe {
                     BlockPos source = position(oil.source);
                     if (!world.isEmptyBlock(source)) throw new IllegalStateException("Oil source is not empty: " + oil.id);
                     net.minecraft.world.item.Item item = net.minecraftforge.registries.ForgeRegistries.ITEMS.getValue(
-                            new net.minecraft.resources.ResourceLocation(oil.bucket));
+                            net.minecraft.resources.ResourceLocation.parse(oil.bucket));
                     if (!(item instanceof net.minecraft.world.item.BucketItem)
                             || !((net.minecraft.world.item.BucketItem) item).emptyContents(null, world, source, null))
                         throw new IllegalStateException("Bucket placement failed: " + oil.id);

@@ -127,7 +127,7 @@ final class SteamOperationalActors {
                         };
                         shot.player.gameMode.changeGameModeForPlayer(GameType.SURVIVAL);
                         shot.player.moveTo(muzzle.getX() + 0.5, muzzle.getY(), muzzle.getZ() + 0.5, 0, 0);
-                        Item weapon = ForgeRegistries.ITEMS.getValue(new ResourceLocation("basesteam:musket"));
+                        Item weapon = ForgeRegistries.ITEMS.getValue(ResourceLocation.parse("basesteam:musket"));
                         c.require(weapon != null && weapon != net.minecraft.world.item.Items.AIR, "Native musket is registered");
                         shot.weapon = new ItemStack(weapon);
                         shot.player.setItemInHand(InteractionHand.MAIN_HAND, shot.weapon);
@@ -135,7 +135,7 @@ final class SteamOperationalActors {
                         if (mode.equals("powderless")) enchant(c, shot.weapon, "basesteam:powderless");
                         if (mode.equals("infinity")) enchant(c, shot.weapon, "minecraft:infinity");
                         if (mode.equals("last-cartridge") || mode.equals("infinity")) {
-                            Item cartridge = ForgeRegistries.ITEMS.getValue(new ResourceLocation("basesteam:blackpowder_cartridge"));
+                            Item cartridge = ForgeRegistries.ITEMS.getValue(ResourceLocation.parse("basesteam:blackpowder_cartridge"));
                             c.require(cartridge != null && cartridge != net.minecraft.world.item.Items.AIR, "Cartridge is registered");
                             shot.player.getInventory().setItem(1, new ItemStack(cartridge));
                         }
@@ -200,8 +200,8 @@ final class SteamOperationalActors {
     }
 
     private static void enchant(MachineContext c, ItemStack weapon, String id) {
-        Enchantment enchantment = ForgeRegistries.ENCHANTMENTS.getValue(new ResourceLocation(id));
-        c.require(enchantment != null, "Registered enchantment " + id);
+        var enchantment = c.world.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT)
+                .getOrThrow(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ENCHANTMENT, ResourceLocation.parse(id)));
         weapon.enchant(enchantment, 1);
     }
 

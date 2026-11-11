@@ -1,26 +1,26 @@
 # Native Client Resource Check
 
-This disposable Minecraft 1.20.6 / Forge 50.2.0 client checks models, textures,
+This disposable Minecraft 1.21.1 / Forge 52.1.0 client checks models, textures,
 translations, recipe-book cells and machine screens after Minecraft loads them.
 It registers no gameplay content, opens no world and closes when finished.
 The probe is excluded from release jars and ordinary Eclipse launches.
-See [port status](../../docs/1.20.6/PORT-STATUS.md) for current qualification.
+See [port status](../../docs/1.21.1/PORT-STATUS.md) for current qualification.
 Earlier-version results do not qualify this version.
 
 Use Java 21 for Gradle, compilation and the client and server runners. The
-target is official 1.20.6 mappings with MCP `20240429.135109`.
+target is official 1.21.1 mappings with MCP `20240808.132146`.
 
 ## Build And Run
 
 ```powershell
 ./gradlew.bat check clientResourceProbeJar verifyEclipseProductionClasspath prepareCombinedEclipseLaunch
 ./test-rig/client-resources/test-launcher.ps1
-./test-rig/client-resources/run.ps1 -JavaHome '<Java 21 home>' -LaunchProfile runClientAllAdvantage.launch -RequireExtensions -MachineGuiLayouts -ChildRendererGeometry -RecipeBookFixtures '<native 1.20.6 recipe run>/unlock' -PreflightOnly
-./test-rig/client-resources/run.ps1 -JavaHome '<Java 21 home>' -LaunchProfile runClientAllAdvantage.launch -RequireExtensions -MachineGuiLayouts -ChildRendererGeometry -RecipeBookFixtures '<native 1.20.6 recipe run>/unlock'
+./test-rig/client-resources/run.ps1 -JavaHome '<Java 21 home>' -LaunchProfile runClientAllAdvantage.launch -RequireExtensions -MachineGuiLayouts -ChildRendererGeometry -RecipeBookFixtures '<native 1.21.1 recipe run>/unlock' -PreflightOnly
+./test-rig/client-resources/run.ps1 -JavaHome '<Java 21 home>' -LaunchProfile runClientAllAdvantage.launch -RequireExtensions -MachineGuiLayouts -ChildRendererGeometry -RecipeBookFixtures '<native 1.21.1 recipe run>/unlock'
 ```
 
-The combined launch requires Power `2.4.13.120061`, Steam `2.2.14.120061` and
-Electric `2.2.14.120061`. Pin the exact rebuilt jars in `profiles/native1206`
+The combined launch requires Power `2.4.14.121011`, Steam `2.2.15.121011` and
+Electric `2.2.15.121011`. Pin the exact rebuilt jars in `profiles/native1211`
 before regenerating it. Omitting the combined profile retains Power-only
 scope. Normal Eclipse launches contain production code only.
 
@@ -39,10 +39,10 @@ is provenance, not proof that the selected loose output equals that jar.
 
 ## Recipe Fixtures
 
-Generate fresh exports from the packaged 1.20.6 candidates, not a historical run:
+Generate fresh exports from the packaged 1.21.1 candidates, not a historical run:
 
 ```powershell
-<python.exe> -B test-rig/migration/native1206_recipes.py --profile '<pinned packaged-current profile>' --seed '<Forge 50.2.0 server>' --inventory '<sealed inventory>' --inventory-sha256 '<inventory SHA-256>' --java '<Java 21 home>/bin/java.exe' --port 25577 --output test-rig/build/native1206-recipes-new
+<python.exe> -B test-rig/migration/native1211_recipes.py --profile '<pinned packaged-current profile>' --seed '<Forge 52.1.0 server>' --inventory '<sealed inventory>' --inventory-sha256 '<inventory SHA-256>' --java '<Java 21 home>/bin/java.exe' --port 25577 --output test-rig/build/native1211-recipes-new
 ```
 
 Use an existing Python 3.11+ environment with `migration/requirements.txt`.

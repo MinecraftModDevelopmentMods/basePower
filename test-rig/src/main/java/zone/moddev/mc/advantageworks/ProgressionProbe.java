@@ -98,7 +98,7 @@ final class ProgressionProbe {
         Set<String> executed = new LinkedHashSet<>();
         for (JsonElement seed : fixture.getAsJsonArray("naturalResources")) {
             String id = seed.getAsString();
-            Item item = ForgeRegistries.ITEMS.getValue(new ResourceLocation(id));
+            Item item = ForgeRegistries.ITEMS.getValue(ResourceLocation.parse(id));
             if (item != null) acquire(known, player, new ItemStack(item), "natural_resource", Collections.emptyList());
         }
         JsonArray loot = new JsonArray();
@@ -175,7 +175,7 @@ final class ProgressionProbe {
                 }
                 if (result.isEmpty()) continue;
                 if (owned(holder.id()) && !crushing) {
-                    AdvancementHolder unlock = server.getAdvancements().get(new ResourceLocation(
+                    AdvancementHolder unlock = server.getAdvancements().get(ResourceLocation.fromNamespaceAndPath(
                             holder.id().getNamespace(), "recipes/" + holder.id().getPath()));
                     require(unlock != null && player.getAdvancements().getOrStartProgress(unlock).isDone()
                             && player.getRecipeBook().contains(holder), "Manufacture lacks ingredient discovery: " + holder.id());
@@ -236,7 +236,7 @@ final class ProgressionProbe {
         JsonObject tags = new JsonObject();
         for (String name : new String[] {"wires", "dusts/carbon", "rubber", "plastic", "circuit_boards", "solder"}) {
             List<String> members = new ArrayList<>();
-            for (var item : net.minecraft.core.registries.BuiltInRegistries.ITEM.getTagOrEmpty(ItemTags.create(new ResourceLocation("forge", name))))
+            for (var item : net.minecraft.core.registries.BuiltInRegistries.ITEM.getTagOrEmpty(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", name))))
                 members.add(net.minecraftforge.registries.ForgeRegistries.ITEMS.getKey(item.value()).toString());
             Collections.sort(members);
             tags.add(name, JSON.toJsonTree(members));
@@ -265,13 +265,13 @@ final class ProgressionProbe {
     }
 
     static ItemStack stack(String id) {
-        Item item = ForgeRegistries.ITEMS.getValue(new ResourceLocation(id));
+        Item item = ForgeRegistries.ITEMS.getValue(ResourceLocation.parse(id));
         return item == null ? ItemStack.EMPTY : new ItemStack(item);
     }
 
     private static net.minecraft.world.level.storage.loot.LootTable lootTable(MinecraftServer server, String id) {
         return server.reloadableRegistries().getLootTable(net.minecraft.resources.ResourceKey.create(
-                net.minecraft.core.registries.Registries.LOOT_TABLE, new ResourceLocation(id)));
+                net.minecraft.core.registries.Registries.LOOT_TABLE, ResourceLocation.parse(id)));
     }
 
     private static LootParams chestParams(ServerLevel world) {
@@ -282,8 +282,10 @@ final class ProgressionProbe {
 
     @SuppressWarnings("unchecked")
     private static ItemStack matchedResult(Recipe<?> recipe, net.minecraft.world.Container inventory, ServerLevel world) {
-        Recipe<net.minecraft.world.Container> typed = (Recipe<net.minecraft.world.Container>) recipe;
-        return typed.matches(inventory, world) ? typed.assemble(inventory, world.registryAccess()) : ItemStack.EMPTY;
+        var input = inventory instanceof CraftingContainer grid ? grid.asCraftInput()
+                : new net.minecraft.world.item.crafting.SingleRecipeInput(inventory.getItem(0));
+        Recipe<net.minecraft.world.item.crafting.RecipeInput> typed = (Recipe<net.minecraft.world.item.crafting.RecipeInput>) recipe;
+        return typed.matches(input, world) ? typed.assemble(input, world.registryAccess()) : ItemStack.EMPTY;
     }
 
     private static boolean advantage(ItemStack stack) { return !stack.isEmpty() && owned(net.minecraftforge.registries.ForgeRegistries.ITEMS.getKey(stack.getItem())); }

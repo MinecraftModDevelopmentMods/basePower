@@ -77,7 +77,7 @@ final class NativeInteropProbe {
     }
 
     private static Block block(String id) {
-        ResourceLocation key = new ResourceLocation(id);
+        ResourceLocation key = ResourceLocation.parse(id);
         require(ForgeRegistries.BLOCKS.containsKey(key), "Missing registry entry: " + id);
         return ForgeRegistries.BLOCKS.getValue(key);
     }
@@ -342,21 +342,21 @@ final class NativeInteropProbe {
 
     @SuppressWarnings("unchecked")
     private static void sharedCrushing(ServerLevel world) {
-        ResourceLocation recipeId = new ResourceLocation("basepower", "crushing_potato_starch");
+        ResourceLocation recipeId = ResourceLocation.fromNamespaceAndPath("basepower", "crushing_potato_starch");
         var holder = world.getRecipeManager().byKey(recipeId).orElseThrow(
                 () -> new AssertionError("Missing Power recipe under Base Metals crushing: " + recipeId));
-        var recipe = (net.minecraft.world.item.crafting.Recipe<Container>) holder.value();
+        var recipe = (net.minecraft.world.item.crafting.Recipe<net.minecraft.world.item.crafting.SingleRecipeInput>) holder.value();
         var type = net.minecraft.core.registries.BuiltInRegistries.RECIPE_TYPE.getKey(recipe.getType());
-        require(new ResourceLocation("basemetals", "crushing").equals(type), "Wrong loaded crushing type: " + type);
+        require(ResourceLocation.fromNamespaceAndPath("basemetals", "crushing").equals(type), "Wrong loaded crushing type: " + type);
         for (var potato : List.of(net.minecraft.world.item.Items.POTATO, net.minecraft.world.item.Items.POISONOUS_POTATO)) {
-            var input = new net.minecraft.world.SimpleContainer(new ItemStack(potato, 3));
+            var input = new net.minecraft.world.item.crafting.SingleRecipeInput(new ItemStack(potato, 3));
             require(recipe.matches(input, world), "Shared crusher rejected " + potato);
             ItemStack result = recipe.assemble(input, world.registryAccess());
-            require(result.getCount() == 1 && new ResourceLocation("basepower", "starch").equals(
+            require(result.getCount() == 1 && ResourceLocation.fromNamespaceAndPath("basepower", "starch").equals(
                     ForgeRegistries.ITEMS.getKey(result.getItem())), "Incorrect shared crushing result: " + result);
             require(input.getItem(0).getCount() == 3, "Assembling a recipe preview mutated its input");
         }
-        require(!recipe.matches(new net.minecraft.world.SimpleContainer(new ItemStack(net.minecraft.world.item.Items.DIRT)), world),
+        require(!recipe.matches(new net.minecraft.world.item.crafting.SingleRecipeInput(new ItemStack(net.minecraft.world.item.Items.DIRT)), world),
                 "Shared crushing accepted unrelated input");
     }
 }

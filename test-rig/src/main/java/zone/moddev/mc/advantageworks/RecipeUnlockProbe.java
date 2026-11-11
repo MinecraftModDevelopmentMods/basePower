@@ -112,7 +112,7 @@ final class RecipeUnlockProbe {
                 JsonObject definition = element.getAsJsonObject();
                 String id = definition.get("id").getAsString();
                 AdvancementHolder advancement = advancement(server, id);
-                RecipeHolder<?> recipe = server.getRecipeManager().byKey(new ResourceLocation(id)).orElse(null);
+                RecipeHolder<?> recipe = server.getRecipeManager().byKey(ResourceLocation.parse(id)).orElse(null);
                 JsonObject row = new JsonObject();
                 row.addProperty("id", id);
                 row.addProperty("recipeActive", recipe != null);
@@ -157,11 +157,11 @@ final class RecipeUnlockProbe {
         } else if (operation.equals("persist")) {
             for (JsonElement element : cases) {
                 String id = element.getAsJsonObject().get("id").getAsString();
-                reset(advancement(server, id), server.getRecipeManager().byKey(new ResourceLocation(id)).orElse(null));
+                reset(advancement(server, id), server.getRecipeManager().byKey(ResourceLocation.parse(id)).orElse(null));
             }
             JsonArray kit = new JsonArray();
             for (JsonElement id : fixture.getAsJsonArray("materials")) {
-                ResourceLocation name = new ResourceLocation(id.getAsString());
+                ResourceLocation name = ResourceLocation.parse(id.getAsString());
                 if (!ForgeRegistries.ITEMS.containsKey(name)) continue;
                 discover(item(id.getAsString()));
                 kit.add(id.getAsString());
@@ -213,7 +213,7 @@ final class RecipeUnlockProbe {
                 available |= !choices(criterion.getValue().getAsJsonObject()).isEmpty();
             boolean done = player.getAdvancements().getOrStartProgress(advancement(server, id)).isDone();
             require(!available || done, "Lost discovery: " + id);
-            RecipeHolder<?> recipe = server.getRecipeManager().byKey(new ResourceLocation(id)).orElse(null);
+            RecipeHolder<?> recipe = server.getRecipeManager().byKey(ResourceLocation.parse(id)).orElse(null);
             require(recipe == null || !available || player.getRecipeBook().contains(recipe), "Lost recipe reward: " + id);
             JsonObject row = new JsonObject();
             row.addProperty("id", id);
@@ -238,8 +238,8 @@ final class RecipeUnlockProbe {
     }
 
     private static AdvancementHolder advancement(MinecraftServer server, String id) {
-        ResourceLocation name = new ResourceLocation(id);
-        return server.getAdvancements().get(new ResourceLocation(name.getNamespace(), "recipes/" + name.getPath()));
+        ResourceLocation name = ResourceLocation.parse(id);
+        return server.getAdvancements().get(ResourceLocation.fromNamespaceAndPath(name.getNamespace(), "recipes/" + name.getPath()));
     }
 
     private static boolean matchesInventory(InventoryChangeTrigger.TriggerInstance condition,
@@ -260,13 +260,13 @@ final class RecipeUnlockProbe {
         if (predicate.has("item")) return Collections.singletonList(item(predicate.get("item").getAsString()));
         List<Item> items = new ArrayList<>();
         for (var holder : net.minecraft.core.registries.BuiltInRegistries.ITEM.getTagOrEmpty(
-                ItemTags.create(new ResourceLocation(predicate.get("tag").getAsString())))) items.add(holder.value());
+                ItemTags.create(ResourceLocation.parse(predicate.get("tag").getAsString())))) items.add(holder.value());
         items.sort(Comparator.comparing(candidate -> net.minecraftforge.registries.ForgeRegistries.ITEMS.getKey(candidate).toString()));
         return items;
     }
 
     private static Item item(String id) {
-        ResourceLocation name = new ResourceLocation(id);
+        ResourceLocation name = ResourceLocation.parse(id);
         Item item = ForgeRegistries.ITEMS.getValue(name);
         require(item != null, "Missing test ingredient: " + id);
         return item;

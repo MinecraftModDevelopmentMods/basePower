@@ -49,7 +49,7 @@ final class RecipeBookProbe {
             buffer.readBytes(bytes);
             Files.write(Paths.get("recipes-" + label + ".bin"), bytes);
         } finally { buffer.release(); }
-        ResourceLocation starchId = new ResourceLocation("basepower:starch_from_potato");
+        ResourceLocation starchId = ResourceLocation.parse("basepower:starch_from_potato");
         Recipe starch = server.getRecipeManager().byKey(starchId).map(RecipeHolder::value).orElse(null);
         require(starch != null && starch.getType() == RecipeType.CRAFTING, "Missing native potato crafting recipe");
         int cases = 0;
@@ -59,10 +59,10 @@ final class RecipeBookProbe {
                 ItemStack input = stack(potato);
                 input.setCount(count);
                 grid.setItem(slot, input);
-                require(starch.matches(grid, world), "Potato recipe rejected slot/stack " + slot + "/" + count);
-                RecipeHolder<?> selected = world.getRecipeManager().getRecipeFor(RecipeType.CRAFTING, grid, world).orElse(null);
+                require(starch.matches(grid.asCraftInput(), world), "Potato recipe rejected slot/stack " + slot + "/" + count);
+                RecipeHolder<?> selected = world.getRecipeManager().getRecipeFor(RecipeType.CRAFTING, grid.asCraftInput(), world).orElse(null);
                 require(selected != null && selected.id().equals(starchId), "Conflicting native potato crafting recipe");
-                ItemStack result = starch.assemble(grid, world.registryAccess());
+                ItemStack result = starch.assemble(grid.asCraftInput(), world.registryAccess());
                 require(id(result).equals("basepower:starch") && result.getCount() == 1, "Starch output changed");
                 require(grid.getItem(slot).getCount() == count, "Result preview mutated input");
                 ItemStack consumed = grid.removeItem(slot, 1);
@@ -74,14 +74,14 @@ final class RecipeBookProbe {
         for (String item : new String[] {null, "minecraft:baked_potato", "minecraft:carrot", "minecraft:dirt"}) {
             CraftingContainer grid = grid(3);
             if (item != null) grid.setItem(0, stack(item));
-            require(!starch.matches(grid, world), "Invalid starch input accepted: " + item);
+            require(!starch.matches(grid.asCraftInput(), world), "Invalid starch input accepted: " + item);
             cases++;
         }
         for (String second : new String[] {"minecraft:potato", "minecraft:poisonous_potato", "minecraft:dirt"}) {
             CraftingContainer grid = grid(3);
             grid.setItem(0, stack("minecraft:potato"));
             grid.setItem(1, stack(second));
-            require(!starch.matches(grid, world), "Extra occupied ingredient slot accepted");
+            require(!starch.matches(grid.asCraftInput(), world), "Extra occupied ingredient slot accepted");
             cases++;
         }
         report.addProperty("potatoCraftingCases", cases);

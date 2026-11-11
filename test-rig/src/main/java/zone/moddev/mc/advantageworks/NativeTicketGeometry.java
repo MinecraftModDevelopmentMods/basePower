@@ -44,7 +44,7 @@ final class NativeTicketGeometry {
             Map<String, Object> result = new LinkedHashMap<>();
             result.put("fullLevel", fullLevel);
             result.put("entityTickingLevel", entityTickingLevel);
-            result.put("maxDistance", ChunkStatus.maxDistance());
+            result.put("maxDistance", ChunkLevel.RADIUS_AROUND_FULL_CHUNK);
             result.put("lastHolderLevel", ChunkLevel.MAX_LEVEL);
             result.put("holderRadius", ChunkLevel.MAX_LEVEL - entityTickingLevel);
             result.put("observedForcedLevels", new ArrayList<>(forcedLevels));

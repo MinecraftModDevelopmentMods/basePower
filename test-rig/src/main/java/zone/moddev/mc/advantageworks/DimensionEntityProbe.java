@@ -334,7 +334,8 @@ final class DimensionEntityProbe {
             Entity leash = entity instanceof Mob ? ((Mob) entity).getLeashHolder() : null;
             entry.add("leashHolderUuid", leash == null ? JsonNull.INSTANCE : JSON.toJsonTree(leash.getUUID().toString()));
             entry.add("leashHolderType", leash == null ? JsonNull.INSTANCE : JSON.toJsonTree(net.minecraftforge.registries.ForgeRegistries.ENTITY_TYPES.getKey(leash.getType()).toString()));
-            BlockPos leashPos = leash instanceof HangingEntity ? ((HangingEntity) leash).getPos() : null;
+            BlockPos leashPos = leash instanceof net.minecraft.world.entity.decoration.BlockAttachedEntity attached
+                    ? attached.getPos() : null;
             entry.add("leashHolderPosition", leashPos == null ? JsonNull.INSTANCE
                     : JSON.toJsonTree(new int[] {leashPos.getX(), leashPos.getY(), leashPos.getZ()}));
             entities.add(entry);

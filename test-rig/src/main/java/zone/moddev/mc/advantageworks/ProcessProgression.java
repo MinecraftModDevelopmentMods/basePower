@@ -124,15 +124,16 @@ final class ProcessProgression {
         selection.addProperty("inputNbt", input.saveOptional(world.registryAccess()).toString());
         selection.addProperty("recipeManagerIdentity", System.identityHashCode(world.getRecipeManager()));
         selection.addProperty("requestedIdPresent",
-                world.getRecipeManager().byKey(new ResourceLocation(requestedRecipe)).isPresent());
+                world.getRecipeManager().byKey(ResourceLocation.parse(requestedRecipe)).isPresent());
         try {
             Class<?> hammerClass = hammer.getItem().getClass();
             if (!hammerClass.getName().equals("zone.moddev.mc.basemetals.content.CrackhammerItem"))
                 throw new IllegalStateException("Unexpected hammer class " + hammerClass.getName());
             RecipeType<?> type = net.minecraft.core.registries.BuiltInRegistries.RECIPE_TYPE
-                    .getOptional(new ResourceLocation("basemetals", "crushing")).orElseThrow();
+                    .getOptional(ResourceLocation.fromNamespaceAndPath("basemetals", "crushing")).orElseThrow();
             net.minecraft.world.item.crafting.RecipeHolder<?> selected = world.getRecipeManager().getRecipeFor(
-                    (RecipeType<Recipe<Container>>) type, new SimpleContainer(input.copy()), world).orElse(null);
+                    (RecipeType<Recipe<net.minecraft.world.item.crafting.SingleRecipeInput>>) type,
+                    new net.minecraft.world.item.crafting.SingleRecipeInput(input.copy()), world).orElse(null);
             selection.addProperty("status", selected == null ? "NO_MATCH" : "MATCH");
             selection.addProperty("matched", selected != null);
             if (selected != null) {
@@ -322,7 +323,7 @@ final class ProcessProgression {
                 && p[i] <= bounds.getAsJsonArray("max").get(i).getAsInt(), "Machine fixture escaped its bounds");
         world.setBlockAndUpdate(pos, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState());
         world.removeBlockEntity(pos);
-        net.minecraft.world.level.block.Block material = ForgeRegistries.BLOCKS.getValue(new ResourceLocation(block));
+        net.minecraft.world.level.block.Block material = ForgeRegistries.BLOCKS.getValue(ResourceLocation.parse(block));
         require(material != null, "Missing machine/fluid " + block);
         world.setBlockAndUpdate(pos, material.defaultBlockState());
         BlockEntity clean = world.getBlockEntity(pos);

@@ -5,8 +5,8 @@ plugins {
     id 'net.minecraftforge.gradle' version '7.0.34'
 }
 
-ext.forge50MavenizerDefault = '../../../../MinecraftMineralogy/OS1206/OreSpawn/ci-fixtures/tools/minecraft-mavenizer-0.5.21-orespawn-compat.jar'
-apply from: '../gradle/forge50-mavenizer.gradle'
+ext.forge52MavenizerDefault = '../../../../MinecraftMineralogy/OS1211/OreSpawn/ci-fixtures/tools/minecraft-mavenizer-0.5.21-orespawn-compat.jar'
+apply from: '../gradle/forge52-mavenizer.gradle'
 
 // Saves, pinned inputs and evidence are siblings, never Gradle cleanup targets.
 layout.buildDirectory = layout.projectDirectory.dir('build/gradle')
@@ -70,7 +70,7 @@ repositories {
 }
 
 def powerCompileJar = file(project.findProperty('powerAdvantageReleaseJar')
-        ?: '../build/libs/basePower-2.4.13.120061.jar')
+        ?: '../build/libs/basePower-2.4.14.121011.jar')
 def exploratoryPowerSha = providers.gradleProperty('worksExploratoryPowerSha256')
 def powerCompileSha = exploratoryPowerSha.orElse(providers.gradleProperty('works_power_sha256'))
 
@@ -106,7 +106,7 @@ tasks.register('verifyWorksCompileInputPin') {
     inputs.file(powerCompileJar)
     inputs.property('powerSha256', powerCompileSha.orElse(''))
     doLast {
-        if (!powerCompileJar.isFile()) throw new GradleException("Missing 1.20.6 Power compile input: ${powerCompileJar}")
+        if (!powerCompileJar.isFile()) throw new GradleException("Missing 1.21.1 Power compile input: ${powerCompileJar}")
         if (!(powerCompileSha.getOrElse('') ==~ /[A-Fa-f0-9]{64}/)) {
             throw new GradleException('Missing or invalid Power SHA-256 pin')
         }
@@ -196,7 +196,7 @@ def registerWorksRunner = { String taskName, String profileName, boolean automat
         if (!automated) standardInput = System.in
         doFirst { JavaExec task ->
             String pin = providers.gradleProperty('worksProfileFile').orNull
-            if (!pin) throw new GradleException("Generate the pinned ${profileName} profile with migration/native1206.py profile and set -PworksProfileFile")
+            if (!pin) throw new GradleException("Generate the pinned ${profileName} profile with migration/native1211.py profile and set -PworksProfileFile")
             File profile = file(pin)
             if (new groovy.json.JsonSlurper().parse(profile).name != profileName) {
                 throw new GradleException("Expected profile ${profileName}: ${profile}")
@@ -218,7 +218,7 @@ def registerWorksRunner = { String taskName, String profileName, boolean automat
 }
 
 registerWorksRunner('runWorksDev', 'dev-core', false,
-        'Builds and launches a disposable interactive 1.20.6 Advantage Works development server.')
+        'Builds and launches a disposable interactive 1.21.1 Advantage Works development server.')
 registerWorksRunner('verifyWorksDev', 'dev-core', true,
         'Generates, checks, restarts, and rechecks the disposable development works.')
 registerWorksRunner('verifyWorksTechProgression', 'dev-core-tech-progression', true,
@@ -242,15 +242,15 @@ registerWorksRunner('verifyWorksWorldgenLegacyImport', 'worldgen-legacy-import',
 registerWorksRunner('runWorksPackagedCurrent', 'packaged-current', false,
         'Launches the complete packaged works on localhost for manual inspection.')
 
-tasks.register('verifyWorksNative1206Inputs', JavaExec) {
+tasks.register('verifyWorksNative1211Inputs', JavaExec) {
     group = 'verification'
-    description = 'Checks 1.20.6 candidate identities and hashes without creating or opening a world.'
+    description = 'Checks 1.21.1 candidate identities and hashes without creating or opening a world.'
     dependsOn tasks.named('runnerClasses'), tasks.named('jar')
     classpath = sourceSets.runner.runtimeClasspath
     mainClass = 'zone.moddev.mc.advantageworks.runner.WorksRunner'
     doFirst { JavaExec task ->
         String pin = providers.gradleProperty('worksProfileFile').orNull
-        if (!pin) throw new GradleException('Set -PworksProfileFile to a generated Forge 50 profile')
+        if (!pin) throw new GradleException('Set -PworksProfileFile to a generated Forge 52 profile')
         args '--profile', file(pin).absolutePath, '--validate-only'
         configurePreparedSeedArgs(task)
     }
@@ -287,11 +287,11 @@ def compileUnitSupport = tasks.register('compileUnitSupport', JavaCompile) {
     classpath = nativeControlClasspath
     destinationDirectory = layout.buildDirectory.dir('unit-support/classes')
 }
-tasks.register('verifyForge50UnitBootstrap', JavaExec) {
+tasks.register('verifyForge52UnitBootstrap', JavaExec) {
     group = 'verification'
     dependsOn compileUnitSupport, unitBootstrapJar
     classpath = files(compileUnitSupport.flatMap { it.destinationDirectory }) + nativeControlClasspath
-    mainClass = 'zone.moddev.mc.advantageworks.unit.Forge50UnitControl'
+    mainClass = 'zone.moddev.mc.advantageworks.unit.Forge52UnitControl'
     javaLauncher = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(21) }
     doFirst { jvmArgs "-javaagent:${unitBootstrapJar.get().archiveFile.get().asFile}" }
 }

@@ -42,11 +42,49 @@ silently discarded.
 
 - Power unit, dependency, identity, resource, archive and Eclipse audits: passed.
 - Packaged Power fluid, shared-crushing and full-restart checks: passed.
-- Combined machine, recipes, player/entity and world-upgrade checks: pending.
-- Partial chunk unload, moving drills and endurance: pending.
-- Combined client rendering, screen geometry and recipe book checks: pending.
-- Independent cache, path-with-spaces and reproducibility checks: pending.
+- Combined finite machine jobs: 132 cases passed, followed by typed saved-NBT
+  inspection and a full process restart. Both stopped saves are checked.
+- Recipe discovery and survival progression: passed in all three recipe modes,
+  with and without rubber, including reload and full restart.
+- Direct original Advantage 1.10, released base* 1.10 and 1.12 upgrades: passed.
+  A retained 1.20.6 fixture also passed conversion, restart and connected operation.
+- Historical player and entity inventories: passed. Nether and End fixtures
+  retain a separately recorded native wolf difference, described below.
+- Partial networks, extended moving drills and endurance: final checks running.
+- Combined client: 94 items, 905 block states, 87 creative entries and recipe-book
+  grouping passed. All 26 tank-gauge images matched independent sprite renders.
+  All 351 required-caption cases passed; 355 broken controls were rejected.
+- Independent cache, path-with-spaces and reproducibility checks: passed for
+  all three mods, with matching player, sources and Javadoc jars.
 - Manual gameplay and visual acceptance: pending.
+
+## Native Entity Difference
+
+Minecraft's own 1.21.1 data fixer changes the old tamed-wolf fixture from
+health 8 and maximum 20 to health 16 and maximum 40. Independent controls
+with no Advantage classes reproduce that change for both old data versions.
+The raw strict comparison remains failed in the report. A separate
+`PASS_WITH_NATIVE_DIFFERENCE` assessment accepts only those two values,
+with the same owner and UUID; all other fields must still match. Inventory
+loss, another changed value or a changed control checksum fails the check.
+
+## Manual Testing
+
+Open the existing `D:\PowerAdvantage\PA1211` Eclipse workspace, refresh the
+Gradle projects and use Power's `runClientAllAdvantage.launch`. It loads all
+three mods with the pinned dependencies. The individual launches remain
+available for isolated checks. Use Java 21 to run Minecraft.
+
+Check the creative tab, recipe discovery during normal play, machine screens
+and their tooltips, live turbine/drill animation, and your usual connected
+setups. A real player login and multiplayer menu interaction are still manual
+checks. The automated client uses isolated, hashed development output;
+packaged server tests use the exact frozen player jars. Neither is a claim
+that every third-party modpack or resource pack is compatible.
+
+The Metal Fluid Tank still drops empty, as in the accepted earlier ports.
+The Portable Fluid Tank is the one that keeps its fluid when picked up in
+Survival. Do not use an original world for a manual upgrade test.
 
 Exact input hashes, failed runs and subsequent results are retained locally
 under `_verification/base-1211-port-20261111` and the rig's ignored `build`

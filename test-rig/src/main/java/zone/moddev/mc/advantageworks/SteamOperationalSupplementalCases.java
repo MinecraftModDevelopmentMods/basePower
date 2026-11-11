@@ -240,14 +240,15 @@ final class SteamOperationalSupplementalCases {
     }
 
     private static Item item(MachineContext c, String id) {
-        Item item = ForgeRegistries.ITEMS.getValue(new ResourceLocation(id));
+        Item item = ForgeRegistries.ITEMS.getValue(ResourceLocation.parse(id));
         c.require(item != null && item != net.minecraft.world.item.Items.AIR, "Registered item " + id);
         return item;
     }
 
     private static void enchant(MachineContext c, ItemStack stack, String id, int level) {
-        Enchantment enchantment = ForgeRegistries.ENCHANTMENTS.getValue(new ResourceLocation(id));
-        c.require(enchantment != null && level >= 1 && level <= enchantment.getMaxLevel(), "Registered supported enchantment " + id);
+        var enchantment = c.world.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT)
+                .getOrThrow(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ENCHANTMENT, ResourceLocation.parse(id)));
+        c.require(level >= 1 && level <= enchantment.value().getMaxLevel(), "Registered supported enchantment " + id);
         stack.enchant(enchantment, level);
     }
 }
