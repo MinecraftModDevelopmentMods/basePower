@@ -2,9 +2,9 @@
 
 **Minecraft 1.21.1 (Forge), version 2.4.14.121011.**
 
-This is a local port candidate, not a published release. See the
-[1.21.1 port record](docs/1.21.1/PORT-STATUS.md) for the current checks.
-Results from earlier versions do not qualify this build.
+This version keeps the existing machines and saved-world data while updating
+to Forge 52 and Java 21. See the [1.21.1 test results](docs/1.21.1/TEST-RESULTS.md)
+for the checked upgrade routes, machine tests and remaining modpack limits.
 
 For the combined Eclipse test, use `runClientAllAdvantage.launch` in this
 project. It loads the matching baseSteam and baseElectric candidates. The
@@ -19,8 +19,7 @@ fluids and item transport for baseSteam and baseElectric.
 - Install [MMD OreSpawn 4.1.0.121011](https://www.curseforge.com/minecraft/mc-mods/mmd-orespawn/files/9189594) on both client and server.
 - Base Metals is optional for a new basePower world. For a world that already
   uses Base Metals, keep it installed and use the matching Forge 1.21.1 build
-  `3.1.2.121011`. That dependency patch is local-only at present, so this
-  candidate must not be distributed as a release. Older public Base Metals
+  `3.1.2.121011` or a later compatible Forge 52 release. Older Base Metals
   builds do not have the shared upgrade hook.
 - baseSteam and baseElectric are separate mods. Use only their matching
   1.21.1 builds. Additional Loot Tables is not needed for the built-in loot.

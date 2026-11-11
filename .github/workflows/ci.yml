@@ -38,7 +38,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           repository: MinecraftModDevelopmentMods/BaseMetals
-          ref: b42b92b0e6f60ac5baf07a6b74042b2fa8427904
+          ref: 327c197bcdd0bb5e883d844bb6a6c8791bc580b7
           path: .ci-dependencies/BaseMetals
       - name: Install pinned Java 25 Mavenizer runtime
         uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
@@ -74,9 +74,8 @@ jobs:
           mavenizer="$orespawn/ci-fixtures/tools/minecraft-mavenizer-0.5.21-orespawn-compat.jar"
           mirror="$RUNNER_TEMP/orespawn-mirror"
           (cd "$basemetals" && bash gradle/stage-orespawn-release.sh "$mirror")
-          chmod +x "$orespawn/gradlew" "$basemetals/gradlew"
-          (cd "$orespawn" && ./gradlew $MMD_GRADLE_TOOLCHAINS jar --no-daemon --stacktrace)
-          (cd "$basemetals" && ./gradlew $MMD_GRADLE_TOOLCHAINS jar -PorespawnVerificationRepository="$mirror" --no-daemon --stacktrace)
+          (cd "$orespawn" && bash gradlew $MMD_GRADLE_TOOLCHAINS jar --no-daemon --stacktrace)
+          (cd "$basemetals" && bash gradlew $MMD_GRADLE_TOOLCHAINS jar -PorespawnVerificationRepository="$mirror" --no-daemon --stacktrace)
           osjar="$orespawn/build/libs/OreSpawn-4.1.0.121011.jar"
           bmjar="$basemetals/build/libs/BaseMetals-3.1.2.121011.jar"
           test -f "$osjar" && test -f "$bmjar"
