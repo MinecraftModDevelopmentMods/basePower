@@ -29,6 +29,10 @@ public final class VanillaRegistryRemaps {
             "plant", "wasteland", "pool", "courbet", "sea", "sunset", "creebet", "wanderer", "graham",
             "match", "bust", "stage", "void", "skull_and_roses", "wither", "fighters", "pointer", "pigscene",
             "burning_skull", "skeleton", "donkey_kong", "earth", "wind", "water", "fire");
+    private static final Set<String> SPLIT_ENTITY_INDEXES = Set.of("boat", "chest_boat", "potion");
+    private static final Set<String> REMOVED_SOUND_INDEXES = Set.of("entity.goat.screaming.horn_break",
+            "entity.leash_knot.break", "entity.leash_knot.place", "entity.puffer_fish.ambient",
+            "entity.wolf.howl", "item.goat_horn.play");
 
     private VanillaRegistryRemaps() {}
 
@@ -122,6 +126,15 @@ public final class VanillaRegistryRemaps {
                 PowerAdvantage.LOGGER.info("Retired unused vanilla point of interest index {}", mapping.getKey());
                 continue;
             }
+            if (retiredNativeIndex(active.getRegistryName(), mapping.getKey())) {
+                // BoatSplitFix and ThrownPotionSplitFix select the concrete type
+                // from entity NBT. Reusing one type here would collapse variants.
+                // Removed sounds have no persistent world payload to translate.
+                mapping.ignore();
+                PowerAdvantage.LOGGER.info("Retired obsolete vanilla registry index {} from {}",
+                        mapping.getKey(), active.getRegistryName());
+                continue;
+            }
             Identifier updatedBiome = vanillaBiomeFixTarget(active.getRegistryName(), mapping.getKey());
             if (updatedBiome != null && active.containsKey(updatedBiome)) {
                 // Vanilla fixes biome names in chunks and world settings. Several
@@ -160,6 +173,12 @@ public final class VanillaRegistryRemaps {
                 && (old.getPath().equals("nitwit") || old.getPath().equals("unemployed"));
     }
 
+    private static boolean retiredNativeIndex(Identifier registry, Identifier old) {
+        if (!old.getNamespace().equals("minecraft")) return false;
+        return registry.equals(Identifier.parse("minecraft:entity_type")) && SPLIT_ENTITY_INDEXES.contains(old.getPath())
+                || registry.equals(Identifier.parse("minecraft:sound_event")) && REMOVED_SOUND_INDEXES.contains(old.getPath());
+    }
+
     static Identifier vanillaBiomeFixTarget(Identifier registry, Identifier old) {
         if (!BIOME_REGISTRY.equals(registry) || !"minecraft".equals(old.getNamespace())) return null;
         String name = old.toString();
@@ -177,6 +196,9 @@ public final class VanillaRegistryRemaps {
         } else if ((registry.equals(Identifier.parse("minecraft:block")) || registry.equals(Identifier.parse("minecraft:item")))
                 && old.getPath().equals("grass")) {
             target = "short_grass";
+        } else if ((registry.equals(Identifier.parse("minecraft:block")) || registry.equals(Identifier.parse("minecraft:item")))
+                && old.getPath().equals("chain")) {
+            target = "iron_chain";
         } else if (registry.equals(Identifier.parse("minecraft:enchantment")) && old.getPath().equals("sweeping")) {
             target = "sweeping_edge";
         } else if (registry.equals(Identifier.parse("minecraft:entity_type")) && old.getPath().equals("zombie_pigman")) {
