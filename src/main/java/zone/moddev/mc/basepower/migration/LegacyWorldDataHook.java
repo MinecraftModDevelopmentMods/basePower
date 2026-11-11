@@ -9,6 +9,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -43,7 +44,7 @@ import zone.moddev.mc.basepower.PowerAdvantage;
  * worlds. Add-ons contribute their identities through {@link LegacyMigrationApi}.
  */
 public final class LegacyWorldDataHook {
-    private static final ResourceLocation BLOCK_REGISTRY = new ResourceLocation("minecraft", "blocks");
+    private static final ResourceLocation BLOCK_REGISTRY = ResourceLocation.fromNamespaceAndPath("minecraft", "blocks");
     private static final Set<String> PREPARED_WORLDS = ConcurrentHashMap.newKeySet();
     private static final String REGISTRY_SIDECAR = "basepower-legacy-registry.dat";
     private static final BitSet LEGACY_BLOCK_IDS = new BitSet();
@@ -108,10 +109,51 @@ public final class LegacyWorldDataHook {
             }
             boolean changed = removeRetiredVanillaProfessionRegistry(root);
             changed |= renameFlattenedBiomeRegistry(root);
-            if (changed) writeWithBackup(levelDat, root);
+            changed |= archiveDataDrivenEnchantmentIndex(root);
+            if (changed) {
+                preserveRetiredRegistryArchive(levelDat, root.getCompound("basepower:legacy_registry_indexes"));
+                writeWithBackup(levelDat, root);
+            }
         } catch (IOException exception) {
-            throw new IllegalStateException("Could not prepare the old villager registry in " + levelDat, exception);
+            throw new IllegalStateException("Could not prepare historical Forge registry indexes in " + levelDat, exception);
         }
+    }
+
+    static boolean archiveDataDrivenEnchantmentIndex(CompoundTag root) {
+        // Flattened items use named enchantments. Forge 52 no longer has this
+        // static registry; keep its exact index for recovery, not in GameData.
+        // Uppercase pre-flattening FML remains untouched for numeric-ID migration.
+        CompoundTag registries = root.getCompound("fml").getCompound("Registries");
+        String key = "minecraft:enchantment";
+        if (!registries.contains(key, Tag.TAG_COMPOUND)) return false;
+        CompoundTag snapshot = registries.getCompound(key);
+        CompoundTag archive = root.getCompound("basepower:legacy_registry_indexes");
+        if (archive.contains(key) && !snapshot.equals(archive.get(key))) {
+            throw new IllegalStateException("Conflicting historical enchantment registry indexes; keep the world backup");
+        }
+        archive.put(key, snapshot.copy());
+        root.put("basepower:legacy_registry_indexes", archive);
+        registries.remove(key);
+        return true;
+    }
+
+    private static void preserveRetiredRegistryArchive(File levelDat, CompoundTag archive) throws IOException {
+        if (archive.isEmpty()) return;
+        Path target = levelDat.toPath().resolveSibling("basepower-retired-registry-indexes.dat");
+        if (Files.exists(target)) {
+            if (!archive.equals(NbtIo.readCompressed(target, NbtAccounter.unlimitedHeap()))) {
+                throw new IOException("Conflicting retained registry indexes in " + target);
+            }
+            return;
+        }
+        Path temporary = Files.createTempFile(target.getParent(), "basepower-registry-indexes-", ".tmp");
+        NbtIo.writeCompressed(archive, temporary);
+        try {
+            Files.move(temporary, target, StandardCopyOption.ATOMIC_MOVE);
+        } catch (java.nio.file.AtomicMoveNotSupportedException unsupported) {
+            Files.move(temporary, target);
+        }
+        PowerAdvantage.LOGGER.info("Retained historical Forge registry indexes in {}", target);
     }
 
     static boolean renameFlattenedBiomeRegistry(CompoundTag root) {
@@ -525,9 +567,9 @@ public final class LegacyWorldDataHook {
 
     static int indexLegacyChunks(File worldDirectory) {
         LEGACY_CHUNKS.clear();
-        return indexLegacyChunks(new ResourceLocation("overworld"), new File(worldDirectory, "region"))
-                + indexLegacyChunks(new ResourceLocation("the_nether"), new File(worldDirectory, "DIM-1/region"))
-                + indexLegacyChunks(new ResourceLocation("the_end"), new File(worldDirectory, "DIM1/region"));
+        return indexLegacyChunks(ResourceLocation.parse("overworld"), new File(worldDirectory, "region"))
+                + indexLegacyChunks(ResourceLocation.parse("the_nether"), new File(worldDirectory, "DIM-1/region"))
+                + indexLegacyChunks(ResourceLocation.parse("the_end"), new File(worldDirectory, "DIM1/region"));
     }
 
     private static int indexLegacyChunks(ResourceLocation dimension, File regionDirectory) {
@@ -621,7 +663,7 @@ public final class LegacyWorldDataHook {
     }
 
     private static ResourceLocation safeId(String value) {
-        try { return value == null || value.isEmpty() ? null : new ResourceLocation(value.toLowerCase(Locale.ROOT)); }
+        try { return value == null || value.isEmpty() ? null : ResourceLocation.parse(value.toLowerCase(Locale.ROOT)); }
         catch (RuntimeException ignored) { return null; }
     }
 

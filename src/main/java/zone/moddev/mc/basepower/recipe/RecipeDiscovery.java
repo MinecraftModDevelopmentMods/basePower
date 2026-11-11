@@ -25,7 +25,7 @@ public final class RecipeDiscovery {
             if (!NAMESPACES.contains(recipe.id().getNamespace()) || recipe.value().isSpecial()
                     || player .getRecipeBook().contains(recipe)) continue;
             AdvancementHolder advancement = player.getServer().getAdvancements().get(
-                    new ResourceLocation(recipe.id().getNamespace(), "recipes/" + recipe.id().getPath()));
+                    ResourceLocation.fromNamespaceAndPath(recipe.id().getNamespace(), "recipes/" + recipe.id().getPath()));
             if (advancement != null && player .getAdvancements().getOrStartProgress(advancement).isDone()) {
                 player .awardRecipes(Collections.singletonList(recipe));
             }

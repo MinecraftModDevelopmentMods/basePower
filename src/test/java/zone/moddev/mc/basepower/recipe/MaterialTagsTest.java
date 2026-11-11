@@ -35,7 +35,7 @@ public class MaterialTagsTest {
     }
 
     private static Set<Item> resolve(MaterialPolicyPack pack, String path, String userEntries) throws Exception {
-        var resource = new ResourceLocation("forge", "tags/items/" + path + ".json");
+        var resource = ResourceLocation.fromNamespaceAndPath("forge", "tags/item/" + path + ".json");
         JsonObject policy;
         try (var reader = new InputStreamReader(pack.getResource(PackType.SERVER_DATA, resource).get(),
                 StandardCharsets.UTF_8)) {

@@ -11,8 +11,8 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 public class VanillaRegistryMappingEventTest {
-    private static final ResourceLocation SOURCE = new ResourceLocation("minecraft:zombie_pigman_spawn_egg");
-    private static final ResourceLocation TARGET = new ResourceLocation("minecraft:zombified_piglin_spawn_egg");
+    private static final ResourceLocation SOURCE = ResourceLocation.parse("minecraft:zombie_pigman_spawn_egg");
+    private static final ResourceLocation TARGET = ResourceLocation.parse("minecraft:zombified_piglin_spawn_egg");
 
     @Test public void resolvesTheTargetFromActiveNotTheIncompleteStagingRegistry() {
         Entry target = new Entry();
@@ -40,7 +40,7 @@ public class VanillaRegistryMappingEventTest {
     @Test public void leavesUnrecognizedEntriesUnresolvedForForgeToReport() {
         IForgeRegistry<Entry> active = registry(new Entry(), true);
         MissingMappingsEvent.Mapping<Entry> mapping = new MissingMappingsEvent.Mapping<>(active, active,
-                new ResourceLocation("othermod:zombie_pigman_spawn_egg"), 42);
+                ResourceLocation.parse("othermod:zombie_pigman_spawn_egg"), 42);
         VanillaRegistryRemaps.remap(event(active, mapping), active);
         assertEquals(MissingMappingsEvent.Action.DEFAULT, property(mapping, "action"));
     }
@@ -60,7 +60,7 @@ public class VanillaRegistryMappingEventTest {
         IForgeRegistry<Entry> active = registry(null, false, "minecraft:memory_module_type");
         for (String name : new String[] {"golem_last_seen_time", "opened_doors"}) {
             MissingMappingsEvent.Mapping<Entry> mapping = new MissingMappingsEvent.Mapping<>(active, active,
-                    new ResourceLocation("minecraft", name), 42);
+                    ResourceLocation.fromNamespaceAndPath("minecraft", name), 42);
             MissingMappingsEvent event = new MissingMappingsEvent(key("minecraft:memory_module_type"),
                     active, Collections.singletonList(mapping));
             VanillaRegistryRemaps.remap(event, active);
@@ -70,17 +70,17 @@ public class VanillaRegistryMappingEventTest {
     }
 
     @Test public void neverRetiresOtherModsOrCurrentMemoryTypes() {
-        ResourceLocation registry = new ResourceLocation("minecraft:memory_module_type");
-        assertFalse(VanillaRegistryRemaps.retiredTransientMemory(registry, new ResourceLocation("othermod:opened_doors")));
-        assertFalse(VanillaRegistryRemaps.retiredTransientMemory(registry, new ResourceLocation("minecraft:golem_detected_recently")));
-        assertFalse(VanillaRegistryRemaps.retiredTransientMemory(new ResourceLocation("minecraft:item"),
-                new ResourceLocation("minecraft:opened_doors")));
+        ResourceLocation registry = ResourceLocation.parse("minecraft:memory_module_type");
+        assertFalse(VanillaRegistryRemaps.retiredTransientMemory(registry, ResourceLocation.parse("othermod:opened_doors")));
+        assertFalse(VanillaRegistryRemaps.retiredTransientMemory(registry, ResourceLocation.parse("minecraft:golem_detected_recently")));
+        assertFalse(VanillaRegistryRemaps.retiredTransientMemory(ResourceLocation.parse("minecraft:item"),
+                ResourceLocation.parse("minecraft:opened_doors")));
     }
 
     @Test public void retiresOnlyTheTwoPointsOfInterestRemovedByVanilla() {
         IForgeRegistry<Entry> active = registry(null, false, "minecraft:point_of_interest_type");
         for (String id : new String[] {"minecraft:nitwit", "minecraft:unemployed", "minecraft:home", "othermod:nitwit"}) {
-            var mapping = new MissingMappingsEvent.Mapping<>(active, active, new ResourceLocation(id), 42);
+            var mapping = new MissingMappingsEvent.Mapping<>(active, active, ResourceLocation.parse(id), 42);
             VanillaRegistryRemaps.remap(event(active, mapping), active);
             boolean retired = id.equals("minecraft:nitwit") || id.equals("minecraft:unemployed");
             assertEquals(id, retired ? MissingMappingsEvent.Action.IGNORE : MissingMappingsEvent.Action.DEFAULT,
@@ -100,12 +100,23 @@ public class VanillaRegistryMappingEventTest {
         }
     }
 
+    @Test public void movedPaintingsRetireOnlyTheirKnownStaticIndexes() {
+        IForgeRegistry<Entry> active = registry(null, false, "minecraft:painting_variant");
+        for (String id : new String[] {"minecraft:alban", "minecraft:aztec", "minecraft:unknown", "othermod:alban"}) {
+            var mapping = new MissingMappingsEvent.Mapping<>(active, active, ResourceLocation.parse(id), 42);
+            VanillaRegistryRemaps.remap(event(active, mapping), active);
+            assertEquals(id, id.equals("minecraft:alban") || id.equals("minecraft:aztec")
+                    ? MissingMappingsEvent.Action.IGNORE : MissingMappingsEvent.Action.DEFAULT, property(mapping, "action"));
+            assertNull(property(mapping, "target"));
+        }
+    }
+
     private static MissingMappingsEvent event(IForgeRegistry<Entry> staging, MissingMappingsEvent.Mapping<Entry> mapping) {
         return new MissingMappingsEvent(staging.getRegistryKey(), staging, Collections.singletonList(mapping));
     }
 
     private static ResourceKey<Registry<Entry>> key(String id) {
-        return ResourceKey.createRegistryKey(new ResourceLocation(id));
+        return ResourceKey.createRegistryKey(ResourceLocation.parse(id));
     }
 
     // Forge keeps the result fields package-private for its snapshot loader.
@@ -129,7 +140,7 @@ public class VanillaRegistryMappingEventTest {
                 new Class<?>[] {IForgeRegistry.class}, (proxy, method, args) -> {
                     switch (method.getName()) {
                         case "getRegistryKey": return key(id);
-                        case "getRegistryName": return new ResourceLocation(id);
+                        case "getRegistryName": return ResourceLocation.parse(id);
                         case "containsKey": return contains && TARGET.equals(args[0]);
                         case "getValue": return target;
                         case "getKey": return args[0] == target ? TARGET : null;

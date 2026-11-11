@@ -90,7 +90,7 @@ public final class ForgeCapabilityBootstrap {
             list.getMethod("insert", list).invoke(instructions, entry);
             return;
         }
-        throw new NoSuchMethodException("Forge 50 ModLoader()");
+        throw new NoSuchMethodException("Forge 52 ModLoader()");
     }
 
     public static void beforeModLoader(Class<?> owner) throws ReflectiveOperationException {

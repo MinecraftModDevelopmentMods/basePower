@@ -41,13 +41,15 @@ def read_json(path):
     return json.loads(path.read_text(encoding="utf-8-sig"))
 
 
-def recipe_fixture(jars, *, component_predicates=False):
+def recipe_fixture(jars, *, component_predicates=False, singular_directories=False):
     recipes = []
     sources = {}
     for path in jars:
         with zipfile.ZipFile(path) as jar:
             for mod in MOD_COUNTS:
-                prefix = f"data/{mod}/recipes/"
+                recipe_directory = "recipe" if singular_directories else "recipes"
+                advancement_directory = "advancement" if singular_directories else "advancements"
+                prefix = f"data/{mod}/{recipe_directory}/"
                 names = sorted(name for name in jar.namelist() if name.startswith(prefix)
                                and name.endswith(".json") and "/" not in name[len(prefix):])
                 for name in names:
@@ -55,7 +57,7 @@ def recipe_fixture(jars, *, component_predicates=False):
                     if recipe["type"] not in RECIPE_TYPES:
                         continue
                     stem = Path(name).stem
-                    advancement_name = f"data/{mod}/advancements/recipes/{stem}.json"
+                    advancement_name = f"data/{mod}/{advancement_directory}/recipes/{stem}.json"
                     advancement = json.loads(jar.read(advancement_name))
                     predicates = {}
                     for key, criterion in advancement["criteria"].items():
@@ -286,7 +288,8 @@ def progression_campaign(root, target, entry, java, port, report, *, engine=None
     write_json(runtime / "progression-fixture.json", definition)
     pack = runtime / WORLD / "datapacks/progression-override"
     write_json(pack / "pack.mcmeta", {"pack": {"pack_format": pack_format, "description": "Disposable loot-override witness"}})
-    write_json(pack / "data/minecraft/loot_tables/chests/simple_dungeon.json", {
+    loot_directory = "loot_tables" if engine is None else getattr(engine, "loot_directory", "loot_tables")
+    write_json(pack / f"data/minecraft/{loot_directory}/chests/simple_dungeon.json", {
         "pools": [{"name": "test_override", "rolls": 1, "entries": [{"type": "item", "name": "minecraft:dirt"}]}]})
     for mode in MODES:
         for rubber in (True, False):

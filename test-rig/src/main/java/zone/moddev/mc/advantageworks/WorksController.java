@@ -81,7 +81,7 @@ final class WorksController {
 
     synchronized void loadDefinition() {
         if (definition != null) return;
-        definition = WorksDefinitionLoader.loadNative1206();
+        definition = WorksDefinitionLoader.loadNative1211();
         for (WorksDefinition.Station station : definition.stations) {
             stations.put(station.id.toUpperCase(Locale.ROOT), station);
             statuses.put(station.id, "NOT_BUILT");
@@ -633,11 +633,9 @@ final class WorksController {
                         }
                     }
                     if (action.enchantment != null) {
-                        Enchantment enchantment = ForgeRegistries.ENCHANTMENTS.getValue(
-                                new ResourceLocation(action.enchantment));
-                        if (enchantment == null) {
-                            throw new IllegalStateException("Unknown enchantment " + action.enchantment);
-                        }
+                        var enchantment = world.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT)
+                                .getOrThrow(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ENCHANTMENT,
+                                        ResourceLocation.parse(action.enchantment)));
                         stack.enchant(enchantment, action.level);
                     }
                     ((Container) tile).setItem(action.slot, stack);
@@ -702,7 +700,7 @@ final class WorksController {
                     world.addFreshEntity(entityItem);
                     break;
                 case "spawnEntity":
-                    EntityType<?> entityType = ForgeRegistries.ENTITY_TYPES.getValue(new ResourceLocation(action.entity));
+                    EntityType<?> entityType = ForgeRegistries.ENTITY_TYPES.getValue(ResourceLocation.parse(action.entity));
                     Entity entity = entityType == null ? null : entityType.create(world);
                     if (entity == null) throw new IllegalStateException("Unknown entity " + action.entity);
                     entity.setPos(pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5);
@@ -864,7 +862,7 @@ final class WorksController {
         if (name == null) return Blocks.AIR;
         String resolved = "minecraft:flowing_water".equals(name) ? "minecraft:water"
                 : "minecraft:stonebrick".equals(name) ? "minecraft:stone_bricks" : name;
-        Block value = ForgeRegistries.BLOCKS.getValue(new ResourceLocation(resolved));
+        Block value = ForgeRegistries.BLOCKS.getValue(ResourceLocation.parse(resolved));
         return value == null ? Blocks.AIR : value;
     }
 
@@ -872,7 +870,7 @@ final class WorksController {
         if (name == null) return null;
         String resolved = "minecraft:sapling".equals(name) ? "minecraft:oak_sapling"
                 : "minecraft:planks".equals(name) ? "minecraft:oak_planks" : name;
-        ResourceLocation key = new ResourceLocation(resolved);
+        ResourceLocation key = ResourceLocation.parse(resolved);
         return ForgeRegistries.ITEMS.containsKey(key) ? ForgeRegistries.ITEMS.getValue(key) : null;
     }
 
@@ -883,7 +881,7 @@ final class WorksController {
     private static BlockState legacyState(String name, Block block, int metadata) {
         if (name != null && (name.startsWith("basepower:")
                 || name.startsWith("basesteam:") || name.startsWith("baseelectric:"))) {
-            return LegacyMigrationApi.decodeBlockState(new ResourceLocation(name), block, metadata);
+            return LegacyMigrationApi.decodeBlockState(ResourceLocation.parse(name), block, metadata);
         }
         if (block instanceof LiquidBlock) {
             return block.defaultBlockState().setValue(LiquidBlock.LEVEL, Integer.valueOf(metadata & 15));
@@ -899,17 +897,17 @@ final class WorksController {
 
     private static Fluid fluid(String name) {
         if (name == null || name.trim().isEmpty()) return null;
-        ResourceLocation id = name.indexOf(':') >= 0 ? new ResourceLocation(name)
-                : new ResourceLocation("basepower", name);
+        ResourceLocation id = name.indexOf(':') >= 0 ? ResourceLocation.parse(name)
+                : ResourceLocation.fromNamespaceAndPath("basepower", name);
         Fluid value = net.minecraft.core.registries.BuiltInRegistries.FLUID.getOptional(id).orElse(null);
         if (value == null) {
             String migratedName = LegacyMigrationApi.fluidTarget(name);
             if (!name.equals(migratedName)) {
-                value = net.minecraft.core.registries.BuiltInRegistries.FLUID.getOptional(new ResourceLocation(migratedName)).orElse(null);
+                value = net.minecraft.core.registries.BuiltInRegistries.FLUID.getOptional(ResourceLocation.parse(migratedName)).orElse(null);
             }
         }
         if (value == null && name.indexOf(':') < 0) {
-            value = net.minecraft.core.registries.BuiltInRegistries.FLUID.getOptional(new ResourceLocation("minecraft", name)).orElse(null);
+            value = net.minecraft.core.registries.BuiltInRegistries.FLUID.getOptional(ResourceLocation.fromNamespaceAndPath("minecraft", name)).orElse(null);
         }
         return value;
     }
@@ -917,6 +915,6 @@ final class WorksController {
     private static Block wool(int metadata) {
         String[] colors = {"white", "orange", "magenta", "light_blue", "yellow", "lime", "pink",
                 "gray", "light_gray", "cyan", "purple", "blue", "brown", "green", "red", "black"};
-        return ForgeRegistries.BLOCKS.getValue(new ResourceLocation("minecraft", colors[metadata & 15] + "_wool"));
+        return ForgeRegistries.BLOCKS.getValue(ResourceLocation.fromNamespaceAndPath("minecraft", colors[metadata & 15] + "_wool"));
     }
 }

@@ -58,7 +58,7 @@ final class MaterialPolicyPack implements PackResources {
         JsonObject tag = new JsonObject();
         tag.addProperty("replace", false);
         tag.add("values", values);
-        resources.put(new ResourceLocation("forge", "tags/items/" + path + ".json"), tag.toString());
+        resources.put(ResourceLocation.fromNamespaceAndPath("forge", "tags/item/" + path + ".json"), tag.toString());
     }
 
     @Override public IoSupplier<InputStream> getRootResource(String... names) { return null; }
@@ -82,7 +82,7 @@ final class MaterialPolicyPack implements PackResources {
     @Override @SuppressWarnings("unchecked")
     public <T> T getMetadataSection(MetadataSectionSerializer<T> serializer) {
         return serializer == PackMetadataSection.TYPE
-                ? (T)new PackMetadataSection(Component.literal(NAME), 41, Optional.empty()) : null;
+                ? (T)new PackMetadataSection(Component.literal(NAME), 48, Optional.empty()) : null;
     }
     @Override public PackLocationInfo location() { return LOCATION; }
     @Override public void close() {}

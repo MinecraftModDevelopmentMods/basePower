@@ -33,7 +33,7 @@ public class StarchRecipeTest {
 
     private static JsonObject read(String name) throws Exception {
         return new JsonParser().parse(new String(Files.readAllBytes(Paths.get(
-                "src/main/resources/data/basepower/recipes/" + name + ".json")), StandardCharsets.UTF_8)).getAsJsonObject();
+                "src/main/resources/data/basepower/recipe/" + name + ".json")), StandardCharsets.UTF_8)).getAsJsonObject();
     }
     private static Set<String> potatoes() {
         return new HashSet<>(java.util.Arrays.asList("minecraft:potato", "minecraft:poisonous_potato"));

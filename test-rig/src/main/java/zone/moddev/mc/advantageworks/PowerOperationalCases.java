@@ -181,7 +181,7 @@ final class PowerOperationalCases {
                                 (zone.moddev.mc.basepower.machines.fluidmachines.StillTileEntity)c.tile(8, 4, 8);
                         still.getInputTank().setFluid(new cyano.poweradvantage.api.fluid.FluidStack(
                                 mode.equals("invalid") ? net.minecraft.world.level.material.Fluids.WATER
-                                        : net.minecraftforge.registries.ForgeRegistries.FLUIDS.getValue(new net.minecraft.resources.ResourceLocation("basepower:crude_oil")), 1000));
+                                        : net.minecraftforge.registries.ForgeRegistries.FLUIDS.getValue(net.minecraft.resources.ResourceLocation.parse("basepower:crude_oil")), 1000));
                         if (!mode.equals("no-fuel")) c.put(8, 4, 8, 0, "minecraft:coal", 1);
                         if (output > 0) c.tank(8, 4, 8, "basepower:refined_oil", output);
                         if (mode.equals("redstone")) c.block(9, 4, 8, "minecraft:redstone_block");

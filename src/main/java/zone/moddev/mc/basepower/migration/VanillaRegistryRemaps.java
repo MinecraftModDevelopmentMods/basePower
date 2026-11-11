@@ -1,6 +1,7 @@
 package zone.moddev.mc.basepower.migration;
 
 import java.util.function.UnaryOperator;
+import java.util.Set;
 import cyano.poweradvantage.api.migration.LegacyMigrationApi;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
@@ -8,7 +9,6 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.material.Fluid;
-import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.resources.ResourceLocation;
@@ -24,7 +24,11 @@ import zone.moddev.mc.basepower.PowerAdvantage;
 
 /** Vanilla's data fixers rename saved data, but not Forge's registry snapshot. */
 public final class VanillaRegistryRemaps {
-    private static final ResourceLocation BIOME_REGISTRY = new ResourceLocation("minecraft:worldgen/biome");
+    private static final ResourceLocation BIOME_REGISTRY = ResourceLocation.parse("minecraft:worldgen/biome");
+    private static final Set<String> LEGACY_PAINTINGS = Set.of("kebab", "aztec", "alban", "aztec2", "bomb",
+            "plant", "wasteland", "pool", "courbet", "sea", "sunset", "creebet", "wanderer", "graham",
+            "match", "bust", "stage", "void", "skull_and_roses", "wither", "fighters", "pointer", "pigscene",
+            "burning_skull", "skeleton", "donkey_kong", "earth", "wind", "water", "fire");
 
     private VanillaRegistryRemaps() {}
 
@@ -38,10 +42,10 @@ public final class VanillaRegistryRemaps {
         MinecraftForge.EVENT_BUS.addListener(EventPriority.HIGHEST, VanillaRegistryRemaps::pointsOfInterest);
         MinecraftForge.EVENT_BUS.addListener(EventPriority.HIGHEST, VanillaRegistryRemaps::blockEntities);
         MinecraftForge.EVENT_BUS.addListener(EventPriority.HIGHEST, VanillaRegistryRemaps::fluids);
-        MinecraftForge.EVENT_BUS.addListener(EventPriority.HIGHEST, VanillaRegistryRemaps::enchantments);
         MinecraftForge.EVENT_BUS.addListener(EventPriority.HIGHEST, VanillaRegistryRemaps::potions);
         MinecraftForge.EVENT_BUS.addListener(EventPriority.HIGHEST, VanillaRegistryRemaps::menus);
         MinecraftForge.EVENT_BUS.addListener(EventPriority.HIGHEST, VanillaRegistryRemaps::recipeSerializers);
+        MinecraftForge.EVENT_BUS.addListener(EventPriority.HIGHEST, VanillaRegistryRemaps::paintings);
     }
 
     private static void blocks(MissingMappingsEvent event) {
@@ -55,24 +59,21 @@ public final class VanillaRegistryRemaps {
     private static void entities(MissingMappingsEvent event) {
         remap(event, ForgeRegistries.ENTITY_TYPES);
         remapAdvantage(event, ForgeRegistries.ENTITY_TYPES,
-                id -> new ResourceLocation(LegacyMigrationApi.entityTarget(id.toString())));
+                id -> ResourceLocation.parse(LegacyMigrationApi.entityTarget(id.toString())));
     }
     private static void sounds(MissingMappingsEvent event) { remap(event, ForgeRegistries.SOUND_EVENTS); }
+    private static void paintings(MissingMappingsEvent event) { remap(event, ForgeRegistries.PAINTING_VARIANTS); }
     private static void biomes(MissingMappingsEvent event) { remap(event, ForgeRegistries.BIOMES); }
     private static void memories(MissingMappingsEvent event) { remap(event, ForgeRegistries.MEMORY_MODULE_TYPES); }
     private static void pointsOfInterest(MissingMappingsEvent event) { remap(event, ForgeRegistries.POI_TYPES); }
 
     private static void blockEntities(MissingMappingsEvent event) {
         remapAdvantage(event, ForgeRegistries.BLOCK_ENTITY_TYPES,
-                id -> new ResourceLocation(LegacyMigrationApi.tileTarget(id.toString())));
+                id -> ResourceLocation.parse(LegacyMigrationApi.tileTarget(id.toString())));
     }
     private static void fluids(MissingMappingsEvent event) {
         remapAdvantage(event, ForgeRegistries.FLUIDS,
-                id -> new ResourceLocation(LegacyMigrationApi.fluidTarget(id.toString())));
-    }
-    private static void enchantments(MissingMappingsEvent event) {
-        remap(event, ForgeRegistries.ENCHANTMENTS);
-        remapAdvantage(event, ForgeRegistries.ENCHANTMENTS, LegacyMigrationApi::registryTarget);
+                id -> ResourceLocation.parse(LegacyMigrationApi.fluidTarget(id.toString())));
     }
     private static void potions(MissingMappingsEvent event) { remap(event, ForgeRegistries.POTIONS); }
     private static void menus(MissingMappingsEvent event) {
@@ -95,6 +96,12 @@ public final class VanillaRegistryRemaps {
 
     static <T> void remap(MissingMappingsEvent event, IForgeRegistry<T> active) {
         for (MissingMappingsEvent.Mapping<T> mapping : event.getMappings(active.getRegistryKey(), "minecraft")) {
+            if (retiredPaintingIndex(active.getRegistryName(), mapping.getKey())) {
+                // These names still exist in the native data-pack registry. Only
+                // Forge's old numeric index is retired; entity variant NBT is unchanged.
+                mapping.ignore();
+                continue;
+            }
             if (active.getRegistryName().equals(ResourceLocation.parse("minecraft:potion"))
                     && mapping.getKey().equals(ResourceLocation.parse("minecraft:empty"))) {
                 // An absent potion is now represented by empty potion contents, not a registry entry.
@@ -136,14 +143,19 @@ public final class VanillaRegistryRemaps {
         }
     }
 
+    static boolean retiredPaintingIndex(ResourceLocation registry, ResourceLocation old) {
+        return registry.equals(ResourceLocation.parse("minecraft:painting_variant"))
+                && old.getNamespace().equals("minecraft") && LEGACY_PAINTINGS.contains(old.getPath());
+    }
+
     static boolean retiredTransientMemory(ResourceLocation registry, ResourceLocation old) {
-        return registry.equals(new ResourceLocation("minecraft:memory_module_type"))
+        return registry.equals(ResourceLocation.parse("minecraft:memory_module_type"))
                 && old.getNamespace().equals("minecraft")
                 && (old.getPath().equals("golem_last_seen_time") || old.getPath().equals("opened_doors"));
     }
 
     static boolean retiredVanillaPoi(ResourceLocation registry, ResourceLocation old) {
-        return registry.equals(new ResourceLocation("minecraft:point_of_interest_type"))
+        return registry.equals(ResourceLocation.parse("minecraft:point_of_interest_type"))
                 && old.getNamespace().equals("minecraft")
                 && (old.getPath().equals("nitwit") || old.getPath().equals("unemployed"));
     }
@@ -153,13 +165,13 @@ public final class VanillaRegistryRemaps {
         String name = old.toString();
         String updated = name.equals("minecraft:deep_warm_ocean") ? "minecraft:warm_ocean"
                 : CavesAndCliffsRenames.RENAMES.get(name);
-        return updated == null ? null : new ResourceLocation(updated);
+        return updated == null ? null : ResourceLocation.parse(updated);
     }
 
     static ResourceLocation replacement(ResourceLocation registry, ResourceLocation old) {
         if (!"minecraft".equals(old.getNamespace())) return null;
         String target = null;
-        if ((registry.equals(new ResourceLocation("minecraft:block")) || registry.equals(new ResourceLocation("minecraft:item")))
+        if ((registry.equals(ResourceLocation.parse("minecraft:block")) || registry.equals(ResourceLocation.parse("minecraft:item")))
                 && old.getPath().equals("grass_path")) {
             target = "dirt_path";
         } else if ((registry.equals(ResourceLocation.parse("minecraft:block")) || registry.equals(ResourceLocation.parse("minecraft:item")))
@@ -167,11 +179,11 @@ public final class VanillaRegistryRemaps {
             target = "short_grass";
         } else if (registry.equals(ResourceLocation.parse("minecraft:enchantment")) && old.getPath().equals("sweeping")) {
             target = "sweeping_edge";
-        } else if (registry.equals(new ResourceLocation("minecraft:entity_type")) && old.getPath().equals("zombie_pigman")) {
+        } else if (registry.equals(ResourceLocation.parse("minecraft:entity_type")) && old.getPath().equals("zombie_pigman")) {
             target = "zombified_piglin";
-        } else if (registry.equals(new ResourceLocation("minecraft:item")) && old.getPath().equals("zombie_pigman_spawn_egg")) {
+        } else if (registry.equals(ResourceLocation.parse("minecraft:item")) && old.getPath().equals("zombie_pigman_spawn_egg")) {
             target = "zombified_piglin_spawn_egg";
-        } else if (registry.equals(new ResourceLocation("minecraft:item"))) {
+        } else if (registry.equals(ResourceLocation.parse("minecraft:item"))) {
             // Forge keeps the 1.19.4 experimental IDs even when that data pack was not enabled.
             target = switch (old.getPath()) {
                 case "pottery_shard_archer" -> "archer_pottery_sherd";
@@ -181,9 +193,11 @@ public final class VanillaRegistryRemaps {
                 case "scute" -> "turtle_scute";
                 default -> null;
             };
-        } else if (registry.equals(new ResourceLocation("minecraft:worldgen/biome")) && old.getPath().equals("nether")) {
+        } else if (registry.equals(ResourceLocation.parse("minecraft:worldgen/biome")) && old.getPath().equals("nether")) {
             target = "nether_wastes";
-        } else if (registry.equals(new ResourceLocation("minecraft:sound_event"))) {
+        } else if (registry.equals(ResourceLocation.parse("minecraft:sound_event"))) {
+            if (old.getPath().equals("block.trial_spawner.ambient_charged")) target = "block.trial_spawner.ambient_ominous";
+            if (old.getPath().equals("block.trial_spawner.charge_activate")) target = "block.trial_spawner.ominous_activate";
             for (String sound : new String[] {"ambient", "angry", "death", "hurt"}) {
                 if (old.getPath().equals("entity.zombie_pigman." + sound)) target = "entity.zombified_piglin." + sound;
             }
@@ -195,6 +209,6 @@ public final class VanillaRegistryRemaps {
             // Native biomes choose their own new music; this alias is for the old shared registry ID.
             if (old.getPath().equals("music.overworld.jungle_and_forest")) target = "music.overworld.forest";
         }
-        return target == null ? null : new ResourceLocation("minecraft", target);
+        return target == null ? null : ResourceLocation.fromNamespaceAndPath("minecraft", target);
     }
 }

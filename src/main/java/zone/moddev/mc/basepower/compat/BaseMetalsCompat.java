@@ -30,7 +30,7 @@ public final class BaseMetalsCompat {
     }
 
     public static ItemStack getSteelPlate() {
-        Item item = ForgeRegistries.ITEMS.getValue(new ResourceLocation("basemetals", "steel_plate"));
+        Item item = ForgeRegistries.ITEMS.getValue(ResourceLocation.fromNamespaceAndPath("basemetals", "steel_plate"));
         return item == null ? null : new ItemStack(item);
     }
 

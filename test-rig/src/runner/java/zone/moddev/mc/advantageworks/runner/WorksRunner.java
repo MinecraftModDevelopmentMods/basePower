@@ -67,14 +67,14 @@ public final class WorksRunner {
 
     public static void main(String[] args) throws Exception {
         Arguments arguments = Arguments.parse(args);
-        Profile profile = readNative1206Profile(arguments.profile);
+        Profile profile = readNative1211Profile(arguments.profile);
         if (arguments.serverPort != null) profile.serverPort = arguments.serverPort;
         File testRig = findTestRig(arguments.profile);
         File powerRoot = testRig.getParentFile().getCanonicalFile();
         // Pin validation precedes directory creation, downloads, and world access.
         requireInputPins(profile);
         profile.preparedSeed = preparedServerSeed(testRig, profile, arguments);
-        requireNative1206CompilePin(testRig, profile);
+        requireNativeCompilePin(testRig, profile);
         if (arguments.validateOnly) {
             List<Map<String, Object>> inputs = stageMods(testRig, null, profile.mods);
             if ("packaged".equals(profile.mode)) {
@@ -89,7 +89,7 @@ public final class WorksRunner {
         File runtime = new File(runtimeBase, profile.name + "-" + stamp).getCanonicalFile();
         requireChild(new File(testRig, "build").getCanonicalFile(), runtime);
         if (profile.preparedSeed == null) {
-            throw new IllegalArgumentException("Forge 50 runtime requires an official prepared server and sealed inventory");
+            throw new IllegalArgumentException("Forge 52 runtime requires an official prepared server and sealed inventory");
         }
         if (profile.preparedSeed != null) profile.preparedSeed.requireDisjoint(runtime);
         if (!runtime.mkdirs()) throw new IllegalStateException("Cannot create runtime " + runtime);
@@ -319,14 +319,17 @@ public final class WorksRunner {
         PreparedServerSeed.requirePlain(root);
         Path args = root.resolve(launcher);
         PreparedServerSeed.requirePlain(args);
-        if (launcher.startsWith("libraries/net/minecraftforge/forge/1.20.6-50.2.0/")) {
-            String shim = "forge-1.20.6-50.2.0-shim.jar";
+        boolean forge52 = launcher.startsWith("libraries/net/minecraftforge/forge/1.21.1-52.1.0/");
+        if (forge52 || launcher.startsWith("libraries/net/minecraftforge/forge/1.20.6-50.2.0/")) {
+            String shim = forge52 ? "forge-1.21.1-52.1.0-shim.jar" : "forge-1.20.6-50.2.0-shim.jar";
             Path jar = root.resolve(shim);
             PreparedServerSeed.requirePlain(jar);
             if (!Files.readString(args, StandardCharsets.UTF_8).strip().equals(
                     "-Djava.net.preferIPv6Addresses=system -jar " + shim)
-                    || !sha256(jar.toFile()).equals("7BECDDA6D36C8359EADA6018C2EDB21C5914C50028C191BE09A39FF9F516E10C")) {
-                throw new IllegalArgumentException("Unexpected official Forge 50 launcher or shim");
+                    || !sha256(jar.toFile()).equals(forge52
+                            ? "F7B706C79896728723DA0E4E8C5A6ECDB6A617AD4DF9D7EA1DDC6367187BC291"
+                            : "7BECDDA6D36C8359EADA6018C2EDB21C5914C50028C191BE09A39FF9F516E10C")) {
+                throw new IllegalArgumentException("Unexpected official Forge shim launcher");
             }
             return;
         }
@@ -804,7 +807,9 @@ public final class WorksRunner {
         }
         return new PreparedServerSeed(preparedPath(testRig, arguments.preparedServerSeed),
                 preparedPath(testRig, arguments.preparedServerSeedInventory), arguments.preparedServerSeedSha256,
-                serverLauncherPath(profile), "1.20.6".equals(profile.minecraftVersion)
+                serverLauncherPath(profile), "1.21.1".equals(profile.minecraftVersion)
+                        ? "forge-1.21.1-52.1.0-shim.jar"
+                        : "1.20.6".equals(profile.minecraftVersion)
                         ? "forge-1.20.6-50.2.0-shim.jar"
                         : "1.20.1".equals(profile.minecraftVersion)
                         ? "libraries/net/minecraft/server/1.20.1-20230612.114412/server-1.20.1-20230612.114412-extra.jar"
@@ -853,11 +858,12 @@ public final class WorksRunner {
         final Map<String, SeedFile> files = new LinkedHashMap<>();
         final Set<String> directories = new LinkedHashSet<>();
         final List<Process> processes = new ArrayList<>();
-        final boolean forge50;
+        final boolean forge50, forge52;
 
         PreparedServerSeed(Path root, Path inventory, String expectedHash, String launcher, String minecraft)
                 throws Exception {
             forge50 = "forge-1.20.6-50.2.0-shim.jar".equals(minecraft);
+            forge52 = "forge-1.21.1-52.1.0-shim.jar".equals(minecraft);
             this.root = root.toAbsolutePath().normalize();
             this.inventory = inventory.toAbsolutePath().normalize();
             if (expectedHash == null || !expectedHash.matches("[0-9A-F]{64}")) {
@@ -925,9 +931,9 @@ public final class WorksRunner {
                     }
                 }
                 reader.endObject();
-                if (forge50 && reader.hasNext() && (!"forge".equals(reader.nextName())
-                        || !"1.20.6-50.2.0".equals(reader.nextString())))
-                    throw new IllegalArgumentException("Incorrect Forge 50 inventory metadata");
+                if ((forge50 || forge52) && reader.hasNext() && (!"forge".equals(reader.nextName())
+                        || !(forge52 ? "1.21.1-52.1.0" : "1.20.6-50.2.0").equals(reader.nextString())))
+                    throw new IllegalArgumentException("Incorrect Forge shim inventory metadata");
                 if (reader.hasNext()) throw new IllegalArgumentException("Unexpected inventory root field");
                 reader.endObject();
                 if (reader.peek() != JsonToken.END_DOCUMENT) throw new IllegalArgumentException("Trailing inventory data");
@@ -980,8 +986,8 @@ public final class WorksRunner {
                         catch (Exception failure) { throw new IOException(failure); }
                         return FileVisitResult.CONTINUE;
                     }
-                    if (codeOnly && forge50 && Set.of("README.txt", "run.bat", "run.sh", "user_jvm_args.txt",
-                            "forge-1.20.6-50.2.0-installer.jar.log").contains(relative)) {
+                    if (codeOnly && (forge50 || forge52) && Set.of("README.txt", "run.bat", "run.sh", "user_jvm_args.txt",
+                            forge52 ? "forge-1.21.1-52.1.0-installer.jar.log" : "forge-1.20.6-50.2.0-installer.jar.log").contains(relative)) {
                         requirePlain(path);
                         return FileVisitResult.CONTINUE;
                     }
@@ -1134,12 +1140,13 @@ public final class WorksRunner {
 
     private static boolean modularForge(Profile profile) {
         return "1.17.1".equals(profile.minecraftVersion) || "1.18.2".equals(profile.minecraftVersion)
-                || "1.20.1".equals(profile.minecraftVersion) || "1.20.6".equals(profile.minecraftVersion);
+                || "1.20.1".equals(profile.minecraftVersion) || "1.20.6".equals(profile.minecraftVersion)
+                || "1.21.1".equals(profile.minecraftVersion);
     }
 
     private static File runtimeJavaHome(Profile profile) throws Exception {
         if (!modularForge(profile)) return java8Home(profile);
-        if ("1.20.6".equals(profile.minecraftVersion)) {
+        if ("1.20.6".equals(profile.minecraftVersion) || "1.21.1".equals(profile.minecraftVersion)) {
             String configured = profile.java21Home;
             if (configured == null || configured.isBlank()) configured = System.getenv("ADVANTAGE_WORKS_JAVA21_HOME");
             File home = new File(configured == null || configured.isBlank()
@@ -1328,16 +1335,24 @@ public final class WorksRunner {
     }
 
     static Profile readNative1206Profile(File file) throws Exception {
-        Profile profile = readProfile(file, "1.20.6", "1.20.6-50.2.0");
+        return readNativeShimProfile(file, "1.20.6", "1.20.6-50.2.0", ".120061");
+    }
+
+    static Profile readNative1211Profile(File file) throws Exception {
+        return readNativeShimProfile(file, "1.21.1", "1.21.1-52.1.0", ".121011");
+    }
+
+    private static Profile readNativeShimProfile(File file, String minecraft, String forge, String suffix) throws Exception {
+        Profile profile = readProfile(file, minecraft, forge);
         if (!"EXPLORATORY_UNQUALIFIED".equals(profile.qualificationStatus) || !"packaged".equals(profile.mode)) {
-            throw new IllegalArgumentException("Forge 50 launches must use ordinary pinned packaged artifacts");
+            throw new IllegalArgumentException("Native shim launches must use ordinary pinned packaged artifacts");
         }
         Set<String> ids = new LinkedHashSet<>();
         for (ModInput input : profile.mods) {
-            if (input.id == null || !ids.add(input.id) || input.version == null || !input.version.endsWith(".120061")
+            if (input.id == null || !ids.add(input.id) || input.version == null || !input.version.endsWith(suffix)
                     || input.file == null || !input.file.endsWith("-" + input.version + ".jar")
                     || !input.required || !input.verifyIdentity || input.workspaceProduced) {
-                throw new IllegalArgumentException("Invalid ordinary Forge 50 mod input: " + input.id);
+                throw new IllegalArgumentException("Invalid ordinary native mod input: " + input.id);
             }
         }
         if (!ids.containsAll(Set.of("basepower", "advantageworkstest", "orespawn"))) {
@@ -1346,7 +1361,7 @@ public final class WorksRunner {
         return withFlatSettings(profile);
     }
 
-    private static void requireNative1206CompilePin(File testRig, Profile profile) throws Exception {
+    private static void requireNativeCompilePin(File testRig, Profile profile) throws Exception {
         ModInput power = profile.mods.stream().filter(input -> "basepower".equals(input.id)).findFirst().orElseThrow();
         ModInput harness = profile.mods.stream().filter(input -> "advantageworkstest".equals(input.id)).findFirst().orElseThrow();
         try (var jar = new java.util.jar.JarFile(resolve(testRig, harness.path))) {

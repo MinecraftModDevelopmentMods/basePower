@@ -8,8 +8,10 @@ import java.util.UUID;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtOps;
+import net.minecraft.nbt.Tag;
 import net.minecraft.SharedConstants;
 import net.minecraft.util.datafix.DataFixers;
+import net.minecraft.util.datafix.DataFixTypes;
 import net.minecraft.util.datafix.fixes.References;
 import net.minecraft.util.datafix.fixes.EntityUUIDFix;
 
@@ -67,6 +69,7 @@ final class LegacyEntityDataFixes {
         } else {
             // All entities inherit this root UUID format, including unknown mod types.
             entity = (CompoundTag) EntityUUIDFix.updateEntityUUID(dynamic).getValue();
+            upgradeAttributePayload(entity, version, current, fixer);
         }
         // Vanilla's UUID fixer rejects zero halves, although they are valid UUID bits.
         if (source.hasUUID("UUID")) {
@@ -87,6 +90,21 @@ final class LegacyEntityDataFixes {
             entity.put("Passengers", fixed);
         }
         return entity;
+    }
+
+    private static void upgradeAttributePayload(CompoundTag entity, int version, int current, DataFixer fixer) {
+        if (!entity.contains("Attributes")) return;
+        if (entity.contains("attributes")) throw new IllegalStateException("Ambiguous old and native entity attributes");
+        CompoundTag input = new CompoundTag();
+        input.put("Attributes", entity.get("Attributes").copy());
+        // Attribute records have the same native schema on players and living entities.
+        // Isolate this vanilla-owned field rather than submitting an unknown mod entity choice.
+        CompoundTag fixed = DataFixTypes.PLAYER.update(fixer, input, version, current);
+        if (!fixed.contains("attributes", Tag.TAG_LIST)) {
+            throw new IllegalStateException("Native attribute data fix did not produce the current format");
+        }
+        entity.remove("Attributes");
+        entity.put("attributes", fixed.get("attributes"));
     }
 
     static void preparePlayerAttributes(CompoundTag player) {

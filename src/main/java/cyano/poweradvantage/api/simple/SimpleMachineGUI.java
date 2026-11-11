@@ -43,7 +43,7 @@ public class SimpleMachineGUI implements ITileEntityGUI {
 	/**
 	 * This is the texture resource for drawing the player's inventory.
 	 */
-	public final static ResourceLocation playerInventoryBox  = new ResourceLocation(PowerAdvantage.MODID+":"+"textures/gui/container/player_inventory.png");
+	public final static ResourceLocation playerInventoryBox  = ResourceLocation.parse(PowerAdvantage.MODID+":"+"textures/gui/container/player_inventory.png");
 	/** Texture resource for the machine's GUI */ 
 	protected final ResourceLocation guiDisplayImage;
 	/** Dimensions of the assembled screen, including its label rows. */
@@ -92,7 +92,7 @@ public class SimpleMachineGUI implements ITileEntityGUI {
 	 * inventory index of the TileEntity's inventory.  
 	 */
 	public SimpleMachineGUI(String guiImage, Integer2D... inventorySlotCoordinates){
-		this(new ResourceLocation(guiImage),inventorySlotCoordinates);
+		this(ResourceLocation.parse(guiImage),inventorySlotCoordinates);
 	}
 	
 	

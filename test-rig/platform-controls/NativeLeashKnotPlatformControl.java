@@ -56,7 +56,7 @@ public final class NativeLeashKnotPlatformControl {
                 || EntityType.LEASH_KNOT.canSerialize() || accepted || !identity.equals(knot.getUUID())
                 || !before.equals(observed) || knot.tickCount != 0 || knot.isRemoved()) throw new AssertionError("Native noSave contract differs");
         Map<String,Object> proof = new LinkedHashMap<>();
-        proof.put("format", 1); proof.put("policy", "native1206-leash-knot-nosave-v1");
+        proof.put("format", 1); proof.put("policy", "native1211-leash-knot-nosave-v1");
         proof.put("minecraftVersion", SharedConstants.getCurrentVersion().getName());
         proof.put("dataVersion", SharedConstants.getCurrentVersion().getDataVersion().getVersion());
         proof.put("forgeVersion", net.minecraftforge.versions.forge.ForgeVersion.getVersion());

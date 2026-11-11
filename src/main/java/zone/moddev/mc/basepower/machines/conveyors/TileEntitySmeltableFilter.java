@@ -1,6 +1,6 @@
 package zone.moddev.mc.basepower.machines.conveyors;
 
-import net.minecraft.world.SimpleContainer;
+import net.minecraft.world.item.crafting.SingleRecipeInput;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.crafting.RecipeType;
@@ -12,8 +12,7 @@ public class TileEntitySmeltableFilter extends TileEntityConveyorFilter {
 	@Override
 	public boolean matchesFilter(ItemStack item) {
 		if (item == null || item.isEmpty() || level == null) return false;
-		SimpleContainer probe = new SimpleContainer(1);
-		probe.setItem(0, item.copy());
+		SingleRecipeInput probe = new SingleRecipeInput(item.copy());
 		return level.getRecipeManager().getRecipeFor(RecipeType.SMELTING, probe, level).isPresent();
 	}
 

@@ -60,7 +60,7 @@ final class SteamOperationalCases {
 
     // This is an actual face-capability insertion, not c.tank's direct reserve seeding.
     private static void fill(MachineContext c, String id, int amount) {
-        Fluid fluid = ForgeRegistries.FLUIDS.getValue(new ResourceLocation(id));
+        Fluid fluid = ForgeRegistries.FLUIDS.getValue(ResourceLocation.parse(id));
         c.require(fluid != null, "Registered input fluid " + id);
         IFluidHandler handler = c.tile(X, Y, Z).getCapability(
                 net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER, Direction.UP)
@@ -78,7 +78,7 @@ final class SteamOperationalCases {
         else if (key.equals("TankOut")) getter = "getOutputTank";
         else throw new IllegalArgumentException("Unknown Steam reserve tank " + key);
         FluidTank tank = tank(c, getter);
-        Fluid type = ForgeRegistries.FLUIDS.getValue(new ResourceLocation(fluid));
+        Fluid type = ForgeRegistries.FLUIDS.getValue(ResourceLocation.parse(fluid));
         c.require(type != null && amount > 0 && amount <= tank.getCapacity(), "Valid finite setup reserve for " + key);
         // Replace the complete tank value: recursively merged NBT retains an old Empty marker.
         tank.setFluid(new FluidStack(type, amount));

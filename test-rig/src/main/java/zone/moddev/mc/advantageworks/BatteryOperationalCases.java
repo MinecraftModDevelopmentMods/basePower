@@ -22,7 +22,8 @@ final class BatteryOperationalCases {
                     }, c -> {
                         PoweredEntity array = (PoweredEntity)c.tile(7, 4, 8);
                         c.require(array.getEnergyCapacity(new ConduitType("electricity")) == capacity, "rated battery capacity retained");
-                        c.require(c.world.getBlockState(c.at(8, 4, 8)).getValue(BlockStateProperties.LIT), "battery powers the live LED");
+                        c.require(c.world.getBlockState(c.at(8, 4, 8)).getLightEmission(c.world, c.at(8, 4, 8)) == 15,
+                                "battery powers the live LED at full light output");
                         net.minecraft.core.BlockPos source = c.at(7, 4, 8), sink = c.at(8, 4, 8);
                         float debit = ElectricOperationalRates.ledDebit(c.activationTick,
                                 ElectricOperationalRates.offset(source.getX(), source.getY(), source.getZ()),

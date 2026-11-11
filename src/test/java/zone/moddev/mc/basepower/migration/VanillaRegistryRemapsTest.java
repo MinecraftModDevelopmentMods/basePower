@@ -12,13 +12,28 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 public class VanillaRegistryRemapsTest {
+    @org.junit.Test public void trialSpawnerRenamesResolveToActualNativeSounds() {
+        net.minecraft.SharedConstants.tryDetectVersion(); net.minecraft.server.Bootstrap.bootStrap();
+        var registry = net.minecraft.resources.ResourceLocation.parse("minecraft:sound_event");
+        for (String[] pair : new String[][] {
+                {"block.trial_spawner.ambient_charged", "block.trial_spawner.ambient_ominous"},
+                {"block.trial_spawner.charge_activate", "block.trial_spawner.ominous_activate"}}) {
+            var actual = VanillaRegistryRemaps.replacement(registry,
+                    net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("minecraft", pair[0]));
+            assertEquals(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("minecraft", pair[1]), actual);
+            assertTrue(net.minecraftforge.registries.ForgeRegistries.SOUND_EVENTS.containsKey(actual));
+        }
+        assertNull(VanillaRegistryRemaps.replacement(registry,
+                net.minecraft.resources.ResourceLocation.parse("othermod:block.trial_spawner.charge_activate")));
+    }
+
     @Test public void retainsBothGrassPathRegistrySnapshots() {
         expect("block", "grass_path", "dirt_path");
         expect("item", "grass_path", "dirt_path");
         assertNull(VanillaRegistryRemaps.replacement(id("entity_type"), id("grass_path")));
     }
 
-    @Test public void retainsVanillaBlockItemAndEnchantmentRenamesThroughForge50() {
+    @Test public void retainsVanillaBlockItemAndEnchantmentRenamesThroughForge52() {
         expect("block", "grass", "short_grass");
         expect("item", "grass", "short_grass");
         expect("item", "scute", "turtle_scute");
@@ -88,7 +103,7 @@ public class VanillaRegistryRemapsTest {
         assertEquals(id("warm_ocean"), VanillaRegistryRemaps.vanillaBiomeFixTarget(biomes, id("deep_warm_ocean")));
         assertNull(VanillaRegistryRemaps.vanillaBiomeFixTarget(biomes, id("plains")));
         assertNull(VanillaRegistryRemaps.vanillaBiomeFixTarget(biomes, id("unknown_biome")));
-        assertNull(VanillaRegistryRemaps.vanillaBiomeFixTarget(biomes, new ResourceLocation("example:desert_hills")));
+        assertNull(VanillaRegistryRemaps.vanillaBiomeFixTarget(biomes, ResourceLocation.parse("example:desert_hills")));
         assertNull(VanillaRegistryRemaps.vanillaBiomeFixTarget(id("block"), id("desert_hills")));
     }
 
@@ -106,7 +121,7 @@ public class VanillaRegistryRemapsTest {
     }
 
     @Test public void leavesOtherModsAndUnrecognizedVanillaEntriesAlone() {
-        assertNull(VanillaRegistryRemaps.replacement(id("item"), new ResourceLocation("othermod:zombie_pigman_spawn_egg")));
+        assertNull(VanillaRegistryRemaps.replacement(id("item"), ResourceLocation.parse("othermod:zombie_pigman_spawn_egg")));
         assertNull(VanillaRegistryRemaps.replacement(id("item"), id("unknown_item")));
         assertNull(VanillaRegistryRemaps.replacement(id("sound_event"), id("music.unknown")));
     }
@@ -120,5 +135,5 @@ public class VanillaRegistryRemapsTest {
         assertEquals(id(to), VanillaRegistryRemaps.replacement(id(registry), id(from)));
     }
 
-    private static ResourceLocation id(String name) { return new ResourceLocation("minecraft", name); }
+    private static ResourceLocation id(String name) { return ResourceLocation.fromNamespaceAndPath("minecraft", name); }
 }

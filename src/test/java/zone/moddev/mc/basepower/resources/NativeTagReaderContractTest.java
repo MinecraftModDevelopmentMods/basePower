@@ -23,11 +23,11 @@ public class NativeTagReaderContractTest {
 
     @Test public void optionalSteelBarsUseTheNativeParserWithAndWithoutBaseMetals() throws Exception {
         JsonObject json = new JsonParser().parse(new String(Files.readAllBytes(Paths.get(
-                "src/main/resources/data/forge/tags/items/bars/steel.json")), StandardCharsets.UTF_8)).getAsJsonObject();
+                "src/main/resources/data/forge/tags/item/bars/steel.json")), StandardCharsets.UTF_8)).getAsJsonObject();
         assertFalse("Do not silently ignore an obsolete optional array", json.has("optional"));
         assertTrue(NativeTestTags.<Item>resolve(id -> null, id -> null, json).isEmpty());
         var present = NativeTestTags.resolve(id ->
-                id.equals(new ResourceLocation("basemetals:steel_bars")) ? Items.IRON_BARS : null, id -> null, json);
+                id.equals(ResourceLocation.parse("basemetals:steel_bars")) ? Items.IRON_BARS : null, id -> null, json);
         assertEquals(java.util.Set.of(Items.IRON_BARS), present);
     }
 

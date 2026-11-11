@@ -35,8 +35,8 @@ import org.apache.logging.log4j.LogManager;
 
 /** Versioned stop-boundary observation. Native no-save helpers are never saved-state witnesses. */
 final class Native117StoppedEntitiesSnapshotV2 {
-    static final String CONTRACT = "native117-helper-contract.json";
-    static final String POLICY = "native117-leash-knot-nosave-v1";
+    static final String CONTRACT = "native1211-helper-contract.json";
+    static final String POLICY = "native1211-leash-knot-nosave-v1";
     private static final Map<MinecraftServer, String> BOOTS = Collections.synchronizedMap(new WeakHashMap<>());
 
     private Native117StoppedEntitiesSnapshotV2() {}

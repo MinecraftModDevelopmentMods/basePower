@@ -28,20 +28,20 @@ public class RecipeUnlockContractTest {
 
     @Test public void everyCraftingRecipeHasExactlyOneUnlockAndProcessingHasNone() throws IOException {
         Set<String> expected = new LinkedHashSet<>();
-        for (Path file : files(DATA.resolve("recipes"))) {
+        for (Path file : files(DATA.resolve("recipe"))) {
             if (crafting(read(file))) expected.add(file.getFileName().toString());
         }
-        Set<String> actual = files(DATA.resolve("advancements/recipes")).stream()
+        Set<String> actual = files(DATA.resolve("advancement/recipes")).stream()
                 .map(file -> file.getFileName().toString()).collect(Collectors.toSet());
         assertFalse("No crafting recipes found", expected.isEmpty());
         assertEquals("Missing or orphaned recipe unlocks", expected, actual);
     }
 
     @Test public void discoveriesAreSingleIngredientAlternativesNotAnEntireCraftingGrid() throws IOException {
-        for (Path file : files(DATA.resolve("recipes"))) {
+        for (Path file : files(DATA.resolve("recipe"))) {
             JsonObject recipe = read(file);
             if (!crafting(recipe)) continue;
-            JsonObject unlock = read(DATA.resolve("advancements/recipes").resolve(file.getFileName()));
+            JsonObject unlock = read(DATA.resolve("advancement/recipes").resolve(file.getFileName()));
             assertEquals("minecraft:recipes/root", unlock.get("parent").getAsString());
             assertFalse("Recipe unlocks should not create visible advancement tabs", unlock.has("display"));
             JsonObject criteria = unlock.getAsJsonObject("criteria");
@@ -74,7 +74,7 @@ public class RecipeUnlockContractTest {
     }
 
     @Test public void rewardAndRecipeCommandCriterionReferToTheExactVariant() throws IOException {
-        for (Path file : files(DATA.resolve("advancements/recipes"))) {
+        for (Path file : files(DATA.resolve("advancement/recipes"))) {
             String id = MOD + ":" + file.getFileName().toString().replace(".json", "");
             JsonObject unlock = read(file);
             JsonArray recipes = unlock.getAsJsonObject("rewards").getAsJsonArray("recipes");
@@ -88,7 +88,7 @@ public class RecipeUnlockContractTest {
     }
 
     @Test public void recipeBookGroupsIdentifyTheOutputNotABroadMachineCategory() throws IOException {
-        for (Path file : files(DATA.resolve("recipes"))) {
+        for (Path file : files(DATA.resolve("recipe"))) {
             JsonObject recipe = read(file);
             if (!crafting(recipe)) continue;
             JsonElement result = recipe.get("result");
@@ -126,7 +126,7 @@ public class RecipeUnlockContractTest {
     @Test public void nativeParserDoesNotUnlockStarchForAnUnrelatedItem() throws IOException {
         net.minecraft.SharedConstants.tryDetectVersion();
         net.minecraft.server.Bootstrap.bootStrap();
-        JsonObject criterion = read(DATA.resolve("advancements/recipes/starch_from_potato.json"))
+        JsonObject criterion = read(DATA.resolve("advancement/recipes/starch_from_potato.json"))
                 .getAsJsonObject("criteria").getAsJsonObject("has_ingredient_1");
         JsonObject predicate = criterion.getAsJsonObject("conditions").getAsJsonArray("items").get(0).getAsJsonObject();
         var registries = net.minecraft.core.RegistryAccess.fromRegistryOfRegistries(net.minecraft.core.registries.BuiltInRegistries.REGISTRY);

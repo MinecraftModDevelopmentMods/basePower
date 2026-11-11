@@ -12,7 +12,7 @@ public final class BaseMetalsLegacyMigration implements Legacy112MigrationExtens
     private BaseMetalsLegacyMigration() {}
 
     public static void register() {
-        Legacy112MigrationExtension.register(new ResourceLocation("basepower", "legacy_world"),
+        Legacy112MigrationExtension.register(ResourceLocation.fromNamespaceAndPath("basepower", "legacy_world"),
                 new BaseMetalsLegacyMigration());
     }
 

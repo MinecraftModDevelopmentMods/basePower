@@ -22,9 +22,9 @@ public class AdvantageLegacyMigrationsTest {
                 "converter_rf_steam", "converter_rf_electricity", "converter_rf_quantum",
                 "converter_tr_electricity")) {
             assertNotNull(path, LegacyMigrationApi.blockStateCodecs().get(
-                    new ResourceLocation("basepower", path)));
-            assertEquals(new ResourceLocation("basepower", path),
-                    LegacyMigrationApi.blockTarget(new ResourceLocation("poweradvantage", path)));
+                    ResourceLocation.fromNamespaceAndPath("basepower", path)));
+            assertEquals(ResourceLocation.fromNamespaceAndPath("basepower", path),
+                    LegacyMigrationApi.blockTarget(ResourceLocation.fromNamespaceAndPath("poweradvantage", path)));
         }
     }
 
@@ -38,9 +38,9 @@ public class AdvantageLegacyMigrationsTest {
                 LegacyMigrationApi.tileTarget("minecraft:poweradvantage.tileentity.fluid_storage_tank"));
         assertEquals("basepower:crude_oil", LegacyMigrationApi.fluidTarget("crude_oil"));
         assertEquals("basepower:crude_oil", LegacyMigrationApi.fluidTarget("poweradvantage:crude_oil"));
-        assertEquals(new ResourceLocation("basepower", "crude_oil_bucket"),
+        assertEquals(ResourceLocation.fromNamespaceAndPath("basepower", "crude_oil_bucket"),
                 LegacyMigrationApi.bucketTarget("crude_oil"));
-        assertEquals(new ResourceLocation("basepower", "refined_oil_bucket"),
+        assertEquals(ResourceLocation.fromNamespaceAndPath("basepower", "refined_oil_bucket"),
                 LegacyMigrationApi.bucketTarget("poweradvantage:refined_oil"));
     }
 }

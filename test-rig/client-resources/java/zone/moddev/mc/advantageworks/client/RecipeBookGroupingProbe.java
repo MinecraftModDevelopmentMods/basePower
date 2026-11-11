@@ -62,15 +62,15 @@ final class RecipeBookGroupingProbe {
             // Import only the generated server fixture's ID snapshot, never a user world.
             Map<ResourceLocation, ForgeRegistry.Snapshot> registry = RegistryManager.ACTIVE.takeSnapshot(false);
             CompoundTag level = NbtIo.readCompressed(root.resolve("server-registries.dat"), NbtAccounter.unlimitedHeap());
-            require("1.20.6".equals(level.getCompound("Data").getCompound("Version").getString("Name")),
-                    "Recipe fixture is not a native 1.20.6 server export");
+            require("1.21.1".equals(level.getCompound("Data").getCompound("Version").getString("Name")),
+                    "Recipe fixture is not a native 1.21.1 server export");
             ListTag mods = level.getCompound("fml").getList("LoadingModList", Tag.TAG_COMPOUND);
             boolean nativeForge = false;
             for (int i = 0; i < mods.size(); i++) {
                 CompoundTag mod = mods.getCompound(i);
-                if ("forge".equals(mod.getString("ModId"))) nativeForge = "50.2.0".equals(mod.getString("ModVersion"));
+                if ("forge".equals(mod.getString("ModId"))) nativeForge = "52.1.0".equals(mod.getString("ModVersion"));
             }
-            require(nativeForge, "Recipe fixture was not saved by Forge 50.2.0");
+            require(nativeForge, "Recipe fixture was not saved by Forge 52.1.0");
             CompoundTag saved = level.getCompound("fml").getCompound("Registries");
             String itemRegistry = ForgeRegistries.ITEMS.getRegistryName().toString();
             String blockRegistry = ForgeRegistries.BLOCKS.getRegistryName().toString();

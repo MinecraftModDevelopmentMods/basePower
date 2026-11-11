@@ -85,7 +85,7 @@ public final class Fluids {
     }
 
     private static ResourceLocation id(String name) {
-        return new ResourceLocation(PowerAdvantage.MODID, name);
+        return ResourceLocation.fromNamespaceAndPath(PowerAdvantage.MODID, name);
     }
 
     private static FluidType oilType(String name, int density, int viscosity) {
@@ -125,11 +125,11 @@ public final class Fluids {
 
     public static Fluid byName(String name) {
         if (name == null || name.trim().isEmpty()) return null;
-        ResourceLocation id = name.indexOf(':') >= 0 ? new ResourceLocation(name)
-                : new ResourceLocation(PowerAdvantage.MODID, name);
+        ResourceLocation id = name.indexOf(':') >= 0 ? ResourceLocation.parse(name)
+                : ResourceLocation.fromNamespaceAndPath(PowerAdvantage.MODID, name);
         Fluid fluid = registeredFluid(id);
         if (fluid == null && name.indexOf(':') < 0) {
-            fluid = registeredFluid(new ResourceLocation("minecraft", name));
+            fluid = registeredFluid(ResourceLocation.fromNamespaceAndPath("minecraft", name));
         }
         return fluid;
     }

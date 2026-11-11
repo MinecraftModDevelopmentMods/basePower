@@ -11,7 +11,7 @@ import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.registries.ForgeRegistries;
 
 /** Proves the test-only fixture reaches Forge's native item, registry, and capability paths. */
-public final class Forge50UnitControl {
+public final class Forge52UnitControl {
     public static void main(String[] args) throws Exception {
         SharedConstants.tryDetectVersion();
         Bootstrap.bootStrap();
@@ -32,6 +32,6 @@ public final class Forge50UnitControl {
                 || (Object) ForgeCapabilities.FLUID_HANDLER == ForgeCapabilities.ITEM_HANDLER) {
             throw new AssertionError("Native Forge capability tokens were not transformed");
         }
-        System.out.println("Forge 50 plain-JUnit bootstrap control PASS");
+        System.out.println("Forge 52 plain-JUnit bootstrap control PASS");
     }
 }

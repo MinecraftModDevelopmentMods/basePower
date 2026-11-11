@@ -6,8 +6,8 @@ const root = path.resolve(__dirname, '..');
 const properties = fs.readFileSync(path.join(root, 'gradle.properties'), 'utf8');
 const mod = /^mod_id=(.+)$/m.exec(properties)[1].trim();
 const data = path.join(root, 'src/main/resources/data', mod);
-const recipes = path.join(data, 'recipes');
-const output = path.join(data, 'advancements/recipes');
+const recipes = path.join(data, 'recipe');
+const output = path.join(data, 'advancement/recipes');
 const check = process.argv.includes('--check');
 const ignored = new Set(['item:minecraft:stick', 'item:minecraft:string',
   'item:minecraft:feather', 'tag:forge:rods/wooden']);

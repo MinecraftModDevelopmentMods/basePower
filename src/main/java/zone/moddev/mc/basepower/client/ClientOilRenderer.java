@@ -11,8 +11,6 @@ public final class ClientOilRenderer {
     private ClientOilRenderer() {}
 
     public static void configureRenderLayers() {
-        ItemBlockRenderTypes.setRenderLayer(zone.moddev.mc.basepower.init.Blocks.steel_frame,
-                RenderType.cutout());
         for (net.minecraft.world.level.material.Fluid fluid : new net.minecraft.world.level.material.Fluid[] {
                 zone.moddev.mc.basepower.init.Fluids.crude_oil,
                 zone.moddev.mc.basepower.init.Fluids.flowing_crude_oil,
@@ -20,10 +18,6 @@ public final class ClientOilRenderer {
                 zone.moddev.mc.basepower.init.Fluids.flowing_refined_oil}) {
             ItemBlockRenderTypes.setRenderLayer(fluid, RenderType.translucent());
         }
-        ItemBlockRenderTypes.setRenderLayer(zone.moddev.mc.basepower.init.Blocks.crude_oil_block,
-                RenderType.translucent());
-        ItemBlockRenderTypes.setRenderLayer(zone.moddev.mc.basepower.init.Blocks.refined_oil_block,
-                RenderType.translucent());
     }
 
 }

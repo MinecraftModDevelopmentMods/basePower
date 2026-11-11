@@ -77,7 +77,7 @@ final class NativeHarvestProbe {
         JsonArray dropEvidence = new JsonArray();
         row.add("dropEvidence", dropEvidence);
         try {
-            ResourceLocation key = new ResourceLocation(blockId);
+            ResourceLocation key = ResourceLocation.parse(blockId);
             require(ForgeRegistries.BLOCKS.containsKey(key), "Missing real block: " + blockId);
             Block block = ForgeRegistries.BLOCKS.getValue(key);
             player.gameMode.changeGameModeForPlayer(GameType.SURVIVAL);
@@ -125,7 +125,8 @@ final class NativeHarvestProbe {
                     require(state.requiresCorrectToolForDrops(), "Ore no longer requires the proper tool");
                 }
                 ItemStack tool = toolItem == null ? ItemStack.EMPTY : new ItemStack(toolItem);
-                if (silk) tool.enchant(Enchantments.SILK_TOUCH, 1);
+                if (silk) tool.enchant(world.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT)
+                        .getOrThrow(Enchantments.SILK_TOUCH), 1);
                 player.setItemInHand(InteractionHand.MAIN_HAND, tool);
                 require(state.canHarvestBlock(world, POS, player) == allowed, "Tool failure/success gate changed");
                 require(player.gameMode.destroyBlock(POS) && world.isEmptyBlock(POS),
@@ -203,7 +204,7 @@ final class NativeHarvestProbe {
         JsonObject solar = new JsonObject();
         solar.addProperty("id", "solar/native-solidity");
         try {
-            Block block = ForgeRegistries.BLOCKS.getValue(new ResourceLocation("baseelectric:photovoltaic_generator"));
+            Block block = ForgeRegistries.BLOCKS.getValue(ResourceLocation.parse("baseelectric:photovoltaic_generator"));
             require(block != null && block != net.minecraft.world.level.block.Blocks.AIR, "Missing native photovoltaic block");
             world.setBlock(POS, block.defaultBlockState(), 2);
             require(world.getBlockState(POS).canOcclude(), "Legacy photovoltaic solid=true was lost");

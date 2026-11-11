@@ -118,15 +118,19 @@ def saved_actor_nbt(value):
     # AttributeMap serializes a HashMap. Attribute names, not iteration order,
     # define identity; retain exact typed values and every other list's order.
     def visit(entity):
-        if "Attributes" in entity:
-            attributes = entity["Attributes"]
+        for field, identity in (("Attributes", "Name"), ("attributes", "id")):
+            if field not in entity:
+                continue
+            if "Attributes" in entity and "attributes" in entity:
+                raise AssertionError("Ambiguous native actor attribute representations")
+            attributes = entity[field]
             if not isinstance(attributes, nbtlib.List) or any(
-                    not isinstance(row, nbtlib.Compound) or not isinstance(row.get("Name"), nbtlib.String)
+                    not isinstance(row, nbtlib.Compound) or not isinstance(row.get(identity), nbtlib.String)
                     for row in attributes):
                 raise AssertionError("Malformed native actor attributes")
-            names = [str(row["Name"]) for row in attributes]
+            names = [str(row[identity]) for row in attributes]
             if len(names) != len(set(names)): raise AssertionError("Duplicate native actor attribute identity")
-            entity["Attributes"] = nbtlib.List[nbtlib.Compound](sorted(attributes, key=lambda row: str(row["Name"])))
+            entity[field] = nbtlib.List[nbtlib.Compound](sorted(attributes, key=lambda row: str(row[identity])))
         for passenger in entity.get("Passengers", []): visit(passenger)
     visit(value)
     return typed_nbt(value)
