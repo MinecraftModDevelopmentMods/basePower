@@ -27,12 +27,16 @@ Its full release suite and all 274 unit tests pass, including fresh Eclipse
 compiler output. Two additional chained 1.13 dimension upgrades now pass their
 payload and full-restart checks. Earlier failed attempts are retained.
 
-This is still **not ready for manual acceptance or release**. The OreSpawn
-startup fault below needs a separate local repair, followed by final dependency
-pins and the full combined machine, client and endurance rerun. The expansions
-currently retain their separately checked intermediate Power pin. Do not
-transfer C2's results to this newer jar or describe that intermediate pin as
-the final dependency set.
+This is still **not ready for manual acceptance or release**. Final dependency
+pins and the full combined machine, client and endurance rerun remain. The
+expansions currently retain their separately checked intermediate Power pin.
+Do not transfer C2's results to a newer jar or describe that intermediate pin
+as the final dependency set.
+
+Base Metals is required by all three mods on both client and server, matching
+their CurseForge requirements. The previous Forge-optional flags were leftover
+metadata and are being corrected. The no-Base-Metals robustness run below is
+not a supported installation or a release qualification requirement.
 
 ## Completed C2 Checks
 
@@ -112,11 +116,12 @@ the production jars and is not a production launch mode.
 
 ## Still Required
 
-The no-Base-Metals profile currently fails during OreSpawn's startup tag lookup
-with `IllegalStateException: Tags not bound`. The normal Base Metals profile
-passes, but that does not qualify the optional-dependency case. The failed
-startup is retained and must be resolved or explicitly reported before calling
-the whole suite green.
+The old no-Base-Metals robustness profile failed during OreSpawn's startup tag
+lookup with `IllegalStateException: Tags not bound`. Its failure is retained,
+not converted to a pass. This was an unsupported dependency combination, so
+repairing OreSpawn for it is not a prerequisite for the base* port. No OreSpawn
+source change has been made. Current metadata must reject a missing Base Metals
+dependency before constructing any of the mods.
 
 The two additional chained 1.13 dimension fixtures exposed a biome lookup and
 four old Forge registry names. Those repairs now pass strict world tests,
@@ -125,7 +130,7 @@ The complete enchantment index is archived, not discarded; uppercase FML and
 numeric-ID archives remain untouched. Conflict, malformed-input, idempotence
 and byte-exact backup controls pass. Four precisely identified removed vanilla
 sound indexes are retired; unknown names still remain unresolved. The final
-aggregate remains pending the separate OreSpawn and full-suite gates.
+aggregate remains pending final dependency pins and the supported full-suite gates.
 
 Manual inspection is still needed for normal play and the in-world hydroelectric
 turbine's animation and orientation. Its geometry checks do not replace seeing

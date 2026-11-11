@@ -105,6 +105,17 @@ public final class NativePackResourceProof {
         var logger = (org.apache.logging.log4j.core.Logger)LogManager.getRootLogger();
         logger.addAppender(appender);
         JsonObject result = new JsonObject();
+        JsonArray dependencies = new JsonArray();
+        for (var dependency : mod.getModInfos().getFirst().getDependencies()) {
+            JsonObject entry = new JsonObject();
+            entry.addProperty("modId", dependency.getModId());
+            entry.addProperty("mandatory", dependency.isMandatory());
+            entry.addProperty("versionRange", dependency.getVersionRange().toString());
+            entry.addProperty("ordering", dependency.getOrdering().name());
+            entry.addProperty("side", dependency.getSide().name());
+            dependencies.add(entry);
+        }
+        result.add("dependencies", dependencies);
         try {
             for (PackType type : PackType.values()) {
                 PackRepository repository = new PackRepository();

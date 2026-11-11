@@ -17,11 +17,10 @@ fluids and item transport for baseSteam and baseElectric.
 ## Playing On 1.21.11
 
 - Install [MMD OreSpawn 4.1.0.121111](https://www.curseforge.com/minecraft/mc-mods/mmd-orespawn/files/9268464) on both client and server.
-- Base Metals is optional for a new basePower world. For a world that already
-  uses Base Metals, keep it installed and use the matching Forge 1.21.11 build
-  `3.1.2.121111`. That dependency patch is local-only at present, so this
-  candidate must not be distributed as a release. Older public Base Metals
-  builds do not have the shared upgrade hook.
+- Base Metals is required on both client and server. Use the matching Forge
+  1.21.11 build `3.1.2.121111`. That dependency patch is local-only at present,
+  so this candidate must not be distributed as a release. Older public Base
+  Metals builds do not have the shared upgrade hook.
 - baseSteam and baseElectric are separate mods. Use only their matching
   1.21.11 builds. Additional Loot Tables is not needed for the built-in loot.
 
@@ -53,7 +52,7 @@ checkout's `ci-fixtures/tools/` directory. This is the same checksum-verified
 source preparation tool used by OreSpawn; its manifest makes no source changes
 for Forge 61.1.0. It uses Java 25 and is not part of the mod or game runtime.
 Set `-Pforge61MavenizerJar=<path>` when that checkout is in another location.
-If Base Metals is installed, use the pinned 3.1.2 build when testing an upgrade. It lets
+Use the pinned Base Metals 3.1.2 build for both new worlds and upgrades. It lets
 both mods preserve old items and machines before Minecraft converts the
 chunk. An older Base Metals jar is not a substitute for this upgrade path.
 

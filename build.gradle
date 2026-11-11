@@ -307,7 +307,7 @@ def preparedReleaseDir = providers.gradleProperty('preparedReleaseDir')
 
 tasks.register('verifyReleaseConfiguration') {
     group = 'verification'
-    description = 'Validates release identity, target metadata, and optional integration policy.'
+    description = 'Validates release identity, target metadata, and required dependencies.'
     doLast {
         def pack = new JsonSlurper().parse(file('src/main/resources/pack.mcmeta')).pack
         if (pack.min_format != [94, 1] || pack.max_format != [94, 1]
@@ -378,13 +378,13 @@ tasks.register('verifyReleaseConfiguration') {
                 throw new GradleException("Source mods.toml is missing ${required}")
             }
         }
-        if (!modsToml.contains('modId="basemetals"\nmandatory=false')) {
-            throw new GradleException('Base Metals must remain Forge-optional; CurseForge installs it for players')
+        if (!modsToml.contains('modId="basemetals"\nmandatory=true')) {
+            throw new GradleException('Base Metals must be required by both Forge and CurseForge')
         }
         String steelBarsTag = file(
                 'src/main/resources/data/forge/tags/item/bars/steel.json').getText('UTF-8')
         if (!steelBarsTag.contains('"required": false') || !steelBarsTag.contains('"basemetals:steel_bars"')) {
-            throw new GradleException('Steel bars must use Forge optional tag entries when Base Metals is absent')
+            throw new GradleException('Steel bars must allow individual Base Metals items to be disabled')
         }
         [
                 'dusts/coal', 'dusts/lead', 'dusts/redstone', 'dusts/silver', 'dusts/tin',
@@ -420,7 +420,7 @@ tasks.register('verifyReleaseConfiguration') {
 
 tasks.register('verifyReleaseDependencies') {
     group = 'verification'
-    description = 'Resolves and audits Forge plus the exact optional compile APIs.'
+    description = 'Resolves and audits Forge plus the exact external compile APIs.'
     dependsOn tasks.named('verifyReleaseConfiguration')
     doLast {
         [(baseMetalsDeobfJar): project.basemetals_deobf_sha256,
@@ -575,11 +575,11 @@ tasks.register('verifyReleaseArtifacts') {
                 throw new GradleException('Packaged pre-flattening table access rule is incorrect')
             }
             String modsToml = zip.getInputStream(zip.getEntry('META-INF/mods.toml'))
-                    .getText(StandardCharsets.UTF_8.name())
+                    .getText(StandardCharsets.UTF_8.name()).replace('\r\n', '\n')
             if (!modsToml.contains('modId="basepower"')
                     || !modsToml.contains("version=\"${project.mod_version}\"")
-                    || !modsToml.contains('modId="basemetals"')
-                    || !modsToml.contains('modId="orespawn"')) {
+                    || !modsToml.contains('modId="basemetals"\nmandatory=true')
+                    || !modsToml.contains('modId="orespawn"\nmandatory=true')) {
                 throw new GradleException('Packaged mods.toml identity, version, or dependencies are incorrect')
             }
             def manifest = new Manifest(zip.getInputStream(zip.getEntry('META-INF/MANIFEST.MF'))).mainAttributes
