@@ -20,14 +20,14 @@ public class SeparateEntityStorageTest {
         CompoundTag staged = LegacyWorldDataHook.prepareEntityChunkForMigration(source);
         assertEquals(before, source);
         assertNotSame(source, staged);
-        assertEquals(0, staged.getList("Entities", 10).size());
+        assertEquals(0, staged.getListOrEmpty("Entities").size());
         LegacyWorldDataHook.finalizeLegacyChunk(staged);
-        CompoundTag entity = staged.getList("Entities", 10).getCompound(0);
-        assertEquals("foreign:machine_witness", entity.getString("id"));
-        assertEquals("keep this payload", entity.getString("ForeignState"));
-        assertEquals(new UUID(0, 17), entity.getUUID("UUID"));
-        assertEquals(new UUID(9, 0), entity.getList("Passengers", 10).getCompound(0).getUUID("UUID"));
-        assertArrayEquals(new int[] {7, -8}, staged.getIntArray("Position"));
+        CompoundTag entity = staged.getListOrEmpty("Entities").getCompoundOrEmpty(0);
+        assertEquals("foreign:machine_witness", entity.getStringOr("id", ""));
+        assertEquals("keep this payload", entity.getStringOr("ForeignState", ""));
+        assertEquals(new UUID(0, 17), entity.read("UUID", net.minecraft.core.UUIDUtil.CODEC).orElseThrow());
+        assertEquals(new UUID(9, 0), entity.getListOrEmpty("Passengers").getCompoundOrEmpty(0).read("UUID", net.minecraft.core.UUIDUtil.CODEC).orElseThrow());
+        assertArrayEquals(new int[] {7, -8}, staged.getIntArray("Position").orElseThrow());
         assertFalse(staged.contains("AdvantageLegacyEntityDataFix"));
         assertEquals(before, source);
     }

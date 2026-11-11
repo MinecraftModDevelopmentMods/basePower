@@ -42,10 +42,11 @@ public class LegacyMachineItemsTest {
         CompoundTag tile = convertedTile(stack("minecraft:wool", 14, 7));
         var previous = zone.moddev.mc.basepower.init.Entities.CONVEYOR;
         try {
-            zone.moddev.mc.basepower.init.Entities.CONVEYOR = net.minecraft.world.level.block.entity.BlockEntityType.Builder
-                    .of(TileEntityConveyor::new, Blocks.HOPPER).build(null);
+            zone.moddev.mc.basepower.init.Entities.CONVEYOR = new net.minecraft.world.level.block.entity.BlockEntityType<>(
+                    TileEntityConveyor::new, java.util.Set.of(Blocks.HOPPER));
             TileEntityConveyor conveyor = new TileEntityConveyor(net.minecraft.core.BlockPos.ZERO, Blocks.HOPPER.defaultBlockState());
-            conveyor.loadWithComponents(tile, registries());
+            conveyor.loadWithComponents(net.minecraft.world.level.storage.TagValueInput.create(
+                    net.minecraft.util.ProblemReporter.DISCARDING, registries(), tile));
             assertSame(Items.RED_WOOL, conveyor.getItem(0).getItem());
             assertEquals(7, conveyor.getItem(0).getCount());
         } finally { zone.moddev.mc.basepower.init.Entities.CONVEYOR = previous; }
@@ -60,10 +61,10 @@ public class LegacyMachineItemsTest {
                 {"minecraft:dye", "4", "minecraft:lapis_lazuli"},
                 {"minecraft:planks", "1", "minecraft:spruce_planks"}}) {
             CompoundTag item = convertedTile(stack(row[0], Integer.parseInt(row[1]), 7))
-                    .getList("Items", 10).getCompound(0);
+                    .getListOrEmpty("Items").getCompoundOrEmpty(0);
             assertStack(row[2], 7, item);
-            assertEquals(0, item.getByte("Slot"));
-            assertTrue("Missing inventory slot in " + item, item.contains("Slot", 1));
+            assertEquals(0, item.getByteOr("Slot", (byte)0));
+            assertTrue("Missing inventory slot in " + item, zone.moddev.mc.basepower.util.NbtCompat.containsTag(item, "Slot", 1));
         }
     }
 
@@ -80,11 +81,11 @@ public class LegacyMachineItemsTest {
         display.putString("Name", "Survey Pick");
         tag.put("display", display);
         pick.put("tag", tag);
-        CompoundTag actual = convertedTile(pick).getList("Items", 10).getCompound(0);
+        CompoundTag actual = convertedTile(pick).getListOrEmpty("Items").getCompoundOrEmpty(0);
         assertStack("minecraft:diamond_pickaxe", 1, actual);
-        assertEquals(17, actual.getCompound("components").getInt("minecraft:damage"));
+        assertEquals(17, actual.getCompoundOrEmpty("components").getIntOr("minecraft:damage", 0));
         assertEnchantment(actual, "minecraft:enchantments", "minecraft:efficiency", 3);
-        ItemStack loaded = ItemStack.parseOptional(registries(), actual);
+        ItemStack loaded = parseStack(actual);
         assertSame(Items.DIAMOND_PICKAXE, loaded.getItem());
         assertEquals(1, loaded.getCount());
         assertEquals(17, loaded.getDamageValue());
@@ -101,11 +102,11 @@ public class LegacyMachineItemsTest {
         tile.put("Recipe", nested);
         tile.putFloat("Energy", 19.5F);
         tile.putString("CustomName", "keep");
-        CompoundTag actual = convert(chunk(tile), 512).getList("block_entities", 10).getCompound(0);
-        assertStack("minecraft:lapis_lazuli", 1, actual.getCompound("Recipe").getCompound("Reference"));
-        assertStack("minecraft:red_wool", 7, actual.getList("Items", 10).getCompound(0));
-        assertEquals(19.5F, actual.getFloat("Energy"), 0F);
-        assertEquals("keep", actual.getString("CustomName"));
+        CompoundTag actual = convert(chunk(tile), 512).getListOrEmpty("block_entities").getCompoundOrEmpty(0);
+        assertStack("minecraft:lapis_lazuli", 1, actual.getCompoundOrEmpty("Recipe").getCompoundOrEmpty("Reference"));
+        assertStack("minecraft:red_wool", 7, actual.getListOrEmpty("Items").getCompoundOrEmpty(0));
+        assertEquals(19.5F, actual.getFloatOr("Energy", 0.0F), 0F);
+        assertEquals("keep", actual.getStringOr("CustomName", ""));
     }
 
     @Test public void foreignPrivatePayloadsAreNotInterpretedAsAdvantageInventories() {
@@ -115,7 +116,7 @@ public class LegacyMachineItemsTest {
         CompoundTag root = chunk(foreign);
         LegacyWorldDataHook.prepareLegacyChunk(root);
         LegacyWorldDataHook.prepareLegacyEntities(root);
-        assertEquals(expected, root.getCompound("Level").getList("TileEntities", 10).getCompound(0));
+        assertEquals(expected, root.getCompoundOrEmpty("Level").getListOrEmpty("TileEntities").getCompoundOrEmpty(0));
     }
 
     @Test public void currentVersionMachineDataIsNotRewritten() {
@@ -132,7 +133,7 @@ public class LegacyMachineItemsTest {
         tiles.add(currentTile);
         CompoundTag root = new CompoundTag();
         root.put("block_entities", tiles);
-        root.putInt("DataVersion", SharedConstants.getCurrentVersion().getDataVersion().getVersion());
+        root.putInt("DataVersion", SharedConstants.getCurrentVersion().dataVersion().version());
         CompoundTag expected = root.copy();
         LegacyWorldDataHook.prepareLegacyChunk(root);
         LegacyWorldDataHook.prepareLegacyEntities(root);
@@ -147,10 +148,10 @@ public class LegacyMachineItemsTest {
         LegacyWorldDataHook.prepareLegacyChunk(root);
         LegacyWorldDataHook.prepareLegacyEntities(root);
         assertEquals(once, root);
-        CompoundTag item = root.getCompound("Level").getList("TileEntities", 10).getCompound(0)
-                .getList("Items", 10).getCompound(0);
+        CompoundTag item = root.getCompoundOrEmpty("Level").getListOrEmpty("TileEntities").getCompoundOrEmpty(0)
+                .getListOrEmpty("Items").getCompoundOrEmpty(0);
         assertStack("minecraft:diamond_pickaxe", 1, item);
-        assertEquals(17, item.getCompound("components").getInt("minecraft:damage"));
+        assertEquals(17, item.getCompoundOrEmpty("components").getIntOr("minecraft:damage", 0));
     }
 
     @Test public void namedBookEnchantmentsAreNotReinterpretedAsProtection() {
@@ -163,7 +164,7 @@ public class LegacyMachineItemsTest {
         list.add(named);
         tag.put("StoredEnchantments", list);
         book.put("tag", tag);
-        CompoundTag actual = convertedTile(book).getList("Items", 10).getCompound(0);
+        CompoundTag actual = convertedTile(book).getListOrEmpty("Items").getCompoundOrEmpty(0);
         assertStack("minecraft:enchanted_book", 1, actual);
         assertEnchantment(actual, "minecraft:stored_enchantments", "steamadvantage:steam_capacity", 3);
     }
@@ -181,13 +182,13 @@ public class LegacyMachineItemsTest {
         CompoundTag tag = new CompoundTag();
         tag.put("BlockEntityTag", blockEntity);
         chest.put("tag", tag);
-        CompoundTag actual = convertedTile(chest).getList("Items", 10).getCompound(0);
+        CompoundTag actual = convertedTile(chest).getListOrEmpty("Items").getCompoundOrEmpty(0);
         assertStack("minecraft:chest", 1, actual);
-        ListTag fixed = actual.getCompound("components").getList("minecraft:container", 10);
+        ListTag fixed = actual.getCompoundOrEmpty("components").getListOrEmpty("minecraft:container");
         assertEquals("Container slots: " + actual, 2, fixed.size());
         CompoundTag pick = itemInContainerSlot(fixed, 0);
         assertStack("minecraft:diamond_pickaxe", 1, pick);
-        assertEquals(17, pick.getCompound("components").getInt("minecraft:damage"));
+        assertEquals(17, pick.getCompoundOrEmpty("components").getIntOr("minecraft:damage", 0));
         assertStack("minecraft:red_wool", 7, itemInContainerSlot(fixed, 1));
     }
 
@@ -196,7 +197,7 @@ public class LegacyMachineItemsTest {
         CompoundTag tag = new CompoundTag();
         tag.put("Private", stack("minecraft:wool", 14, 7));
         foreign.put("tag", tag);
-        assertEquals(foreign, convertedTile(foreign).getList("Items", 10).getCompound(0));
+        assertEquals(foreign, convertedTile(foreign).getListOrEmpty("Items").getCompoundOrEmpty(0));
     }
 
     @Test public void nestedNamedEnchantmentsSurviveNativeContainerFixes() {
@@ -211,9 +212,9 @@ public class LegacyMachineItemsTest {
         book.put("tag", tag);
         CompoundTag root = chunk(tile(carrier(book)));
         root.putInt("DataVersion", 1343);
-        CompoundTag actual = convert(root, 1343).getList("block_entities", 10)
-                .getCompound(0).getList("Items", 10).getCompound(0);
-        ListTag fixed = actual.getCompound("components").getList("minecraft:container", 10);
+        CompoundTag actual = convert(root, 1343).getListOrEmpty("block_entities")
+                .getCompoundOrEmpty(0).getListOrEmpty("Items").getCompoundOrEmpty(0);
+        ListTag fixed = actual.getCompoundOrEmpty("components").getListOrEmpty("minecraft:container");
         assertEquals("Container slots: " + actual, 1, fixed.size());
         CompoundTag fixedBook = itemInContainerSlot(fixed, 0);
         assertStack("minecraft:enchanted_book", 1, fixedBook);
@@ -229,21 +230,23 @@ public class LegacyMachineItemsTest {
         foreign.put("tag", privateData);
         CompoundTag before = foreign.copy();
 
-        CompoundTag chest = convertedTile(carrier(foreign)).getList("Items", 10).getCompound(0);
+        CompoundTag chest = convertedTile(carrier(foreign)).getListOrEmpty("Items").getCompoundOrEmpty(0);
         assertStack("minecraft:chest", 1, chest);
-        ListTag slots = chest.getCompound("components").getList("minecraft:container", 10);
+        ListTag slots = chest.getCompoundOrEmpty("components").getListOrEmpty("minecraft:container");
         assertEquals("Container slots: " + chest, 1, slots.size());
         CompoundTag actual = itemInContainerSlot(slots, 7);
         assertStack("other:component", 3, actual);
         assertEquals(before.get("Damage"), actual.get("Damage"));
-        assertEquals(before.getCompound("tag"), actual.getCompound("components").getCompound("minecraft:custom_data"));
+        assertEquals(before.getCompoundOrEmpty("tag"), actual.getCompoundOrEmpty("components").getCompoundOrEmpty("minecraft:custom_data"));
     }
 
     @Test public void registeredForeignToolKeepsWearInDirectAndNestedMachineSlots() {
         String id = "advantageworks_unit:legacy_foreign_tool";
         net.minecraftforge.registries.GameData.unfreezeData();
-        var tool = new net.minecraft.world.item.Item(new net.minecraft.world.item.Item.Properties().durability(250));
-        net.minecraftforge.registries.ForgeRegistries.ITEMS.register(net.minecraft.resources.ResourceLocation.parse(id), tool);
+        var tool = new net.minecraft.world.item.Item(new net.minecraft.world.item.Item.Properties().durability(250)
+                .setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ITEM,
+                        net.minecraft.resources.Identifier.parse(id))));
+        net.minecraftforge.registries.ForgeRegistries.ITEMS.register(net.minecraft.resources.Identifier.parse(id), tool);
         CompoundTag foreign = stack(id, 9, 1);
         CompoundTag payload = new CompoundTag();
         payload.putInt("Fixture", 31);
@@ -251,18 +254,24 @@ public class LegacyMachineItemsTest {
         CompoundTag original = foreign.copy();
 
         var direct = zone.moddev.mc.basepower.util.ItemData.readStack(registries(), foreign);
-        CompoundTag chest = convertedTile(carrier(foreign)).getList("Items", 10).getCompound(0);
-        var carried = ItemStack.parseOptional(registries(), chest)
+        CompoundTag chest = convertedTile(carrier(foreign)).getListOrEmpty("Items").getCompoundOrEmpty(0);
+        var carried = parseStack(chest)
                 .get(net.minecraft.core.component.DataComponents.CONTAINER).nonEmptyItems().iterator().next();
         for (var loaded : List.of(direct, carried)) {
             assertSame(tool, loaded.getItem());
             assertEquals(1, loaded.getCount());
             assertEquals(9, loaded.getDamageValue());
             assertEquals(payload, zone.moddev.mc.basepower.util.ItemData.customData(loaded));
-            assertEquals(9, ItemStack.parseOptional(registries(),
-                    (CompoundTag) loaded.save(registries())).getDamageValue());
+            assertEquals(9, parseStack((CompoundTag) ItemStack.CODEC.encodeStart(
+                    registries().createSerializationContext(net.minecraft.nbt.NbtOps.INSTANCE), loaded)
+                    .getOrThrow()).getDamageValue());
         }
         assertEquals(original, foreign);
+    }
+
+    private static ItemStack parseStack(CompoundTag saved) {
+        return ItemStack.OPTIONAL_CODEC.parse(registries().createSerializationContext(net.minecraft.nbt.NbtOps.INSTANCE),
+                saved).getOrThrow();
     }
 
     @Test public void positiveNativeContainerConversionsDoNotEmitErrors() {
@@ -278,16 +287,16 @@ public class LegacyMachineItemsTest {
         source.putIntArray("PrivateArray", new int[] {1, 2});
         CompoundTag before = source.copy();
         CompoundTag result = LegacyMachineItemDataFixes.upgradeTo704(source, 512, new EnvelopeFixer(root -> {
-            assertEquals(1, root.getAllKeys().size());
-            assertEquals(1, root.getList("Inventory", 10).size());
-            CompoundTag item = root.getList("Inventory", 10).getCompound(0);
+            assertEquals(1, root.keySet().size());
+            assertEquals(1, root.getListOrEmpty("Inventory").size());
+            CompoundTag item = root.getListOrEmpty("Inventory").getCompoundOrEmpty(0);
             assertEquals(before, item);
-            item.getIntArray("PrivateArray")[0] = 99;
+            item.getIntArray("PrivateArray").orElseThrow()[0] = 99;
             item.putString("NativeField", "retained");
         }));
         assertEquals(before, source);
-        assertEquals("retained", result.getString("NativeField"));
-        assertEquals(99, result.getIntArray("PrivateArray")[0]);
+        assertEquals("retained", result.getStringOr("NativeField", ""));
+        assertEquals(99, result.getIntArray("PrivateArray").orElseThrow()[0]);
         result.putInt("AfterReturn", 1);
         assertEquals(before, source);
     }
@@ -303,8 +312,8 @@ public class LegacyMachineItemsTest {
     }
 
     @Test public void native704EnvelopeRejectsNonSingletonInventories() {
-        rejectedEnvelope(root -> root.getList("Inventory", 10).remove(0));
-        rejectedEnvelope(root -> root.getList("Inventory", 10).add(stack("minecraft:stone", 0, 1)));
+        rejectedEnvelope(root -> root.getListOrEmpty("Inventory").remove(0));
+        rejectedEnvelope(root -> root.getListOrEmpty("Inventory").add(stack("minecraft:stone", 0, 1)));
     }
 
     @Test public void native704EnvelopeRejectsCountAndSlotChanges() {
@@ -347,7 +356,7 @@ public class LegacyMachineItemsTest {
         } catch (IllegalStateException expected) { assertEquals(before, source); }
     }
 
-    private static CompoundTag envelopeItem(CompoundTag root) { return root.getList("Inventory", 10).getCompound(0); }
+    private static CompoundTag envelopeItem(CompoundTag root) { return root.getListOrEmpty("Inventory").getCompoundOrEmpty(0); }
 
     private static void rejectedEnvelope(Consumer<CompoundTag> mutation) {
         CompoundTag source = stack("minecraft:chest", 0, 1), before = source.copy();
@@ -400,34 +409,34 @@ public class LegacyMachineItemsTest {
     }
 
     private static void assertStack(String id, int count, CompoundTag item) {
-        assertEquals(id, item.getString("id"));
-        assertEquals("Stack count: " + item, count, item.getInt("count"));
+        assertEquals(id, item.getStringOr("id", ""));
+        assertEquals("Stack count: " + item, count, item.getIntOr("count", 0));
         assertFalse("Legacy count remains in " + item, item.contains("Count"));
     }
 
     private static void assertEnchantment(CompoundTag item, String component, String name, int level) {
-        CompoundTag levels = item.getCompound("components").getCompound(component).getCompound("levels");
-        assertEquals("Enchantment levels: " + item, java.util.Set.of(name), levels.getAllKeys());
-        assertEquals(level, levels.getInt(name));
+        CompoundTag levels = item.getCompoundOrEmpty("components").getCompoundOrEmpty(component);
+        assertEquals("Enchantment levels: " + item, java.util.Set.of(name), levels.keySet());
+        assertEquals(level, levels.getIntOr(name, 0));
     }
 
     private static CompoundTag itemInContainerSlot(ListTag slots, int slot) {
         for (int i = 0; i < slots.size(); i++) {
-            CompoundTag entry = slots.getCompound(i);
-            if (entry.contains("slot", 3) && entry.getInt("slot") == slot) return entry.getCompound("item");
+            CompoundTag entry = slots.getCompoundOrEmpty(i);
+            if (zone.moddev.mc.basepower.util.NbtCompat.containsTag(entry, "slot", 3) && entry.getIntOr("slot", 0) == slot) return entry.getCompoundOrEmpty("item");
         }
         throw new AssertionError("Missing slot " + slot + " in " + slots);
     }
 
     private static CompoundTag convertedTile(CompoundTag item) {
-        return convert(chunk(tile(item)), 512).getList("block_entities", 10).getCompound(0);
+        return convert(chunk(tile(item)), 512).getListOrEmpty("block_entities").getCompoundOrEmpty(0);
     }
 
     private static CompoundTag convert(CompoundTag root, int version) {
         LegacyWorldDataHook.prepareLegacyChunk(root);
         LegacyWorldDataHook.prepareLegacyEntities(root);
         CompoundTag fixed = DataFixTypes.CHUNK.update(DataFixers.getDataFixer(),
-                root, version, SharedConstants.getCurrentVersion().getDataVersion().getVersion());
+                root, version, SharedConstants.getCurrentVersion().dataVersion().version());
         return LegacyWorldDataHook.finalizeLegacyChunk(fixed);
     }
 

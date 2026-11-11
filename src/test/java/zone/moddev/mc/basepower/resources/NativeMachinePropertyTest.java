@@ -25,7 +25,8 @@ public class NativeMachinePropertyTest {
     }
 
     @Test public void machineDefaultsKeepPistonResistanceAndNonOccludingRendering() {
-        var state = new PropertyMachine(GUIBlock.machineProperties(0.75F)).defaultBlockState();
+        var state = new PropertyMachine(zone.moddev.mc.basepower.init.Blocks.properties(
+                "property_test", GUIBlock.machineProperties(0.75F))).defaultBlockState();
         state.initCache();
         assertFalse(state.canOcclude());
         assertTrue(state.blocksMotion());
@@ -33,20 +34,20 @@ public class NativeMachinePropertyTest {
     }
 
     @Test public void explicitNativePropertiesRetainBothSolidAndNonSolidChoices() {
-        assertTrue(new PropertyMachine(Block.Properties.of().mapColor(MapColor.STONE)).defaultBlockState().canOcclude());
-        assertFalse(new PropertyMachine(Block.Properties.of().mapColor(MapColor.STONE).noOcclusion())
+        assertTrue(new PropertyMachine(zone.moddev.mc.basepower.init.Blocks.properties("property_test", Block.Properties.of()).mapColor(MapColor.STONE)).defaultBlockState().canOcclude());
+        assertFalse(new PropertyMachine(zone.moddev.mc.basepower.init.Blocks.properties("property_test", Block.Properties.of()).mapColor(MapColor.STONE).noOcclusion())
                 .defaultBlockState().canOcclude());
     }
 
     @Test public void conveyorsRemainNonSolidWhenUsingExplicitNativeProperties() {
         assertFalse(new BlockConveyor(0.75F).defaultBlockState().canOcclude());
-        assertFalse(new BlockConveyorFilter(0.75F, TileEntityConveyor.class)
+        assertFalse(new BlockConveyorFilter("test_filter", 0.75F, TileEntityConveyor.class)
                 .defaultBlockState().canOcclude());
     }
 
     @Test public void conduitSubclassesCanChooseNativePropertiesWithoutReplacingNetworkBehavior() {
-        PropertyConduit solid = new PropertyConduit(Block.Properties.of().mapColor(MapColor.STONE));
-        PropertyConduit nonSolid = new PropertyConduit(Block.Properties.of().mapColor(MapColor.STONE).noOcclusion());
+        PropertyConduit solid = new PropertyConduit(zone.moddev.mc.basepower.init.Blocks.properties("property_test", Block.Properties.of()).mapColor(MapColor.STONE));
+        PropertyConduit nonSolid = new PropertyConduit(zone.moddev.mc.basepower.init.Blocks.properties("property_test", Block.Properties.of()).mapColor(MapColor.STONE).noOcclusion());
         assertTrue(solid.defaultBlockState().canOcclude());
         assertFalse(nonSolid.defaultBlockState().canOcclude());
         assertEquals(6, nonSolid.defaultBlockState().getProperties().size());

@@ -12,11 +12,11 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.systems.RenderSystem;
+import net.minecraft.client.renderer.RenderPipelines;
+import org.joml.Matrix3x2fStack;
 import net.minecraft.network.chat.Component;
 import zone.moddev.mc.basepower.registry.MachineGUIRegistry;
 
@@ -43,9 +43,9 @@ public class SimpleMachineGUI implements ITileEntityGUI {
 	/**
 	 * This is the texture resource for drawing the player's inventory.
 	 */
-	public final static ResourceLocation playerInventoryBox  = ResourceLocation.parse(PowerAdvantage.MODID+":"+"textures/gui/container/player_inventory.png");
+	public final static Identifier playerInventoryBox  = Identifier.parse(PowerAdvantage.MODID+":"+"textures/gui/container/player_inventory.png");
 	/** Texture resource for the machine's GUI */ 
-	protected final ResourceLocation guiDisplayImage;
+	protected final Identifier guiDisplayImage;
 	/** Dimensions of the assembled screen, including its label rows. */
 	protected final int guiWidth, guiHeight;
 	/** List of pixel coordinates for the upper-left corner of each inventory 
@@ -68,7 +68,7 @@ public class SimpleMachineGUI implements ITileEntityGUI {
 	 * is assumed that the index in this list of coordinates corresponds to the 
 	 * inventory index of the TileEntity's inventory.  
 	 */
-	public SimpleMachineGUI(ResourceLocation guiImage, Integer2D... inventorySlotCoordinates){
+	public SimpleMachineGUI(Identifier guiImage, Integer2D... inventorySlotCoordinates){
 		this.guiDisplayImage = guiImage;
 		this.guiWidth = 176;
 		this.guiHeight = 240;
@@ -92,7 +92,7 @@ public class SimpleMachineGUI implements ITileEntityGUI {
 	 * inventory index of the TileEntity's inventory.  
 	 */
 	public SimpleMachineGUI(String guiImage, Integer2D... inventorySlotCoordinates){
-		this(ResourceLocation.parse(guiImage),inventorySlotCoordinates);
+		this(Identifier.parse(guiImage),inventorySlotCoordinates);
 	}
 	
 	
@@ -279,16 +279,16 @@ guiContainer.blit(arrowTexture, x+79, y+35, 0, 0, arrowLength, 17);
 			this.renderTooltip(graphics, mouseX, mouseY);
 			if (font.width(title.getString()) > width - 8
 					&& mouseY >= topPos + 1 && mouseY < topPos + MACHINE_TOP) {
-				graphics.renderTooltip(font, title, mouseX, mouseY);
+				graphics.setTooltipForNextFrame(font, title, mouseX, mouseY);
 			}
 		}
 
 		@Override
 		protected void renderLabels(GuiGraphics graphics, int mouseX, int mouseY) {
 			String machineName = fitLabel(title.getString(), width - 8);
-			graphics.drawString(font, machineName, (imageWidth - font.width(machineName)) / 2, 1, 0xFFFFFF);
+			graphics.drawString(font, machineName, (imageWidth - font.width(machineName)) / 2, 1, 0xFFFFFFFF);
 			graphics.drawString(font, fitLabel(playerInventoryLabel.getString(), imageWidth - 16),
-					8, MACHINE_TOP + MACHINE_HEIGHT, 0xFFFFFF);
+					8, MACHINE_TOP + MACHINE_HEIGHT, 0xFFFFFFFF);
 		}
 
 		private String fitLabel(String text, int availableWidth) {
@@ -299,9 +299,6 @@ guiContainer.blit(arrowTexture, x+79, y+35, 0, 0, arrowLength, 17);
 		@Override
 		protected void renderBg(GuiGraphics graphics, float partialTicks, int mouseX, int mouseY) {
 			this.graphics = graphics;
-			RenderSystem.enableBlend();
-			RenderSystem.defaultBlendFunc();
-			RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
 			int x = (width - imageWidth) / 2;
 			int y = (height - imageHeight) / 2;
 			final int playerInventoryWidth = 176;
@@ -312,7 +309,6 @@ guiContainer.blit(arrowTexture, x+79, y+35, 0, 0, arrowLength, 17);
 				drawGUIDecorations(entity, this, x, y + MACHINE_TOP, getZLevel());
 			} finally {
 				this.graphics = null;
-				RenderSystem.disableBlend();
 			}
 		}
 
@@ -321,14 +317,15 @@ guiContainer.blit(arrowTexture, x+79, y+35, 0, 0, arrowLength, 17);
 			blit(guiDisplayImage, x, y, u, v, width, height);
 		}
 
-		public void blit(ResourceLocation texture, int x, int y, int u, int v, int width, int height) {
-			graphics.blit(texture, x, y, u, v, width, height);
+		public void blit(Identifier texture, int x, int y, int u, int v, int width, int height) {
+			graphics.blit(RenderPipelines.GUI_TEXTURED, texture, x, y, u, v, width, height, 256, 256);
 		}
 
 		/** The active render context, available while drawing decorations. */
 		public GuiGraphics getGraphics() { return graphics; }
 
-		public PoseStack getMatrices() { return getGraphics().pose(); }
+        /** Native GUI transforms are two-dimensional; rotations use radians. */
+		public Matrix3x2fStack getMatrices() { return getGraphics().pose(); }
 		/**
 		 * Gets the z-coordinate of this GUI element
 		 * @return screen depth coordinate

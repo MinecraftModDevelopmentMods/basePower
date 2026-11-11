@@ -4,15 +4,9 @@
     "xyz"
   ],
   "key": {
-    "x": {
-      "item": "minecraft:ender_pearl"
-    },
-    "y": {
-      "tag": "forge:frames/steel"
-    },
-    "z": {
-      "item": "minecraft:redstone_block"
-    }
+    "x": "minecraft:ender_pearl",
+    "y": "#forge:frames/steel",
+    "z": "minecraft:redstone_block"
   },
   "result": {
     "id": "basepower:converter_rf_quantum"

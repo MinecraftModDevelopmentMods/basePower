@@ -1,8 +1,6 @@
 {
   "type": "basemetals:crushing",
-  "ingredient": {
-    "item": "basepower:fluid_drain"
-  },
+  "ingredient": "basepower:fluid_drain",
   "result": {
     "id": "basepower:fluid_pipe",
     "count": 2

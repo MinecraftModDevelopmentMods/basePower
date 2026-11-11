@@ -6,12 +6,8 @@
     "XXX"
   ],
   "key": {
-    "X": {
-      "tag": "forge:ingots/refined_iron"
-    },
-    "Z": {
-      "tag": "forge:power_supply_units"
-    }
+    "X": "#forge:ingots/refined_iron",
+    "Z": "#forge:power_supply_units"
   },
   "result": {
     "id": "basepower:converter_tr_electricity"

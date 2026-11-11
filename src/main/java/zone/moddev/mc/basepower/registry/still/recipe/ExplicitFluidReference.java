@@ -1,7 +1,7 @@
 package zone.moddev.mc.basepower.registry.still.recipe;
 
 import net.minecraft.world.level.material.Fluid;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.core.Registry;
 
 /**
@@ -44,7 +44,7 @@ public class ExplicitFluidReference extends FluidReference {
 	 */
 	@Override
 	public boolean matches(String fluidName) {
-		ResourceLocation id = net.minecraftforge.registries.ForgeRegistries.FLUIDS.getKey(reference);
+		Identifier id = net.minecraftforge.registries.ForgeRegistries.FLUIDS.getKey(reference);
 		return id != null && (id.toString().equals(fluidName) || id.getPath().equals(fluidName));
 	}
 
@@ -65,7 +65,7 @@ public class ExplicitFluidReference extends FluidReference {
 	 */
 	@Override
 	public int hashCode() {
-		ResourceLocation id = net.minecraftforge.registries.ForgeRegistries.FLUIDS.getKey(reference);
+		Identifier id = net.minecraftforge.registries.ForgeRegistries.FLUIDS.getKey(reference);
 		return id == null ? System.identityHashCode(reference) : id.hashCode();
 	}
 }

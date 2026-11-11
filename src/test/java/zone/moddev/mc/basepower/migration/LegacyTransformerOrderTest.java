@@ -1,233 +1,185 @@
 package zone.moddev.mc.basepower.migration;
 
-import java.io.IOException;
-import java.io.InputStream;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
-import javax.script.ScriptException;
+import java.util.Set;
 import org.junit.Test;
-import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.JumpInsnNode;
-import org.objectweb.asm.tree.MethodInsnNode;
+import org.objectweb.asm.tree.LdcInsnNode;
 import org.objectweb.asm.tree.MethodNode;
 import static org.junit.Assert.*;
+import static zone.moddev.mc.basepower.migration.NativeMigrationMixinContract.*;
 
-/** Applies both real migration scripts to the exact native Forge 52 classes. */
+/** Strict native Mixin contracts. No hand-written transformer is substituted for the production injectors. */
 public class LegacyTransformerOrderTest {
-    private static final String WORLD = "net/minecraft/world/level/storage/LevelStorageSource";
-    private static final String CHUNK = "net/minecraft/world/level/chunk/storage/ChunkStorage";
-    private static final String ENTITIES = "net/minecraft/world/level/chunk/storage/EntityStorage";
-    private static final String REGION = "net/minecraft/world/level/chunk/storage/SimpleRegionStorage";
-    private static final String WORLDGEN = "net/minecraft/server/level/WorldGenRegion";
     private static final String POWER = "zone/moddev/mc/basepower/migration/LegacyWorldDataHook";
     private static final String METALS = "zone/moddev/mc/basemetals/migration/LegacyWorldDataHook";
-    private static final String METADATA = "zone/moddev/mc/basepower/migration/LegacyWorldMetadata";
-    private static final String PLAYER = "zone/moddev/mc/basepower/migration/LegacyPlayerDataFixes";
-    private static final String NBT = "Lnet/minecraft/nbt/CompoundTag;";
-    private static final String DYNAMIC = "Lcom/mojang/serialization/Dynamic;";
-    private static final String FIXER = "Lcom/mojang/datafixers/DataFixer;";
-    private static final String WORLD_READ = "(Ljava/nio/file/Path;" + FIXER + ")" + DYNAMIC;
-    private static final String CHUNK_UPGRADE = "(Lnet/minecraft/resources/ResourceKey;"
-            + "Ljava/util/function/Supplier;" + NBT + "Ljava/util/Optional;)" + NBT;
 
-    @Test public void advantageThenBaseMetalsPreservesBothHooks() throws Exception { check(false, false); }
-    @Test public void baseMetalsThenAdvantagePreservesBothHooks() throws Exception { check(true, false); }
+    @Test public void advantageThenBaseMetalsPreservesBothHookContracts() throws Exception {
+        check(List.of("basepower", "basemetals"));
+    }
 
-    @Test public void descriptorBasedChunkHooksDoNotDependOnMethodNamesInEitherOrder() throws Exception {
-        check(false, true);
-        check(true, true);
+    @Test public void baseMetalsThenAdvantagePreservesBothHookContracts() throws Exception {
+        check(List.of("basemetals", "basepower"));
+    }
+
+    @Test public void nativeChunkDescriptorsAndInvocationNamesFailClosedOnDrift() throws Exception {
+        Binding staging = binding("basepower", "SimpleRegionStorageMixin", "prepareInventories");
+        assertEquals(UPGRADE, staging.selector());
+        staging.assertAt("INVOKE");
+        assertEquals("Lnet/minecraft/nbt/NbtUtils;getDataVersion(" + TAG + "I)I", staging.invocation());
+        assertEquals(1, staging.invokeSites(staging.target()));
+        MethodNode nativeMethod = staging.nativeMethod();
+        nativeMethod.name = "renamedUpgrade";
+        assertThrows(AssertionError.class, staging::nativeMethod);
+        Binding fresh = binding("basepower", "SimpleRegionStorageMixin", "prepareInventories");
+        calls(fresh.nativeMethod()).stream().filter(fresh::matches).findFirst().orElseThrow().name = "renamedGetVersion";
+        assertEquals("Mixin selectors must not accept renamed native invocation names", 0, fresh.invokeSites(fresh.target()));
+        fresh.at().values.set(fresh.at().values.indexOf("value") + 1, "HEAD");
+        assertThrows("Inventory staging at HEAD would race the other mod", AssertionError.class,
+                () -> fresh.assertAt("INVOKE"));
     }
 
     @Test public void separateEntityStorageStillUsesTheNativeRegionConverterThroughThePowerHook() throws Exception {
-        ClassNode node = nativeClass(ENTITIES);
-        String desc = "(" + NBT + "I)" + NBT;
-        assertEquals(1, nativeEntityCalls(node, desc).size());
-        transform(node, "separate_entity_storage", false);
-        assertEquals(0, nativeEntityCalls(node, desc).size());
-        assertEquals(1, calls(node, POWER, "upgradeEntityChunk", "(L" + REGION + ";" + desc.substring(1)));
-
-        ClassNode missing = nativeClass(ENTITIES);
-        nativeEntityCalls(missing, desc).getFirst().desc = "(" + NBT + "J)" + NBT;
-        expectRejection(() -> transform(missing, "separate_entity_storage", false), "exactly one native entity-chunk");
-        assertEquals(0, calls(missing, POWER, "upgradeEntityChunk", "(L" + REGION + ";" + desc.substring(1)));
+        ClassNode entities = read("net/minecraft/world/level/chunk/storage/EntityStorage");
+        String twoArg = "(" + TAG + "I)" + TAG;
+        var nativeCalls = calls(entities).stream().filter(call -> call.owner.equals(REGION)
+                && call.name.equals("upgradeChunkTag") && call.desc.equals(twoArg)).toList();
+        assertEquals(1, nativeCalls.size());
+        ClassNode region = read(REGION);
+        MethodNode delegate = method(region, "upgradeChunkTag" + twoArg);
+        assertEquals(1, calls(delegate).stream().filter(call -> call.owner.equals(REGION)
+                && (call.name + call.desc).equals(UPGRADE)).count());
+        binding("basepower", "SimpleRegionStorageMixin", "prepareChunk").assertAt("HEAD");
+        binding("basepower", "SimpleRegionStorageMixin", "prepareInventories").assertAt("INVOKE");
+        binding("basepower", "SimpleRegionStorageMixin", "finishChunk").assertAt("RETURN");
+        nativeCalls.getFirst().desc = "(" + TAG + "J)" + TAG;
+        assertFalse("Wrong native overload cannot satisfy the entity-storage contract", calls(entities).stream()
+                .anyMatch(call -> call.owner.equals(REGION) && call.name.equals("upgradeChunkTag") && call.desc.equals(twoArg)));
     }
 
-    private static void check(boolean baseFirst, boolean renamedChunk) throws Exception {
-        ClassNode world = nativeClass(WORLD);
-        applyBoth(world, "legacy_world_info", baseFirst);
-        MethodNode fixed = method(world, "readLevelDataTagFixed", WORLD_READ);
-        List<MethodInsnNode> readers = methods(fixed);
-        assertEquals(List.of("java/nio/file/Path", lastApplied(baseFirst), "java/nio/file/Path",
-                firstApplied(baseFirst), WORLD), readers.subList(0, 5).stream().map(call -> call.owner).toList());
-        assertEquals("readLevelDataTagRaw", readers.get(4).name);
-        assertBoth(world, "prepareLegacyWorld", "(Ljava/io/File;)V");
-        assertEquals(1, calls(method(world, "readLevelDataTagRaw", "(Ljava/nio/file/Path;)" + NBT),
-                METADATA, "remapRaw", "(" + NBT + ")" + NBT));
-        String tag = "Lnet/minecraft/nbt/Tag;";
-        assertEquals(1, calls(method(world, "readLightweightData", "(Ljava/nio/file/Path;)" + tag),
-                METADATA, "remapLightweight", "(" + tag + ")" + tag));
-        assertEquals(1, calls(world, PLAYER, "updateNativeEmbeddedPlayer",
-                "(Lnet/minecraft/util/datafix/DataFixTypes;" + FIXER + DYNAMIC + "I)" + DYNAMIC));
-
-        ClassNode chunk = nativeClass(CHUNK);
-        MethodNode upgrade = method(chunk, "upgradeChunkTag", CHUNK_UPGRADE);
-        MethodNode read = method(chunk, "read", "(Lnet/minecraft/world/level/ChunkPos;)Ljava/util/concurrent/CompletableFuture;");
-        if (renamedChunk) {
-            renameChunkMethod(chunk, upgrade);
-            renameChunkMethod(chunk, read);
-            renameChunkMethod(chunk, method(chunk, "getVersion", "(" + NBT + ")I"));
+    @Test public void bothRequiredConfigsAndAllNativePowerMixinsArePresent() throws Exception {
+        for (String mod : List.of("basepower", "basemetals")) {
+            JsonObject config;
+            try (var reader = new InputStreamReader(resource("/" + mod + ".mixins.json"), StandardCharsets.UTF_8)) {
+                config = JsonParser.parseReader(reader).getAsJsonObject();
+            }
+            assertTrue(config.get("required").getAsBoolean());
+            assertEquals("JAVA_21", config.get("compatibilityLevel").getAsString());
+            assertEquals(1, config.getAsJsonObject("injectors").get("defaultRequire").getAsInt());
+            assertTrue(config.getAsJsonArray("mixins").asList().stream().map(value -> value.getAsString())
+                    .toList().containsAll(List.of("BlockStateDataMixin", "LevelStorageSourceMixin",
+                            "SimpleRegionStorageMixin", "WorldGenRegionMixin")));
+            if (mod.equals("basepower")) assertEquals(Set.of("BlockStateDataMixin", "LevelStorageSourceMixin",
+                    "PlayerDataStorageMixin", "SimpleRegionStorageMixin", "WorldGenRegionMixin"),
+                    config.getAsJsonArray("mixins").asList().stream().map(value -> value.getAsString())
+                            .collect(java.util.stream.Collectors.toSet()));
         }
-        applyBoth(chunk, "legacy_chunk_status", baseFirst);
-        assertBoth(chunk, "prepareLegacyChunk", "(" + NBT + ")V");
-        int returns = (int) Arrays.stream(upgrade.instructions.toArray())
-                .filter(instruction -> instruction.getOpcode() == Opcodes.ARETURN).count();
-        assertEquals("Review each native Forge 52 chunk-upgrade return", 2, returns);
-        assertEquals(returns, calls(upgrade, POWER, "finalizeLegacyChunk", "(" + NBT + ")" + NBT));
-        assertEquals(returns, calls(upgrade, METALS, "finalizeLegacyChunk", "(" + NBT + ")" + NBT));
-        assertEquals(1, calls(upgrade, POWER, "prepareLegacyEntities", "(" + NBT + ")V"));
-        assertEquals(1, calls(read, POWER, "copyChunkReadForMigration",
-                "(Ljava/util/concurrent/CompletableFuture;)Ljava/util/concurrent/CompletableFuture;"));
-        assertChunkOrder(upgrade, baseFirst);
-
-        ClassNode worldgen = nativeClass(WORLDGEN);
-        applyBoth(worldgen, "legacy_worldgen_guard", baseFirst);
-        String guardDesc = "(L" + WORLDGEN + ";Lnet/minecraft/core/BlockPos;)Z";
-        assertBoth(worldgen, "shouldBlockWorldgenWrite", guardDesc);
-        MethodNode guard = method(worldgen, "ensureCanWrite", "(Lnet/minecraft/core/BlockPos;)Z");
-        List<MethodInsnNode> guardCalls = methods(guard);
-        assertGuard(guardCalls.get(0), lastApplied(baseFirst));
-        assertGuard(guardCalls.get(1), firstApplied(baseFirst));
+        assertNull(getClass().getResource("/coremods/poweradvantage_118_migration.js"));
+        assertFalse(java.nio.file.Files.exists(java.nio.file.Path.of("src/main/resources/META-INF/coremods.json")));
     }
 
-    private static void assertChunkOrder(MethodNode upgrade, boolean baseFirst) {
-        List<MethodInsnNode> entries = methods(upgrade).subList(0, 4);
-        assertEquals(List.of("prepareLegacyChunk", "prepareLegacyChunk", "prepareLegacyEntities", "getVersion"),
-                List.of(entries.get(0).name, entries.get(1).name, entries.get(2).name,
-                        entries.get(3).name.replace("renamed_", "")));
-        assertEquals(List.of(lastApplied(baseFirst), firstApplied(baseFirst), POWER, CHUNK),
-                entries.stream().map(call -> call.owner).toList());
-        assertEquals("(" + NBT + ")I", entries.get(3).desc);
-        for (AbstractInsnNode instruction : upgrade.instructions.toArray()) {
-            if (instruction.getOpcode() != Opcodes.ARETURN) continue;
-            assertTrue(instruction.getPrevious() instanceof MethodInsnNode);
-            MethodInsnNode last = (MethodInsnNode) instruction.getPrevious();
-            assertTrue(last.getPrevious() instanceof MethodInsnNode);
-            MethodInsnNode before = (MethodInsnNode) last.getPrevious();
-            assertEquals("finalizeLegacyChunk", before.name);
-            assertEquals("finalizeLegacyChunk", last.name);
-            assertEquals(firstApplied(baseFirst), before.owner);
-            assertEquals(lastApplied(baseFirst), last.owner);
-        }
-    }
-
-    private static void assertGuard(MethodInsnNode call, String owner) {
-        assertEquals(owner, call.owner);
-        assertEquals("shouldBlockWorldgenWrite", call.name);
-        assertEquals(Opcodes.IFEQ, call.getNext().getOpcode());
-        assertEquals(Opcodes.ICONST_0, call.getNext().getNext().getOpcode());
-        AbstractInsnNode denied = call.getNext().getNext().getNext();
-        assertEquals(Opcodes.IRETURN, denied.getOpcode());
-        assertSame(((JumpInsnNode) call.getNext()).label, denied.getNext());
-    }
-
-    private static String firstApplied(boolean baseFirst) { return baseFirst ? METALS : POWER; }
-    private static String lastApplied(boolean baseFirst) { return baseFirst ? POWER : METALS; }
-
-    private static List<MethodInsnNode> nativeEntityCalls(ClassNode node, String desc) {
-        return methods(node).stream().filter(call -> call.getOpcode() == Opcodes.INVOKEVIRTUAL
-                && call.owner.equals(REGION) && call.name.equals("upgradeChunkTag") && call.desc.equals(desc)).toList();
-    }
-
-    private static void assertBoth(ClassNode node, String name, String desc) {
-        assertEquals(node.name, 1, calls(node, POWER, name, desc));
-        assertEquals(node.name, 1, calls(node, METALS, name, desc));
-    }
-
-    private static void renameChunkMethod(ClassNode node, MethodNode target) {
-        for (MethodInsnNode call : methods(node)) {
-            if (call.owner.equals(node.name) && call.name.equals(target.name) && call.desc.equals(target.desc)) {
-                call.name = "renamed_" + call.name;
+    @Test public void numericIdExpansionIsRequiredAtNativeClassInitializationTail() throws Exception {
+        Binding expansion = binding("basepower", "BlockStateDataMixin", "expandLegacyIds");
+        assertEquals("<clinit>", expansion.selector());
+        expansion.assertAt("TAIL");
+        assertEquals("net/minecraft/util/datafix/fixes/BlockStateData", expansion.target().name);
+        for (String name : List.of("MAP", "BLOCK_DEFAULTS")) {
+            var field = expansion.mixin().fields.stream().filter(value -> value.name.equals(name)).findFirst().orElseThrow();
+            assertEquals("[Lcom/mojang/serialization/Dynamic;", field.desc);
+            assertNotNull(expansion.target().fields.stream().filter(value -> value.name.equals(name)
+                    && value.desc.equals(field.desc) && (value.access & Opcodes.ACC_STATIC) != 0).findFirst().orElseThrow());
+            for (String annotation : List.of("Shadow", "Final", "Mutable")) {
+                annotation(field.visibleAnnotations, "Lorg/spongepowered/asm/mixin/" + annotation + ";");
             }
         }
-        target.name = "renamed_" + target.name;
+        assertTrue(Arrays.stream(expansion.handler().instructions.toArray())
+                .anyMatch(insn -> insn instanceof LdcInsnNode constant && Integer.valueOf(65536).equals(constant.cst)));
+        assertTrue(Arrays.stream(expansion.handler().instructions.toArray())
+                .anyMatch(insn -> insn instanceof org.objectweb.asm.tree.IntInsnNode constant && constant.operand == 4096));
     }
 
-    private static void applyBoth(ClassNode node, String target, boolean baseFirst) throws Exception {
-        transform(node, target, baseFirst);
-        transform(node, target, !baseFirst);
-    }
+    private static void check(List<String> mods) throws Exception {
+        for (String mod : mods) {
+            String hook = mod.equals("basepower") ? POWER : METALS;
+            Binding world = binding(mod, "LevelStorageSourceMixin", "prepareWorld");
+            world.assertAt("HEAD");
+            assertEquals(STORAGE + "LevelStorageSource", world.target().name);
+            assertEquals("readLevelDataTagFixed", world.selector());
+            assertFalse(world.cancellable());
+            assertCalls(world.handler(), hook, "prepareLegacyWorld", "(Ljava/io/File;)V");
+            assertTrue("Only primary level.dat may initialize a migration snapshot",
+                    Arrays.stream(world.handler().instructions.toArray()).anyMatch(insn ->
+                            insn instanceof LdcInsnNode constant && "level.dat".equals(constant.cst)));
+            var prepare = calls(world.handler()).stream().filter(call -> call.name.equals("prepareLegacyWorld")).findFirst().orElseThrow();
+            assertTrue("Primary-file guard must precede snapshot preparation", Arrays.stream(world.handler().instructions.toArray())
+                    .takeWhile(insn -> insn != prepare).anyMatch(JumpInsnNode.class::isInstance));
 
-    static void transform(ClassNode node, String target, boolean base) throws Exception {
-        String mod = base ? "basemetals" : "poweradvantage";
-        String path = base ? "/coremods/basemetals_118_compatibility.js" : "/coremods/poweradvantage_118_migration.js";
-        ScriptEngine engine = new ScriptEngineManager().getEngineByName("nashorn");
-        assertNotNull("Transformer tests require Forge's bundled Nashorn engine", engine);
-        try (InputStreamReader reader = new InputStreamReader(resource(path), StandardCharsets.UTF_8)) { engine.eval(reader); }
-        engine.put("targetClass", node);
-        String entry = "initializeCoreMod()." + mod + "_" + target;
-        assertEquals("CLASS", engine.eval(entry + ".target.type"));
-        assertEquals(node.name.replace('/', '.'), engine.eval(entry + ".target.name"));
-        assertSame(node, engine.eval(entry + ".transformer(targetClass)"));
-    }
+            Binding before = binding(mod, "SimpleRegionStorageMixin", "prepareChunk");
+            before.assertAt("HEAD");
+            assertEquals(REGION, before.target().name);
+            assertEquals(UPGRADE, before.selector());
+            assertFalse("Both HEAD hooks must be able to run", before.cancellable());
+            assertCalls(before.handler(), hook, "prepareLegacyChunk", "(" + TAG + ")V");
+            Binding after = binding(mod, "SimpleRegionStorageMixin", "finishChunk");
+            after.assertAt("RETURN");
+            assertEquals(UPGRADE, after.selector());
+            assertTrue(after.cancellable());
+            assertEquals("All native returns, including current-version early return, must be covered", 2,
+                    Arrays.stream(after.nativeMethod().instructions.toArray()).filter(insn -> insn.getOpcode() == Opcodes.ARETURN).count());
+            assertCalls(after.handler(), hook, "finalizeLegacyChunk", "(" + TAG + ")" + TAG);
+            assertCallbackResult(after.handler());
 
-    static ClassNode nativeClass(String internalName) throws IOException {
-        ClassNode node = new ClassNode();
-        try (InputStream input = resource("/" + internalName + ".class")) {
-            new ClassReader(input).accept(node, 0);
+            Binding worldgen = binding(mod, "WorldGenRegionMixin", "protectTerrain");
+            worldgen.assertAt("HEAD");
+            assertEquals("net/minecraft/server/level/WorldGenRegion", worldgen.target().name);
+            assertEquals("ensureCanWrite", worldgen.selector());
+            assertTrue(worldgen.cancellable());
+            assertCalls(worldgen.handler(), hook, "shouldBlockWorldgenWrite",
+                    "(Lnet/minecraft/server/level/WorldGenRegion;Lnet/minecraft/core/BlockPos;)Z");
+            assertCallbackResult(worldgen.handler());
+            assertTrue("A blocked write must return false, never true", Arrays.stream(worldgen.handler().instructions.toArray())
+                    .anyMatch(insn -> insn.getOpcode() == Opcodes.ICONST_0));
+            assertFalse(Arrays.stream(worldgen.handler().instructions.toArray())
+                    .anyMatch(insn -> insn.getOpcode() == Opcodes.ICONST_1));
         }
-        return node;
-    }
-
-    static InputStream resource(String name) {
-        InputStream input = LegacyTransformerOrderTest.class.getResourceAsStream(name);
-        assertNotNull("Missing pinned native dependency resource " + name, input);
-        return input;
-    }
-
-    static void expectRejection(TransformerCall call, String message) throws Exception {
-        try {
-            call.run();
-            fail("An unsupported native reader must abort transformation");
-        } catch (ScriptException expected) {
-            assertTrue(expected.getMessage(), expected.getMessage().contains(message));
+        Binding staging = binding("basepower", "SimpleRegionStorageMixin", "prepareInventories");
+        staging.assertAt("INVOKE");
+        assertEquals(1, calls(staging.nativeMethod()).stream().filter(staging::matches).count());
+        assertCalls(staging.handler(), POWER, "prepareLegacyEntities", "(" + TAG + ")V");
+        // At(INVOKE), with no shift/slice/ordinal, follows every non-cancellable HEAD injection in either priority order.
+        assertFalse(staging.cancellable());
+        Binding read = binding("basepower", "SimpleRegionStorageMixin", "detachRead");
+        read.assertAt("RETURN");
+        assertTrue(read.cancellable());
+        assertCalls(read.handler(), POWER, "copyChunkReadForMigration",
+                "(Ljava/util/concurrent/CompletableFuture;)Ljava/util/concurrent/CompletableFuture;");
+        assertCallbackResult(read.handler());
+        for (String name : List.of("remapRaw", "remapSummary")) {
+            Binding metadata = binding("basepower", "LevelStorageSourceMixin", name);
+            metadata.assertAt("RETURN");
+            assertTrue(metadata.cancellable());
+            assertCalls(metadata.handler(), "zone/moddev/mc/basepower/migration/LegacyWorldMetadata",
+                    name.equals("remapRaw") ? "remapRaw" : "remapLightweight",
+                    name.equals("remapRaw") ? "(" + TAG + ")" + TAG : "(Lnet/minecraft/nbt/Tag;)Lnet/minecraft/nbt/Tag;");
+            assertCallbackResult(metadata.handler());
         }
     }
 
-    @FunctionalInterface interface TransformerCall { void run() throws Exception; }
-
-    static int calls(ClassNode node, String owner, String name, String desc) {
-        return node.methods.stream().mapToInt(method -> calls(method, owner, name, desc)).sum();
+    private static void assertCallbackResult(MethodNode method) {
+        assertEquals(1, calls(method).stream().filter(call -> call.owner.equals(
+                "org/spongepowered/asm/mixin/injection/callback/CallbackInfoReturnable")
+                && call.name.equals("setReturnValue") && call.desc.equals("(Ljava/lang/Object;)V")).count());
     }
 
-    static int calls(MethodNode method, String owner, String name, String desc) {
-        return (int) methods(method).stream().filter(call -> {
-            if (!call.owner.equals(owner) || !call.name.equals(name) || !call.desc.equals(desc)) return false;
-            assertEquals(Opcodes.INVOKESTATIC, call.getOpcode());
-            return true;
-        }).count();
-    }
-
-    private static List<MethodInsnNode> methods(ClassNode node) {
-        List<MethodInsnNode> all = new ArrayList<>();
-        node.methods.forEach(method -> all.addAll(methods(method)));
-        return all;
-    }
-
-    private static List<MethodInsnNode> methods(MethodNode method) {
-        return Arrays.stream(method.instructions.toArray()).filter(MethodInsnNode.class::isInstance)
-                .map(MethodInsnNode.class::cast).toList();
-    }
-
-    private static MethodNode method(ClassNode node, String name, String desc) {
-        return node.methods.stream().filter(method -> method.name.equals(name) && method.desc.equals(desc))
-                .findFirst().orElseThrow(() -> new AssertionError("Missing native method " + node.name + "." + name + desc));
+    private static void assertCalls(MethodNode method, String owner, String name, String descriptor) {
+        assertEquals(method.name, 1, calls(method).stream().filter(call -> call.getOpcode() == Opcodes.INVOKESTATIC
+                && call.owner.equals(owner) && call.name.equals(name) && call.desc.equals(descriptor)).count());
     }
 }

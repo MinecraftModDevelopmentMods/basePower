@@ -1,8 +1,6 @@
 {
   "type": "minecraft:smelting",
-  "ingredient": {
-    "item": "basepower:starch"
-  },
+  "ingredient": "basepower:starch",
   "result": {
     "id": "basepower:bioplastic_ingot"
   },

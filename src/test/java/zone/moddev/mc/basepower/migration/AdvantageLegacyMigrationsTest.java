@@ -6,7 +6,7 @@ import static org.junit.Assert.assertTrue;
 
 import cyano.poweradvantage.api.migration.LegacyMigrationApi;
 import java.util.Arrays;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.junit.Test;
 
 public class AdvantageLegacyMigrationsTest {
@@ -22,9 +22,9 @@ public class AdvantageLegacyMigrationsTest {
                 "converter_rf_steam", "converter_rf_electricity", "converter_rf_quantum",
                 "converter_tr_electricity")) {
             assertNotNull(path, LegacyMigrationApi.blockStateCodecs().get(
-                    ResourceLocation.fromNamespaceAndPath("basepower", path)));
-            assertEquals(ResourceLocation.fromNamespaceAndPath("basepower", path),
-                    LegacyMigrationApi.blockTarget(ResourceLocation.fromNamespaceAndPath("poweradvantage", path)));
+                    Identifier.fromNamespaceAndPath("basepower", path)));
+            assertEquals(Identifier.fromNamespaceAndPath("basepower", path),
+                    LegacyMigrationApi.blockTarget(Identifier.fromNamespaceAndPath("poweradvantage", path)));
         }
     }
 
@@ -38,9 +38,9 @@ public class AdvantageLegacyMigrationsTest {
                 LegacyMigrationApi.tileTarget("minecraft:poweradvantage.tileentity.fluid_storage_tank"));
         assertEquals("basepower:crude_oil", LegacyMigrationApi.fluidTarget("crude_oil"));
         assertEquals("basepower:crude_oil", LegacyMigrationApi.fluidTarget("poweradvantage:crude_oil"));
-        assertEquals(ResourceLocation.fromNamespaceAndPath("basepower", "crude_oil_bucket"),
+        assertEquals(Identifier.fromNamespaceAndPath("basepower", "crude_oil_bucket"),
                 LegacyMigrationApi.bucketTarget("crude_oil"));
-        assertEquals(ResourceLocation.fromNamespaceAndPath("basepower", "refined_oil_bucket"),
+        assertEquals(Identifier.fromNamespaceAndPath("basepower", "refined_oil_bucket"),
                 LegacyMigrationApi.bucketTarget("poweradvantage:refined_oil"));
     }
 }

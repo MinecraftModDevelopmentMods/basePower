@@ -1,0 +1,22 @@
+{
+  "name": "power-interop",
+  "mode": "packaged",
+  "minecraftVersion": "1.21.11",
+  "forgeVersion": "61.1.0",
+  "qualificationStatus": "EXPLORATORY_UNQUALIFIED",
+  "baseMetalsSourceCommit": "e6b869ffe7d6fd6a011a99f1844d2a7995394daf",
+  "mods": [
+    {
+      "id": "basemetals",
+      "version": "3.1.2.121111",
+      "path": "../../../../BaseMetals/.verification-basemetals12111/Advantage shared hook/build/libs/BaseMetals-3.1.2.121111.jar",
+      "sha256": "6D24D760E8E025960095DE04C51E6B79CFF93071618FC0B6BF64E05C346CC097"
+    },
+    {
+      "id": "orespawn",
+      "version": "4.1.0.121111",
+      "path": "../../../../MinecraftMineralogy/OS12111/OreSpawn/build/libs/OreSpawn-4.1.0.121111.jar",
+      "sha256": "DE39929057288CEA110196C9E9D708E129B80BC360A2E53976337FFA6A84A67B"
+    }
+  ]
+}

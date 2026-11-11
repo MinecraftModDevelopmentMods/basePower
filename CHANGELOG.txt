@@ -1,3 +1,11 @@
+basePower 2.4.15.121111 (Minecraft 1.21.11, local candidate)
+
+- Bring basePower to Forge 61 and Java 21, keeping the existing machine and world identities.
+- Use native value-based saves and migration Mixins while retaining the legacy API's saved fields.
+- Update recipes, item definitions, resource packs and fluid screens for the newer APIs.
+- Keep old-world upgrade checks separate from the machine, restart and visual checks.
+- This version is still being tested locally and has not been published.
+
 basePower 2.4.14.121011 (Minecraft 1.21.1)
 
 - Bring basePower to Forge 52 and Java 21, keeping existing blocks, items and machine data.
@@ -7,7 +15,6 @@ basePower 2.4.14.121011 (Minecraft 1.21.1)
 - Handle the new data-driven painting and enchantment registries when upgrading 1.20.6 worlds. Keep a recovery copy of the old enchantment indexes and map the renamed trial-spawner sounds.
 - Keep the shared Base Metals upgrade hook for old Advantage and released base* worlds.
 - Correct the local Base Metals path used by Eclipse and check dependency pins before compilation.
-- This is a local test candidate. It has not been pushed or published.
 
 basePower 2.4.13.120061 (Minecraft 1.20.6)
 

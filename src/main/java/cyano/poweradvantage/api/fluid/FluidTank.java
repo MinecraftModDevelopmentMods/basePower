@@ -78,7 +78,7 @@ public class FluidTank {
     }
 
     public FluidTank readFromNBT(CompoundTag nbt) {
-        setFluid(nbt.contains("Empty", 1) ? null : FluidStack.loadFluidStackFromNBT(nbt));
+        setFluid(zone.moddev.mc.basepower.util.NbtCompat.containsTag(nbt, "Empty", 1) ? null : FluidStack.loadFluidStackFromNBT(nbt));
         return this;
     }
 }

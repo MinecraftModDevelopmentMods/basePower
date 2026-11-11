@@ -219,7 +219,7 @@ public class ConduitRegistry {
 	 * @param type      The native energy type of the added conduit block
 	 */
 	public void conduitBlockPlacedEvent(Level w, BlockPos location, ConduitType type) {
-		if (w.isClientSide) return; // ignore client-side
+		if (w.isClientSide()) return; // ignore client-side
 		net.minecraft.resources.ResourceKey<Level> dimension = w.dimension();
 		clearIfWorldChanged(w, dimension);
 		BlockPos4D coord = new BlockPos4D(dimension, location);
@@ -254,7 +254,7 @@ public class ConduitRegistry {
 	 * @param types power types whose cached networks must be rebuilt
 	 */
 	public void conduitBlockLoadedEvent(Level w, ConduitType... types) {
-		if (w.isClientSide) return;
+		if (w.isClientSide()) return;
 		clearIfWorldChanged(w, w.dimension());
 		for (ConduitType type : types) {
 			getConduitNetworkManager(type).invalidateAll();
@@ -273,7 +273,7 @@ public class ConduitRegistry {
 
 	private void invalidateChunk(ChunkEvent event) {
 		if (!(event.getLevel() instanceof Level world)) return;
-		if (world.isClientSide) return;
+		if (world.isClientSide()) return;
 		net.minecraft.resources.ResourceKey<Level> dimension = world.dimension();
 		clearIfWorldChanged(world, dimension);
 		for (ConduitNetworkManager manager : networkManagers.values()) {
@@ -289,7 +289,7 @@ public class ConduitRegistry {
 	 * @param type      The native energy type of the removed conduit block
 	 */
 	public void conduitBlockRemovedEvent(Level w, BlockPos location, ConduitType type) {
-		if (w.isClientSide) return; // ignore client-side
+		if (w.isClientSide()) return; // ignore client-side
 		net.minecraft.resources.ResourceKey<Level> dimension = w.dimension();
 		clearIfWorldChanged(w, dimension);
 		BlockPos4D coord = new BlockPos4D(dimension, location);

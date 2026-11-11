@@ -142,8 +142,12 @@ public class FuelRegistry {
 		if(fuel == null || fuel.isEmpty()) return 0;
 		int custom = getInstance().getBurnTime(fuel);
 		if (custom > 0) return (short) Math.min(Short.MAX_VALUE, custom);
-		Integer vanilla = AbstractFurnaceBlockEntity.getFuel().get(fuel.getItem());
-		int burnTime = ForgeEventFactory.getItemBurnTime(fuel, vanilla == null ? 0 : vanilla.intValue(), net.minecraft.world.item.crafting.RecipeType.SMELTING);
+		var server = net.minecraftforge.server.ServerLifecycleHooks.getCurrentServer();
+        var values = server != null ? server.fuelValues()
+                : net.minecraft.world.level.block.entity.FuelValues.vanillaBurnTimes(
+                        net.minecraft.core.RegistryAccess.fromRegistryOfRegistries(net.minecraft.core.registries.BuiltInRegistries.REGISTRY),
+                        net.minecraft.world.flag.FeatureFlags.DEFAULT_FLAGS);
+        int burnTime = values.burnDuration(fuel, net.minecraft.world.item.crafting.RecipeType.SMELTING);
 		return (short) Math.min(Short.MAX_VALUE, Math.max(0, burnTime));
 	}
 
@@ -159,7 +163,7 @@ public class FuelRegistry {
 		if(list.isEmpty()){
 			fuelItem.shrink(1);
 			if(fuelItem.isEmpty()){
-				fuelItem = fuelItem.getCraftingRemainingItem();
+				fuelItem = fuelItem.getCraftingRemainder();
 			}
 		} else {
 			for (Function<ItemStack, ItemStack> algorithm : list) {

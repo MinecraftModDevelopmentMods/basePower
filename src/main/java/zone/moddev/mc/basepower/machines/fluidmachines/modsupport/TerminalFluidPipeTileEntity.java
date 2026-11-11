@@ -13,7 +13,7 @@ import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.core.Direction;
 import zone.moddev.mc.basepower.conduitnetwork.ConduitRegistry;
-import zone.moddev.mc.basepower.init.Entities;
+
 import zone.moddev.mc.basepower.init.Fluids;
 import zone.moddev.mc.basepower.util.FluidHandlerHelper;
 
@@ -22,7 +22,7 @@ public class TerminalFluidPipeTileEntity extends PoweredEntity {
     private final Direction[] faces = Direction.values();
     private final IAdvantageFluidHandler[] neighbors = new IAdvantageFluidHandler[faces.length];
 
-    public TerminalFluidPipeTileEntity(net.minecraft.core.BlockPos pos, net.minecraft.world.level.block.state.BlockState state) { super(Entities.PIPE_TERMINAL, pos, state); }
+    public TerminalFluidPipeTileEntity(net.minecraft.core.BlockPos pos, net.minecraft.world.level.block.state.BlockState state) { super(zone.moddev.mc.basepower.init.Entities.PIPE_TERMINAL, pos, state); }
 
     @Override public void tickUpdate(boolean server) {
         if (!server) return;

@@ -1,7 +1,7 @@
 package zone.moddev.mc.basepower.util;
 
 import net.minecraft.world.level.material.Fluid;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.core.Registry;
 
 public final class FluidIdHelper {
@@ -12,14 +12,14 @@ public final class FluidIdHelper {
 
 	public static int getFluidId(Fluid fluid) {
 		if (fluid == null) return 0;
-		ResourceLocation name = net.minecraftforge.registries.ForgeRegistries.FLUIDS.getKey(fluid);
+		Identifier name = net.minecraftforge.registries.ForgeRegistries.FLUIDS.getKey(fluid);
 		return name == null ? 0 : name.toString().hashCode();
 	}
 
 	public static Fluid getFluid(int id) {
 		if (id == 0) return null;
 		for (Fluid fluid : net.minecraftforge.registries.ForgeRegistries.FLUIDS) {
-			ResourceLocation name = net.minecraftforge.registries.ForgeRegistries.FLUIDS.getKey(fluid);
+			Identifier name = net.minecraftforge.registries.ForgeRegistries.FLUIDS.getKey(fluid);
 			if (name != null && name.toString().hashCode() == id) return fluid;
 		}
 		return null;

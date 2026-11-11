@@ -297,18 +297,18 @@ public abstract class TileEntitySimplePowerMachine extends PoweredEntity impleme
 		ItemStack[] inventory = this.getInventory();
 		if(inventory != null ){
 			Arrays.fill(inventory, null);
-			final ListTag nbttaglist = tagRoot.getList("Items", 10);
+			final ListTag nbttaglist = tagRoot.getListOrEmpty("Items");
 			for (int i = 0; i < nbttaglist.size() && i < inventory.length; ++i) {
-				final CompoundTag nbttagcompound1 = nbttaglist .getCompound(i);
-				final byte n = nbttagcompound1.getByte("Slot");
+				final CompoundTag nbttagcompound1 = nbttaglist .getCompoundOrEmpty(i);
+				final byte n = nbttagcompound1.getByteOr("Slot", (byte) 0);
 				if (n >= 0 && n < inventory.length) {
 					ItemStack stack = ItemData.readStack(registries, nbttagcompound1);
 					inventory[n] = stack.isEmpty() ? null : stack;
 				}
 			}
 		}
-		if (tagRoot .contains("CustomName", 8)) {
-			this.customName = tagRoot.getString("CustomName");
+		if (zone.moddev.mc.basepower.util.NbtCompat.containsTag(tagRoot, "CustomName", 8)) {
+			this.customName = tagRoot.getStringOr("CustomName", "");
 		}
 	}
 	
@@ -326,7 +326,7 @@ public abstract class TileEntitySimplePowerMachine extends PoweredEntity impleme
 			final ListTag nbttaglist = new ListTag();
 			for (int i = 0; i < inventory.length; ++i) {
 				if (inventory[i] != null && !inventory[i].isEmpty()) {
-					final CompoundTag nbttagcompound1 = (CompoundTag) inventory[i].save(registries);
+					final CompoundTag nbttagcompound1 = (CompoundTag) zone.moddev.mc.basepower.util.ItemData.writeStack(inventory[i], registries);
 					nbttagcompound1.putByte("Slot", (byte)i);
 					nbttaglist .add(nbttagcompound1);
 				}
@@ -418,7 +418,7 @@ public abstract class TileEntitySimplePowerMachine extends PoweredEntity impleme
 	 * <code>getDataFieldArray()</code> array
 	 */
 	public void readDataFieldUpdateTag(CompoundTag tag){
-		int[] newData = tag.getIntArray("[]");
+		int[] newData = tag.getIntArray("[]").orElseGet(() -> new int[0]);
 		System.arraycopy(newData, 0, this.getDataFieldArray(), 0, Math.min(newData.length, this.getDataFieldArray().length));
 		this.onDataFieldUpdate();
 	}
@@ -435,10 +435,15 @@ public abstract class TileEntitySimplePowerMachine extends PoweredEntity impleme
 	/**
 	 * Receives the network packet made by <code>getDescriptionPacket()</code>
 	 */
-	@Override
 	public void onDataPacket(Connection net, ClientboundBlockEntityDataPacket packet, HolderLookup.Provider registries) {
 		readDataFieldUpdateTag(packet.getTag());
 	}
+
+    @Override
+    public void onDataPacket(Connection connection, net.minecraft.world.level.storage.ValueInput input,
+            HolderLookup.Provider registries) {
+        readDataFieldUpdateTag(zone.moddev.mc.basepower.util.LegacyNbtFields.read(input));
+    }
 	
 ///// ISidedInventory methods /////
 	/**
@@ -466,7 +471,6 @@ public abstract class TileEntitySimplePowerMachine extends PoweredEntity impleme
 	/**
 	 * executes when a player right-clicks and opens the inventory GUI
 	 */
-	@Override
 	public void startOpen(Player arg0) {
 		// do nothing
 		
@@ -475,7 +479,6 @@ public abstract class TileEntitySimplePowerMachine extends PoweredEntity impleme
 	/**
 	 * executes when a player stops interacting with this machine 
 	 */
-	@Override
 	public void stopOpen(Player arg0) {
 		// do nothing
 		

@@ -4,15 +4,9 @@
     "xyz"
   ],
   "key": {
-    "x": {
-      "tag": "forge:power_supply_units"
-    },
-    "y": {
-      "tag": "forge:frames/steel"
-    },
-    "z": {
-      "item": "minecraft:redstone_block"
-    }
+    "x": "#forge:power_supply_units",
+    "y": "#forge:frames/steel",
+    "z": "minecraft:redstone_block"
   },
   "result": {
     "id": "basepower:converter_rf_electricity"

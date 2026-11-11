@@ -4,10 +4,10 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.DynamicOps;
 import com.mojang.serialization.MapCodec;
 import java.util.Locale;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.tags.ItemTags;
 import net.minecraftforge.common.crafting.conditions.ICondition;
-import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.eventbus.api.bus.BusGroup;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import zone.moddev.mc.basepower.PowerAdvantage;
@@ -27,7 +27,7 @@ public final class RecipeConditions {
 
     private RecipeConditions() {}
 
-    public static void register(IEventBus bus) { SERIALIZERS.register(bus); }
+    public static void register(BusGroup bus) { SERIALIZERS.register(bus); }
 
     private record Mode(String mode, boolean match) implements ICondition {
         private static final MapCodec<Mode> MATCH = create(true);
@@ -43,12 +43,12 @@ public final class RecipeConditions {
         }
     }
 
-    private record Material(ResourceLocation tag, boolean empty) implements ICondition {
+    private record Material(Identifier tag, boolean empty) implements ICondition {
         private static final MapCodec<Material> EMPTY = create(true);
         private static final MapCodec<Material> NOT_EMPTY = create(false);
 
         private static MapCodec<Material> create(boolean empty) {
-            return ResourceLocation.CODEC.fieldOf("tag").xmap(id -> new Material(id, empty), Material::tag);
+            return Identifier.CODEC.fieldOf("tag").xmap(id -> new Material(id, empty), Material::tag);
         }
 
         @Override public MapCodec<Material> codec() { return empty ? EMPTY : NOT_EMPTY; }

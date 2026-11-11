@@ -2,10 +2,10 @@ package zone.moddev.mc.basepower.init;
 
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegisterEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
+
 import net.minecraftforge.fml.common.Mod;
 import zone.moddev.mc.basepower.PowerAdvantage;
 import zone.moddev.mc.basepower.machines.conveyors.TileEntityBlockFilter;
@@ -30,7 +30,6 @@ import cyano.poweradvantage.api.modsupport.rf.TileEntityRFSteamConverter;
 import cyano.poweradvantage.api.modsupport.techreborn.TileEntityTRElectricityConverter;
 
 /** Stable tile identities with the native 1.14 valid-block lists. */
-@Mod.EventBusSubscriber(modid = PowerAdvantage.MODID, bus = Mod.EventBusSubscriber.Bus.MOD)
 public final class Entities {
     public static BlockEntityType<TerminalFluidPipeTileEntity> PIPE_TERMINAL;
     public static BlockEntityType<FluidDrainTileEntity> FLUID_DRAIN;
@@ -54,8 +53,6 @@ public final class Entities {
     public static BlockEntityType<TileEntityTRElectricityConverter> TR_ELECTRICITY_CONVERTER;
 
     private Entities() {}
-
-    @SubscribeEvent
     public static void register(RegisterEvent event) {
         if (!ForgeRegistries.Keys.BLOCK_ENTITY_TYPES.equals(event.getRegistryKey())) return;
         PIPE_TERMINAL = register(event, "tileentity.pipe_terminal", TerminalFluidPipeTileEntity::new, Blocks.fluid_pipe_terminal);
@@ -84,8 +81,8 @@ public final class Entities {
     private static <T extends BlockEntity> BlockEntityType<T> register(
             RegisterEvent event, String id,
             BlockEntityType.BlockEntitySupplier<T> factory, net.minecraft.world.level.block.Block... validBlocks) {
-        BlockEntityType<T> type = BlockEntityType.Builder.<T>of(factory, validBlocks).build(null);
-        event.register(ForgeRegistries.Keys.BLOCK_ENTITY_TYPES, ResourceLocation.fromNamespaceAndPath(PowerAdvantage.MODID, id), () -> type);
+        BlockEntityType<T> type = new BlockEntityType<>(factory, java.util.Set.of(validBlocks));
+        event.register(ForgeRegistries.Keys.BLOCK_ENTITY_TYPES, Identifier.fromNamespaceAndPath(PowerAdvantage.MODID, id), () -> type);
         return type;
     }
 }

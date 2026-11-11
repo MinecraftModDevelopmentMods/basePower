@@ -6,13 +6,13 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import cyano.poweradvantage.api.fluid.FluidPoweredEntity;
 import cyano.poweradvantage.api.simple.SimpleMachineGUI;
 import zone.moddev.mc.basepower.math.Integer2D;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import cyano.poweradvantage.api.fluid.FluidStack;
 
 public class FilteredFluidTankGUI extends SimpleMachineGUI {
 
 
-	public FilteredFluidTankGUI(ResourceLocation image) {
+	public FilteredFluidTankGUI(Identifier image) {
 		super(image,
 				Integer2D.fromCoordinates(31, 31));
 	}
@@ -37,7 +37,7 @@ public class FilteredFluidTankGUI extends SimpleMachineGUI {
 	@OnlyIn(Dist.CLIENT)
 	public static void drawFluidBar(
 			FluidStack fs, float barHeight, int xPos, int yPos,
-			ResourceLocation displayImage, GUIContainer guiContainer, int x, int y, float zLevel
+			Identifier displayImage, GUIContainer guiContainer, int x, int y, float zLevel
 	) {
 		FluidTankGUI.drawFluidBar(fs, barHeight, xPos, yPos, displayImage, guiContainer, x, y, zLevel);
 	}

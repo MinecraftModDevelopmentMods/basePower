@@ -7,7 +7,7 @@ import java.security.ProtectionDomain;
 import java.util.List;
 import java.util.Optional;
 
-/** Runs Forge's own token and event transforms for plain JUnit. */
+/** Runs Forge's capability-token transform and an empty loader for plain JUnit. */
 public final class ForgeCapabilityBootstrap {
     private static final String MOD_LOADER = "net/minecraftforge/fml/ModLoader";
     private static final String AGENT = "zone/moddev/mc/advantageworks/unit/ForgeCapabilityBootstrap";
@@ -17,18 +17,16 @@ public final class ForgeCapabilityBootstrap {
             @Override public byte[] transform(ClassLoader loader, String name, Class<?> type,
                     ProtectionDomain domain, byte[] bytes) {
                 if (loader == null || name == null) return null;
-                boolean event = name.startsWith("net/minecraftforge/network/NetworkEvent")
-                        || name.equals("net/minecraftforge/registries/MissingMappingsEvent");
                 boolean modLoader = MOD_LOADER.equals(name);
                 String token = "net/minecraftforge/common/capabilities/CapabilityToken";
-                if (!event && !modLoader && !(name.contains("$") || name.equals(token))) return null;
-                if (!event && !modLoader && !token.equals(name)
+                if (!modLoader && !(name.contains("$") || name.equals(token))) return null;
+                if (!modLoader && !token.equals(name)
                         && loader.getResource("org/objectweb/asm/ClassReader.class") == null) return null;
                 try {
                     Class<?> readerType = Class.forName("org.objectweb.asm.ClassReader", true, loader);
                     Object reader = readerType.getConstructor(byte[].class).newInstance((Object)bytes);
                     String parent = (String)readerType.getMethod("getSuperName").invoke(reader);
-                    if (!event && !modLoader && !token.equals(name) && !token.equals(parent)) return null;
+                    if (!modLoader && !token.equals(name) && !token.equals(parent)) return null;
                     Class<?> nodeType = Class.forName("org.objectweb.asm.tree.ClassNode", true, loader);
                     Object node = nodeType.getConstructor().newInstance();
                     Class<?> visitorType = Class.forName("org.objectweb.asm.ClassVisitor", true, loader);
@@ -37,12 +35,6 @@ public final class ForgeCapabilityBootstrap {
                     Object asmName = asmType.getMethod("getObjectType", String.class).invoke(null, name);
                     if (modLoader) {
                         addLoaderFixture(loader, nodeType, node, asmName);
-                    } else if (event) {
-                        Class<?> transformer = Class.forName("net.minecraftforge.eventbus.EventSubclassTransformer", true, loader);
-                        var transformed = (java.util.Optional<?>) transformer.getMethod("transform", nodeType, asmType)
-                                .invoke(transformer.getConstructor().newInstance(), node, asmName);
-                        if (transformed.isEmpty()) return null;
-                        node = transformed.get();
                     } else {
                         Class<?> phaseType = Class.forName(
                                 "cpw.mods.modlauncher.serviceapi.ILaunchPluginService$Phase", true, loader);
@@ -90,7 +82,7 @@ public final class ForgeCapabilityBootstrap {
             list.getMethod("insert", list).invoke(instructions, entry);
             return;
         }
-        throw new NoSuchMethodException("Forge 52 ModLoader()");
+        throw new NoSuchMethodException("Forge 61 ModLoader()");
     }
 
     public static void beforeModLoader(Class<?> owner) throws ReflectiveOperationException {

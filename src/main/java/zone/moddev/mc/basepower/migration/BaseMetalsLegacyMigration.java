@@ -2,7 +2,7 @@ package zone.moddev.mc.basepower.migration;
 
 import cyano.poweradvantage.api.migration.LegacyMigrationApi;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.registries.ForgeRegistries;
 import zone.moddev.mc.basemetals.api.migration.Legacy112MigrationExtension;
@@ -12,7 +12,7 @@ public final class BaseMetalsLegacyMigration implements Legacy112MigrationExtens
     private BaseMetalsLegacyMigration() {}
 
     public static void register() {
-        Legacy112MigrationExtension.register(ResourceLocation.fromNamespaceAndPath("basepower", "legacy_world"),
+        Legacy112MigrationExtension.register(Identifier.fromNamespaceAndPath("basepower", "legacy_world"),
                 new BaseMetalsLegacyMigration());
     }
 
@@ -33,9 +33,9 @@ public final class BaseMetalsLegacyMigration implements Legacy112MigrationExtens
     }
 
     @Override
-    public BlockState decodeBlockState(ResourceLocation legacyId, int metadata) {
+    public BlockState decodeBlockState(Identifier legacyId, int metadata) {
         if (!LegacyMigrationApi.handlesNamespace(legacyId.getNamespace())) return null;
-        ResourceLocation target = LegacyMigrationApi.blockTarget(legacyId);
+        Identifier target = LegacyMigrationApi.blockTarget(legacyId);
         if (!ForgeRegistries.BLOCKS.containsKey(target)) {
             throw new IllegalStateException("No replacement for saved Advantage block " + legacyId + " (expected " + target + ")");
         }

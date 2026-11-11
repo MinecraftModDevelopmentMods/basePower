@@ -11,11 +11,11 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.PackResources;
 import net.minecraft.server.packs.PackLocationInfo;
 import net.minecraft.server.packs.PackType;
-import net.minecraft.server.packs.metadata.MetadataSectionSerializer;
+import net.minecraft.server.packs.metadata.MetadataSectionType;
 import net.minecraft.server.packs.metadata.pack.PackMetadataSection;
 import net.minecraft.server.packs.resources.IoSupplier;
 import net.minecraft.server.packs.repository.PackSource;
@@ -29,7 +29,7 @@ final class MaterialPolicyPack implements PackResources {
     static final String NAME = "Power Advantage material aliases";
     static final PackLocationInfo LOCATION =
             new PackLocationInfo(ID, Component.literal(NAME), PackSource.BUILT_IN, Optional.empty());
-    private final Map<ResourceLocation, String> resources = new LinkedHashMap<>();
+    private final Map<Identifier, String> resources = new LinkedHashMap<>();
 
     MaterialPolicyPack() {
         // Pack instances are created for each reload, after common config loading.
@@ -58,19 +58,19 @@ final class MaterialPolicyPack implements PackResources {
         JsonObject tag = new JsonObject();
         tag.addProperty("replace", false);
         tag.add("values", values);
-        resources.put(ResourceLocation.fromNamespaceAndPath("forge", "tags/item/" + path + ".json"), tag.toString());
+        resources.put(Identifier.fromNamespaceAndPath("forge", "tags/item/" + path + ".json"), tag.toString());
     }
 
     @Override public IoSupplier<InputStream> getRootResource(String... names) { return null; }
 
-    @Override public IoSupplier<InputStream> getResource(PackType type, ResourceLocation id) {
+    @Override public IoSupplier<InputStream> getResource(PackType type, Identifier id) {
         if (type != PackType.SERVER_DATA || !resources.containsKey(id)) return null;
         return () -> new ByteArrayInputStream(resources.get(id).getBytes(StandardCharsets.UTF_8));
     }
 
     @Override public void listResources(PackType type, String namespace, String prefix, ResourceOutput output) {
         if (type != PackType.SERVER_DATA) return;
-        for (ResourceLocation id : resources.keySet()) {
+        for (Identifier id : resources.keySet()) {
             if (namespace.equals(id.getNamespace()) && id.getPath().startsWith(prefix + "/")) {
                 output.accept(id, getResource(type, id));
             }
@@ -80,9 +80,11 @@ final class MaterialPolicyPack implements PackResources {
         return type == PackType.SERVER_DATA ? Collections.singleton("forge") : Collections.emptySet();
     }
     @Override @SuppressWarnings("unchecked")
-    public <T> T getMetadataSection(MetadataSectionSerializer<T> serializer) {
-        return serializer == PackMetadataSection.TYPE
-                ? (T)new PackMetadataSection(Component.literal(NAME), 48, Optional.empty()) : null;
+    public <T> T getMetadataSection(MetadataSectionType<T> section) {
+        return section == PackMetadataSection.SERVER_TYPE
+                ? (T)new PackMetadataSection(Component.literal(NAME),
+                        new net.minecraft.util.InclusiveRange<>(net.minecraft.SharedConstants.getCurrentVersion()
+                                .packVersion(PackType.SERVER_DATA))) : null;
     }
     @Override public PackLocationInfo location() { return LOCATION; }
     @Override public void close() {}

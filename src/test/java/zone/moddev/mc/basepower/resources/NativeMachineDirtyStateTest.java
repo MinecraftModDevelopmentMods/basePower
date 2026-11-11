@@ -47,7 +47,7 @@ public class NativeMachineDirtyStateTest {
         for (MethodNode method : production().methods) if (method.name.equals("markMachineStateUnsaved")) mark = method;
         assertNotNull("Missing native save invalidation", mark);
         assertEquals(1, calls(mark, "net/minecraft/server/level/ServerChunkCache", "getChunkNow"));
-        assertEquals(1, calls(mark, "net/minecraft/world/level/chunk/LevelChunk", "setUnsaved"));
+        assertEquals(1, calls(mark, "net/minecraft/world/level/chunk/LevelChunk", "markUnsaved"));
         for (AbstractInsnNode instruction : mark.instructions.toArray()) if (instruction instanceof MethodInsnNode) {
             String name = ((MethodInsnNode) instruction).name;
             assertFalse("Dirty marking must not load chunks or send comparator/client updates: " + name,

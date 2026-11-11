@@ -8,14 +8,14 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.material.Fluid;
 import cyano.poweradvantage.api.fluid.FluidStack;
 import cyano.poweradvantage.api.fluid.FluidTank;
-import zone.moddev.mc.basepower.init.Entities;
+
 import zone.moddev.mc.basepower.util.FluidContainerHelper;
 
 @SuppressWarnings("deprecation")
 public class MetalTankTileEntity  extends TileEntitySimpleFluidMachine {
 
 	public MetalTankTileEntity(net.minecraft.core.BlockPos pos, net.minecraft.world.level.block.state.BlockState state) {
-		super(Entities.METAL_TANK, pos, state, FluidTank.BUCKET_VOLUME * 10, "tile.basepower.fluid_metal_tank.name");
+		super(zone.moddev.mc.basepower.init.Entities.METAL_TANK, pos, state, FluidTank.BUCKET_VOLUME * 10, "tile.basepower.fluid_metal_tank.name");
 	}
 
 

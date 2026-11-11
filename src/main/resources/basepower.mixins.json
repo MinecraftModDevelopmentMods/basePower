@@ -1,0 +1,14 @@
+{
+  "required": true,
+  "minVersion": "0.8.7",
+  "package": "zone.moddev.mc.basepower.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "BlockStateDataMixin",
+    "LevelStorageSourceMixin",
+    "PlayerDataStorageMixin",
+    "SimpleRegionStorageMixin",
+    "WorldGenRegionMixin"
+  ],
+  "injectors": { "defaultRequire": 1 }
+}

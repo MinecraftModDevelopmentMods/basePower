@@ -18,16 +18,21 @@ import net.minecraft.world.level.Level;
 public class FluidPipeBlock extends BlockSimpleFluidConduit {
 
 	public FluidPipeBlock() {
-		super(Properties.of().mapColor(MapColor.STONE).pushReaction(PushReaction.BLOCK)
-				.forceSolidOn().strength(0.75F), 4F / 16F);
+		this("fluid_pipe");
 	}
+
+    protected FluidPipeBlock(String id) {
+        super(Blocks.properties(id, Properties.of().mapColor(MapColor.STONE).pushReaction(PushReaction.BLOCK)
+                .forceSolidOn().strength(0.75F)), 4F / 16F);
+    }
 
 
 	/**
 	 * Called when a neighboring block changes.
 	 */
 	@Override
-	public void neighborChanged(BlockState state, Level worldIn, BlockPos pos, Block blockIn, BlockPos fromPos, boolean isMoving) {
+	public void neighborChanged(BlockState state, Level worldIn, BlockPos pos, Block blockIn,
+            net.minecraft.world.level.redstone.Orientation orientation, boolean isMoving) {
 		pipeCheck(worldIn, pos);
 	}
 
@@ -40,7 +45,7 @@ public class FluidPipeBlock extends BlockSimpleFluidConduit {
 	}
 
 	private void pipeCheck(Level w, BlockPos pos) {
-		if (!w.isClientSide) {
+		if (!w.isClientSide()) {
 			if (numberOfAdjacentFluidHandlers(w, pos) > 0) {
 				w.setBlock(pos, Blocks.fluid_pipe_terminal.defaultBlockState(), 3);
 			}

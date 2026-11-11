@@ -2,7 +2,7 @@ package zone.moddev.mc.basepower.migration;
 
 import java.lang.reflect.Proxy;
 import java.util.Collections;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceKey;
 import net.minecraftforge.registries.MissingMappingsEvent;
@@ -11,8 +11,8 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 public class VanillaRegistryMappingEventTest {
-    private static final ResourceLocation SOURCE = ResourceLocation.parse("minecraft:zombie_pigman_spawn_egg");
-    private static final ResourceLocation TARGET = ResourceLocation.parse("minecraft:zombified_piglin_spawn_egg");
+    private static final Identifier SOURCE = Identifier.parse("minecraft:zombie_pigman_spawn_egg");
+    private static final Identifier TARGET = Identifier.parse("minecraft:zombified_piglin_spawn_egg");
 
     @Test public void resolvesTheTargetFromActiveNotTheIncompleteStagingRegistry() {
         Entry target = new Entry();
@@ -27,20 +27,25 @@ public class VanillaRegistryMappingEventTest {
     @Test public void aLaterExplicitForgeDecisionOverridesTheCompatibilityMapping() {
         IForgeRegistry<Entry> active = registry(new Entry(), true);
         MissingMappingsEvent.Mapping<Entry> mapping = new MissingMappingsEvent.Mapping<>(active, active, SOURCE, 42);
-        var bus = net.minecraftforge.eventbus.api.BusBuilder.builder().build();
-        bus.addListener(net.minecraftforge.eventbus.api.EventPriority.HIGHEST,
+        var group = net.minecraftforge.eventbus.api.bus.BusGroup.create("basepower-migration-test");
+        var bus = net.minecraftforge.eventbus.api.bus.EventBus.create(group, MissingMappingsEvent.class);
+        bus.addListener(net.minecraftforge.eventbus.api.listener.Priority.HIGHEST,
                 (MissingMappingsEvent event) -> VanillaRegistryRemaps.remap(event, active));
-        bus.addListener(net.minecraftforge.eventbus.api.EventPriority.NORMAL,
+        bus.addListener(net.minecraftforge.eventbus.api.listener.Priority.NORMAL,
                 (MissingMappingsEvent event) -> mapping.ignore());
-        bus.start();
-        bus.post(event(active, mapping));
+        group.startup();
+        try {
+            bus.post(event(active, mapping));
+        } finally {
+            group.dispose();
+        }
         assertEquals(MissingMappingsEvent.Action.IGNORE, property(mapping, "action"));
     }
 
     @Test public void leavesUnrecognizedEntriesUnresolvedForForgeToReport() {
         IForgeRegistry<Entry> active = registry(new Entry(), true);
         MissingMappingsEvent.Mapping<Entry> mapping = new MissingMappingsEvent.Mapping<>(active, active,
-                ResourceLocation.parse("othermod:zombie_pigman_spawn_egg"), 42);
+                Identifier.parse("othermod:zombie_pigman_spawn_egg"), 42);
         VanillaRegistryRemaps.remap(event(active, mapping), active);
         assertEquals(MissingMappingsEvent.Action.DEFAULT, property(mapping, "action"));
     }
@@ -60,7 +65,7 @@ public class VanillaRegistryMappingEventTest {
         IForgeRegistry<Entry> active = registry(null, false, "minecraft:memory_module_type");
         for (String name : new String[] {"golem_last_seen_time", "opened_doors"}) {
             MissingMappingsEvent.Mapping<Entry> mapping = new MissingMappingsEvent.Mapping<>(active, active,
-                    ResourceLocation.fromNamespaceAndPath("minecraft", name), 42);
+                    Identifier.fromNamespaceAndPath("minecraft", name), 42);
             MissingMappingsEvent event = new MissingMappingsEvent(key("minecraft:memory_module_type"),
                     active, Collections.singletonList(mapping));
             VanillaRegistryRemaps.remap(event, active);
@@ -70,17 +75,17 @@ public class VanillaRegistryMappingEventTest {
     }
 
     @Test public void neverRetiresOtherModsOrCurrentMemoryTypes() {
-        ResourceLocation registry = ResourceLocation.parse("minecraft:memory_module_type");
-        assertFalse(VanillaRegistryRemaps.retiredTransientMemory(registry, ResourceLocation.parse("othermod:opened_doors")));
-        assertFalse(VanillaRegistryRemaps.retiredTransientMemory(registry, ResourceLocation.parse("minecraft:golem_detected_recently")));
-        assertFalse(VanillaRegistryRemaps.retiredTransientMemory(ResourceLocation.parse("minecraft:item"),
-                ResourceLocation.parse("minecraft:opened_doors")));
+        Identifier registry = Identifier.parse("minecraft:memory_module_type");
+        assertFalse(VanillaRegistryRemaps.retiredTransientMemory(registry, Identifier.parse("othermod:opened_doors")));
+        assertFalse(VanillaRegistryRemaps.retiredTransientMemory(registry, Identifier.parse("minecraft:golem_detected_recently")));
+        assertFalse(VanillaRegistryRemaps.retiredTransientMemory(Identifier.parse("minecraft:item"),
+                Identifier.parse("minecraft:opened_doors")));
     }
 
     @Test public void retiresOnlyTheTwoPointsOfInterestRemovedByVanilla() {
         IForgeRegistry<Entry> active = registry(null, false, "minecraft:point_of_interest_type");
         for (String id : new String[] {"minecraft:nitwit", "minecraft:unemployed", "minecraft:home", "othermod:nitwit"}) {
-            var mapping = new MissingMappingsEvent.Mapping<>(active, active, ResourceLocation.parse(id), 42);
+            var mapping = new MissingMappingsEvent.Mapping<>(active, active, Identifier.parse(id), 42);
             VanillaRegistryRemaps.remap(event(active, mapping), active);
             boolean retired = id.equals("minecraft:nitwit") || id.equals("minecraft:unemployed");
             assertEquals(id, retired ? MissingMappingsEvent.Action.IGNORE : MissingMappingsEvent.Action.DEFAULT,
@@ -92,7 +97,7 @@ public class VanillaRegistryMappingEventTest {
     @Test public void retiresOnlyTheRemovedVanillaEmptyPotionIndex() {
         IForgeRegistry<Entry> active = registry(null, false, "minecraft:potion");
         for (String id : new String[] {"minecraft:empty", "minecraft:water", "othermod:empty"}) {
-            var mapping = new MissingMappingsEvent.Mapping<>(active, active, ResourceLocation.parse(id), 42);
+            var mapping = new MissingMappingsEvent.Mapping<>(active, active, Identifier.parse(id), 42);
             VanillaRegistryRemaps.remap(event(active, mapping), active);
             assertEquals(id, id.equals("minecraft:empty") ? MissingMappingsEvent.Action.IGNORE
                     : MissingMappingsEvent.Action.DEFAULT, property(mapping, "action"));
@@ -103,7 +108,7 @@ public class VanillaRegistryMappingEventTest {
     @Test public void movedPaintingsRetireOnlyTheirKnownStaticIndexes() {
         IForgeRegistry<Entry> active = registry(null, false, "minecraft:painting_variant");
         for (String id : new String[] {"minecraft:alban", "minecraft:aztec", "minecraft:unknown", "othermod:alban"}) {
-            var mapping = new MissingMappingsEvent.Mapping<>(active, active, ResourceLocation.parse(id), 42);
+            var mapping = new MissingMappingsEvent.Mapping<>(active, active, Identifier.parse(id), 42);
             VanillaRegistryRemaps.remap(event(active, mapping), active);
             assertEquals(id, id.equals("minecraft:alban") || id.equals("minecraft:aztec")
                     ? MissingMappingsEvent.Action.IGNORE : MissingMappingsEvent.Action.DEFAULT, property(mapping, "action"));
@@ -116,7 +121,7 @@ public class VanillaRegistryMappingEventTest {
     }
 
     private static ResourceKey<Registry<Entry>> key(String id) {
-        return ResourceKey.createRegistryKey(ResourceLocation.parse(id));
+        return ResourceKey.createRegistryKey(Identifier.parse(id));
     }
 
     // Forge keeps the result fields package-private for its snapshot loader.
@@ -140,7 +145,7 @@ public class VanillaRegistryMappingEventTest {
                 new Class<?>[] {IForgeRegistry.class}, (proxy, method, args) -> {
                     switch (method.getName()) {
                         case "getRegistryKey": return key(id);
-                        case "getRegistryName": return ResourceLocation.parse(id);
+                        case "getRegistryName": return Identifier.parse(id);
                         case "containsKey": return contains && TARGET.equals(args[0]);
                         case "getValue": return target;
                         case "getKey": return args[0] == target ? TARGET : null;

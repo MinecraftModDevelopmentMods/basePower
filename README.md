@@ -1,35 +1,35 @@
 # basePower
 
-**Minecraft 1.21.1 (Forge), version 2.4.14.121011.**
+**Minecraft 1.21.11 (Forge), version 2.4.15.121111.**
 
 This is a local port candidate, not a published release. See the
-[1.21.1 port record](docs/1.21.1/PORT-STATUS.md) for the current checks.
+[1.21.11 port record](docs/1.21.11/PORT-STATUS.md) for the current checks.
 Results from earlier versions do not qualify this build.
 
 For the combined Eclipse test, use `runClientAllAdvantage.launch` in this
 project. It loads the matching baseSteam and baseElectric candidates. The
-[port record](docs/1.21.1/PORT-STATUS.md) separates the automated checks from
+[port record](docs/1.21.11/PORT-STATUS.md) separates the automated checks from
 the remaining manual gameplay and visual checks.
 
 basePower continues DrCyano's Power Advantage. It provides shared power,
 fluids and item transport for baseSteam and baseElectric.
 
-## Playing On 1.21.1
+## Playing On 1.21.11
 
-- Install [MMD OreSpawn 4.1.0.121011](https://www.curseforge.com/minecraft/mc-mods/mmd-orespawn/files/9189594) on both client and server.
+- Install [MMD OreSpawn 4.1.0.121111](https://www.curseforge.com/minecraft/mc-mods/mmd-orespawn/files/9268464) on both client and server.
 - Base Metals is optional for a new basePower world. For a world that already
-  uses Base Metals, keep it installed and use the matching Forge 1.21.1 build
-  `3.1.2.121011`. That dependency patch is local-only at present, so this
+  uses Base Metals, keep it installed and use the matching Forge 1.21.11 build
+  `3.1.2.121111`. That dependency patch is local-only at present, so this
   candidate must not be distributed as a release. Older public Base Metals
   builds do not have the shared upgrade hook.
 - baseSteam and baseElectric are separate mods. Use only their matching
-  1.21.1 builds. Additional Loot Tables is not needed for the built-in loot.
+  1.21.11 builds. Additional Loot Tables is not needed for the built-in loot.
 
 **Back up the entire world before upgrading. Test only disposable copies.**
 The port keeps existing registry names and machine data. The upgrade checks
 use disposable copies of original Advantage and released base* saves, including
 connected machines, and check them again after a full restart. Check that the
-other mods in your world support 1.21.1 before you upgrade.
+other mods in your world support 1.21.11 before you upgrade.
 The accepted [1.14 results](docs/1.14/BROADER-QUALIFICATION.md) are historical
 evidence, not qualification of this port or a whole modpack.
 
@@ -37,21 +37,21 @@ Recipe-book discovery now follows relevant ingredients. See the [all-Advantage m
 
 The [manufacturing progression audit](docs/1.13/MANUFACTURING-PROGRESSION.md) traces survival parts from raw resources, including configured material aliases, processing, loot-only parts and automated restart checks.
 
-## Building Minecraft 1.21.1
+## Building Minecraft 1.21.11
 
-The build uses Forge 52.1.0, official `1.21.1` mappings,
-MCP `20240808.132146`, ForgeGradle 7.0.34 and Gradle 9.6.1.
+The build uses Forge 61.1.0, official `1.21.11` mappings,
+MCP `20251223.124241`, ForgeGradle 7.0.34 and Gradle 9.6.1.
 Use Java 21 for Gradle, compilation and Minecraft. Mavenizer also
 needs Java 25; the development launcher helper uses Java 8. Pass the installed homes using
 `-Porg.gradle.java.installations.paths=<java8>,<java21>,<java25>` and disable
 automatic discovery and downloads for a reproducibility check.
 
-Use the pinned Base Metals `3.1.2.121011` and OreSpawn `4.1.0.121011` jars.
+Use the pinned Base Metals `3.1.2.121111` and OreSpawn `4.1.0.121111` jars.
 The source pins and checksums are in `gradle.properties`.
-Forge 52 also needs the Mavenizer compatibility jar in the pinned OreSpawn
+Forge 61 also needs the Mavenizer compatibility jar in the pinned OreSpawn
 checkout's `ci-fixtures/tools/` directory. It fixes decompiled Forge sources
 on a clean build and uses Java 25. It is not part of the mod or game runtime.
-Set `-Pforge52MavenizerJar=<path>` when that checkout is in another location.
+Set `-Pforge61MavenizerJar=<path>` when that checkout is in another location.
 If Base Metals is installed, use the pinned 3.1.2 build when testing an upgrade. It lets
 both mods preserve old items and machines before Minecraft converts the
 chunk. An older Base Metals jar is not a substitute for this upgrade path.
@@ -65,8 +65,8 @@ gradlew.bat clean check build javadoc genEclipseRuns eclipse isolateEclipseProdu
 The default dependency jars are:
 
 ```text
-D:\BaseMetals\.verification-basemetals1211\Advantage shared hook\build\libs\BaseMetals-3.1.2.121011.jar
-D:\MinecraftMineralogy\OS1211\OreSpawn\build\libs\OreSpawn-4.1.0.121011.jar
+D:\BaseMetals\.verification-basemetals1211\Advantage shared hook\build\libs\BaseMetals-3.1.2.121111.jar
+D:\MinecraftMineralogy\OS1211\OreSpawn\build\libs\OreSpawn-4.1.0.121111.jar
 ```
 
 Other layouts can pass `-PbaseMetalsDeobfJar=<path>` and `-PoreSpawnDeobfJar=<path>`.
@@ -75,10 +75,10 @@ Dependencies are never embedded in PowerAdvantage artifacts.
 Dependency checksums and source commits are recorded in `gradle.properties`.
 Unknown artifacts fail the dependency audit. The release audit also rejects a
 player jar that differs from the frozen test kit. Hosted CI requires the Base
-Metals pin to be on its upstream `master-1.21.1` branch; a locally tested pin
+Metals pin to be on its upstream `master-1.21.11` branch; a locally tested pin
 does not qualify a hosted build.
 
-Release jars are written to `build/libs`. Forge 52 uses the same mod jar for play
+Release jars are written to `build/libs`. Forge 61 uses the same mod jar for play
 and development; `deobfJar` is kept as a task alias for older build scripts.
 
 For Eclipse, import this repository as an existing Gradle project and run:
@@ -130,6 +130,6 @@ its presence is not proof that an upgrade is safe.
 
 The [legacy migration guide](docs/1.13/MIGRATION.md) describes the earlier protocols.
 The [Advantage Works 1.20.1 guide](test-rig/NATIVE1201.md) describes the prior
-qualification and the checks carried into 1.21.1.
+qualification and the checks carried into 1.21.11.
 
 The historical 1.10 handbook remains on the [1.10.2 branch](https://github.com/MinecraftModDevelopmentMods/PowerAdvantage/blob/master-1.10.2/docs/1.10/README.md).

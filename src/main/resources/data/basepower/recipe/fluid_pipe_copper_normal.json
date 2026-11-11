@@ -6,9 +6,7 @@
     "xxx"
   ],
   "key": {
-    "x": {
-      "tag": "forge:ingots/copper"
-    }
+    "x": "#forge:ingots/copper"
   },
   "result": {
     "id": "basepower:fluid_pipe",

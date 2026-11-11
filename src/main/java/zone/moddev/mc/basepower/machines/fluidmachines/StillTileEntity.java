@@ -17,7 +17,7 @@ import net.minecraft.world.level.material.Fluid;
 import cyano.poweradvantage.api.fluid.FluidStack;
 import cyano.poweradvantage.api.fluid.FluidTank;
 import cyano.poweradvantage.api.fluid.FluidTankInfo;
-import zone.moddev.mc.basepower.init.Entities;
+
 
 @SuppressWarnings("deprecation")
 public class StillTileEntity extends TileEntitySimpleFluidMachine {
@@ -42,7 +42,7 @@ public class StillTileEntity extends TileEntitySimpleFluidMachine {
 
 
 	public StillTileEntity(net.minecraft.core.BlockPos pos, net.minecraft.world.level.block.state.BlockState state) {
-		super(Entities.STILL, pos, state, FluidTank.BUCKET_VOLUME, "tile.basepower.still.name");
+		super(zone.moddev.mc.basepower.init.Entities.STILL, pos, state, FluidTank.BUCKET_VOLUME, "tile.basepower.still.name");
 	}
 
 	@Override
@@ -265,19 +265,19 @@ public class StillTileEntity extends TileEntitySimpleFluidMachine {
 	@Override
 	protected void loadAdditional(final CompoundTag tagRoot, HolderLookup.Provider registries) {
 		super.loadAdditional(tagRoot, registries);
-		if (tagRoot.contains("InputTank", 10)) {
-			CompoundTag tankTag2 = tagRoot .getCompound("InputTank");
+		if (zone.moddev.mc.basepower.util.NbtCompat.containsTag(tagRoot, "InputTank", 10)) {
+			CompoundTag tankTag2 = tagRoot .getCompoundOrEmpty("InputTank");
 			inputTank.readFromNBT(tankTag2);
-			if (tankTag2.contains("Empty", 1)) {
+			if (zone.moddev.mc.basepower.util.NbtCompat.containsTag(tankTag2, "Empty", 1)) {
 				// empty the tank if NBT says its empty (not default behavior of Tank.readFromNBT(...) )
 				inputTank.setFluid(null);
 			}
 		}
-		if (tagRoot.contains("burnTime", 99)) {
-			this.burnTime = tagRoot.getShort("burnTime");
+		if (zone.moddev.mc.basepower.util.NbtCompat.containsTag(tagRoot, "burnTime", 99)) {
+			this.burnTime = tagRoot.getShortOr("burnTime", (short) 0);
 		}
-		if (tagRoot.contains("totalBurnTime", 99)) {
-			this.totalBurnTime = tagRoot.getShort("totalBurnTime");
+		if (zone.moddev.mc.basepower.util.NbtCompat.containsTag(tagRoot, "totalBurnTime", 99)) {
+			this.totalBurnTime = tagRoot.getShortOr("totalBurnTime", (short) 0);
 		}
 	}
 
@@ -412,30 +412,30 @@ public class StillTileEntity extends TileEntitySimpleFluidMachine {
 	@Override
 	public void readDataFieldUpdateTag(CompoundTag tag) {
 		boolean usedFluidNbt = false;
-		if (tag .contains("InputTank", 10)) {
-			CompoundTag inputTankTag = tag .getCompound("InputTank");
+		if (zone.moddev.mc.basepower.util.NbtCompat.containsTag(tag, "InputTank", 10)) {
+			CompoundTag inputTankTag = tag .getCompoundOrEmpty("InputTank");
 			inputTank.readFromNBT(inputTankTag);
-			if (inputTankTag.contains("Empty", 1)) {
+			if (zone.moddev.mc.basepower.util.NbtCompat.containsTag(inputTankTag, "Empty", 1)) {
 				inputTank.setFluid(null);
 			}
 			usedFluidNbt = true;
 		}
-		if (tag .contains("Tank", 10)) {
-			CompoundTag outputTankTag = tag .getCompound("Tank");
+		if (zone.moddev.mc.basepower.util.NbtCompat.containsTag(tag, "Tank", 10)) {
+			CompoundTag outputTankTag = tag .getCompoundOrEmpty("Tank");
 			getTank().readFromNBT(outputTankTag);
-			if (outputTankTag.contains("Empty", 1)) {
+			if (zone.moddev.mc.basepower.util.NbtCompat.containsTag(outputTankTag, "Empty", 1)) {
 				getTank().setFluid(null);
 			}
 			usedFluidNbt = true;
 		}
-		if (tag.contains("burnTime", 99)) {
-			this.burnTime = tag.getShort("burnTime");
+		if (zone.moddev.mc.basepower.util.NbtCompat.containsTag(tag, "burnTime", 99)) {
+			this.burnTime = tag.getShortOr("burnTime", (short) 0);
 		}
-		if (tag.contains("totalBurnTime", 99)) {
-			this.totalBurnTime = tag.getShort("totalBurnTime");
+		if (zone.moddev.mc.basepower.util.NbtCompat.containsTag(tag, "totalBurnTime", 99)) {
+			this.totalBurnTime = tag.getShortOr("totalBurnTime", (short) 0);
 		}
-		if (tag .contains("[]", 11)) {
-			int[] newData = tag.getIntArray("[]");
+		if (zone.moddev.mc.basepower.util.NbtCompat.containsTag(tag, "[]", 11)) {
+			int[] newData = tag.getIntArray("[]").orElseGet(() -> new int[0]);
 			System.arraycopy(newData, 0, this.getDataFieldArray(), 0, Math.min(newData.length, this.getDataFieldArray().length));
 			if (!usedFluidNbt) {
 				this.onDataFieldUpdate();

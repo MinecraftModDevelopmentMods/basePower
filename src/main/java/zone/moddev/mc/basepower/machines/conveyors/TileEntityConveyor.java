@@ -25,7 +25,7 @@ import zone.moddev.mc.basepower.PowerAdvantage;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
-import zone.moddev.mc.basepower.init.Entities;
+
 
 public class TileEntityConveyor extends BlockEntity implements WorldlyContainer, net.minecraft.world.Nameable {
     private final zone.moddev.mc.basepower.util.MachineCapabilities machineCapabilities =
@@ -66,7 +66,7 @@ public class TileEntityConveyor extends BlockEntity implements WorldlyContainer,
 	
 	
 	public TileEntityConveyor(BlockPos pos, BlockState state){
-		this(Entities.CONVEYOR, pos, state, 1);
+		this(zone.moddev.mc.basepower.init.Entities.CONVEYOR, pos, state, 1);
 	}
 	
 	protected TileEntityConveyor(BlockEntityType<?> type, BlockPos pos, BlockState state, int inventorySize){
@@ -77,7 +77,7 @@ public class TileEntityConveyor extends BlockEntity implements WorldlyContainer,
 	
 	public void tick() {
 		Level w = getLevel();
-		if(w.isClientSide) return;
+		if(w.isClientSide()) return;
 		if(transferCooldown > 0) transferCooldown--;
 		if(transferCooldown == 0){
 			// do tick update
@@ -110,7 +110,7 @@ public class TileEntityConveyor extends BlockEntity implements WorldlyContainer,
 						upstreamBlock.getX()+1, upstreamBlock.getY()+1, upstreamBlock.getZ()+1));
 				if(!list.isEmpty()){
 					ItemEntity e = list.get(0);
-					if(!e.hasImpulse){
+					if(!e.needsSync){
 						ItemStack entityStack = e.getItem();
 						if(canInsertItemInto(entityStack,this,myDir)){
 							ItemStack newItem = entityStack.copy();
@@ -241,23 +241,27 @@ public class TileEntityConveyor extends BlockEntity implements WorldlyContainer,
 	 * @param tagRoot The root of the NBT
 	 */
 	@Override
+    protected void loadAdditional(net.minecraft.world.level.storage.ValueInput input) {
+        super.loadAdditional(input);
+        loadAdditional(zone.moddev.mc.basepower.util.LegacyNbtFields.read(input), input.lookup());
+    }
+
 	protected void loadAdditional(final CompoundTag tagRoot, HolderLookup.Provider registries) {
-		super.loadAdditional(tagRoot, registries);
 		ItemStack[] inventory = this.getInventory();
 		if(inventory != null ){
 			Arrays.fill(inventory, null);
-			final ListTag nbttaglist = tagRoot.getList("Items", 10);
+			final ListTag nbttaglist = tagRoot.getListOrEmpty("Items");
 			for (int i = 0; i < nbttaglist.size() && i < inventory.length; ++i) {
-				final CompoundTag nbttagcompound1 = nbttaglist .getCompound(i);
-				final byte n = nbttagcompound1.getByte("Slot");
+				final CompoundTag nbttagcompound1 = nbttaglist .getCompoundOrEmpty(i);
+				final byte n = nbttagcompound1.getByteOr("Slot", (byte) 0);
 				if (n >= 0 && n < inventory.length) {
 					ItemStack stack = ItemData.readStack(registries, nbttagcompound1);
 					inventory[n] = stack.isEmpty() ? null : stack;
 				}
 			}
 		}
-		if (tagRoot .contains("CustomName", 8)) {
-			this.customName = tagRoot.getString("CustomName");
+		if (zone.moddev.mc.basepower.util.NbtCompat.containsTag(tagRoot, "CustomName", 8)) {
+			this.customName = tagRoot.getStringOr("CustomName", "");
 		}
 	}
 	
@@ -268,14 +272,22 @@ public class TileEntityConveyor extends BlockEntity implements WorldlyContainer,
 	 * @param tagRoot The root of the NBT
 	 */
 	@Override
+    protected void saveAdditional(net.minecraft.world.level.storage.ValueOutput output) {
+        super.saveAdditional(output);
+        CompoundTag tag = new CompoundTag();
+        saveAdditional(tag, zone.moddev.mc.basepower.util.LegacyNbtFields.registries(output,
+                level != null ? level.registryAccess() : net.minecraft.core.RegistryAccess.fromRegistryOfRegistries(
+                        net.minecraft.core.registries.BuiltInRegistries.REGISTRY)));
+        zone.moddev.mc.basepower.util.LegacyNbtFields.write(output, tag);
+    }
+
 	protected void saveAdditional(final CompoundTag tagRoot, HolderLookup.Provider registries) {
-		super.saveAdditional(tagRoot, registries);
 		ItemStack[] inventory = this.getInventory();
 		if(inventory != null ){
 			final ListTag nbttaglist = new ListTag();
 			for (int i = 0; i < inventory.length; ++i) {
 				if (inventory[i] != null && !inventory[i].isEmpty()) {
-					final CompoundTag nbttagcompound1 = (CompoundTag) inventory[i].save(registries);
+					final CompoundTag nbttagcompound1 = (CompoundTag) zone.moddev.mc.basepower.util.ItemData.writeStack(inventory[i], registries);
 					nbttagcompound1.putByte("Slot", (byte)i);
 					nbttaglist .add(nbttagcompound1);
 				}
@@ -313,7 +325,6 @@ public class TileEntityConveyor extends BlockEntity implements WorldlyContainer,
 		return true;
 	}
 
-	@Override
 	public void stopOpen(Player p) {
 		// do nothing
 	}
@@ -382,7 +393,6 @@ public class TileEntityConveyor extends BlockEntity implements WorldlyContainer,
 						(double)this.worldPosition.getZ() + 0.5) <= 64.0;
 	}
 
-	@Override
 	public void startOpen(Player arg0) {
 		// do nothing
 	}

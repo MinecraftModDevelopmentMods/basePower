@@ -7,7 +7,12 @@ if [[ ! "$commit" =~ ^[0-9a-f]{40}$ ]]; then
   exit 1
 fi
 
-branch=master-1.20.6
+minecraft="$(sed -n 's/^minecraft_version=//p' gradle.properties)"
+if [[ ! "$minecraft" =~ ^1\.[0-9]+\.[0-9]+$ ]]; then
+  echo "::error::Expected a complete Minecraft target version in gradle.properties"
+  exit 1
+fi
+branch="master-$minecraft"
 if ! status="$(gh api "repos/MinecraftModDevelopmentMods/BaseMetals/compare/$commit...$branch" --jq '.status')"; then
   echo "::error::Could not verify Base Metals $commit on upstream $branch"
   exit 1

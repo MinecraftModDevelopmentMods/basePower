@@ -2,9 +2,9 @@ name: CodeQL
 
 on:
   push:
-    branches: [master-1.21.1, 'feature/**']
+    branches: [master-1.21.11, 'feature/**']
   pull_request:
-    branches: [master-1.21.1]
+    branches: [master-1.21.11]
   schedule:
     - cron: '47 7 * * 4'
 
@@ -21,7 +21,7 @@ jobs:
     steps:
       - name: Check out PowerAdvantage
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-      - name: Require the Base Metals pin on upstream master-1.21.1
+      - name: Require the Base Metals pin on upstream master-1.21.11
         id: base-metals-pin
         env:
           GH_TOKEN: ${{ github.token }}
@@ -32,13 +32,13 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           repository: MinecraftModDevelopmentMods/OreSpawn
-          ref: 62c08169c71f4d4fd8f107289e63fd2a4c7c655c
+          ref: ecad75b24309a344f712d898d717c6a8823fc9f2
           path: .ci-dependencies/OreSpawn
       - name: Check out pinned Base Metals
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           repository: MinecraftModDevelopmentMods/BaseMetals
-          ref: b42b92b0e6f60ac5baf07a6b74042b2fa8427904
+          ref: e6b869ffe7d6fd6a011a99f1844d2a7995394daf
           path: .ci-dependencies/BaseMetals
       - name: Install pinned Java 25 Mavenizer runtime
         uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
@@ -77,8 +77,8 @@ jobs:
           chmod +x "$orespawn/gradlew" "$basemetals/gradlew"
           (cd "$orespawn" && ./gradlew $MMD_GRADLE_TOOLCHAINS jar --no-daemon --stacktrace)
           (cd "$basemetals" && ./gradlew $MMD_GRADLE_TOOLCHAINS jar -PorespawnVerificationRepository="$mirror" --no-daemon --stacktrace)
-          echo "orespawn=$orespawn/build/libs/OreSpawn-4.1.0.121011.jar" >> "$GITHUB_OUTPUT"
-          echo "basemetals=$basemetals/build/libs/BaseMetals-3.1.2.121011.jar" >> "$GITHUB_OUTPUT"
+          echo "orespawn=$orespawn/build/libs/OreSpawn-4.1.0.121111.jar" >> "$GITHUB_OUTPUT"
+          echo "basemetals=$basemetals/build/libs/BaseMetals-3.1.2.121111.jar" >> "$GITHUB_OUTPUT"
           echo "mavenizer=$mavenizer" >> "$GITHUB_OUTPUT"
       - name: Initialize CodeQL
         uses: github/codeql-action/init@db488ddef3bf6cb639b32c2e9a7c0a7ea8271d28 # v4
@@ -91,6 +91,6 @@ jobs:
           ./gradlew $MMD_GRADLE_TOOLCHAINS clean classes verifyReleaseDependencies --rerun-tasks --no-build-cache --no-daemon --stacktrace \
             -PbaseMetalsDeobfJar=${{ steps.dependencies.outputs.basemetals }} \
             -PoreSpawnDeobfJar=${{ steps.dependencies.outputs.orespawn }} \
-            -Pforge52MavenizerJar=${{ steps.dependencies.outputs.mavenizer }}
+            -Pforge61MavenizerJar=${{ steps.dependencies.outputs.mavenizer }}
       - name: Analyze
         uses: github/codeql-action/analyze@db488ddef3bf6cb639b32c2e9a7c0a7ea8271d28 # v4

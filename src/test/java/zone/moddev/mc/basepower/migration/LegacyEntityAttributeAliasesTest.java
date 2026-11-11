@@ -9,10 +9,9 @@ import com.mojang.serialization.Dynamic;
 import java.util.UUID;
 import java.util.function.UnaryOperator;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.animal.Wolf;
+import net.minecraft.world.entity.animal.wolf.Wolf;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.NbtUtils;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.SharedConstants;
@@ -39,9 +38,9 @@ public class LegacyEntityAttributeAliasesTest {
         CompoundTag root = chunk(entity);
         LegacyEntityDataFixes.prepare(root);
         LegacyEntityDataFixes.finish(root);
-        CompoundTag actual = root.getCompound("Level").getList("Entities", 10).getCompound(0);
+        CompoundTag actual = root.getCompoundOrEmpty("Level").getListOrEmpty("Entities").getCompoundOrEmpty(0);
         CompoundTag expected = before.copy();
-        expected.getList("Attributes", 10).getCompound(0).putString("Name", "forge:swim_speed");
+        expected.getListOrEmpty("Attributes").getCompoundOrEmpty(0).putString("Name", "forge:swim_speed");
         expected = LegacyForgeAttributeRegistryTest.nativeAttributeRecord(expected);
         assertEquals(expected, actual);
         assertEquals(before, entity);
@@ -51,14 +50,14 @@ public class LegacyEntityAttributeAliasesTest {
         CompoundTag root = chunk(entity("minecraft:wolf", true));
         LegacyEntityDataFixes.prepare(root);
         LegacyEntityDataFixes.finish(root);
-        CompoundTag attribute = root.getCompound("Level").getList("Entities", 10).getCompound(0)
-                .getList("attributes", 10).getCompound(0);
-        assertEquals("forge:swim_speed", attribute.getString("id"));
-        assertEquals(2D, attribute.getDouble("base"), 0D);
-        assertEquals("keep-attribute-field", attribute.getString("PrivateNote"));
-        CompoundTag modifier = attribute.getList("modifiers", 10).getCompound(0);
-        assertEquals("minecraft:" + MODIFIER, modifier.getString("id"));
-        assertEquals("keep-modifier-field", modifier.getString("PrivateNote"));
+        CompoundTag attribute = root.getCompoundOrEmpty("Level").getListOrEmpty("Entities").getCompoundOrEmpty(0)
+                .getListOrEmpty("attributes").getCompoundOrEmpty(0);
+        assertEquals("forge:swim_speed", attribute.getStringOr("id", ""));
+        assertEquals(2D, attribute.getDoubleOr("base", 0.0D), 0D);
+        assertEquals("keep-attribute-field", attribute.getStringOr("PrivateNote", ""));
+        CompoundTag modifier = attribute.getListOrEmpty("modifiers").getCompoundOrEmpty(0);
+        assertEquals("minecraft:" + MODIFIER, modifier.getStringOr("id", ""));
+        assertEquals("keep-modifier-field", modifier.getStringOr("PrivateNote", ""));
     }
 
     @Test public void aliasesOnlyEntityPassengersNotInventoryOrPrivateCompounds() {
@@ -72,12 +71,12 @@ public class LegacyEntityAttributeAliasesTest {
         ListTag items = new ListTag(); items.add(foreign.copy()); parent.put("Items", items);
         CompoundTag root = chunk(parent);
         LegacyEntityDataFixes.prepare(root); LegacyEntityDataFixes.finish(root);
-        CompoundTag actual = root.getCompound("Level").getList("Entities", 10).getCompound(0);
-        assertEquals("forge:swim_speed", actual.getList("Passengers", 10).getCompound(0)
-                .getList("attributes", 10).getCompound(0).getString("id"));
-        assertEquals(foreign, actual.getCompound("PrivateData"));
-        assertEquals(foreign, actual.getCompound("ForgeData"));
-        assertEquals(items, actual.getList("Items", 10));
+        CompoundTag actual = root.getCompoundOrEmpty("Level").getListOrEmpty("Entities").getCompoundOrEmpty(0);
+        assertEquals("forge:swim_speed", actual.getListOrEmpty("Passengers").getCompoundOrEmpty(0)
+                .getListOrEmpty("attributes").getCompoundOrEmpty(0).getStringOr("id", ""));
+        assertEquals(foreign, actual.getCompoundOrEmpty("PrivateData"));
+        assertEquals(foreign, actual.getCompoundOrEmpty("ForgeData"));
+        assertEquals(items, actual.getListOrEmpty("Items"));
     }
 
     @Test public void rejectsLegacyNativeCollisionWithoutChangingChunk() {
@@ -97,7 +96,7 @@ public class LegacyEntityAttributeAliasesTest {
         }
         entity.put("Attributes", list);
         CompoundTag root = chunk(entity), before = root.copy();
-        before.getCompound("Level").getList("Entities", 10).set(0,
+        before.getCompoundOrEmpty("Level").getListOrEmpty("Entities").set(0,
                 LegacyForgeAttributeRegistryTest.nativeAttributeRecord(entity));
         LegacyEntityDataFixes.prepare(root); LegacyEntityDataFixes.finish(root);
         assertEquals(before, root);
@@ -116,12 +115,12 @@ public class LegacyEntityAttributeAliasesTest {
 
     @Test public void modernChunksAndPlayersRemainUnchanged() {
         CompoundTag root = chunk(entity("minecraft:wolf", true));
-        root.putInt("DataVersion", SharedConstants.getCurrentVersion().getDataVersion().getVersion());
+        root.putInt("DataVersion", SharedConstants.getCurrentVersion().dataVersion().version());
         CompoundTag before = root.copy();
         LegacyEntityDataFixes.prepare(root); assertEquals(before, root);
         CompoundTag player = player(entity("minecraft:wolf", true));
         CompoundTag result = LegacyPlayerDataFixes.update(DataFixers.getDataFixer(), DataFixTypes.PLAYER,
-                player, SharedConstants.getCurrentVersion().getDataVersion().getVersion());
+                player, SharedConstants.getCurrentVersion().dataVersion().version());
         assertEquals(player, result);
     }
 
@@ -130,17 +129,17 @@ public class LegacyEntityAttributeAliasesTest {
         ListTag passengers = new ListTag(); passengers.add(entity("example:seat", true)); vehicle.put("Passengers", passengers);
         CompoundTag source = player(vehicle), expected = source.copy();
         CompoundTag result = LegacyPlayerDataFixes.update(new RecordingFixer(value -> {
-            CompoundTag rootVehicle = value.getCompound("RootVehicle").getCompound("Entity");
-            assertEquals("forge:swim_speed", rootVehicle.getList("Attributes", 10).getCompound(0).getString("Name"));
-            assertEquals("forge:swim_speed", rootVehicle.getList("Passengers", 10).getCompound(0)
-                    .getList("Attributes", 10).getCompound(0).getString("Name"));
+            CompoundTag rootVehicle = value.getCompoundOrEmpty("RootVehicle").getCompoundOrEmpty("Entity");
+            assertEquals("forge:swim_speed", rootVehicle.getListOrEmpty("Attributes").getCompoundOrEmpty(0).getStringOr("Name", ""));
+            assertEquals("forge:swim_speed", rootVehicle.getListOrEmpty("Passengers").getCompoundOrEmpty(0)
+                    .getListOrEmpty("Attributes").getCompoundOrEmpty(0).getStringOr("Name", ""));
             return value;
         }), DataFixTypes.PLAYER, source, 512);
         assertEquals(expected, source);
-        expected.getCompound("RootVehicle").getCompound("Entity").getList("Attributes", 10)
-                .getCompound(0).putString("Name", "forge:swim_speed");
-        expected.getCompound("RootVehicle").getCompound("Entity").getList("Passengers", 10).getCompound(0)
-                .getList("Attributes", 10).getCompound(0).putString("Name", "forge:swim_speed");
+        expected.getCompoundOrEmpty("RootVehicle").getCompoundOrEmpty("Entity").getListOrEmpty("Attributes")
+                .getCompoundOrEmpty(0).putString("Name", "forge:swim_speed");
+        expected.getCompoundOrEmpty("RootVehicle").getCompoundOrEmpty("Entity").getListOrEmpty("Passengers").getCompoundOrEmpty(0)
+                .getListOrEmpty("Attributes").getCompoundOrEmpty(0).putString("Name", "forge:swim_speed");
         assertEquals(expected, result);
     }
 
@@ -154,15 +153,15 @@ public class LegacyEntityAttributeAliasesTest {
         CompoundTag result = LegacyPlayerDataFixes.update(new RecordingFixer(value -> value),
                 DataFixTypes.PLAYER, player, 1343);
         assertEquals(before, player);
-        assertEquals(inventory, result.getList("Inventory", 10));
-        assertEquals(before.getCompound("PrivateData"), result.getCompound("PrivateData"));
+        assertEquals(inventory, result.getListOrEmpty("Inventory"));
+        assertEquals(before.getCompoundOrEmpty("PrivateData"), result.getCompoundOrEmpty("PrivateData"));
     }
 
     @Test public void rootVehiclePassengerCollisionFailsWithoutChangingPlayer() {
         CompoundTag vehicle = entity("example:vehicle", true);
         CompoundTag child = entity("example:seat", true);
         CompoundTag duplicate = attribute(false); duplicate.putString("Name", "forge:swim_speed");
-        child.getList("Attributes", 10).add(duplicate);
+        child.getListOrEmpty("Attributes").add(duplicate);
         ListTag passengers = new ListTag(); passengers.add(child); vehicle.put("Passengers", passengers);
         CompoundTag player = player(vehicle), before = player.copy();
         try {
@@ -176,36 +175,36 @@ public class LegacyEntityAttributeAliasesTest {
         ListTag passengers = new ListTag(); passengers.add(entity("minecraft:wolf", true)); vehicle.put("Passengers", passengers);
         CompoundTag player = player(vehicle), before = player.copy();
         CompoundTag result = LegacyPlayerDataFixes.update(DataFixers.getDataFixer(), DataFixTypes.PLAYER, player, 1343);
-        CompoundTag fixed = result.getCompound("RootVehicle").getCompound("Entity");
-        for (CompoundTag actual : new CompoundTag[] {fixed, fixed.getList("Passengers", 10).getCompound(0)}) {
-            CompoundTag attribute = actual.getList("attributes", 10).getCompound(0);
-            assertEquals("forge:swim_speed", attribute.getString("id"));
-            assertEquals(2D, attribute.getDouble("base"), 0D);
-            assertEquals("minecraft:" + MODIFIER, attribute.getList("modifiers", 10).getCompound(0).getString("id"));
+        CompoundTag fixed = result.getCompoundOrEmpty("RootVehicle").getCompoundOrEmpty("Entity");
+        for (CompoundTag actual : new CompoundTag[] {fixed, fixed.getListOrEmpty("Passengers").getCompoundOrEmpty(0)}) {
+            CompoundTag attribute = actual.getListOrEmpty("attributes").getCompoundOrEmpty(0);
+            assertEquals("forge:swim_speed", attribute.getStringOr("id", ""));
+            assertEquals(2D, attribute.getDoubleOr("base", 0.0D), 0D);
+            assertEquals("minecraft:" + MODIFIER, attribute.getListOrEmpty("modifiers").getCompoundOrEmpty(0).getStringOr("id", ""));
         }
         assertEquals(before, player);
     }
 
     @Test public void ownPlayerAttributeBaseTwoAndModifierSurviveNativePlayerDfu() {
         CompoundTag player = player(entity("minecraft:wolf", true));
-        player.put("Attributes", entity("minecraft:wolf", true).getList("Attributes", 10));
+        player.put("Attributes", entity("minecraft:wolf", true).getListOrEmpty("Attributes"));
         CompoundTag foreign = entity("example:private", true);
         player.put("PrivateData", foreign.copy());
         CompoundTag before = player.copy();
         CompoundTag result = LegacyPlayerDataFixes.update(DataFixers.getDataFixer(), DataFixTypes.PLAYER, player, 1343);
-        CompoundTag attribute = result.getList("attributes", 10).getCompound(0);
-        assertEquals("forge:swim_speed", attribute.getString("id"));
-        assertEquals(2D, attribute.getDouble("base"), 0D);
-        assertEquals("minecraft:" + MODIFIER, attribute.getList("modifiers", 10).getCompound(0).getString("id"));
-        assertEquals("keep-attribute-field", attribute.getString("PrivateNote"));
-        assertEquals("keep-modifier-field", attribute.getList("modifiers", 10).getCompound(0).getString("PrivateNote"));
-        assertEquals(foreign, result.getCompound("PrivateData"));
+        CompoundTag attribute = result.getListOrEmpty("attributes").getCompoundOrEmpty(0);
+        assertEquals("forge:swim_speed", attribute.getStringOr("id", ""));
+        assertEquals(2D, attribute.getDoubleOr("base", 0.0D), 0D);
+        assertEquals("minecraft:" + MODIFIER, attribute.getListOrEmpty("modifiers").getCompoundOrEmpty(0).getStringOr("id", ""));
+        assertEquals("keep-attribute-field", attribute.getStringOr("PrivateNote", ""));
+        assertEquals("keep-modifier-field", attribute.getListOrEmpty("modifiers").getCompoundOrEmpty(0).getStringOr("PrivateNote", ""));
+        assertEquals(foreign, result.getCompoundOrEmpty("PrivateData"));
         assertEquals(before, player);
     }
 
     @Test public void ownPlayerAttributeCollisionFailsWithoutMutatingCaller() {
         CompoundTag player = player(entity("example:vehicle", true));
-        ListTag attributes = entity("example:attributes", true).getList("Attributes", 10);
+        ListTag attributes = entity("example:attributes", true).getListOrEmpty("Attributes");
         CompoundTag duplicate = attribute(false); duplicate.putString("Name", "forge:swim_speed"); attributes.add(duplicate);
         player.put("Attributes", attributes);
         CompoundTag before = player.copy();
@@ -230,16 +229,16 @@ public class LegacyEntityAttributeAliasesTest {
         source.putFloat("Health", 8F);
         CompoundTag red = (CompoundTag) DataFixers.getDataFixer().update(References.ENTITY,
                 new Dynamic<>(NbtOps.INSTANCE, source.copy()), 1343,
-                SharedConstants.getCurrentVersion().getDataVersion().getVersion()).getValue();
-        Wolf before = new Wolf(EntityType.WOLF, world); before.load(red);
+                SharedConstants.getCurrentVersion().dataVersion().version()).getValue();
+        Wolf before = new Wolf(EntityType.WOLF, world); NativeWolfTestWorld.load(before, red);
         var swimSpeed = ForgeMod.SWIM_SPEED.getHolder().orElseThrow();
         assertEquals(1D, before.getAttribute(swimSpeed).getBaseValue(), 0D);
         CompoundTag root = chunk(source);
         LegacyEntityDataFixes.prepare(root); LegacyEntityDataFixes.finish(root);
         Wolf after = new Wolf(EntityType.WOLF, world);
-        after.load(root.getCompound("Level").getList("Entities", 10).getCompound(0));
+        NativeWolfTestWorld.load(after, root.getCompoundOrEmpty("Level").getListOrEmpty("Entities").getCompoundOrEmpty(0));
         assertEquals(2D, after.getAttribute(swimSpeed).getBaseValue(), 0D);
-        var modifierId = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("minecraft", MODIFIER.toString());
+        var modifierId = net.minecraft.resources.Identifier.fromNamespaceAndPath("minecraft", MODIFIER.toString());
         assertNotNull(after.getAttribute(swimSpeed).getModifier(modifierId));
         assertEquals(0.75D, after.getAttribute(swimSpeed).getModifier(modifierId).amount(), 0D);
         assertEquals(2.75D, after.getAttributeValue(swimSpeed), 0D);
@@ -248,9 +247,9 @@ public class LegacyEntityAttributeAliasesTest {
 
     private static void assertCollision(String first, String second) {
         CompoundTag entity = entity("example:vehicle", true);
-        entity.getList("Attributes", 10).getCompound(0).putString("Name", first);
+        entity.getListOrEmpty("Attributes").getCompoundOrEmpty(0).putString("Name", first);
         CompoundTag duplicate = attribute(false); duplicate.putString("Name", second);
-        entity.getList("Attributes", 10).add(duplicate);
+        entity.getListOrEmpty("Attributes").add(duplicate);
         CompoundTag root = chunk(entity), before = root.copy();
         try { LegacyEntityDataFixes.prepare(root); fail("Alias collision accepted"); }
         catch (IllegalStateException expected) { assertEquals(before, root); }
@@ -282,7 +281,7 @@ public class LegacyEntityAttributeAliasesTest {
 
     private static CompoundTag player(CompoundTag entity) {
         CompoundTag result = new CompoundTag(); CompoundTag vehicle = new CompoundTag();
-        vehicle.put("Entity", entity); vehicle.putUUID("Attach", new UUID(1L, 2L)); result.put("RootVehicle", vehicle); return result;
+        vehicle.put("Entity", entity); vehicle.store("Attach", net.minecraft.core.UUIDUtil.CODEC, new UUID(1L, 2L)); result.put("RootVehicle", vehicle); return result;
     }
 
     private static void registerForgeAttributes() throws Exception {

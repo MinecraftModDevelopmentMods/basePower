@@ -35,8 +35,8 @@ public class MachineCapabilitiesLifecycleTest {
         assertNotNull(ForgeCapabilities.ENERGY);
         previousTank = Entities.METAL_TANK;
         previousConveyor = Entities.CONVEYOR;
-        Entities.METAL_TANK = BlockEntityType.Builder.of(MetalTankTileEntity::new, Blocks.IRON_BLOCK).build(null);
-        Entities.CONVEYOR = BlockEntityType.Builder.of(TileEntityConveyor::new, Blocks.HOPPER).build(null);
+        Entities.METAL_TANK = new BlockEntityType<>(MetalTankTileEntity::new, java.util.Set.of(Blocks.IRON_BLOCK));
+        Entities.CONVEYOR = new BlockEntityType<>(TileEntityConveyor::new, java.util.Set.of(Blocks.HOPPER));
     }
 
     @AfterClass public static void restoreNativeTypes() {
@@ -157,7 +157,7 @@ public class MachineCapabilitiesLifecycleTest {
 
     private static final class TestConverter extends cyano.poweradvantage.api.modsupport.rf.TileEntityRFConverter {
         private static final BlockEntityType<TestConverter> TYPE =
-                BlockEntityType.Builder.of(TestConverter::new, Blocks.IRON_BLOCK).build(null);
+                new BlockEntityType<>(TestConverter::new, java.util.Set.of(Blocks.IRON_BLOCK));
         TestConverter() { this(BlockPos.ZERO, Blocks.IRON_BLOCK.defaultBlockState()); }
         TestConverter(BlockPos pos, BlockState state) {
             super(TYPE, pos, state, new cyano.poweradvantage.api.ConduitType("test-power"), 100, 1000, "test");

@@ -1,0 +1,6 @@
+{
+  "model": {
+    "type": "minecraft:model",
+    "model": "basepower:item/rotator_tool"
+  }
+}

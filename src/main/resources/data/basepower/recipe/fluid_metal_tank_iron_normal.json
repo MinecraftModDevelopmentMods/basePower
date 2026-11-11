@@ -6,12 +6,8 @@
     "xxx"
   ],
   "key": {
-    "x": {
-      "tag": "forge:ingots/iron"
-    },
-    "p": {
-      "tag": "forge:pipes"
-    }
+    "x": "#forge:ingots/iron",
+    "p": "#forge:pipes"
   },
   "result": {
     "id": "basepower:fluid_metal_tank"

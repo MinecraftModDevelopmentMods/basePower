@@ -48,8 +48,8 @@ public class InventoryWrapper implements WorldlyContainer, Nameable {
     @Override public boolean stillValid(Player player) {
         return slots.length != 0 && inventory.stillValid(player);
     }
-    @Override public void startOpen(Player player) { inventory.startOpen(player); }
-    @Override public void stopOpen(Player player) { inventory.stopOpen(player); }
+    @Override public void startOpen(net.minecraft.world.entity.ContainerUser user) { inventory.startOpen(user); }
+    @Override public void stopOpen(net.minecraft.world.entity.ContainerUser user) { inventory.stopOpen(user); }
     @Override public void setChanged() { inventory.setChanged(); }
     @Override public int[] getSlotsForFace(Direction face) { return isLocked() ? NO_SLOTS : slots; }
     @Override public boolean canPlaceItemThroughFace(int slot, ItemStack stack, Direction face) {

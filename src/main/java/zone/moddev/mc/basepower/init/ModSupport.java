@@ -28,13 +28,13 @@ public final class ModSupport {
     public static synchronized void initBlocks() {
         if (initialized) return;
         float hardness = 0.75F;
-        converter_rf_steam = Blocks.add(new BlockRFConverter(GUIBlock.machineProperties(hardness), new ConduitType("steam"),
+        converter_rf_steam = Blocks.add(new BlockRFConverter(Blocks.properties("converter_rf_steam", GUIBlock.machineProperties(hardness)), new ConduitType("steam"),
                 TileEntityRFSteamConverter.class), "converter_rf_steam");
-        converter_rf_electricity = Blocks.add(new BlockRFConverter(GUIBlock.machineProperties(hardness), new ConduitType("electricity"),
+        converter_rf_electricity = Blocks.add(new BlockRFConverter(Blocks.properties("converter_rf_electricity", GUIBlock.machineProperties(hardness)), new ConduitType("electricity"),
                 TileEntityRFElectricityConverter.class), "converter_rf_electricity");
-        converter_rf_quantum = Blocks.add(new BlockRFConverter(GUIBlock.machineProperties(hardness), new ConduitType("quantum"),
+        converter_rf_quantum = Blocks.add(new BlockRFConverter(Blocks.properties("converter_rf_quantum", GUIBlock.machineProperties(hardness)), new ConduitType("quantum"),
                 TileEntityRFQuantumConverter.class), "converter_rf_quantum");
-        converter_tr_electricity = Blocks.add(new BlockTRConverter(GUIBlock.machineProperties(hardness), new ConduitType("electricity"),
+        converter_tr_electricity = Blocks.add(new BlockTRConverter(Blocks.properties("converter_tr_electricity", GUIBlock.machineProperties(hardness)), new ConduitType("electricity"),
                 TileEntityTRElectricityConverter.class), "converter_tr_electricity");
         initialized = true;
     }

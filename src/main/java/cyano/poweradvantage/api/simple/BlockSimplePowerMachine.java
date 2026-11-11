@@ -4,7 +4,7 @@ import cyano.poweradvantage.api.*;
 import zone.moddev.mc.basepower.conduitnetwork.ConduitRegistry;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.state.properties.Property;
-import net.minecraft.world.level.block.state.properties.DirectionProperty;
+import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.entity.LivingEntity;
@@ -40,7 +40,7 @@ net.minecraftforge.fml.common.registry.ForgeRegistries.BLOCKS.register(myMachine
  *
  */
 public abstract class BlockSimplePowerMachine extends GUIBlock implements ITypedConduit {
-	public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
+	public static final EnumProperty<Direction> FACING = HorizontalDirectionalBlock.FACING;
 	private final ConduitType[] type;
 
 
@@ -153,7 +153,7 @@ public abstract class BlockSimplePowerMachine extends GUIBlock implements ITyped
      * @param state Block state
      */
     protected void setDefaultFacing(final Level w, final BlockPos coord, final BlockState state) {
-        if (w.isClientSide) {
+        if (w.isClientSide()) {
             return;
         }
         final BlockState block = w.getBlockState(coord.north());

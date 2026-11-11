@@ -6,7 +6,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtIo;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -34,7 +34,7 @@ public class LegacyRegistryArchiveTest {
         assertNotNull(retained);
         assertNotEquals(level.toFile(), retained);
         var archive = NbtIo.readCompressed(retained.toPath(), net.minecraft.nbt.NbtAccounter.unlimitedHeap());
-        assertEquals(source.getCompound("FML"), archive.getCompound("FML"));
+        assertEquals(source.getCompoundOrEmpty("FML"), archive.getCompoundOrEmpty("FML"));
         assertFalse(archive.contains("Data"));
         LegacyWorldDataHook.preserveLegacyRegistry(level.toFile(), nativeSave);
         assertEquals(archive, NbtIo.readCompressed(retained.toPath(), net.minecraft.nbt.NbtAccounter.unlimitedHeap()));
@@ -49,13 +49,13 @@ public class LegacyRegistryArchiveTest {
         Files.write(region, header);
         try {
             assertEquals(1, LegacyWorldDataHook.indexLegacyChunks(world.toFile()));
-            var nether = ResourceLocation.parse("the_nether");
+            var nether = Identifier.parse("the_nether");
             assertTrue(LegacyWorldDataHook.isProtectedChunk(nether, new BlockPos(0, 0, 0)));
             assertTrue(LegacyWorldDataHook.isProtectedChunk(nether, new BlockPos(0, 255, 0)));
             assertFalse(LegacyWorldDataHook.isProtectedChunk(nether, new BlockPos(0, -1, 0)));
             assertFalse(LegacyWorldDataHook.isProtectedChunk(nether, new BlockPos(0, 256, 0)));
             assertFalse(LegacyWorldDataHook.isProtectedChunk(nether, new BlockPos(16, 64, 0)));
-            assertFalse(LegacyWorldDataHook.isProtectedChunk(ResourceLocation.parse("overworld"), new BlockPos(0, 64, 0)));
+            assertFalse(LegacyWorldDataHook.isProtectedChunk(Identifier.parse("overworld"), new BlockPos(0, 64, 0)));
         } finally {
             LegacyWorldDataHook.indexLegacyChunks(temporary.newFolder());
         }

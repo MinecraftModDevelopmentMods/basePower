@@ -6,15 +6,9 @@
     "z"
   ],
   "key": {
-    "x": {
-      "item": "basepower:item_conveyor"
-    },
-    "y": {
-      "item": "minecraft:furnace"
-    },
-    "z": {
-      "item": "minecraft:oak_pressure_plate"
-    }
+    "x": "basepower:item_conveyor",
+    "y": "minecraft:furnace",
+    "z": "minecraft:oak_pressure_plate"
   },
   "result": {
     "id": "basepower:item_filter_smelt"

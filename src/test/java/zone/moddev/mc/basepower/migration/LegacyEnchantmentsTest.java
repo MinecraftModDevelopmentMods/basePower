@@ -24,10 +24,10 @@ public class LegacyEnchantmentsTest {
         }
         tag.put("ench", list);
         assertTrue(LegacyWorldDataHook.migrateLegacyEnchantments(tag, saved));
-        assertFalse(tag.contains("ench", 9));
+        assertFalse(zone.moddev.mc.basepower.util.NbtCompat.containsTag(tag, "ench", 9));
         for (int i = 0; i < 4; i++) {
-            assertEquals(saved.get(10 + i), tag.getList("Enchantments", 10).getCompound(i).getString("id"));
-            assertEquals(3, tag.getList("Enchantments", 10).getCompound(i).getShort("lvl"));
+            assertEquals(saved.get(10 + i), tag.getListOrEmpty("Enchantments").getCompoundOrEmpty(i).getStringOr("id", ""));
+            assertEquals(3, tag.getListOrEmpty("Enchantments").getCompoundOrEmpty(i).getShortOr("lvl", (short)0));
         }
         assertFalse(LegacyWorldDataHook.migrateLegacyEnchantments(tag, saved));
     }
@@ -43,8 +43,8 @@ public class LegacyEnchantmentsTest {
         list.add(entry);
         book.put("StoredEnchantments", list);
         assertTrue(LegacyWorldDataHook.migrateLegacyEnchantments(book, saved));
-        assertEquals("steamadvantage:rapid_reload", book.getList("StoredEnchantments", 10).getCompound(0).getString("id"));
-        assertEquals(2, book.getList("StoredEnchantments", 10).getCompound(0).getShort("lvl"));
+        assertEquals("steamadvantage:rapid_reload", book.getListOrEmpty("StoredEnchantments").getCompoundOrEmpty(0).getStringOr("id", ""));
+        assertEquals(2, book.getListOrEmpty("StoredEnchantments").getCompoundOrEmpty(0).getShortOr("lvl", (short)0));
     }
 
     @Test(expected = IllegalStateException.class)

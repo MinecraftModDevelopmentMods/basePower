@@ -5,7 +5,7 @@ import net.minecraft.nbt.IntArrayTag;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.core.Registry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
@@ -278,7 +278,7 @@ public class BlockPos4D {
 
 	public Tag toNBT() {
 		CompoundTag data = new CompoundTag();
-		data.putString("Dimension", dimension.location().toString());
+		data.putString("Dimension", dimension.identifier().toString());
 		data.putIntArray("Pos", new int[] {pos.getX(), pos.getY(), pos.getZ()});
 		return data;
 	}
@@ -290,10 +290,10 @@ public class BlockPos4D {
 			return new BlockPos4D(legacyDimension(data[0]), data[1], data[2], data[3]);
 		}
 		CompoundTag data = (CompoundTag) tag;
-		int[] pos = data.getIntArray("Pos");
+		int[] pos = data.getIntArray("Pos").orElseGet(() -> new int[0]);
 		if (pos.length != 3) throw new IllegalArgumentException("Invalid position");
 		return new BlockPos4D(ResourceKey.create(net.minecraft.core.registries.Registries.DIMENSION,
-				ResourceLocation.parse(data.getString("Dimension"))), pos[0], pos[1], pos[2]);
+				Identifier.parse(data.getStringOr("Dimension", ""))), pos[0], pos[1], pos[2]);
 	}
 
 	/** Only the three vanilla numeric IDs have an unambiguous legacy meaning. */

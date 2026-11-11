@@ -6,9 +6,7 @@
     "xxx"
   ],
   "key": {
-    "x": {
-      "tag": "forge:bars/steel"
-    }
+    "x": "#forge:bars/steel"
   },
   "result": {
     "id": "basepower:steel_frame"

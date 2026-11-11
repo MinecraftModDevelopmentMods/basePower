@@ -2,10 +2,10 @@ package zone.moddev.mc.basepower.machines.conveyors;
 
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.common.Tags;
-import zone.moddev.mc.basepower.init.Entities;
+
 
 public class TileEntityOreFilter extends TileEntityConveyorFilter {
-	public TileEntityOreFilter(net.minecraft.core.BlockPos pos, net.minecraft.world.level.block.state.BlockState state) { super(Entities.FILTER_ORE, pos, state, 1); }
+	public TileEntityOreFilter(net.minecraft.core.BlockPos pos, net.minecraft.world.level.block.state.BlockState state) { super(zone.moddev.mc.basepower.init.Entities.FILTER_ORE, pos, state, 1); }
 
 	@Override
 	public boolean matchesFilter(ItemStack item) {

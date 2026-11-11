@@ -18,6 +18,8 @@ import net.minecraft.world.level.Level;
 @SuppressWarnings("deprecation")
 public class TerminalFluidPipeBlock extends FluidPipeBlock implements EntityBlock {
 
+    public TerminalFluidPipeBlock() { super("fluid_pipe_terminal"); }
+
 	@Override
 	public BlockEntity newBlockEntity(net.minecraft.core.BlockPos pos, net.minecraft.world.level.block.state.BlockState state) {
 		return new TerminalFluidPipeTileEntity(pos, state);
@@ -38,7 +40,8 @@ public class TerminalFluidPipeBlock extends FluidPipeBlock implements EntityBloc
 	 * Called when a neighboring block changes.
 	 */
 	@Override
-	public void neighborChanged(BlockState state, Level worldIn, BlockPos pos, Block blockIn, BlockPos fromPos, boolean isMoving) {
+	public void neighborChanged(BlockState state, Level worldIn, BlockPos pos, Block blockIn,
+            net.minecraft.world.level.redstone.Orientation orientation, boolean isMoving) {
 		pipeCheck(worldIn, pos);
 	}
 
@@ -51,7 +54,7 @@ public class TerminalFluidPipeBlock extends FluidPipeBlock implements EntityBloc
 	}
 
 	private void pipeCheck(Level w, BlockPos pos) {
-		if (!w.isClientSide) {
+		if (!w.isClientSide()) {
 			if (numberOfAdjacentFluidHandlers(w, pos) == 0) {
 				w.setBlock(pos, Blocks.fluid_pipe.defaultBlockState(), 3);
 			}

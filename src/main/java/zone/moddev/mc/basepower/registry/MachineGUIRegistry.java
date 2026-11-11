@@ -19,7 +19,7 @@ import net.minecraft.world.level.Level;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.extensions.IForgeMenuType;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegisterEvent;
 import zone.moddev.mc.basepower.PowerAdvantage;
@@ -50,7 +50,7 @@ public final class MachineGUIRegistry {
     public static void registerTypes(RegisterEvent event) {
         if (!ForgeRegistries.Keys.MENU_TYPES.equals(event.getRegistryKey())) return;
         TYPE = IForgeMenuType.create(MachineGUIRegistry::createClientContainer);
-        event.register(ForgeRegistries.Keys.MENU_TYPES, ResourceLocation.fromNamespaceAndPath(PowerAdvantage.MODID, "machine"), () -> TYPE);
+        event.register(ForgeRegistries.Keys.MENU_TYPES, Identifier.fromNamespaceAndPath(PowerAdvantage.MODID, "machine"), () -> TYPE);
     }
 
     private static SimpleMachineGUI.Container createClientContainer(
@@ -82,7 +82,7 @@ public final class MachineGUIRegistry {
 
     public static void open(ServerPlayer player, Level world, BlockPos pos, int id) {
         BlockEntity tile = world.getBlockEntity(pos);
-        if (world.isClientSide || player.level() != world || !(tile instanceof Container)) return;
+        if (world.isClientSide() || player.level() != world || !(tile instanceof Container)) return;
         SimpleMachineGUI gui = definition(id);
         player.openMenu(new MenuProvider() {
             @Override public AbstractContainerMenu createMenu(int windowId, Inventory inventory, Player owner) {

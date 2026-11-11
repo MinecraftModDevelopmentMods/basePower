@@ -13,8 +13,8 @@ public class RetiredProfessionSnapshotTest {
             player.putInt("XpLevel", 34);
             root.put("Player", player);
             assertTrue(LegacyWorldDataHook.removeRetiredVanillaProfessionRegistry(root));
-            assertFalse(root.getCompound(namespace).getCompound("Registries").contains("minecraft:villagerprofessions"));
-            assertEquals(player, root.getCompound("Player"));
+            assertFalse(root.getCompoundOrEmpty(namespace).getCompoundOrEmpty("Registries").contains("minecraft:villagerprofessions"));
+            assertEquals(player, root.getCompoundOrEmpty("Player"));
             assertFalse(LegacyWorldDataHook.removeRetiredVanillaProfessionRegistry(root));
         }
     }

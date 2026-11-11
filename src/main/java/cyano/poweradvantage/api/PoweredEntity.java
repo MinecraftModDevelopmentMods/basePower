@@ -142,7 +142,7 @@ public abstract class PoweredEntity extends BlockEntity implements IPowerMachine
 	 * Tells Minecraft to synchronize this tile entity
 	 */
 	protected final void sync() {
-		if (this.level == null || this.level.isClientSide) return;
+		if (this.level == null || this.level.isClientSide()) return;
 		this.setChanged();
         BlockState state = this.level.getBlockState(getBlockPos());
         this.level.sendBlockUpdated(getBlockPos(), state, state, 2);
@@ -173,7 +173,7 @@ public abstract class PoweredEntity extends BlockEntity implements IPowerMachine
 	public void onLoad() {
 		super.onLoad();
 		this.conduitRefreshDelay = 2;
-		if (this.level != null && !this.level.isClientSide) {
+		if (this.level != null && !this.level.isClientSide()) {
 			ConduitRegistry.getInstance().conduitBlockLoadedEvent(this.level, this.getTypes());
 		}
 	}
@@ -216,7 +216,7 @@ public abstract class PoweredEntity extends BlockEntity implements IPowerMachine
 				.getChunkSource().getChunkNow(pos.getX() >> 4, pos.getZ() >> 4);
 		// Timers and externally supplied energy can change without a GUI sync.
 		// Mark the loaded chunk only; do not load neighbours or notify comparators.
-		if (chunk != null) chunk.setUnsaved(true);
+		if (chunk != null) chunk.markUnsaved();
 	}
 
 	private void refreshConduitNetworkAfterLoad() {
@@ -247,7 +247,7 @@ public abstract class PoweredEntity extends BlockEntity implements IPowerMachine
 	 * @return true if on server world, false otherwise
 	 */
 	public boolean isServer() {
-		return !this.getLevel().isClientSide;
+		return !this.getLevel().isClientSide();
 	}
 
 	/**
@@ -257,7 +257,7 @@ public abstract class PoweredEntity extends BlockEntity implements IPowerMachine
 	 * @return false if on server world, true if on client
 	 */
 	public boolean isClient() {
-		return this.getLevel().isClientSide;
+		return this.getLevel().isClientSide();
 	}
 
 	/**
@@ -280,11 +280,16 @@ public abstract class PoweredEntity extends BlockEntity implements IPowerMachine
 	 * packet.
 	 */
 	@Override
+	protected void loadAdditional(net.minecraft.world.level.storage.ValueInput input) {
+		super.loadAdditional(input);
+		loadAdditional(zone.moddev.mc.basepower.util.LegacyNbtFields.read(input), input.lookup());
+	}
+
+	/** Compatibility hook for add-ons which persist the established flat NBT schema. */
 	protected void loadAdditional(final CompoundTag tagRoot, HolderLookup.Provider registries) {
-		super.loadAdditional(tagRoot, registries);
 		this.conduitRefreshDelay = 2;
-		if (tagRoot.contains("Energy", 11)) {
-			int[] data = tagRoot.getIntArray("Energy");
+		if (tagRoot.get("Energy") instanceof net.minecraft.nbt.IntArrayTag energy) {
+			int[] data = energy.getAsIntArray();
 			for (int i = 0; i < data.length; i++) {
 				if (i >= this.getTypes().length) break;
 				this.setEnergy(Float.intBitsToFloat(data[i]), this.getTypes()[i]);
@@ -297,8 +302,15 @@ public abstract class PoweredEntity extends BlockEntity implements IPowerMachine
 	 * the network.
 	 */
 	@Override
+	protected void saveAdditional(net.minecraft.world.level.storage.ValueOutput output) {
+		super.saveAdditional(output);
+		CompoundTag fields = new CompoundTag();
+		saveAdditional(fields, zone.moddev.mc.basepower.util.LegacyNbtFields.registries(output, serializationRegistries()));
+		zone.moddev.mc.basepower.util.LegacyNbtFields.write(output, fields);
+	}
+
+	/** Compatibility hook; the native writer retains these fields at the root. */
 	protected void saveAdditional(final CompoundTag tagRoot, HolderLookup.Provider registries) {
-		super.saveAdditional(tagRoot, registries);
 		int[] data = new int[this.getTypes().length];
 		for (int i = 0; i < data.length; i++) {
 			data[i] = Float.floatToIntBits(this.getEnergy(this.getTypes()[i]));
@@ -310,6 +322,18 @@ public abstract class PoweredEntity extends BlockEntity implements IPowerMachine
 		return getLevel() == null
 				? net.minecraft.core.RegistryAccess.fromRegistryOfRegistries(net.minecraft.core.registries.BuiltInRegistries.REGISTRY)
 				: getLevel().registryAccess();
+	}
+
+	/** Reads an existing compound through Minecraft's registry-aware native reader. */
+	public final void loadWithComponents(CompoundTag tag, HolderLookup.Provider registries) {
+		loadWithComponents(net.minecraft.world.level.storage.TagValueInput.create(
+				net.minecraft.util.ProblemReporter.DISCARDING, registries, tag));
+	}
+
+	/** Reads only custom fields without changing the established add-on entry point. */
+	public final void loadCustomOnly(CompoundTag tag, HolderLookup.Provider registries) {
+		loadCustomOnly(net.minecraft.world.level.storage.TagValueInput.create(
+				net.minecraft.util.ProblemReporter.DISCARDING, registries, tag));
 	}
 
 	/** @deprecated Prefer the registry-aware Minecraft save methods. */

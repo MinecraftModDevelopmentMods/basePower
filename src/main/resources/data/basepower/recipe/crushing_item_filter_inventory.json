@@ -1,8 +1,6 @@
 {
   "type": "basemetals:crushing",
-  "ingredient": {
-    "item": "basepower:item_filter_inventory"
-  },
+  "ingredient": "basepower:item_filter_inventory",
   "result": {
     "id": "basemetals:steel_plate",
     "count": 1
