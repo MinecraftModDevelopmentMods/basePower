@@ -1,7 +1,8 @@
 # Minecraft 1.21.1 Port
 
-Status: ready for manual testing. Local automated qualification passed on
-11 November 2026. This is not a release approval. See the
+Status: automated qualification and manual acceptance passed on
+11 November 2026. Publication is handled separately by the guarded release
+workflow. See the
 [test results](TEST-RESULTS.md) for the exact scope and remaining checks.
 
 The port starts from the published 1.20.6 basePower source, commit
@@ -12,11 +13,11 @@ ports are being qualified together.
 ## Dependencies
 
 - MMD OreSpawn `4.1.0.121011`, published file 9189594.
-- Base Metals `3.1.2.121011`, local migration-hook commit
-  `b42b92b0e6f60ac5baf07a6b74042b2fa8427904`.
+- Base Metals `3.1.2.121011`, merged migration-hook commit
+  `327c197bcdd0bb5e883d844bb6a6c8791bc580b7`.
 
-The Base Metals patch is not published. Do not substitute the older public
-jar for a world-upgrade test. All source worlds and earlier qualification
+Do not substitute an older Base Metals jar for a world-upgrade test.
+All source worlds and earlier qualification
 receipts are kept unchanged; each run uses a disposable copy.
 
 ## Port Changes
@@ -68,7 +69,7 @@ silently discarded.
 - Unit checks: 226 Power, 228 Steam, 106 Electric and 329 harness JUnit tests,
   plus 2,247 Python regression tests, passed. Separate Eclipse ECJ compilation
   and expansion GameTests passed. These counts are not combined across reruns.
-- Manual gameplay and visual acceptance: pending.
+- Manual gameplay and visual acceptance: passed.
 
 ## Native Entity Difference
 
@@ -103,5 +104,5 @@ under `_verification/base-1211-port-20261111` and the rig's ignored `build`
 directory. The final index is `final-qualification.json`; the five-player-jar
 manual kit is in `manual-test-jars/`, with checksums and no harness.
 These checks qualify only their recorded inputs, not an arbitrary
-modpack. Local commits are allowed for dependency pins; pushing, merging and
-publication wait for manual acceptance.
+modpack. Merged CI and public downloads must reproduce the accepted player
+jar before the dependent releases proceed.

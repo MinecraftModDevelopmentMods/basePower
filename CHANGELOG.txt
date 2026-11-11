@@ -7,7 +7,6 @@ basePower 2.4.14.121011 (Minecraft 1.21.1)
 - Handle the new data-driven painting and enchantment registries when upgrading 1.20.6 worlds. Keep a recovery copy of the old enchantment indexes and map the renamed trial-spawner sounds.
 - Keep the shared Base Metals upgrade hook for old Advantage and released base* worlds.
 - Correct the local Base Metals path used by Eclipse and check dependency pins before compilation.
-- This is a local test candidate. It has not been pushed or published.
 
 basePower 2.4.13.120061 (Minecraft 1.20.6)
 
