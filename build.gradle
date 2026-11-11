@@ -257,7 +257,7 @@ tasks.named('jar', Jar) {
     }
 }
 
-// Forge 52 uses the official names at runtime, so the same jar serves both uses.
+// Forge 61 uses the official names at runtime, so the same jar serves both uses.
 def releaseJar = tasks.named('jar', Jar)
 
 tasks.register('deobfJar') {

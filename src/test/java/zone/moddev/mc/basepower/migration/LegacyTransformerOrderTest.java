@@ -130,11 +130,13 @@ public class LegacyTransformerOrderTest {
             Binding after = binding(mod, "SimpleRegionStorageMixin", "finishChunk");
             after.assertAt("RETURN");
             assertEquals(UPGRADE, after.selector());
-            assertTrue(after.cancellable());
+            assertFalse("Finalization must not short-circuit companion return hooks", after.cancellable());
             assertEquals("All native returns, including current-version early return, must be covered", 2,
                     Arrays.stream(after.nativeMethod().instructions.toArray()).filter(insn -> insn.getOpcode() == Opcodes.ARETURN).count());
             assertCalls(after.handler(), hook, "finalizeLegacyChunk", "(" + TAG + ")" + TAG);
-            assertCallbackResult(after.handler());
+            assertFalse("In-place finalization must not cancel the return callback",
+                    calls(after.handler()).stream().anyMatch(call -> call.name.equals("setReturnValue")
+                            || call.name.equals("cancel")));
 
             Binding worldgen = binding(mod, "WorldGenRegionMixin", "protectTerrain");
             worldgen.assertAt("HEAD");

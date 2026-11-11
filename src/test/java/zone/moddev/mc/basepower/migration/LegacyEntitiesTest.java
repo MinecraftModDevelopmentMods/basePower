@@ -20,6 +20,27 @@ public class LegacyEntitiesTest {
         assertWolf(false);
     }
 
+    @Test public void stagedEntitiesSurviveTheIntermediateLegacyFlatteningAndFullNativeFix() {
+        CompoundTag turbine = entity("example:turbine");
+        turbine.putIntArray("parentPos", new int[] {860, 5, -964});
+        turbine.putLong("UUIDMost", 17L);
+        turbine.putLong("UUIDLeast", 19L);
+        CompoundTag root = chunk(turbine, 512);
+        LegacyWorldDataHook.prepareLegacyChunk(root);
+        LegacyWorldDataHook.prepareLegacyEntities(root);
+        root = DataFixTypes.CHUNK.update(DataFixers.getDataFixer(), root, 512, 1493);
+        root.putInt("DataVersion", 1493);
+        assertTrue("The intermediate chunk must retain its isolated entity payload",
+                root.contains("AdvantageLegacyEntityDataFix"));
+        CompoundTag converted = convert(root.copy(), 1493);
+        ListTag actual = converted.getListOrEmpty("entities");
+        assertEquals(1, actual.size());
+        assertEquals("example:turbine", actual.getCompoundOrEmpty(0).getString("id").orElseThrow());
+        assertArrayEquals(new int[] {860, 5, -964}, actual.getCompoundOrEmpty(0).getIntArray("parentPos").orElseThrow());
+        assertEquals(new UUID(17L, 19L), actual.getCompoundOrEmpty(0).read("UUID", net.minecraft.core.UUIDUtil.CODEC).orElseThrow());
+        assertFalse(converted.contains("AdvantageLegacyEntityDataFix"));
+    }
+
     @Test public void retainsWolfBesideCustomEntityInDirect110Chunk() {
         assertWolf(true);
     }

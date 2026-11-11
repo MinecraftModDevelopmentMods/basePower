@@ -36,9 +36,10 @@ abstract class SimpleRegionStorageMixin {
     }
 
     @Inject(method = "upgradeChunkTag(Lnet/minecraft/nbt/CompoundTag;ILnet/minecraft/nbt/CompoundTag;)Lnet/minecraft/nbt/CompoundTag;",
-            at = @At("RETURN"), cancellable = true)
+            at = @At("RETURN"))
     private void basepower$finishChunk(CompoundTag chunk, int fallback, CompoundTag context,
             CallbackInfoReturnable<CompoundTag> callback) {
-        callback.setReturnValue(LegacyWorldDataHook.finalizeLegacyChunk(callback.getReturnValue()));
+        // Mutate the native result without cancelling other mods' return hooks.
+        LegacyWorldDataHook.finalizeLegacyChunk(callback.getReturnValue());
     }
 }
