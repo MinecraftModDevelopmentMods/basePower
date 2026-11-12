@@ -22,8 +22,11 @@ The compile baseline is Forge 66.0.0, official 26.3 names, MCP
 - Villager trades use the singular item-modifier field. Loot functions and
   predicates use their current type discriminator and explicit count providers.
   Native codec tests retain the old exchange rates, chest counts and drops.
-- Registry-loaded recipes resolve pending item tags through the current
-  registry lookup. Explicit condition contexts remain authoritative.
+- Registry-loaded recipes and advancements resolve the actual pending tag
+  contents, not the unbound or previous contents of their named holders. A
+  required lookup hook carries that reload's native `PendingTags` without a
+  global cache. Explicit condition contexts remain authoritative. Tests cover
+  initially unbound tags, player-edited empty tags and independent reloads.
 - Recipe-book criteria use native recipe lists. Each generated unlock retains
   its recipe's conditions, so inactive mode or missing-material variants do not
   leave dangling registry references. A real startup failure and native codec

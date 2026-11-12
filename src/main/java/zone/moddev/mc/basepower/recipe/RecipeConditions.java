@@ -58,11 +58,14 @@ public final class RecipeConditions {
     }
 
     static boolean materialTagEmpty(Identifier tag, ICondition.IContext context, DynamicOps<?> ops) {
-        // Recipes are now registry-loaded; their pending tags live on RegistryOps.
+        // Named holders can still contain the previous reload's values here.
         if (context == ICondition.IContext.EMPTY && ops instanceof net.minecraft.resources.RegistryOps<?> registries) {
-            return registries.getter(net.minecraft.core.registries.Registries.ITEM)
-                    .flatMap(items -> items.get(ItemTags.create(tag)))
-                    .map(items -> items.size() == 0).orElse(true);
+            var items = registries.getter(net.minecraft.core.registries.Registries.ITEM);
+            if (items.orElse(null) instanceof PendingItemTags pending) {
+                return pending.pending().getPending(ItemTags.create(tag)).isEmpty();
+            }
+            return items.flatMap(lookup -> lookup.get(ItemTags.create(tag)))
+                    .map(named -> named.size() == 0).orElse(true);
         }
         return context.getTag(ItemTags.create(tag)).isEmpty();
     }

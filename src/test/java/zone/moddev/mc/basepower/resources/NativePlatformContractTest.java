@@ -25,7 +25,7 @@ public class NativePlatformContractTest {
         java.util.Set<String> hooks = new java.util.HashSet<>();
         config.getAsJsonArray("mixins").forEach(value -> hooks.add(value.getAsString()));
         assertEquals(java.util.Set.of("BlockStateDataMixin", "LevelStorageSourceMixin", "SelectedWorldStorageMixin", "PlayerDataStorageMixin",
-                "SimpleRegionStorageMixin", "WorldGenRegionMixin"), hooks);
+                "SimpleRegionStorageMixin", "WorldGenRegionMixin", "PendingItemTagsMixin"), hooks);
         for (String name : hooks) assertNotNull(read("zone/moddev/mc/basepower/mixin/" + name));
     }
 

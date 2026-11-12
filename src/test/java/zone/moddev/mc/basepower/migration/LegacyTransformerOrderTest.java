@@ -103,7 +103,7 @@ public class LegacyTransformerOrderTest {
                     .toList().containsAll(List.of("BlockStateDataMixin", "LevelStorageSourceMixin",
                             "SimpleRegionStorageMixin", "WorldGenRegionMixin")));
             if (mod.equals("basepower")) assertEquals(Set.of("BlockStateDataMixin", "LevelStorageSourceMixin", "SelectedWorldStorageMixin",
-                    "PlayerDataStorageMixin", "SimpleRegionStorageMixin", "WorldGenRegionMixin"),
+                    "PlayerDataStorageMixin", "SimpleRegionStorageMixin", "WorldGenRegionMixin", "PendingItemTagsMixin"),
                     config.getAsJsonArray("mixins").asList().stream().map(value -> value.getAsString())
                             .collect(java.util.stream.Collectors.toSet()));
         }

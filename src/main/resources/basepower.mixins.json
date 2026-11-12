@@ -9,7 +9,8 @@
     "SelectedWorldStorageMixin",
     "PlayerDataStorageMixin",
     "SimpleRegionStorageMixin",
-    "WorldGenRegionMixin"
+    "WorldGenRegionMixin",
+    "PendingItemTagsMixin"
   ],
   "injectors": { "defaultRequire": 1 }
 }
