@@ -1,10 +1,36 @@
 # Minecraft 26.1.2 Test Results
 
-The current basePower, baseSteam and baseElectric candidates have completed
-their automated checks and manual playtesting. Publication is being prepared
-separately; a passing test record does not mean a release is already public.
+The basePower, baseSteam and baseElectric candidates have completed their
+automated checks and manual playtesting. The release checks below distinguish
+the public files from the original accepted test kit.
 
-## Tested Versions
+## Release Checks
+
+Base Metals 3.1.2.2601021, basePower 2.4.16.2601021, baseSteam
+2.2.17.2601021 and baseElectric 2.2.17.2601021 have been merged and published.
+Anonymous downloads from
+CurseForge, MMD Maven and GitHub Releases match their tested player jars.
+The Advantage CurseForge files are [Power 9576332](https://www.curseforge.com/minecraft/mc-mods/basepower/files/9576332),
+[Steam 9577519](https://www.curseforge.com/minecraft/mc-mods/basesteam/files/9577519)
+and [Electric 9577930](https://www.curseforge.com/minecraft/mc-mods/baseelectric/files/9577930).
+Approval waits resumed their existing uploads; no duplicate files or retagged
+releases were needed. Electric's first Maven resume hit a closed connection;
+the retry passed and its anonymous download was checked separately.
+
+Electric's promoted jar is
+`57E9C7A71FB28B55EEDB28D8C14FB0A8F31CE0390D3B8480C818888F49C756A1`.
+Only its manifest changed, to record the merged Power source and public pin;
+all other 576 archive entries match the original accepted candidate. The exact
+promoted six-jar kit passed another original-1.10 operating migration and two
+genuine 30-minute endurance runs with full restarts. Independent replay checked
+all 66 checkpoints and the stopped saves with an unbroken pre-run input seal.
+
+The promoted profile is `native2612-publication-promotion-13.json`, SHA-256
+`362537D7E7B7006E057D208FED49C683A9BC2FF7F803500F7CC02974E68C8903`.
+Its separate local receipts are under
+`D:/PowerAdvantage/_verification/base-2612-publication-20261112/`.
+
+## Original Manual-Acceptance Kit
 
 | Mod | Version | Player Jar SHA-256 |
 | --- | --- | --- |
@@ -15,8 +41,8 @@ separately; a passing test record does not mean a release is already public.
 These checks used Forge 64.1.5, Temurin 25.0.3+9, the local Base Metals
 3.1.2.2601021 migration-hook build, and published OreSpawn 4.1.1.2601021
 (CurseForge file 9572926). Base Metals and OreSpawn were installed throughout.
-The Base Metals hook build is still local; an older public jar is not a
-substitute for this test kit.
+That Base Metals jar has since been published unchanged as CurseForge file
+9576007. An older jar is not a substitute for this test kit.
 
 OreSpawn's player jar was downloaded anonymously and verified as
 `810284ECB32D5249381F246498CEFA57E70FFF7CCC40110F799FC276CBC42BF7`,
@@ -68,4 +94,5 @@ independent stopped-save replay. Older candidate results were not relabelled.
 
 Manual testing was accepted on 12 November 2026. Source delivery and publication
 follow the dependency order: Base Metals, basePower, baseSteam, then baseElectric.
-The exact test jars and original automated evidence remain unchanged.
+The original automated evidence remains unchanged. The separate promotion
+record above qualifies Electric's final manifest-only update.

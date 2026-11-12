@@ -1,8 +1,10 @@
 # Minecraft 26.2 Test Results
 
-The three local candidates have passed the automated checks below. They are
-ready for manual testing, not release. No 26.2 implementation or dependency
-fix has been pushed or published, and hosted CI has not qualified these pins.
+The three candidates have passed the automated checks below, and manual
+testing was accepted on 12 November 2026. Source delivery and publication are
+being prepared in dependency order. The original local evidence and its
+pre-acceptance labels remain unchanged; hosted CI and public downloads are
+separate release checks.
 
 ## Exact Test Kit
 

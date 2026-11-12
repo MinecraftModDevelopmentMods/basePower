@@ -1,10 +1,10 @@
 # basePower
 
-**Minecraft 26.2 (Forge), version 2.4.17.2602001. Local test candidate.**
+**Minecraft 26.2 (Forge), version 2.4.17.2602001. Accepted for release.**
 
 This branch is a fresh port of the accepted 26.1.2 source. Its automated
-machine, migration, graphical and endurance checks have passed. It is ready
-for manual testing, not publication. See the
+machine, migration, graphical and endurance checks have passed, and manual
+testing is complete. Publication is being prepared separately. See the
 [26.2 qualification](docs/26.2/QUALIFICATION.md) and
 [port record](docs/26.2/PORT-STATUS.md).
 The [26.1.2 qualification](docs/26.1.2/QUALIFICATION.md) and
