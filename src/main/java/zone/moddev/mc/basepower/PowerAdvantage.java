@@ -14,7 +14,7 @@ import cyano.poweradvantage.api.migration.LegacyConfigMigration.ValueType;
 import cyano.poweradvantage.api.migration.LegacyOreSpawnConfigBridge;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.fml.DistExecutor;
+import net.minecraftforge.fml.loading.FMLEnvironment;
 
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.eventbus.api.bus.BusGroup;
@@ -42,7 +42,7 @@ import zone.moddev.mc.basepower.migration.BaseMetalsLegacyMigration;
 public final class PowerAdvantage {
     public static final String MODID = "basepower";
     public static final String NAME = "basePower";
-    public static final String VERSION = "2.4.15.121111";
+    public static final String VERSION = "2.4.16.2601021";
     public static final Logger LOGGER = LogManager.getLogger(MODID);
 
     private static PowerAdvantage instance;
@@ -80,7 +80,6 @@ public final class PowerAdvantage {
         net.minecraftforge.event.level.ChunkEvent.Load.BUS.addListener(ConduitRegistry.getInstance()::onChunkLoad);
         net.minecraftforge.event.level.ChunkEvent.Unload.BUS.addListener(ConduitRegistry.getInstance()::onChunkUnload);
         net.minecraftforge.event.entity.player.PlayerEvent.PlayerLoggedInEvent.BUS.addListener(RecipeDiscovery::onPlayerLogin);
-        net.minecraftforge.event.village.VillagerTradesEvent.BUS.addListener(zone.moddev.mc.basepower.init.Villages::onTrades);
         net.minecraftforge.event.AddPackFindersEvent.BUS.addListener(
                 zone.moddev.mc.basepower.recipe.MaterialTags::registerPack);
         net.minecraftforge.registries.RegisterEvent.getBus(modBus).addListener(zone.moddev.mc.basepower.init.Blocks::registerBlocks);
@@ -102,14 +101,13 @@ public final class PowerAdvantage {
         net.minecraftforge.fml.event.config.ModConfigEvent.Reloading.getBus(modBus).addListener(PowerAdvantageConfig::onConfigLoading);
         FMLCommonSetupEvent.getBus(modBus).addListener(this::commonSetup);
 
-        DistExecutor.runWhenOn(Dist.CLIENT, () -> () -> {
+        if (FMLEnvironment.dist == Dist.CLIENT) {
             net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent.getBus(modBus).addListener(
                     (net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent event) ->
                             event.enqueueWork(() -> {
                                 MachineGUIRegistry.registerScreens();
-                                zone.moddev.mc.basepower.client.ClientOilRenderer.configureRenderLayers();
                             }));
-        });
+        }
     }
 
     private static void migrateLegacyOreSpawnConfiguration() {
@@ -148,7 +146,7 @@ public final class PowerAdvantage {
     private void commonSetup(FMLCommonSetupEvent event) {
         Fuels.init();
         GUI.init();
-        if (ModList.get().isLoaded("basemetals")) {
+        if (ModList.isLoaded("basemetals")) {
             event.enqueueWork(() -> BaseMetalsLegacyMigration.register());
         }
         // Forge's shared hook list is not safe to mutate during parallel mod construction.

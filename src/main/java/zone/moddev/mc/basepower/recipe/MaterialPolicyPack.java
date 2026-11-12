@@ -34,7 +34,7 @@ final class MaterialPolicyPack implements PackResources {
     MaterialPolicyPack() {
         // Pack instances are created for each reload, after common config loading.
         this(PowerAdvantage.plasticIsAlsoRubber,
-                PowerAdvantage.recipeMode == RecipeMode.NORMAL && ModList.get().isLoaded("baseelectric"));
+                PowerAdvantage.recipeMode == RecipeMode.NORMAL && ModList.isLoaded("baseelectric"));
     }
 
     MaterialPolicyPack(boolean plasticIsRubber, boolean normalSolder) {

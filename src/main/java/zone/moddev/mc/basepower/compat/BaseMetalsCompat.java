@@ -15,7 +15,7 @@ import zone.moddev.mc.basepower.PowerAdvantage;
 public final class BaseMetalsCompat {
     private BaseMetalsCompat() {}
 
-    public static boolean isLoaded() { return ModList.get().isLoaded("basemetals"); }
+    public static boolean isLoaded() { return ModList.isLoaded("basemetals"); }
 
     public static void setStrongHammers(boolean enabled) {
         PowerAdvantage.LOGGER.debug("Ignoring legacy strong-hammers setting on Base Metals 1.13");

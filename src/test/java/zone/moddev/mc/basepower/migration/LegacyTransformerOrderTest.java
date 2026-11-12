@@ -44,6 +44,27 @@ public class LegacyTransformerOrderTest {
         fresh.at().values.set(fresh.at().values.indexOf("value") + 1, "HEAD");
         assertThrows("Inventory staging at HEAD would race the other mod", AssertionError.class,
                 () -> fresh.assertAt("INVOKE"));
+        Binding overload = binding("basepower", "SimpleRegionStorageMixin", "prepareChunk");
+        overload.nativeMethod().desc = "(" + TAG + "I" + TAG + ")" + TAG;
+        assertThrows("Forge61's three-argument overload cannot satisfy Forge64", AssertionError.class, overload::nativeMethod);
+    }
+
+    @Test public void selectedWorldCaptureRejectsNativeLockReadAndFallbackDrift() throws Exception {
+        for (String mod : List.of("basepower", "basemetals")) {
+            String mixin = mod.equals("basepower") ? "SelectedWorldStorageMixin" : "LevelStorageSourceMixin";
+            Binding read = binding(mod, mixin, "prepareWorld");
+            assertSelectedWorld(read);
+            calls(read.nativeMethod()).stream().filter(read::matches).findFirst().orElseThrow().name = "renamedRawRead";
+            assertThrows(AssertionError.class, () -> assertSelectedWorld(read));
+            Binding lock = binding(mod, mixin, "prepareWorld");
+            calls(lock.nativeMethod()).stream().filter(call -> call.name.equals("checkLock"))
+                    .findFirst().orElseThrow().name = "unrelatedLock";
+            assertThrows(AssertionError.class, () -> assertSelectedWorld(lock));
+            Binding fallback = binding(mod, mixin, "prepareWorld");
+            Arrays.stream(fallback.handler().instructions.toArray()).filter(insn -> insn instanceof JumpInsnNode
+                    && insn.getOpcode() == Opcodes.IFNE).map(JumpInsnNode.class::cast).findFirst().orElseThrow().setOpcode(Opcodes.IFEQ);
+            assertThrows("Fallback preparation must fail closed", AssertionError.class, () -> assertSelectedWorld(fallback));
+        }
     }
 
     @Test public void separateEntityStorageStillUsesTheNativeRegionConverterThroughThePowerHook() throws Exception {
@@ -71,12 +92,17 @@ public class LegacyTransformerOrderTest {
                 config = JsonParser.parseReader(reader).getAsJsonObject();
             }
             assertTrue(config.get("required").getAsBoolean());
-            assertEquals("JAVA_21", config.get("compatibilityLevel").getAsString());
+            String compatibility = config.get("compatibilityLevel").getAsString();
+            assertEquals("JAVA_21", compatibility);
+            assertEquals(org.spongepowered.asm.mixin.MixinEnvironment.CompatibilityLevel.JAVA_21,
+                    org.spongepowered.asm.mixin.MixinEnvironment.CompatibilityLevel.valueOf(compatibility));
+            assertEquals("Mixin compatibility does not lower Java25 production bytecode", 69,
+                    read("zone/moddev/mc/" + mod + "/" + (mod.equals("basepower") ? "PowerAdvantage" : "BaseMetals")).version & 0xffff);
             assertEquals(1, config.getAsJsonObject("injectors").get("defaultRequire").getAsInt());
             assertTrue(config.getAsJsonArray("mixins").asList().stream().map(value -> value.getAsString())
                     .toList().containsAll(List.of("BlockStateDataMixin", "LevelStorageSourceMixin",
                             "SimpleRegionStorageMixin", "WorldGenRegionMixin")));
-            if (mod.equals("basepower")) assertEquals(Set.of("BlockStateDataMixin", "LevelStorageSourceMixin",
+            if (mod.equals("basepower")) assertEquals(Set.of("BlockStateDataMixin", "LevelStorageSourceMixin", "SelectedWorldStorageMixin",
                     "PlayerDataStorageMixin", "SimpleRegionStorageMixin", "WorldGenRegionMixin"),
                     config.getAsJsonArray("mixins").asList().stream().map(value -> value.getAsString())
                             .collect(java.util.stream.Collectors.toSet()));
@@ -108,18 +134,13 @@ public class LegacyTransformerOrderTest {
     private static void check(List<String> mods) throws Exception {
         for (String mod : mods) {
             String hook = mod.equals("basepower") ? POWER : METALS;
-            Binding world = binding(mod, "LevelStorageSourceMixin", "prepareWorld");
-            world.assertAt("HEAD");
-            assertEquals(STORAGE + "LevelStorageSource", world.target().name);
-            assertEquals("readLevelDataTagFixed", world.selector());
-            assertFalse(world.cancellable());
-            assertCalls(world.handler(), hook, "prepareLegacyWorld", "(Ljava/io/File;)V");
-            assertTrue("Only primary level.dat may initialize a migration snapshot",
-                    Arrays.stream(world.handler().instructions.toArray()).anyMatch(insn ->
-                            insn instanceof LdcInsnNode constant && "level.dat".equals(constant.cst)));
-            var prepare = calls(world.handler()).stream().filter(call -> call.name.equals("prepareLegacyWorld")).findFirst().orElseThrow();
-            assertTrue("Primary-file guard must precede snapshot preparation", Arrays.stream(world.handler().instructions.toArray())
-                    .takeWhile(insn -> insn != prepare).anyMatch(JumpInsnNode.class::isInstance));
+            Binding world = binding(mod, mod.equals("basepower") ? "SelectedWorldStorageMixin" : "LevelStorageSourceMixin", "prepareWorld");
+            assertSelectedWorld(world);
+            assertCalls(world.handler(), hook, mod.equals("basepower") ? "prepareLegacyWorld" : "prepareSelectedWorld",
+                    mod.equals("basepower") ? "(Ljava/io/File;)V" : "(Ljava/nio/file/Path;)V");
+            assertTrue("Capture must select the primary level-data resource", Arrays.stream(world.handler().instructions.toArray())
+                    .anyMatch(insn -> insn instanceof org.objectweb.asm.tree.FieldInsnNode field
+                            && field.owner.equals(STORAGE + "LevelResource") && field.name.equals("LEVEL_DATA_FILE")));
 
             Binding before = binding(mod, "SimpleRegionStorageMixin", "prepareChunk");
             before.assertAt("HEAD");

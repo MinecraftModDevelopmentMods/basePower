@@ -9,8 +9,8 @@ Set-StrictMode -Version Latest
 $ProjectRoot = (Resolve-Path -LiteralPath $ProjectRoot).Path
 $Evidence = [IO.Path]::GetFullPath($Evidence)
 if (Test-Path -LiteralPath $Evidence) { throw 'Refusing to replace Eclipse evidence' }
-if ((Get-Content -LiteralPath (Join-Path $JavaHome 'release') -Raw) -notmatch '(?m)^JAVA_VERSION="21(?:\.|\+|")') {
-    throw 'The native Eclipse build requires Java 21'
+if ((Get-Content -LiteralPath (Join-Path $JavaHome 'release') -Raw) -notmatch '(?m)^JAVA_VERSION="25(?:\.|\+|")') {
+    throw 'The native Eclipse build requires Java 25'
 }
 $null = New-Item -ItemType Directory -Path $Evidence
 $java = Join-Path $JavaHome 'bin/java.exe'
@@ -47,7 +47,7 @@ try {
         $null = New-Item -ItemType Directory -Path $output
         $outputs[$scope] = $output
         if ($scope -eq 'test') { $libraries += @($outputs.main, (Join-Path $ProjectRoot 'build/resources/main')) }
-        $arguments = @('-21','-proc:none','-encoding','UTF-8','-warn:none','-classpath',
+        $arguments = @('-25','-proc:none','-encoding','UTF-8','-warn:none','-classpath',
             ('"' + ($libraries -join ';') + '"'), '-d', ('"' + $output + '"'))
         $arguments += @($sources | Sort-Object FullName | ForEach-Object { '"' + $_.FullName + '"' })
         $argFile = Join-Path $Evidence "$scope.args"
@@ -60,7 +60,7 @@ try {
         if (-not $classes.Count) { throw "No Eclipse $scope classes" }
         foreach ($file in $classes) {
             $bytes = [IO.File]::ReadAllBytes($file.FullName)
-            if ($bytes[6] * 256 + $bytes[7] -ne 65) { throw "Non-Java-21 class: $file" }
+            if ($bytes[6] * 256 + $bytes[7] -ne 69) { throw "Non-Java-25 class: $file" }
         }
         $report.compilations[$scope].classes = $classes.Count
     }

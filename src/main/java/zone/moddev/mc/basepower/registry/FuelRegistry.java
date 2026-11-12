@@ -163,7 +163,8 @@ public class FuelRegistry {
 		if(list.isEmpty()){
 			fuelItem.shrink(1);
 			if(fuelItem.isEmpty()){
-				fuelItem = fuelItem.getCraftingRemainder();
+				var remainder = fuelItem.getCraftingRemainder();
+				fuelItem = remainder == null ? ItemStack.EMPTY : remainder.create();
 			}
 		} else {
 			for (Function<ItemStack, ItemStack> algorithm : list) {

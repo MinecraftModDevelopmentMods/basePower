@@ -6,6 +6,7 @@
   "mixins": [
     "BlockStateDataMixin",
     "LevelStorageSourceMixin",
+    "SelectedWorldStorageMixin",
     "PlayerDataStorageMixin",
     "SimpleRegionStorageMixin",
     "WorldGenRegionMixin"

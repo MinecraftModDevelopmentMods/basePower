@@ -1,44 +1,32 @@
 # basePower
 
-**Minecraft 1.21.11 (Forge), version 2.4.15.121111.**
+**Minecraft 26.1.2 (Forge), version 2.4.16.2601021, in development.**
 
-This release has passed automated qualification and manual testing. It is
-available on [CurseForge](https://www.curseforge.com/minecraft/mc-mods/basepower/files/9566998),
-[MMD Maven](https://maven.moddev.zone/releases/zone/moddev/mc/basepower/basePower/2.4.15.121111/)
-and [GitHub](https://github.com/MinecraftModDevelopmentMods/basePower/releases/tag/2.4.15.121111).
-The [1.21.11 port record](docs/1.21.11/PORT-STATUS.md) records the checks and
-remaining coverage limits; earlier versions do not qualify this release.
+This branch is a local port, not a released or qualified build. The
+[26.1.2 port record](docs/26.1.2/PORT-STATUS.md) separates completed checks from
+work still to do. The accepted [1.21.11 qualification](docs/1.21.11/QUALIFICATION.md)
+is retained as historical evidence; it does not qualify this port.
 
-The current Base Metals-installed test set has passed its automated machine,
-upgrade, graphical and two-world 30-minute endurance checks. Manual testing has
-also been accepted. See the [qualification record](docs/1.21.11/QUALIFICATION.md)
-for the exact jars, results and remaining human checks.
-The [release-pin recheck](docs/1.21.11/QUALIFICATION.md#release-pin-recheck)
-also covers the final expansion manifests, a fresh old-world upgrade and
-another two-world endurance run with exact saved-state replay.
-
-For the combined Eclipse test, use `runClientAllAdvantage.launch` in this
-project. It loads the matching baseSteam and baseElectric candidates. The
-[port record](docs/1.21.11/PORT-STATUS.md) separates the automated checks from
-the remaining manual gameplay and visual checks.
+The combined Eclipse launch will load matching baseSteam and baseElectric
+candidates once their exact jars and development profile have been prepared.
 
 basePower continues DrCyano's Power Advantage. It provides shared power,
 fluids and item transport for baseSteam and baseElectric.
 
-## Playing On 1.21.11
+## Testing On 26.1.2
 
-- Install [MMD OreSpawn 4.1.0.121111](https://www.curseforge.com/minecraft/mc-mods/mmd-orespawn/files/9268464) on both client and server.
-- Install [Base Metals 3.1.2.121111](https://www.curseforge.com/minecraft/mc-mods/base-metals/files/9566738)
-  on both client and server. Older Base Metals builds do not have the shared
-  upgrade hook required by this release.
+- Use MMD OreSpawn `4.1.0.2601021` on both client and server.
+- This candidate requires the local Base Metals `3.1.2.2601021` migration-hook
+  build on both client and server. It has not been published; the public
+  `3.1.1` jar is not a substitute for the upgrade tests.
 - baseSteam and baseElectric are separate mods. Use only their matching
-  1.21.11 builds. Additional Loot Tables is not needed for the built-in loot.
+  26.1.2 builds. Additional Loot Tables is not needed for the built-in loot.
 
 **Back up the entire world before upgrading. Test only disposable copies.**
 The port keeps existing registry names and machine data. The upgrade checks
-use disposable copies of original Advantage and released base* saves, including
-connected machines, and check them again after a full restart. Check that the
-other mods in your world support 1.21.11 before you upgrade.
+will use disposable copies of original Advantage and released base* saves,
+including connected machines, and check them after a full restart. Check that
+the other mods in your world support 26.1.2 before attempting an upgrade.
 The accepted [1.14 results](docs/1.14/BROADER-QUALIFICATION.md) are historical
 evidence, not qualification of this port or a whole modpack.
 
@@ -46,22 +34,21 @@ Recipe-book discovery now follows relevant ingredients. See the [all-Advantage m
 
 The [manufacturing progression audit](docs/1.13/MANUFACTURING-PROGRESSION.md) traces survival parts from raw resources, including configured material aliases, processing, loot-only parts and automated restart checks.
 
-## Building Minecraft 1.21.11
+## Building Minecraft 26.1.2
 
-The build uses Forge 61.1.0, official `1.21.11` mappings,
-MCP `20251223.124241`, ForgeGradle 7.0.34 and Gradle 9.6.1.
-Use Java 21 for Gradle, compilation and Minecraft. Mavenizer also
-needs Java 25; the development launcher helper uses Java 8. Pass the installed homes using
-`-Porg.gradle.java.installations.paths=<java8>,<java21>,<java25>` and disable
+The build uses Forge 64.1.5, official `26.1.2` names,
+MCP `20260409.101008`, ForgeGradle 7.0.34 and Gradle 9.6.1.
+Use Java `25.0.3+9` for Gradle, compilation, Mavenizer and Minecraft. Pass its home using
+`-Porg.gradle.java.installations.paths=<java25>` and disable
 automatic discovery and downloads for a reproducibility check.
 
-Use the pinned Base Metals `3.1.2.121111` and OreSpawn `4.1.0.121111` jars.
+Use the pinned Base Metals `3.1.2.2601021` and OreSpawn `4.1.0.2601021` jars.
 The source pins and checksums are in `gradle.properties`.
-Forge 61 also needs the Mavenizer compatibility jar in the pinned OreSpawn
+Forge 64 also needs the Mavenizer compatibility jar in the pinned OreSpawn
 checkout's `ci-fixtures/tools/` directory. This is the same checksum-verified
 source preparation tool used by OreSpawn; its manifest makes no source changes
-for Forge 61.1.0. It uses Java 25 and is not part of the mod or game runtime.
-Set `-Pforge61MavenizerJar=<path>` when that checkout is in another location.
+for this target. It is not part of the mod or game runtime.
+Set `-Pforge64MavenizerJar=<path>` when that checkout is in another location.
 Use the pinned Base Metals 3.1.2 build for both new worlds and upgrades. It lets
 both mods preserve old items and machines before Minecraft converts the
 chunk. An older Base Metals jar is not a substitute for this upgrade path.
@@ -75,8 +62,8 @@ gradlew.bat clean check build javadoc genEclipseRuns eclipse isolateEclipseProdu
 The default dependency jars are:
 
 ```text
-D:\BaseMetals\.verification-basemetals12111\Advantage shared hook\build\libs\BaseMetals-3.1.2.121111.jar
-D:\MinecraftMineralogy\OS12111\OreSpawn\build\libs\OreSpawn-4.1.0.121111.jar
+D:\BaseMetals\BaseMetals 2612\BaseMetals\build\libs\BaseMetals-3.1.2.2601021.jar
+D:\MinecraftMineralogy\OS2612\OreSpawn\build\libs\OreSpawn-4.1.0.2601021.jar
 ```
 
 Other layouts can pass `-PbaseMetalsDeobfJar=<path>` and `-PoreSpawnDeobfJar=<path>`.
@@ -85,10 +72,10 @@ Dependencies are never embedded in PowerAdvantage artifacts.
 Dependency checksums and source commits are recorded in `gradle.properties`.
 Unknown artifacts fail the dependency audit. The release audit also rejects a
 player jar that differs from the frozen test kit. Hosted CI requires the Base
-Metals pin to be on its upstream `master-1.21.11` branch; a locally tested pin
+Metals pin to be on its upstream `master-26.1.2` branch; a locally tested pin
 does not qualify a hosted build.
 
-Release jars are written to `build/libs`. Forge 61 uses the same mod jar for play
+Release jars are written to `build/libs`. Forge 64 uses the same mod jar for play
 and development; `deobfJar` is kept as a task alias for older build scripts.
 
 For Eclipse, import this repository as an existing Gradle project and run:
@@ -101,10 +88,10 @@ Refresh the project in Eclipse, allow its Java build to finish, and launch the g
 
 Eclipse copies production resources from `build/resources/main`, not directly from `src/main/resources`. This prevents its builder from overwriting the expanded `mods.toml` with raw `${version}` placeholders. After updating this setup, use **Gradle > Refresh Gradle Project**, then **Project > Clean** before relaunching. After editing resources or version properties, run `processResources` or refresh the Gradle project before the Eclipse build. See the [metadata regression notes](docs/1.13/ECLIPSE-METADATA.md).
 
-To prepare a combined client, build the baseSteam and baseElectric `2.2.16.121111` jars,
+To prepare a combined client, build the baseSteam and baseElectric `2.2.17.2601021` jars,
 run `gradlew.bat prepareCombinedEclipseLaunch`, refresh Eclipse, then launch
 `runClientAllAdvantage.launch`. Inputs must match
-`test-rig/profiles/native12111/dev-core.json`; alternative layouts can pass
+`test-rig/profiles/native2612/dev-core.json`; alternative layouts can pass
 `-PsteamAdvantageDeobfJar=<path>` and `-PelectricAdvantageDeobfJar=<path>`.
 The ordinary `runClient.launch` remains Power-only. Both use the `run` directory;
 preparing a launch does not copy, open or qualify a save.
@@ -113,7 +100,7 @@ preparing a launch does not copy, open or qualify a save.
 matching their packages. They also read every development runtime jar entry
 and check its size and CRC to catch damaged cached dependencies.
 
-Keep Eclipse's access-restriction checks enabled and use Java 21 for its project
+Keep Eclipse's access-restriction checks enabled and use Java 25 for its project
 JRE and Minecraft launches. Check visuals, menus and recipe discovery against the
 same jars used for the automated machine tests.
 
@@ -140,6 +127,6 @@ its presence is not proof that an upgrade is safe.
 
 The [legacy migration guide](docs/1.13/MIGRATION.md) describes the earlier protocols.
 The [Advantage Works 1.20.1 guide](test-rig/NATIVE1201.md) describes the prior
-qualification and the checks carried into 1.21.11.
+qualification and the checks carried forward into later ports.
 
 The historical 1.10 handbook remains on the [1.10.2 branch](https://github.com/MinecraftModDevelopmentMods/PowerAdvantage/blob/master-1.10.2/docs/1.10/README.md).

@@ -8,7 +8,7 @@ if [[ ! "$commit" =~ ^[0-9a-f]{40}$ ]]; then
 fi
 
 minecraft="$(sed -n 's/^minecraft_version=//p' gradle.properties)"
-if [[ ! "$minecraft" =~ ^1\.[0-9]+\.[0-9]+$ ]]; then
+if [[ ! "$minecraft" =~ ^(1|[2-9][0-9])\.[0-9]+\.[0-9]+$ ]]; then
   echo "::error::Expected a complete Minecraft target version in gradle.properties"
   exit 1
 fi

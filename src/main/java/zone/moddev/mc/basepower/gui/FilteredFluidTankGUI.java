@@ -1,7 +1,5 @@
 package zone.moddev.mc.basepower.gui;
 
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 
 import cyano.poweradvantage.api.fluid.FluidPoweredEntity;
 import cyano.poweradvantage.api.simple.SimpleMachineGUI;
@@ -18,7 +16,6 @@ public class FilteredFluidTankGUI extends SimpleMachineGUI {
 	}
 
 	@Override
-	@OnlyIn(Dist.CLIENT)
 	public void drawGUIDecorations(Object srcEntity, GUIContainer guiContainer, int x, int y, float z) {
 		// draw indicator
 		if (srcEntity instanceof FluidPoweredEntity) {
@@ -34,7 +31,6 @@ public class FilteredFluidTankGUI extends SimpleMachineGUI {
 	}
 
 
-	@OnlyIn(Dist.CLIENT)
 	public static void drawFluidBar(
 			FluidStack fs, float barHeight, int xPos, int yPos,
 			Identifier displayImage, GUIContainer guiContainer, int x, int y, float zLevel

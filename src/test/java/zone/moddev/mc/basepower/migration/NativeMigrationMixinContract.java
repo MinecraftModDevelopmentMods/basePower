@@ -14,6 +14,8 @@ import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.FieldInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.MethodNode;
+import org.objectweb.asm.tree.JumpInsnNode;
+import org.objectweb.asm.tree.VarInsnNode;
 import org.objectweb.asm.tree.analysis.Analyzer;
 import org.objectweb.asm.tree.analysis.SourceInterpreter;
 import org.objectweb.asm.tree.analysis.SourceValue;
@@ -27,7 +29,7 @@ final class NativeMigrationMixinContract {
     static final String TAG = "Lnet/minecraft/nbt/CompoundTag;";
     static final String DYNAMIC = "Lcom/mojang/serialization/Dynamic;";
     static final String FIXER = "Lcom/mojang/datafixers/DataFixer;";
-    static final String UPGRADE = "upgradeChunkTag(" + TAG + "I" + TAG + ")" + TAG;
+    static final String UPGRADE = "upgradeChunkTag(" + TAG + "I" + TAG + "I)" + TAG;
 
     private NativeMigrationMixinContract() {}
 
@@ -98,6 +100,75 @@ final class NativeMigrationMixinContract {
         return new Binding(owner, callback, injector, at, read(targets.getFirst().getInternalName()), selectors.getFirst());
     }
 
+    static List<MethodNode> playerMethods(ClassNode nativeClass, String invocation) throws Exception {
+        List<MethodNode> result = new ArrayList<>();
+        for (MethodNode method : nativeClass.methods) {
+            for (MethodInsnNode call : calls(method)) {
+                if (invocation.equals("L" + call.owner + ";" + call.name + call.desc)
+                        && playerReceiver(nativeClass, method, call) != null) result.add(method);
+            }
+        }
+        return result;
+    }
+
+    static FieldInsnNode playerReceiver(ClassNode owner, MethodNode method, MethodInsnNode call) throws Exception {
+        var analyzer = new Analyzer<SourceValue>(new SourceInterpreter(Opcodes.ASM9) {
+            @Override public SourceValue copyOperation(AbstractInsnNode insn, SourceValue input) { return input; }
+        });
+        var frame = analyzer.analyze(owner.name, method)[method.instructions.indexOf(call)];
+        var receiver = frame.getStack(frame.getStackSize() - Type.getArgumentTypes(call.desc).length - 1);
+        if (receiver.insns.size() == 1 && receiver.insns.iterator().next() instanceof FieldInsnNode field
+                && field.getOpcode() == Opcodes.GETSTATIC && field.owner.equals(FIX_TYPES)
+                && field.name.equals("PLAYER")) return field;
+        return null;
+    }
+
+    record PlayerBoundary(ClassNode target, String invocation) {
+        boolean matches(MethodInsnNode call) {
+            return invocation.equals("L" + call.owner + ";" + call.name + call.desc);
+        }
+        List<MethodNode> playerMethods(ClassNode owner) throws Exception {
+            return NativeMigrationMixinContract.playerMethods(owner, invocation);
+        }
+        MethodNode assertOnePlayerSite(ClassNode owner) throws Exception {
+            List<MethodNode> methods = playerMethods(owner);
+            assertEquals("Exactly one PLAYER componentization boundary: " + owner.name, 1, methods.size());
+            return methods.getFirst();
+        }
+    }
+
+    static void assertSelectedWorld(Binding world) throws Exception {
+        world.assertAt("INVOKE");
+        assertEquals(STORAGE + "LevelStorageSource$LevelStorageAccess", world.target.name);
+        assertEquals("getUnfixedDataTag", world.selector);
+        assertEquals("(Z)" + DYNAMIC, world.nativeMethod().desc);
+        assertFalse(world.cancellable());
+        assertEquals("L" + STORAGE + "LevelStorageSource;readLevelDataTagRaw(Ljava/nio/file/Path;)" + TAG,
+                world.invocation());
+        var nativeMethod = world.nativeMethod();
+        var reads = calls(nativeMethod).stream().filter(world::matches).toList();
+        var locks = calls(nativeMethod).stream().filter(call -> call.owner.equals(world.target.name)
+                && call.name.equals("checkLock") && call.desc.equals("()V")).toList();
+        assertEquals("Exactly one selected raw read", 1, reads.size());
+        assertEquals("Exactly one native session-lock check", 1, locks.size());
+        assertTrue("Capture must follow native session locking", nativeMethod.instructions.indexOf(locks.getFirst())
+                < nativeMethod.instructions.indexOf(reads.getFirst()));
+        var prepares = calls(world.handler).stream().filter(call -> call.name.equals("prepareLegacyWorld")
+                || call.name.equals("prepareSelectedWorld")).toList();
+        assertEquals(1, prepares.size());
+        int preparation = world.handler.instructions.indexOf(prepares.getFirst());
+        var frames = new Analyzer<>(new SourceInterpreter()).analyze(world.mixin.name, world.handler);
+        boolean guarded = false;
+        for (int i = 0; i < preparation; i++) {
+            if (!(world.handler.instructions.get(i) instanceof JumpInsnNode jump)
+                    || jump.getOpcode() != Opcodes.IFNE || world.handler.instructions.indexOf(jump.label) <= preparation) continue;
+            var condition = frames[i].getStack(frames[i].getStackSize() - 1);
+            guarded |= condition.insns.size() == 1 && condition.insns.iterator().next() instanceof VarInsnNode load
+                    && load.getOpcode() == Opcodes.ILOAD && load.var == 1;
+        }
+        assertTrue("Only !useFallback may prepare the selected world", guarded);
+    }
+
     record Binding(ClassNode mixin, MethodNode handler, AnnotationNode injector, AnnotationNode at,
             ClassNode target, String selector) {
         String point() { return (String) value(at, "value", ""); }
@@ -135,24 +206,7 @@ final class NativeMigrationMixinContract {
         }
 
         List<MethodNode> playerMethods(ClassNode nativeClass) throws Exception {
-            List<MethodNode> result = new ArrayList<>();
-            for (MethodNode method : nativeClass.methods) {
-                if (calls(method).stream().noneMatch(this::matches)) continue;
-                // Track the actual receiver through locals; a nearby PLAYER constant is not sufficient.
-                var analyzer = new Analyzer<SourceValue>(new SourceInterpreter(Opcodes.ASM9) {
-                    @Override public SourceValue copyOperation(AbstractInsnNode insn, SourceValue input) { return input; }
-                });
-                var frames = analyzer.analyze(nativeClass.name, method);
-                for (int index = 0; index < method.instructions.size(); index++) {
-                    if (!(method.instructions.get(index) instanceof MethodInsnNode call) || !matches(call)) continue;
-                    var frame = frames[index];
-                    var receiver = frame.getStack(frame.getStackSize() - Type.getArgumentTypes(call.desc).length - 1);
-                    if (receiver.insns.size() == 1 && receiver.insns.iterator().next() instanceof FieldInsnNode field
-                            && field.getOpcode() == Opcodes.GETSTATIC && field.owner.equals(FIX_TYPES)
-                            && field.name.equals("PLAYER")) result.add(method);
-                }
-            }
-            return result;
+            return NativeMigrationMixinContract.playerMethods(nativeClass, invocation());
         }
 
         MethodNode assertOnePlayerSite(ClassNode nativeClass) throws Exception {

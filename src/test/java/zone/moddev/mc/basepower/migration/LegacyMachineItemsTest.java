@@ -247,6 +247,13 @@ public class LegacyMachineItemsTest {
                 .setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ITEM,
                         net.minecraft.resources.Identifier.parse(id))));
         net.minecraftforge.registries.ForgeRegistries.ITEMS.register(net.minecraft.resources.Identifier.parse(id), tool);
+        // This item is registered after the worldless bootstrap. Bake its real native
+        // default components before testing wear; an unbound holder is not a loaded item.
+        net.minecraft.core.registries.BuiltInRegistries.DATA_COMPONENT_INITIALIZERS.build(registries())
+                .forEach(pending -> pending.forEach((holder, components) -> {
+                    if (holder.key().identifier().toString().equals(id)) holder.bindComponents(components);
+                }));
+        assertEquals(Integer.valueOf(250), tool.components().get(net.minecraft.core.component.DataComponents.MAX_DAMAGE));
         CompoundTag foreign = stack(id, 9, 1);
         CompoundTag payload = new CompoundTag();
         payload.putInt("Fixture", 31);
@@ -256,7 +263,7 @@ public class LegacyMachineItemsTest {
         var direct = zone.moddev.mc.basepower.util.ItemData.readStack(registries(), foreign);
         CompoundTag chest = convertedTile(carrier(foreign)).getListOrEmpty("Items").getCompoundOrEmpty(0);
         var carried = parseStack(chest)
-                .get(net.minecraft.core.component.DataComponents.CONTAINER).nonEmptyItems().iterator().next();
+                .get(net.minecraft.core.component.DataComponents.CONTAINER).nonEmptyItems().iterator().next().create();
         for (var loaded : List.of(direct, carried)) {
             assertSame(tool, loaded.getItem());
             assertEquals(1, loaded.getCount());

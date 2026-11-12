@@ -77,15 +77,20 @@ public class ClientResourceContractTest {
         assertEquals("directory", source.get("type").getAsString());
         assertEquals("items", source.get("source").getAsString());
         assertEquals("items/", source.get("prefix").getAsString());
+    }
+
+    @Test public void developmentProfilePinsTheActualNative2612Family() throws IOException {
         String build = Files.readString(Paths.get("build.gradle"), StandardCharsets.UTF_8);
-        assertTrue("Combined Eclipse defaults must select the native 1.21.11 profile",
+        assertTrue("Combined Eclipse defaults must select the native 26.1.2 profile",
+                build.contains("'test-rig/profiles/native2612/dev-core.json'"));
+        assertFalse("A CLI override must not hide a stale 1.21.11 default",
                 build.contains("'test-rig/profiles/native12111/dev-core.json'"));
         assertFalse("A CLI override must not hide a stale 1.21.1 default",
                 build.contains("'test-rig/profiles/native1211/dev-core.json'"));
-        JsonObject profile = read(Paths.get("test-rig/profiles/native12111/dev-core.json"));
+        JsonObject profile = read(Paths.get("test-rig/profiles/native2612/dev-core.json"));
         assertEquals("development", profile.get("mode").getAsString());
-        assertEquals("1.21.11", profile.get("minecraftVersion").getAsString());
-        assertEquals("61.1.0", profile.get("forgeVersion").getAsString());
+        assertEquals("26.1.2", profile.get("minecraftVersion").getAsString());
+        assertEquals("64.1.5", profile.get("forgeVersion").getAsString());
         java.util.Properties pins = new java.util.Properties();
         try (Reader reader = Files.newBufferedReader(Paths.get("gradle.properties"), StandardCharsets.UTF_8)) {
             pins.load(reader);

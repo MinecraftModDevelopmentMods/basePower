@@ -35,11 +35,11 @@ public class Native12111RegistryMigrationTest {
         properties.putString("waterlogged", "true");
         block.put("Properties", properties);
         var fixed = DataFixers.getDataFixer().update(References.BLOCK_STATE,
-                new Dynamic<>(NbtOps.INSTANCE, block), 3839, 4671);
+                new Dynamic<>(NbtOps.INSTANCE, block), 3839, currentVersion());
         assertEquals("minecraft:iron_chain", fixed.get("Name").asString().result().orElseThrow());
         assertEquals(new Dynamic<>(NbtOps.INSTANCE, properties), fixed.get("Properties").result().orElseThrow());
         var stack = DataFixers.getDataFixer().update(References.ITEM_STACK,
-                new Dynamic<>(NbtOps.INSTANCE, item("chain", 7)), 3839, 4671);
+                new Dynamic<>(NbtOps.INSTANCE, item("chain", 7)), 3839, currentVersion());
         assertEquals("minecraft:iron_chain", stack.get("id").asString().result().orElseThrow());
         assertEquals(7, stack.get("count").asInt(-1));
         assertNull(VanillaRegistryRemaps.replacement(id("entity_type"), id("chain")));
@@ -111,10 +111,14 @@ public class Native12111RegistryMigrationTest {
 
     private static void assertFixedEntity(CompoundTag entity, String target) {
         var fixed = DataFixers.getDataFixer().update(References.ENTITY,
-                new Dynamic<>(NbtOps.INSTANCE, entity), 3839, 4671);
+                new Dynamic<>(NbtOps.INSTANCE, entity), 3839, currentVersion());
         assertEquals(id(target).toString(), fixed.get("id").asString().result().orElseThrow());
         assertEquals(121111, fixed.get("AdvWorksOpaqueWitness").asInt(-1));
         assertTrue(ForgeRegistries.ENTITY_TYPES.containsKey(id(target)));
+    }
+
+    private static int currentVersion() {
+        return SharedConstants.getCurrentVersion().dataVersion().version();
     }
 
     @SuppressWarnings("unchecked")

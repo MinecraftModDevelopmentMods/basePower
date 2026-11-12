@@ -2,48 +2,38 @@ package zone.moddev.mc.advantageworks.unit;
 
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.Instrumentation;
-import java.lang.reflect.Proxy;
 import java.security.ProtectionDomain;
-import java.util.List;
-import java.util.Optional;
 
-/** Runs Forge's capability-token transform and an empty loader for plain JUnit. */
+/** Runs Forge's capability-token transform and native empty discovery for plain JUnit. */
 public final class ForgeCapabilityBootstrap {
-    private static final String MOD_LOADER = "net/minecraftforge/fml/ModLoader";
-    private static final String AGENT = "zone/moddev/mc/advantageworks/unit/ForgeCapabilityBootstrap";
 
     public static void premain(String options, Instrumentation instrumentation) {
         instrumentation.addTransformer(new ClassFileTransformer() {
             @Override public byte[] transform(ClassLoader loader, String name, Class<?> type,
                     ProtectionDomain domain, byte[] bytes) {
                 if (loader == null || name == null) return null;
-                boolean modLoader = MOD_LOADER.equals(name);
                 String token = "net/minecraftforge/common/capabilities/CapabilityToken";
-                if (!modLoader && !(name.contains("$") || name.equals(token))) return null;
-                if (!modLoader && !token.equals(name)
+                if (!(name.contains("$") || name.equals(token))) return null;
+                if (!token.equals(name)
                         && loader.getResource("org/objectweb/asm/ClassReader.class") == null) return null;
                 try {
                     Class<?> readerType = Class.forName("org.objectweb.asm.ClassReader", true, loader);
                     Object reader = readerType.getConstructor(byte[].class).newInstance((Object)bytes);
                     String parent = (String)readerType.getMethod("getSuperName").invoke(reader);
-                    if (!modLoader && !token.equals(name) && !token.equals(parent)) return null;
+                    if (!token.equals(name) && !token.equals(parent)) return null;
                     Class<?> nodeType = Class.forName("org.objectweb.asm.tree.ClassNode", true, loader);
                     Object node = nodeType.getConstructor().newInstance();
                     Class<?> visitorType = Class.forName("org.objectweb.asm.ClassVisitor", true, loader);
                     readerType.getMethod("accept", visitorType, int.class).invoke(reader, node, 0);
                     Class<?> asmType = Class.forName("org.objectweb.asm.Type", true, loader);
                     Object asmName = asmType.getMethod("getObjectType", String.class).invoke(null, name);
-                    if (modLoader) {
-                        addLoaderFixture(loader, nodeType, node, asmName);
-                    } else {
-                        Class<?> phaseType = Class.forName(
+                    Class<?> phaseType = Class.forName(
                                 "cpw.mods.modlauncher.serviceapi.ILaunchPluginService$Phase", true, loader);
                         Object phase = phaseType.getField("BEFORE").get(null);
                         Class<?> pluginType = Class.forName(
                                 "net.minecraftforge.fml.common.asm.CapabilityTokenSubclass", true, loader);
                         pluginType.getMethod("processClassWithFlags", phaseType, nodeType, asmType, String.class)
                                 .invoke(pluginType.getConstructor().newInstance(), phase, node, asmName, "junit");
-                    }
                     Class<?> writerType = Class.forName("org.objectweb.asm.ClassWriter", true, loader);
                     Object writer = writerType.getConstructor(int.class).newInstance(1);
                     nodeType.getMethod("accept", visitorType).invoke(node, writer);
@@ -54,73 +44,11 @@ public final class ForgeCapabilityBootstrap {
                 }
             }
         });
-    }
-
-    private static void addLoaderFixture(ClassLoader loader, Class<?> nodeType, Object node, Object asmName)
-            throws ReflectiveOperationException {
-        Class<?> insn = Class.forName("org.objectweb.asm.tree.AbstractInsnNode", true, loader);
-        Class<?> list = Class.forName("org.objectweb.asm.tree.InsnList", true, loader);
-        Class<?> ldc = Class.forName("org.objectweb.asm.tree.LdcInsnNode", true, loader);
-        Class<?> var = Class.forName("org.objectweb.asm.tree.VarInsnNode", true, loader);
-        Class<?> method = Class.forName("org.objectweb.asm.tree.MethodInsnNode", true, loader);
-        for (Object ctor : (List<?>) nodeType.getField("methods").get(node)) {
-            Class<?> type = ctor.getClass();
-            if (!"<init>".equals(type.getField("name").get(ctor)) || !"()V".equals(type.getField("desc").get(ctor))) continue;
-            Object instructions = type.getField("instructions").get(ctor);
-            Object entry = list.getConstructor().newInstance();
-            var add = list.getMethod("add", insn);
-            var call = method.getConstructor(int.class, String.class, String.class, String.class, boolean.class);
-            add.invoke(entry, ldc.getConstructor(Object.class).newInstance(asmName));
-            add.invoke(entry, call.newInstance(184, AGENT, "beforeModLoader", "(Ljava/lang/Class;)V", false));
-            for (Object instruction : (Object[]) list.getMethod("toArray").invoke(instructions)) {
-                if ((int) insn.getMethod("getOpcode").invoke(instruction) != 177) continue; // RETURN
-                Object exit = list.getConstructor().newInstance();
-                add.invoke(exit, var.getConstructor(int.class, int.class).newInstance(25, 0)); // ALOAD 0
-                add.invoke(exit, call.newInstance(184, AGENT, "afterModLoader", "(Ljava/lang/Object;)V", false));
-                list.getMethod("insertBefore", insn, list).invoke(instructions, instruction, exit);
-            }
-            list.getMethod("insert", list).invoke(instructions, entry);
-            return;
+        try {
+            Class.forName("zone.moddev.mc.advantageworks.unit.Forge64UnitLoader")
+                    .getMethod("initialize").invoke(null);
+        } catch (ReflectiveOperationException failure) {
+            throw new IllegalStateException("Cannot initialize native Forge 64 JUnit discovery", failure);
         }
-        throw new NoSuchMethodException("Forge 61 ModLoader()");
-    }
-
-    public static void beforeModLoader(Class<?> owner) throws ReflectiveOperationException {
-        ClassLoader loader = owner.getClassLoader();
-        Class<?> fml = Class.forName("net.minecraftforge.fml.loading.FMLLoader", true, loader);
-        if (fml.getMethod("getLoadingModList").invoke(null) != null) {
-            throw new IllegalStateException("The JUnit agent must not run inside a real Forge launch");
-        }
-        Class<?> loading = Class.forName("net.minecraftforge.fml.loading.LoadingModList", true, loader);
-        Class<?> earlyError = Class.forName("net.minecraftforge.fml.loading.EarlyLoadingException", true, loader);
-        Object emptyDiscovery = loading.getMethod("of", List.class, List.class, earlyError)
-                .invoke(null, List.of(), List.of(), null);
-        loading.getMethod("setBrokenFiles", List.class).invoke(emptyDiscovery, List.of());
-        var listField = fml.getDeclaredField("loadingModList");
-        listField.setAccessible(true);
-        listField.set(null, emptyDiscovery);
-        Class<?> layers = Class.forName("cpw.mods.modlauncher.api.IModuleLayerManager", true, loader);
-        Object classpathLayers = Proxy.newProxyInstance(loader, new Class<?>[] {layers}, (proxy, method, args) -> {
-            if (method.getName().equals("getLayer")) return Optional.of(ModuleLayer.boot());
-            throw new UnsupportedOperationException(method.toString());
-        });
-        var layerField = fml.getDeclaredField("moduleLayerManager");
-        layerField.setAccessible(true);
-        layerField.set(null, classpathLayers);
-    }
-
-    public static void afterModLoader(Object loader) throws ReflectiveOperationException {
-        Class<?> owner = loader.getClass();
-        Class<?> mods = Class.forName("net.minecraftforge.fml.ModList", true, owner.getClassLoader());
-        Object emptyMods = mods.getMethod("of", List.class, List.class).invoke(null, List.of(), List.of());
-        var setLoaded = mods.getDeclaredMethod("setLoadedMods", List.class);
-        setLoaded.setAccessible(true);
-        setLoaded.invoke(emptyMods, List.of());
-        var modList = owner.getDeclaredField("modList");
-        modList.setAccessible(true);
-        modList.set(loader, emptyMods);
-        var valid = owner.getDeclaredField("loadingStateValid");
-        valid.setAccessible(true);
-        valid.setBoolean(loader, true);
     }
 }

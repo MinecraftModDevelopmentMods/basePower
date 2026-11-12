@@ -1,16 +1,16 @@
-name: basePower 1.21.11 CI
+name: basePower 26.1.2 CI
 
 on:
   push:
-    branches: [master-1.21.11, 'feature/**']
+    branches: [master-26.1.2, 'feature/**']
   pull_request:
-    branches: [master-1.21.11]
+    branches: [master-26.1.2]
 
 permissions:
   contents: read
 
 concurrency:
-  group: basepower-1.21.11-${{ github.workflow }}-${{ github.ref }}
+  group: basepower-26.1.2-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -23,7 +23,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Test target-derived dependency guards
         run: bash .github/test-base-metals-pin.sh
-      - name: Require the Base Metals pin on upstream master-1.21.11
+      - name: Require the Base Metals pin on upstream master-26.1.2
         id: base-metals-pin
         env:
           GH_TOKEN: ${{ github.token }}
@@ -34,34 +34,24 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           repository: MinecraftModDevelopmentMods/OreSpawn
-          ref: ecad75b24309a344f712d898d717c6a8823fc9f2
+          ref: c45ea2a111520ef904e994dd8dcd90babfcef29b
           path: .ci-dependencies/OreSpawn
       - name: Check out pinned Base Metals
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           repository: MinecraftModDevelopmentMods/BaseMetals
-          ref: 616d527e50e4bf0137eeb9c44fa586e34a0452a0
+          ref: 13d4c4e38bf74d76f2f69f307dc55d13a81e8674
           path: .ci-dependencies/BaseMetals
-      - name: Install pinned Java 25 Mavenizer runtime
+      - name: Install Java 25 for Gradle, tools and Minecraft
         uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
         with:
           distribution: temurin
           java-version: '25.0.3+9.0.LTS'
-      - name: Install Java 8 launcher helper
-        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
-        with:
-          distribution: temurin
-          java-version: '8.0.502+7'
-      - name: Install Java 21 for Gradle and production
-        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
-        with:
-          distribution: temurin
-          java-version: '21.0.7+6.0.LTS'
       - name: Use pinned build toolchains
         # These are Gradle project properties, not JVM system properties.
         shell: bash
         run: >-
-          echo "MMD_GRADLE_TOOLCHAINS=-Porg.gradle.java.installations.paths=$JAVA_HOME,$JAVA_HOME_8_X64,$JAVA_HOME_25_X64
+          echo "MMD_GRADLE_TOOLCHAINS=-Porg.gradle.java.installations.paths=$JAVA_HOME
           -Porg.gradle.java.installations.auto-detect=false
           -Porg.gradle.java.installations.auto-download=false" >> "$GITHUB_ENV"
       - name: Set up Gradle
@@ -78,8 +68,8 @@ jobs:
           (cd "$basemetals" && bash gradle/stage-orespawn-release.sh "$mirror")
           (cd "$orespawn" && bash gradlew $MMD_GRADLE_TOOLCHAINS jar --no-daemon --stacktrace)
           (cd "$basemetals" && bash gradlew $MMD_GRADLE_TOOLCHAINS jar -PorespawnVerificationRepository="$mirror" --no-daemon --stacktrace)
-          osjar="$orespawn/build/libs/OreSpawn-4.1.0.121111.jar"
-          bmjar="$basemetals/build/libs/BaseMetals-3.1.2.121111.jar"
+          osjar="$orespawn/build/libs/OreSpawn-4.1.0.2601021.jar"
+          bmjar="$basemetals/build/libs/BaseMetals-3.1.2.2601021.jar"
           test -f "$osjar" && test -f "$bmjar"
           echo "orespawn=$osjar" >> "$GITHUB_OUTPUT"
           echo "basemetals=$bmjar" >> "$GITHUB_OUTPUT"
@@ -90,12 +80,12 @@ jobs:
           writeReleaseChecksums verifyEclipseProductionClasspath
           -PbaseMetalsDeobfJar=${{ steps.dependencies.outputs.basemetals }}
           -PoreSpawnDeobfJar=${{ steps.dependencies.outputs.orespawn }}
-          -Pforge61MavenizerJar=${{ steps.dependencies.outputs.mavenizer }}
+          -Pforge64MavenizerJar=${{ steps.dependencies.outputs.mavenizer }}
           --no-daemon --stacktrace
       - name: Upload audited release candidate
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: basePower-1.21.11-${{ github.sha }}
+          name: basePower-26.1.2-${{ github.sha }}
           if-no-files-found: error
           retention-days: 30
           path: |
@@ -106,7 +96,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: basePower-1.21.11-diagnostics-${{ github.sha }}
+          name: basePower-26.1.2-diagnostics-${{ github.sha }}
           if-no-files-found: ignore
           retention-days: 14
           path: |

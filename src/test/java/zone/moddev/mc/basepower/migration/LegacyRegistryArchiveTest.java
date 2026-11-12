@@ -61,6 +61,43 @@ public class LegacyRegistryArchiveTest {
         }
     }
 
+    @Test public void relocatedAndCustomDimensionChunksRetainExactTerrainGuards() throws Exception {
+        Path world = temporary.newFolder().toPath();
+        writeChunkIndex(world, "dimensions/minecraft/overworld/region/r.-1.0.mca", 31, 0);
+        writeChunkIndex(world, "dimensions/minecraft/the_nether/region/r.0.-1.mca", 0, 31);
+        writeChunkIndex(world, "dimensions/other/deep/cavern/region/r.1.-1.mca", 2, 3);
+        // A retained old directory may overlap a native directory during recovery.
+        writeChunkIndex(world, "region/r.-1.0.mca", 31, 0);
+        try {
+            assertEquals("Duplicate paths must not invent an extra saved chunk", 3,
+                    LegacyWorldDataHook.indexLegacyChunks(world.toFile()));
+            assertTrue(LegacyWorldDataHook.isProtectedChunk(Identifier.parse("minecraft:overworld"),
+                    new BlockPos(-16, 64, 0)));
+            assertTrue(LegacyWorldDataHook.isProtectedChunk(Identifier.parse("minecraft:the_nether"),
+                    new BlockPos(0, 64, -16)));
+            assertTrue(LegacyWorldDataHook.isProtectedChunk(Identifier.parse("other:deep/cavern"),
+                    new BlockPos(34 * 16, 64, -29 * 16)));
+            assertFalse(LegacyWorldDataHook.isProtectedChunk(Identifier.parse("minecraft:the_end"),
+                    new BlockPos(-16, 64, 0)));
+            assertFalse(LegacyWorldDataHook.isProtectedChunk(Identifier.parse("other:deep/cavern"),
+                    new BlockPos(35 * 16, 64, -29 * 16)));
+            assertEquals("Repeated indexing must remain idempotent", 3,
+                    LegacyWorldDataHook.indexLegacyChunks(world.toFile()));
+        } finally {
+            LegacyWorldDataHook.indexLegacyChunks(temporary.newFolder());
+        }
+    }
+
+    private static void writeChunkIndex(Path world, String relative, int localX, int localZ) throws Exception {
+        Path region = world.resolve(relative);
+        Files.createDirectories(region.getParent());
+        byte[] header = new byte[4096];
+        int offset = (localX + localZ * 32) * 4;
+        header[offset + 2] = 2;
+        header[offset + 3] = 1;
+        Files.write(region, header);
+    }
+
     private static CompoundTag registrySnapshot() {
         CompoundTag source = new CompoundTag();
         CompoundTag fml = new CompoundTag();

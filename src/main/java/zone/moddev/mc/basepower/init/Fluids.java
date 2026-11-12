@@ -18,8 +18,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Registry;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.LevelReader;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
 
 import net.minecraftforge.fluids.FluidType;
@@ -89,10 +87,7 @@ public final class Fluids {
         return new FluidType(FluidType.Properties.create().descriptionId("fluid.basepower." + name)
                 .density(density).viscosity(viscosity).temperature(300)) {
             @Override public void initializeClient(Consumer<IClientFluidTypeExtensions> consumer) {
-                consumer.accept(new IClientFluidTypeExtensions() {
-                    @Override public Identifier getStillTexture() { return id("blocks/" + name + "_still"); }
-                    @Override public Identifier getFlowingTexture() { return id("blocks/" + name + "_flow"); }
-                });
+                consumer.accept(zone.moddev.mc.basepower.client.ClientOilRenderer.extensions(name));
             }
         };
     }

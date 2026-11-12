@@ -49,7 +49,7 @@ public final class PartsLoot extends LootModifier {
         var resourceManager = context.getLevel().getServer().getResourceManager();
         String source = resourceManager.getResource(table.withPath(path -> "loot_table/" + path + ".json"))
                 .map(Resource::sourcePackId).orElse("");
-        for (Identifier extra : partTables(table, source, ModList.get()::isLoaded)) {
+        for (Identifier extra : partTables(table, source, ModList::isLoaded)) {
             var key = ResourceKey.create(Registries.LOOT_TABLE, extra);
             context.getResolver().lookupOrThrow(Registries.LOOT_TABLE).get(key)
                     .ifPresent(holder -> holder.value().getRandomItemsRaw(context, loot::add));
@@ -70,7 +70,7 @@ public final class PartsLoot extends LootModifier {
     }
 
     private static boolean hasAdditionalLootTables() {
-        return ModList.get().getMods().stream().anyMatch(mod -> mod.getModId().replace("_", "").replace("-", "")
+        return ModList.getMods().stream().anyMatch(mod -> mod.getModId().replace("_", "").replace("-", "")
                 .equals("additionalloottables"));
     }
 }

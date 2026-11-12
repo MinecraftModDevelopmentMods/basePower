@@ -2,8 +2,6 @@ package zone.moddev.mc.basepower.registry;
 
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 
 /**
  * This interface is used to combine the two different classes of a block GUI 
@@ -30,6 +28,5 @@ public interface ITileEntityGUI {
 	 * @param player The player that is going to use the GUI
 	 * @return An instance of net.minecraft.client.gui.screen.inventory.ContainerScreen
 	 */
-	@OnlyIn(Dist.CLIENT)
 	public abstract net.minecraft.client.gui.screens.inventory.AbstractContainerScreen getContainerGUI(BlockEntity e, Player player);
 }

@@ -104,7 +104,7 @@ public class FluidDrainTileEntity extends TileEntitySimpleFluidMachine {
                         || candidateState.getType().isSame(state.getType()))) candidates.add(candidate);
             }
             if (candidates.isEmpty()) return null;
-            position = candidates.get(candidates.size() == 1 ? 0 : world.random.nextInt(candidates.size()));
+            position = candidates.get(candidates.size() == 1 ? 0 : world.getRandom().nextInt(candidates.size()));
         }
         return null;
     }

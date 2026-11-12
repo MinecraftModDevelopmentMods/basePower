@@ -450,14 +450,17 @@ public final class LegacyWorldDataHook {
     private static void migrateLoosePlayerData(File levelDat, CompoundTag root) throws IOException {
         boolean changed = migrateLegacyNbt(root) > 0;
         if (changed && levelDat.isFile()) writeWithBackup(levelDat, root);
-        File playerData = new File(levelDat.getParentFile(), "playerdata");
-        File[] files = playerData.listFiles((directory, name) -> name.endsWith(".dat"));
-        if (files == null) return;
-        Arrays.sort(files);
-        for (File file : files) {
-            try (FileInputStream input = new FileInputStream(file)) {
-                CompoundTag player = NbtIo.readCompressed(input, NbtAccounter.unlimitedHeap());
-                if (migrateLegacyNbt(player) > 0) writeWithBackup(file, player);
+        // Native file fixing moves playerdata to players/data; reopen must handle the new location too.
+        for (String directory : List.of("playerdata", "players/data")) {
+            File[] files = new File(levelDat.getParentFile(), directory)
+                    .listFiles((parent, name) -> name.endsWith(".dat"));
+            if (files == null) continue;
+            Arrays.sort(files);
+            for (File file : files) {
+                try (FileInputStream input = new FileInputStream(file)) {
+                    CompoundTag player = NbtIo.readCompressed(input, NbtAccounter.unlimitedHeap());
+                    if (migrateLegacyNbt(player) > 0) writeWithBackup(file, player);
+                }
             }
         }
     }
@@ -602,15 +605,32 @@ public final class LegacyWorldDataHook {
 
     static int indexLegacyChunks(File worldDirectory) {
         LEGACY_CHUNKS.clear();
-        return indexLegacyChunks(Identifier.parse("overworld"), new File(worldDirectory, "region"))
+        int indexed = indexLegacyChunks(Identifier.parse("overworld"), new File(worldDirectory, "region"))
                 + indexLegacyChunks(Identifier.parse("the_nether"), new File(worldDirectory, "DIM-1/region"))
                 + indexLegacyChunks(Identifier.parse("the_end"), new File(worldDirectory, "DIM1/region"));
+        Path dimensions = worldDirectory.toPath().resolve("dimensions");
+        if (Files.isDirectory(dimensions)) {
+            try (var directories = Files.walk(dimensions)) {
+                for (Path directory : directories.filter(Files::isDirectory)
+                        .filter(path -> path.getFileName().toString().equals("region")).toList()) {
+                    Path relative = dimensions.relativize(directory.getParent());
+                    if (relative.getNameCount() < 2) continue;
+                    Identifier dimension = Identifier.tryParse(relative.getName(0) + ":"
+                            + relative.subpath(1, relative.getNameCount()).toString().replace(File.separatorChar, '/'));
+                    if (dimension != null) indexed += indexLegacyChunks(dimension, directory.toFile());
+                }
+            } catch (IOException exception) {
+                throw new IllegalStateException("Could not inspect saved dimension paths in " + dimensions, exception);
+            }
+        }
+        return indexed;
     }
 
     private static int indexLegacyChunks(Identifier dimension, File regionDirectory) {
         File[] regions = regionDirectory.listFiles((directory, name) -> name.matches("r\\.-?\\d+\\.-?\\d+\\.mc[ar]"));
         if (regions == null) return 0;
-        Set<Long> chunks = ConcurrentHashMap.newKeySet();
+        Set<Long> chunks = LEGACY_CHUNKS.computeIfAbsent(dimension, ignored -> ConcurrentHashMap.newKeySet());
+        int previous = chunks.size();
         byte[] locations = new byte[4096];
         for (File region : regions) {
             String[] parts = region.getName().split("\\.");
@@ -636,7 +656,7 @@ public final class LegacyWorldDataHook {
             }
         }
         LEGACY_CHUNKS.put(dimension, chunks);
-        return chunks.size();
+        return chunks.size() - previous;
     }
 
     @SuppressWarnings("unchecked")

@@ -20,11 +20,13 @@ public class NativePackRangeContractTest {
             JsonObject pack = side.getAsJsonObject("nativeMetadata");
             var range = PackFormat.packCodec(type).codec().parse(JsonOps.INSTANCE, pack).getOrThrow();
             assertEquals(type.toString(), type == PackType.CLIENT_RESOURCES,
-                    range.isValueInRange(PackFormat.of(75, 0)));
+                    range.isValueInRange(PackFormat.of(84, 0)));
             assertEquals(type.toString(), type == PackType.SERVER_DATA,
-                    range.isValueInRange(PackFormat.of(94, 1)));
-            assertFalse(range.isValueInRange(PackFormat.of(74)));
-            assertFalse(range.isValueInRange(PackFormat.of(95)));
+                    range.isValueInRange(PackFormat.of(101, 1)));
+            assertFalse(range.isValueInRange(PackFormat.of(83)));
+            assertFalse(range.isValueInRange(PackFormat.of(102)));
+            assertFalse(range.isValueInRange(PackFormat.of(75, 0)));
+            assertFalse(range.isValueInRange(PackFormat.of(94, 1)));
         }
     }
 
@@ -46,11 +48,12 @@ public class NativePackRangeContractTest {
     }
 
     @Test public void dataOnlyRangeDoesNotQualifyClientResources() {
-        JsonObject dataOnly = JsonParser.parseString("{\"min_format\":[94,1],\"max_format\":[94,1]}")
+        JsonObject dataOnly = JsonParser.parseString("{\"min_format\":[101,1],\"max_format\":[101,1]}")
                 .getAsJsonObject();
         var range = PackFormat.packCodec(PackType.CLIENT_RESOURCES).codec()
                 .parse(JsonOps.INSTANCE, dataOnly).getOrThrow();
-        assertFalse(range.isValueInRange(PackFormat.of(75, 0)));
-        assertTrue(range.isValueInRange(PackFormat.of(94, 1)));
+        assertFalse(range.isValueInRange(PackFormat.of(84, 0)));
+        assertFalse(range.isValueInRange(PackFormat.of(94, 1)));
+        assertTrue(range.isValueInRange(PackFormat.of(101, 1)));
     }
 }

@@ -20,24 +20,24 @@ abstract class SimpleRegionStorageMixin {
         callback.setReturnValue(LegacyWorldDataHook.copyChunkReadForMigration(callback.getReturnValue()));
     }
 
-    @Inject(method = "upgradeChunkTag(Lnet/minecraft/nbt/CompoundTag;ILnet/minecraft/nbt/CompoundTag;)Lnet/minecraft/nbt/CompoundTag;",
+    @Inject(method = "upgradeChunkTag(Lnet/minecraft/nbt/CompoundTag;ILnet/minecraft/nbt/CompoundTag;I)Lnet/minecraft/nbt/CompoundTag;",
             at = @At("HEAD"))
-    private void basepower$prepareChunk(CompoundTag chunk, int fallback, CompoundTag context,
+    private void basepower$prepareChunk(CompoundTag chunk, int fallback, CompoundTag context, int targetVersion,
             CallbackInfoReturnable<CompoundTag> callback) {
         LegacyWorldDataHook.prepareLegacyChunk(chunk);
     }
 
-    @Inject(method = "upgradeChunkTag(Lnet/minecraft/nbt/CompoundTag;ILnet/minecraft/nbt/CompoundTag;)Lnet/minecraft/nbt/CompoundTag;",
+    @Inject(method = "upgradeChunkTag(Lnet/minecraft/nbt/CompoundTag;ILnet/minecraft/nbt/CompoundTag;I)Lnet/minecraft/nbt/CompoundTag;",
             at = @At(value = "INVOKE", target = "Lnet/minecraft/nbt/NbtUtils;getDataVersion(Lnet/minecraft/nbt/CompoundTag;I)I"))
-    private void basepower$prepareInventories(CompoundTag chunk, int fallback, CompoundTag context,
+    private void basepower$prepareInventories(CompoundTag chunk, int fallback, CompoundTag context, int targetVersion,
             CallbackInfoReturnable<CompoundTag> callback) {
         // Both mods' HEAD hooks have run before machine/entity payloads are staged.
         LegacyWorldDataHook.prepareLegacyEntities(chunk);
     }
 
-    @Inject(method = "upgradeChunkTag(Lnet/minecraft/nbt/CompoundTag;ILnet/minecraft/nbt/CompoundTag;)Lnet/minecraft/nbt/CompoundTag;",
+    @Inject(method = "upgradeChunkTag(Lnet/minecraft/nbt/CompoundTag;ILnet/minecraft/nbt/CompoundTag;I)Lnet/minecraft/nbt/CompoundTag;",
             at = @At("RETURN"))
-    private void basepower$finishChunk(CompoundTag chunk, int fallback, CompoundTag context,
+    private void basepower$finishChunk(CompoundTag chunk, int fallback, CompoundTag context, int targetVersion,
             CallbackInfoReturnable<CompoundTag> callback) {
         // Mutate the native result without cancelling other mods' return hooks.
         LegacyWorldDataHook.finalizeLegacyChunk(callback.getReturnValue());
