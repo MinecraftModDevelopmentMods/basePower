@@ -28,7 +28,7 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 public class Native12111RecipeBookProbeTest {
-    private static final ContextMap CONTEXT = new ContextMap.Builder().create(SlotDisplayContext.CONTEXT);
+    private static final ContextMap CONTEXT = ContextMap.builder().buildAndValidate(SlotDisplayContext.CONTEXT);
 
     @BeforeClass public static void bootstrap() {
         net.minecraft.SharedConstants.tryDetectVersion();
@@ -76,10 +76,10 @@ public class Native12111RecipeBookProbeTest {
         byte[] encoded;
         var tag = Identifier.parse("advantageworks:recipe_probe");
         try {
-            payload.writeMap(java.util.Map.of(tag, new it.unimi.dsi.fastutil.ints.IntArrayList(new int[] {
-                    BuiltInRegistries.ITEM.getId(Items.POTATO), BuiltInRegistries.ITEM.getId(Items.CARROT)})),
-                    FriendlyByteBuf::writeIdentifier, FriendlyByteBuf::writeIntIdList);
-            var nativeTags = TagNetworkSerialization.NetworkPayload.read(payload);
+            TagNetworkSerialization.NetworkPayload.STREAM_CODEC.encode(payload, new TagNetworkSerialization.NetworkPayload(
+                    java.util.Map.of(tag, new it.unimi.dsi.fastutil.ints.IntArrayList(new int[] {
+                        BuiltInRegistries.ITEM.getId(Items.POTATO), BuiltInRegistries.ITEM.getId(Items.CARROT)}))));
+            var nativeTags = TagNetworkSerialization.NetworkPayload.STREAM_CODEC.decode(payload);
             assertFalse(payload.isReadable());
             encoded = RecipeBookProbe.itemTagsPacket(java.util.Map.of(Registries.ITEM, nativeTags));
         } finally { payload.release(); }
@@ -87,7 +87,7 @@ public class Native12111RecipeBookProbeTest {
         try {
             var decoded = ClientboundUpdateTagsPacket.STREAM_CODEC.decode(packet);
             assertFalse(packet.isReadable());
-            var tags = decoded.getTags().get(Registries.ITEM);
+            var tags = decoded.tags().get(Registries.ITEM);
             assertEquals(1, tags.size());
             assertEquals(List.of(Items.POTATO, Items.CARROT), tags.resolve(BuiltInRegistries.ITEM).tags()
                     .get(net.minecraft.tags.TagKey.create(Registries.ITEM, tag)).stream()

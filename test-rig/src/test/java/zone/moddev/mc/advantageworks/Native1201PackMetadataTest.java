@@ -21,10 +21,10 @@ public class Native1201PackMetadataTest {
                     net.minecraft.server.packs.PackType.SERVER_DATA).codec()
                     .parse(com.mojang.serialization.JsonOps.INSTANCE, pack).getOrThrow();
             var formats = section.supportedFormats();
-            assertTrue(formats.isValueInRange(net.minecraft.server.packs.metadata.pack.PackFormat.of(94, 1)));
+            assertTrue(formats.isValueInRange(net.minecraft.server.packs.metadata.pack.PackFormat.of(121, 0)));
             assertFalse(formats.isValueInRange(net.minecraft.server.packs.metadata.pack.PackFormat.of(75, 0)));
-            assertFalse(formats.isValueInRange(net.minecraft.server.packs.metadata.pack.PackFormat.of(94, 0)));
-            assertFalse(formats.isValueInRange(net.minecraft.server.packs.metadata.pack.PackFormat.of(95)));
+            assertFalse(formats.isValueInRange(net.minecraft.server.packs.metadata.pack.PackFormat.of(120, 1)));
+            assertFalse(formats.isValueInRange(net.minecraft.server.packs.metadata.pack.PackFormat.of(121, 1)));
         }
     }
 }

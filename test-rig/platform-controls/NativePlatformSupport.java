@@ -59,12 +59,12 @@ final class NativePlatformSupport {
         if (worldgen) {
             var base = RegistryLayer.createRegistryAccess();
             try (var resources = new MultiPackResourceManager(PackType.SERVER_DATA,
-                    List.of(ServerPacksSource.createVanillaPackSource()))) {
+                    List.of(ServerPacksSource.createVanillaPackSource().fullResources()))) {
                 var tags = TagLoader.loadTagsForExistingRegistries(resources, base.getLayer(RegistryLayer.STATIC));
-                var lookups = TagLoader.buildUpdatedLookups(base.getAccessForLoading(RegistryLayer.WORLDGEN), tags);
+                var lookups = TagLoader.buildUpdatedLookups(base.getAccessForLoading(RegistryLayer.WORLD), tags);
                 var loaded = RegistryDataLoader.load(resources, lookups,
-                        RegistryDataLoader.WORLDGEN_REGISTRIES, Runnable::run).join();
-                registries = base.replaceFrom(RegistryLayer.WORLDGEN, loaded).compositeAccess();
+                        RegistryDataLoader.WORLD_REGISTRIES, Runnable::run).join();
+                registries = base.replaceFrom(RegistryLayer.WORLD, loaded).compositeAccess();
             }
         }
         field(world, "registryAccess", registries);
@@ -118,6 +118,7 @@ final class NativePlatformSupport {
     }
 
     static void sourceEvidence(Map<String, Object> proof, Class<?>... types) throws Exception {
+        proof.put("engineProtocol", "NATIVE66");
         Path engine = Path.of(Entity.class.getProtectionDomain().getCodeSource().getLocation().toURI());
         if (!Files.isRegularFile(engine)) throw new AssertionError("Native engine is not a jar: " + engine);
         String name = engine.getFileName().toString();
@@ -135,7 +136,9 @@ final class NativePlatformSupport {
         }
         proof.put("nativeSourceSha256", hashes);
         Map<String, String> controls = new LinkedHashMap<>();
-        for (String source : List.of("NativePlatformSupport.java", "NativeLeashKnotPlatformControl.java")) {
+        for (String source : List.of("NativePlatformSupport.java", "NativeLeashKnotPlatformControl.java",
+                "NativeWolfPlatformControl.java", "NativeSystemReportPlatformControl.java",
+                "NettyJava25PlatformControl.java")) {
             controls.put("platform-controls/" + source, sha(Files.readAllBytes(Path.of("platform-controls", source))));
         }
         controls.put("unit-support/zone/moddev/mc/advantageworks/unit/NativeEmptyEntityTracker.java", sha(Files.readAllBytes(Path.of(

@@ -55,7 +55,7 @@ final class SteamOperationalActors {
                         ArmorStand rider = new ArmorStand(c.world, base.getX() + 0.5,
                                 base.getY() + (down ? 7 : 1) + 0.00390625, base.getZ() + 0.5);
                         rider.setNoGravity(true);
-                        rider.setInvulnerable(true);
+                        rider.setPermanentlyInvulnerable(true);
                         c.require(c.world.addFreshEntity(rider), "Passenger spawned into the real server world");
                         passenger[0] = rider;
                         c.record("passenger/uuid", rider.getUUID().toString());

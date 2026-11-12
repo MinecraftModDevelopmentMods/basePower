@@ -27,7 +27,8 @@ public final class Forge64UnitLoader {
         net.minecraft.SharedConstants.tryDetectVersion();
         net.minecraft.server.Bootstrap.bootStrap();
         net.minecraft.core.registries.BuiltInRegistries.DATA_COMPONENT_INITIALIZERS
-                .build(net.minecraft.data.registries.VanillaRegistries.createLookup())
+                .build(net.minecraft.data.registries.VanillaRegistries.createReloadableLookup(
+                        net.minecraft.data.registries.VanillaRegistries.createWorldLookup()))
                 .forEach(net.minecraft.core.component.DataComponentInitializers.PendingComponents::apply);
         initialized = true;
     }

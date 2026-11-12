@@ -1,7 +1,7 @@
 {
   "pack": {
-    "description": "Advantage Works 1.21.11 test resources",
-    "min_format": [94, 1],
-    "max_format": [94, 1]
+    "description": "Advantage Works 26.3 test resources",
+    "min_format": [121, 0],
+    "max_format": [121, 0]
   }
 }

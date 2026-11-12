@@ -79,7 +79,11 @@ public final class WorksRunner {
             new CalendarTarget("26.2", "26.2-65.1.0", ".2602001", "native262",
                     "8D113D3DFFF0F0978A1989E22A8040FAD0FE5E332EF766B3702EB29687C9F4D2",
                     "813FBBFECC3086A492783B9F5023AE15007737B42E17AAB75F48BA77403314DF",
-                    "7D1A733519C86FE2665110BF660DCF4B7358B97F416975444906E5CC77F163BE"));
+                    "7D1A733519C86FE2665110BF660DCF4B7358B97F416975444906E5CC77F163BE"),
+            new CalendarTarget("26.3", "26.3-66.0.0", ".2603001", "native263",
+                    "5D4687093B4E34ABF1254034B0DA3BCA48F225569343809F906C586B0685BAB1",
+                    "C6173EEA56AED0B947722F314542196E28A35285844961D517C7FB571492BBE3",
+                    "041CDCC0BCF4207410D06D8F17EECCE0097FBC19A4263E6E619171A22D20340F"));
 
     private static CalendarTarget calendarTarget(String minecraft) {
         return CALENDAR_TARGETS.stream().filter(target -> target.minecraft.equals(minecraft)).findFirst().orElse(null);
@@ -373,6 +377,10 @@ public final class WorksRunner {
         return nativeLoggingConfiguration(runtime, loggingJar, calendarTarget("26.2"));
     }
 
+    static String native263LoggingConfiguration(File runtime, File loggingJar) throws Exception {
+        return nativeLoggingConfiguration(runtime, loggingJar, calendarTarget("26.3"));
+    }
+
     private static String nativeLoggingConfiguration(File runtime, File loggingJar, CalendarTarget target) throws Exception {
         byte[] modified = nativeLoggingBytes(loggingJar, target);
         Path config = runtime.toPath().resolve(target.loggingPrefix() + "-log4j2-plain-stacktraces.xml");
@@ -406,7 +414,8 @@ public final class WorksRunner {
             Path jar = root.resolve(calendar.shim());
             PreparedServerSeed.requirePlain(jar);
             if (!Files.readString(args, StandardCharsets.UTF_8).strip().equals(
-                    "-Djava.net.preferIPv6Addresses=system -XX:+UseCompactObjectHeaders -jar " + calendar.shim())
+                    "-Djava.net.preferIPv6Addresses=system -XX:+UseCompactObjectHeaders "
+                            + (calendar.id.equals("native263") ? "-XX:StackShadowPages=32 " : "") + "-jar " + calendar.shim())
                     || !sha256(jar.toFile()).equals(calendar.shimHash))
                 throw new IllegalArgumentException("Unexpected selected Forge 64 shim command");
             return;
@@ -1328,6 +1337,10 @@ public final class WorksRunner {
         requireNative2612Environment(environment);
     }
 
+    static void requireNative263Environment(Map<String, String> environment) {
+        requireNative2612Environment(environment);
+    }
+
     static void requireNative2612Environment(Map<String, String> environment) {
         for (String key : List.of("JAVA_TOOL_OPTIONS", "JDK_JAVA_OPTIONS", "_JAVA_OPTIONS", "CLASSPATH")) {
             if (environment.get(key) != null && !environment.get(key).isBlank())
@@ -1512,6 +1525,9 @@ public final class WorksRunner {
         try (InputStreamReader reader = new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8)) {
             JsonObject metadata = GSON.fromJson(reader, JsonObject.class);
             if (metadata != null && metadata.has("minecraftVersion")
+                    && "26.3".equals(metadata.get("minecraftVersion").getAsString()))
+                return readNative263Profile(file);
+            if (metadata != null && metadata.has("minecraftVersion")
                     && "26.2".equals(metadata.get("minecraftVersion").getAsString()))
                 return readNative262Profile(file);
             if (metadata != null && metadata.has("minecraftVersion")
@@ -1544,6 +1560,17 @@ public final class WorksRunner {
         profile.mods.forEach(input -> ids.add(input.id));
         if (!ids.containsAll(Set.of("basepower", "advantageworkstest", "basemetals", "orespawn")))
             throw new IllegalArgumentException("Forge 65 requires the complete pinned dependency family");
+        return profile;
+    }
+
+    static Profile readNative263Profile(File file) throws Exception {
+        Profile profile = readNativeShimProfile(file, "26.3", "26.3-66.0.0", ".2603001");
+        if (!"build/works-native263".equals(profile.runtimeBase))
+            throw new IllegalArgumentException("Forge 66 must use isolated build/works-native263 runtimes");
+        Set<String> ids = new LinkedHashSet<>();
+        profile.mods.forEach(input -> ids.add(input.id));
+        if (!ids.equals(Set.of("basepower", "advantageworkstest", "basesteam", "baseelectric", "basemetals", "orespawn")))
+            throw new IllegalArgumentException("Forge 66 requires all six actual pinned target inputs");
         return profile;
     }
 

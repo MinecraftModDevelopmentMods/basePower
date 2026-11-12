@@ -108,8 +108,8 @@ public final class ClientResourceProbe {
             if (preLoginGeometry != null) for (var row : preLoginGeometry.entrySet()) result.add(row.getKey(), row.getValue().deepCopy());
             if (worldOilReport != null) result.add("world_oil_visual", worldOilReport.deepCopy());
             if (readinessFailure != null) throw new IllegalStateException("Native login/fixture gate failed", readinessFailure);
-            require("26.2".equals(result.get("minecraft").getAsString())
-                    && "65.1.0".equals(result.get("forge").getAsString())
+            require("26.3".equals(result.get("minecraft").getAsString())
+                    && "66.0.0".equals(result.get("forge").getAsString())
                     && Runtime.version().feature() == 25, "Wrong native client target");
             require(loggedIn && componentsBound, "Native real-world login/component binding did not complete");
             var expectedWorld = Path.of("saves/AdvantageClientResources").toRealPath();
@@ -148,9 +148,9 @@ public final class ClientResourceProbe {
             result.add("mod_versions", versions);
             require(versions.has("basepower") && zone.moddev.mc.basepower.PowerAdvantage.VERSION
                     .equals(versions.get("basepower").getAsString()), "Power metadata does not match the compiled version");
-            require("2.4.17.2602001".equals(versions.get("basepower").getAsString()), "Wrong native Power candidate");
+            require("2.4.18.2603001".equals(versions.get("basepower").getAsString()), "Wrong native Power candidate");
             for (String id : new String[]{"basesteam", "baseelectric"}) {
-                if (versions.has(id)) require("2.2.18.2602001".equals(versions.get(id).getAsString()), "Wrong native expansion candidate: " + id);
+                if (versions.has(id)) require("2.2.19.2603001".equals(versions.get(id).getAsString()), "Wrong native expansion candidate: " + id);
             }
             require(minecraft.getModelManager().getBlockStateModelSet() != null, "Timed out before model baking");
             require(minecraft.gui.overlay() == null, "Timed out before native resource loading completed");
@@ -364,10 +364,13 @@ public final class ClientResourceProbe {
             var layersField = ItemStackRenderState.class.getDeclaredField("layers");
             countField.setAccessible(true);
             layersField.setAccessible(true);
+            var quadsField = ItemStackRenderState.LayerRenderState.class.getDeclaredField("quads");
+            quadsField.setAccessible(true);
             var layers = (ItemStackRenderState.LayerRenderState[]) layersField.get(state);
             int quads = 0;
             for (int i = 0; i < countField.getInt(state); i++) {
-                for (BakedQuad quad : layers[i].prepareQuadList()) {
+                var itemQuads = (net.minecraft.client.resources.model.geometry.ItemQuads) quadsField.get(layers[i]);
+                for (BakedQuad quad : itemQuads.all()) {
                     require(!"missingno".equals(quad.materialInfo().sprite().contents().name().getPath()), "Missing face texture: " + id);
                     quads++;
                 }

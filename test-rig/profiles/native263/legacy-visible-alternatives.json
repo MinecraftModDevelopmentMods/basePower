@@ -1,0 +1,11 @@
+{
+  "protocol": "NATIVE26_LEGACY_VISIBLE_DISABLED_ALTERNATIVES_V1",
+  "reason": "Retain the imported placement rules and show complete disabled modern alternatives. Presence is not duplicate generation; enabling a second overlapping source is.",
+  "replacesOnly": [
+    {"id": "modern-oil-not-duplicated", "section": "fluid_deposits", "entry": "basepower:fluid_deposit/desert_crude_oil", "block": "basepower:crude_oil"},
+    {"id": "modern-lithium-not-duplicated", "section": "ores", "entry": "baseelectric:ore/lithium", "block": "baseelectric:li_ore"},
+    {"id": "modern-sulfur-not-duplicated", "section": "ores", "entry": "baseelectric:ore/sulfur", "block": "baseelectric:sulfur_ore"}
+  ],
+  "replacement": {"present": true, "field": "enabled", "expectedBoolean": false},
+  "historicalAssertionsAndReceiptsRemainUnchanged": true
+}

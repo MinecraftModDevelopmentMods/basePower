@@ -31,14 +31,14 @@ public class Native1201TestFlatTest {
         Bootstrap.bootStrap();
         var base = RegistryLayer.createRegistryAccess();
         try (var resources = new MultiPackResourceManager(PackType.SERVER_DATA,
-                List.of(ServerPacksSource.createVanillaPackSource()))) {
+                List.of(ServerPacksSource.createVanillaPackSource().fullResources()))) {
             var pendingTags = net.minecraft.tags.TagLoader.loadTagsForExistingRegistries(
                     resources, base.getLayer(RegistryLayer.STATIC));
             var lookups = net.minecraft.tags.TagLoader.buildUpdatedLookups(
-                    base.getAccessForLoading(RegistryLayer.WORLDGEN), pendingTags);
+                    base.getAccessForLoading(RegistryLayer.WORLD), pendingTags);
             var worldgen = RegistryDataLoader.load(resources, lookups,
-                    RegistryDataLoader.WORLDGEN_REGISTRIES, Runnable::run).join();
-            registries = base.replaceFrom(RegistryLayer.WORLDGEN, worldgen).compositeAccess();
+                    RegistryDataLoader.WORLD_REGISTRIES, Runnable::run).join();
+            registries = base.replaceFrom(RegistryLayer.WORLD, worldgen).compositeAccess();
         }
     }
 

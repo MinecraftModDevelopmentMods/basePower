@@ -146,7 +146,7 @@ final class RecipeBookProbe {
             byte[] bytes = new byte[buffer.readableBytes()];
             buffer.getBytes(buffer.readerIndex(), bytes);
             var decoded = ClientboundUpdateTagsPacket.STREAM_CODEC.decode(buffer);
-            require(!buffer.isReadable() && decoded.getTags().keySet().equals(tags.keySet()),
+            require(!buffer.isReadable() && decoded.tags().keySet().equals(tags.keySet()),
                     "Native tag packet did not round-trip its registry set");
             return bytes;
         } finally { buffer.release(); }

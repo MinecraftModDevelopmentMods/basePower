@@ -55,7 +55,8 @@ public class Native117PlayerIoTest {
         Bootstrap.bootStrap();
         var enchantments = new net.minecraft.core.MappedRegistry<Enchantment>(
                 net.minecraft.core.registries.Registries.ENCHANTMENT, com.mojang.serialization.Lifecycle.stable());
-        var vanilla = net.minecraft.data.registries.VanillaRegistries.createLookup();
+        var vanilla = net.minecraft.data.registries.VanillaRegistries.createReloadableLookup(
+                net.minecraft.data.registries.VanillaRegistries.createWorldLookup());
         vanilla.lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT).listElements().forEach(holder ->
                 net.minecraft.core.Registry.register(enchantments, holder.key(), holder.value()));
         // Only the item-codec fixture definitions are synthetic; live tests load Steam's data pack.

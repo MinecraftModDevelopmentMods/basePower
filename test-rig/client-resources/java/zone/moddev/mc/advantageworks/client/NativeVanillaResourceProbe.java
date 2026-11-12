@@ -39,7 +39,7 @@ final class NativeVanillaResourceProbe implements PreparableReloadListener {
 
     private static JsonObject capture(ResourceManager resources) {
         JsonObject result = new JsonObject();
-        result.addProperty("protocol", "NATIVE65_VANILLA_RESOURCE_ROOTS_V1");
+        result.addProperty("protocol", "NATIVE66_VANILLA_RESOURCE_ROOTS_V1");
         result.addProperty("phase", "reload-preparation-before-atlas-upload");
         JsonArray rows = new JsonArray();
         result.add("resources", rows);
@@ -51,7 +51,7 @@ final class NativeVanillaResourceProbe implements PreparableReloadListener {
                 row.addProperty("resource", name);
                 rows.add(row);
                 var vanilla = Minecraft.getInstance().getVanillaPackResources()
-                        .getResource(PackType.CLIENT_RESOURCES, id);
+                        .fullResources().getResource(PackType.CLIENT_RESOURCES, id);
                 JsonObject direct = new JsonObject();
                 direct.addProperty("present", vanilla != null);
                 row.add("vanilla", direct);

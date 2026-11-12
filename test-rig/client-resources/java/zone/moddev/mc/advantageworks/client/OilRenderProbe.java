@@ -7,7 +7,7 @@ import net.minecraft.client.Minecraft;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.VertexFormatElement;
+import com.mojang.renderpearl.api.vertex.VertexFormatElement;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.FlowingFluid;
 import net.minecraft.world.level.material.FluidState;
@@ -100,7 +100,7 @@ final class OilRenderProbe {
             }
         };
         try (var storage = new com.mojang.blaze3d.vertex.ByteBufferBuilder(4096)) {
-        BufferBuilder buffer = new BufferBuilder(storage, com.mojang.blaze3d.PrimitiveTopology.QUADS, DefaultVertexFormat.BLOCK);
+        BufferBuilder buffer = new BufferBuilder(storage, com.mojang.renderpearl.api.pipeline.PrimitiveTopology.QUADS, DefaultVertexFormat.BLOCK);
         var models = minecraft.getModelManager().getFluidStateModelSet();
         var nativeModel = net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions.of(state)
                 .getModel(state, world, BlockPos.ZERO, models.get(state));
