@@ -34,7 +34,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           repository: MinecraftModDevelopmentMods/OreSpawn
-          ref: c45ea2a111520ef904e994dd8dcd90babfcef29b
+          ref: 101fd12b598934c353e417c57edc5c2bbefd5f53
           path: .ci-dependencies/OreSpawn
       - name: Check out pinned Base Metals
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -68,7 +68,7 @@ jobs:
           (cd "$basemetals" && bash gradle/stage-orespawn-release.sh "$mirror")
           (cd "$orespawn" && bash gradlew $MMD_GRADLE_TOOLCHAINS jar --no-daemon --stacktrace)
           (cd "$basemetals" && bash gradlew $MMD_GRADLE_TOOLCHAINS jar -PorespawnVerificationRepository="$mirror" --no-daemon --stacktrace)
-          osjar="$orespawn/build/libs/OreSpawn-4.1.0.2601021.jar"
+          osjar="$orespawn/build/libs/OreSpawn-4.1.1.2601021.jar"
           bmjar="$basemetals/build/libs/BaseMetals-3.1.2.2601021.jar"
           test -f "$osjar" && test -f "$bmjar"
           echo "orespawn=$osjar" >> "$GITHUB_OUTPUT"

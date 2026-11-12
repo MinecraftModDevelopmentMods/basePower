@@ -15,7 +15,8 @@ fluids and item transport for baseSteam and baseElectric.
 
 ## Testing On 26.1.2
 
-- Use MMD OreSpawn `4.1.0.2601021` on both client and server.
+- Use MMD OreSpawn `4.1.1.2601021` on both client and server. This includes
+  the fix that keeps saved ore settings when providers rename their rules.
 - This candidate requires the local Base Metals `3.1.2.2601021` migration-hook
   build on both client and server. It has not been published; the public
   `3.1.1` jar is not a substitute for the upgrade tests.
@@ -42,7 +43,7 @@ Use Java `25.0.3+9` for Gradle, compilation, Mavenizer and Minecraft. Pass its h
 `-Porg.gradle.java.installations.paths=<java25>` and disable
 automatic discovery and downloads for a reproducibility check.
 
-Use the pinned Base Metals `3.1.2.2601021` and OreSpawn `4.1.0.2601021` jars.
+Use the pinned Base Metals `3.1.2.2601021` and OreSpawn `4.1.1.2601021` jars.
 The source pins and checksums are in `gradle.properties`.
 Forge 64 also needs the Mavenizer compatibility jar in the pinned OreSpawn
 checkout's `ci-fixtures/tools/` directory. This is the same checksum-verified
@@ -63,7 +64,7 @@ The default dependency jars are:
 
 ```text
 D:\BaseMetals\BaseMetals 2612\BaseMetals\build\libs\BaseMetals-3.1.2.2601021.jar
-D:\MinecraftMineralogy\OS2612\OreSpawn\build\libs\OreSpawn-4.1.0.2601021.jar
+D:\MinecraftMineralogy\OS2612\OreSpawn\build\libs\OreSpawn-4.1.1.2601021.jar
 ```
 
 Other layouts can pass `-PbaseMetalsDeobfJar=<path>` and `-PoreSpawnDeobfJar=<path>`.

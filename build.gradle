@@ -344,9 +344,9 @@ tasks.register('verifyReleaseConfiguration') {
             throw new GradleException('Unexpected CurseForge dependency or game-version metadata')
         }
         if (project.basemetals_version != '3.1.2.2601021'
-                || project.orespawn_version != '4.1.0.2601021'
+                || project.orespawn_version != '4.1.1.2601021'
                 || !(project.basemetals_source_commit ==~ /[a-f0-9]{40}/)
-                || project.orespawn_source_commit != 'c45ea2a111520ef904e994dd8dcd90babfcef29b') {
+                || project.orespawn_source_commit != '101fd12b598934c353e417c57edc5c2bbefd5f53') {
             throw new GradleException('Unexpected Base Metals or OreSpawn dependency identity')
         }
         String mainSource = file(

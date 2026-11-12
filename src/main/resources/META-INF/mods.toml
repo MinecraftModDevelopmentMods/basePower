@@ -22,7 +22,7 @@ side="BOTH"
 [[dependencies.basepower]]
 modId="orespawn"
 mandatory=true
-versionRange="[4.1.0.2601021,5.0.0)"
+versionRange="[4.1.1.2601021,5.0.0)"
 ordering="AFTER"
 side="BOTH"
 
