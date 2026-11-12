@@ -1,7 +1,140 @@
 {
   "sources": [
-    { "type": "directory", "source": "blocks", "prefix": "blocks/" },
-    { "type": "directory", "source": "items", "prefix": "items/" },
-    { "type": "directory", "source": "materials", "prefix": "materials/" }
+    {
+      "type": "minecraft:single",
+      "resource": "basepower:blocks/crude_oil_flow"
+    },
+    {
+      "type": "minecraft:single",
+      "resource": "basepower:blocks/crude_oil_still"
+    },
+    {
+      "type": "minecraft:single",
+      "resource": "basepower:blocks/filter_bottom"
+    },
+    {
+      "type": "minecraft:single",
+      "resource": "basepower:blocks/filter_side_block"
+    },
+    {
+      "type": "minecraft:single",
+      "resource": "basepower:blocks/filter_side_food"
+    },
+    {
+      "type": "minecraft:single",
+      "resource": "basepower:blocks/filter_side_fuel"
+    },
+    {
+      "type": "minecraft:single",
+      "resource": "basepower:blocks/filter_side_inventory"
+    },
+    {
+      "type": "minecraft:single",
+      "resource": "basepower:blocks/filter_side_ore"
+    },
+    {
+      "type": "minecraft:single",
+      "resource": "basepower:blocks/filter_side_overflow"
+    },
+    {
+      "type": "minecraft:single",
+      "resource": "basepower:blocks/filter_side_plantable"
+    },
+    {
+      "type": "minecraft:single",
+      "resource": "basepower:blocks/filter_side_smeltable"
+    },
+    {
+      "type": "minecraft:single",
+      "resource": "basepower:blocks/fluid_discharge_face"
+    },
+    {
+      "type": "minecraft:single",
+      "resource": "basepower:blocks/fluid_discharge_side"
+    },
+    {
+      "type": "minecraft:single",
+      "resource": "basepower:blocks/fluid_drain_face"
+    },
+    {
+      "type": "minecraft:single",
+      "resource": "basepower:blocks/fluid_drain_side"
+    },
+    {
+      "type": "minecraft:single",
+      "resource": "basepower:blocks/fluid_metal_tank_side"
+    },
+    {
+      "type": "minecraft:single",
+      "resource": "basepower:blocks/fluid_metal_tank_top"
+    },
+    {
+      "type": "minecraft:single",
+      "resource": "basepower:blocks/fluid_pipe"
+    },
+    {
+      "type": "minecraft:single",
+      "resource": "basepower:blocks/fluid_switch_off"
+    },
+    {
+      "type": "minecraft:single",
+      "resource": "basepower:blocks/fluid_switch_on"
+    },
+    {
+      "type": "minecraft:single",
+      "resource": "basepower:blocks/item_conveyor_end"
+    },
+    {
+      "type": "minecraft:single",
+      "resource": "basepower:blocks/item_conveyor_side"
+    },
+    {
+      "type": "minecraft:single",
+      "resource": "basepower:blocks/item_conveyor_top"
+    },
+    {
+      "type": "minecraft:single",
+      "resource": "basepower:blocks/refined_oil_flow"
+    },
+    {
+      "type": "minecraft:single",
+      "resource": "basepower:blocks/refined_oil_still"
+    },
+    {
+      "type": "minecraft:single",
+      "resource": "basepower:blocks/steel_frame"
+    },
+    {
+      "type": "minecraft:single",
+      "resource": "basepower:blocks/techreborn_converter"
+    },
+    {
+      "type": "minecraft:single",
+      "resource": "basepower:materials/brass"
+    },
+    {
+      "type": "minecraft:single",
+      "resource": "basepower:materials/iron"
+    },
+    {
+      "type": "minecraft:single",
+      "resource": "basepower:materials/metal_panel"
+    },
+    {
+      "type": "minecraft:single",
+      "resource": "basepower:materials/plastic"
+    },
+    {
+      "type": "minecraft:single",
+      "resource": "basepower:materials/steel"
+    },
+    {
+      "type": "minecraft:single",
+      "resource": "basepower:materials/steel_dark"
+    },
+    {
+      "type": "minecraft:single",
+      "resource": "basepower:materials/wood"
+    }
   ]
 }

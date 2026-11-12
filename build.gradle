@@ -1131,6 +1131,8 @@ tasks.register('verifyModelAssets') {
     File blockstateRoot = new File(resourceRoot, "assets/${project.mod_id}/blockstates")
     inputs.dir(modelRoot)
     inputs.dir(blockstateRoot)
+    inputs.files('src/main/resources/assets/minecraft/atlases/blocks.json',
+            'src/main/resources/assets/minecraft/atlases/items.json')
 
     doLast {
         Set<String> vanillaAssets = [] as Set<String>
@@ -1141,7 +1143,29 @@ tasks.register('verifyModelAssets') {
                 zip.entries().each { entry -> vanillaAssets.add(entry.name) }
             }
         }
-        def atlas = new JsonSlurper().parse(new File(resourceRoot, 'assets/minecraft/atlases/blocks.json'))
+        Set<String> registeredSprites = [] as Set<String>
+        ['blocks', 'items'].each { String atlasName ->
+            File atlasFile = new File(resourceRoot, "assets/minecraft/atlases/${atlasName}.json")
+            def atlas = new JsonSlurper().parse(atlasFile)
+            if (atlas.keySet() != ['sources'] as Set || !(atlas.sources instanceof List) || atlas.sources.isEmpty()) {
+                throw new GradleException("${atlasFile} must declare nonempty explicit sprite sources")
+            }
+            atlas.sources.each { source ->
+                if (!(source instanceof Map) || source.keySet() != ['type', 'resource'] as Set
+                        || source.type != 'minecraft:single' || !(source.resource instanceof String)
+                        || !source.resource.startsWith("${project.mod_id}:")) {
+                    throw new GradleException("${atlasFile} must only register this mod's native single sprites")
+                }
+                String sprite = source.resource
+                if (!registeredSprites.add(sprite)) {
+                    throw new GradleException("Duplicate sprite across native atlases: ${sprite}")
+                }
+                String spritePath = sprite.substring(sprite.indexOf(':') + 1)
+                if (!new File(resourceRoot, "assets/${project.mod_id}/textures/${spritePath}.png").isFile()) {
+                    throw new GradleException("${atlasFile} registers missing sprite ${sprite}")
+                }
+            }
+        }
         def verifyReference = { String reference, String assetType, String sourcePath ->
             if (reference.startsWith('#')) return
             int separator = reference.indexOf(':')
@@ -1161,9 +1185,9 @@ tasks.register('verifyModelAssets') {
                     "assets/${namespace}/${assetType}/${path}.json")
             if (assetType == 'textures') {
                 target = new File(resourceRoot, "assets/${namespace}/textures/${path}.png")
-                if (!atlas.sources.any { it.type == 'directory' && it.prefix == it.source + '/'
-                        && path.startsWith(it.prefix as String) }) {
-                    throw new GradleException("${sourcePath} references texture ${reference} outside the block atlas")
+                // Native 26 materials identify a sprite, not a fixed block/item atlas.
+                if (!registeredSprites.contains("${namespace}:${path}".toString())) {
+                    throw new GradleException("${sourcePath} references unregistered native sprite ${reference}")
                 }
             }
             if (!target.isFile()) {

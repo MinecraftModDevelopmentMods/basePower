@@ -1,5 +1,28 @@
 {
   "sources": [
-    { "type": "directory", "source": "items", "prefix": "items/" }
+    {
+      "type": "minecraft:single",
+      "resource": "basepower:items/bioplastic_ingot"
+    },
+    {
+      "type": "minecraft:single",
+      "resource": "basepower:items/bucket_crude_oil"
+    },
+    {
+      "type": "minecraft:single",
+      "resource": "basepower:items/bucket_refined_oil"
+    },
+    {
+      "type": "minecraft:single",
+      "resource": "basepower:items/rotator_tool"
+    },
+    {
+      "type": "minecraft:single",
+      "resource": "basepower:items/sprocket"
+    },
+    {
+      "type": "minecraft:single",
+      "resource": "basepower:items/starch"
+    }
   ]
 }
