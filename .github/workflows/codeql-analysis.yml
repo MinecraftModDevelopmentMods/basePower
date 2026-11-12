@@ -40,7 +40,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           repository: MinecraftModDevelopmentMods/BaseMetals
-          ref: 13d4c4e38bf74d76f2f69f307dc55d13a81e8674
+          ref: 331fa46914f854db71a8c33500cc559a8878b7d3
           path: .ci-dependencies/BaseMetals
       - name: Install Java 25 for Gradle, tools and Minecraft
         uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5

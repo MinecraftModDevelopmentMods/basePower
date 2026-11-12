@@ -393,6 +393,12 @@ public final class LegacyWorldDataHook {
         return mapped;
     }
 
+    static synchronized void prepareLegacyEnchantmentContext(CompoundTag levelSnapshot) {
+        // Base Metals can flatten entity inventories before our selected-world hook.
+        // Resolve their numeric enchantments from this world's index, never a previous load.
+        installLegacyEnchantments(levelSnapshot.getCompoundOrEmpty("FML").getCompoundOrEmpty("Registries"));
+    }
+
     private static void installLegacyEnchantments(CompoundTag registries) {
         LEGACY_ENCHANTMENTS.clear();
         ListTag entries = registries.getCompoundOrEmpty("minecraft:enchantments").getListOrEmpty("ids");
