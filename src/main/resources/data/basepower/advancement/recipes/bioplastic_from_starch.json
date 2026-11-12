@@ -16,7 +16,9 @@
     "has_recipe": {
       "trigger": "minecraft:recipe_unlocked",
       "conditions": {
-        "recipe": "basepower:bioplastic_from_starch"
+        "recipes": [
+          "basepower:bioplastic_from_starch"
+        ]
       }
     }
   },

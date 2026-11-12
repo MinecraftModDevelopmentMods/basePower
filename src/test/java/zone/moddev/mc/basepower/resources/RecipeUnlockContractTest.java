@@ -82,8 +82,19 @@ public class RecipeUnlockContractTest {
             assertEquals(id, recipes.get(0).getAsString());
             JsonObject criterion = unlock.getAsJsonObject("criteria").getAsJsonObject("has_recipe");
             assertEquals("minecraft:recipe_unlocked", criterion.get("trigger").getAsString());
-            assertEquals(id, criterion.getAsJsonObject("conditions").get("recipe").getAsString());
+            var recipesInCriterion = criterion.getAsJsonObject("conditions").getAsJsonArray("recipes");
+            assertEquals(1, recipesInCriterion.size());
+            assertEquals(id, recipesInCriterion.get(0).getAsString());
+            assertFalse(criterion.getAsJsonObject("conditions").has("recipe"));
             assertFalse("Forge recipe conditions are not valid advancement conditions", unlock.has("conditions"));
+        }
+    }
+
+    @Test public void conditionalRecipesAndTheirUnlocksHaveExactlyTheSameGate() throws IOException {
+        for (Path file : files(DATA.resolve("advancement/recipes"))) {
+            JsonObject unlock = read(file);
+            JsonObject recipe = read(DATA.resolve("recipe").resolve(file.getFileName()));
+            assertEquals(file.toString(), recipe.get("forge:condition"), unlock.get("forge:condition"));
         }
     }
 

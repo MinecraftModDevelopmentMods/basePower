@@ -44,7 +44,9 @@
     "has_recipe": {
       "trigger": "minecraft:recipe_unlocked",
       "conditions": {
-        "recipe": "basepower:fluid_discharge"
+        "recipes": [
+          "basepower:fluid_discharge"
+        ]
       }
     }
   },
@@ -60,6 +62,27 @@
   "rewards": {
     "recipes": [
       "basepower:fluid_discharge"
+    ]
+  },
+  "forge:condition": {
+    "type": "forge:and",
+    "values": [
+      {
+        "type": "basepower:tag_not_empty",
+        "tag": "forge:bars"
+      },
+      {
+        "type": "basepower:tag_not_empty",
+        "tag": "forge:frames/steel"
+      },
+      {
+        "type": "basepower:tag_not_empty",
+        "tag": "forge:pipes"
+      },
+      {
+        "type": "basepower:tag_not_empty",
+        "tag": "forge:plates/steel"
+      }
     ]
   }
 }

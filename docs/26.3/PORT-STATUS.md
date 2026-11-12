@@ -24,6 +24,10 @@ The compile baseline is Forge 66.0.0, official 26.3 names, MCP
   Native codec tests retain the old exchange rates, chest counts and drops.
 - Registry-loaded recipes resolve pending item tags through the current
   registry lookup. Explicit condition contexts remain authoritative.
+- Recipe-book criteria use native recipe lists. Each generated unlock retains
+  its recipe's conditions, so inactive mode or missing-material variants do not
+  leave dangling registry references. A real startup failure and native codec
+  regression tests cover the old format.
 - The current biome-index allowlist includes dappled forest. Saved biome data
   remains under the native data fixers rather than being replaced by a registry
   object.

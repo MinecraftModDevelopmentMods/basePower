@@ -14,7 +14,9 @@
     "has_recipe": {
       "trigger": "minecraft:recipe_unlocked",
       "conditions": {
-        "recipe": "basepower:steel_frame"
+        "recipes": [
+          "basepower:steel_frame"
+        ]
       }
     }
   },
@@ -28,5 +30,9 @@
     "recipes": [
       "basepower:steel_frame"
     ]
+  },
+  "forge:condition": {
+    "type": "basepower:tag_not_empty",
+    "tag": "forge:bars/steel"
   }
 }

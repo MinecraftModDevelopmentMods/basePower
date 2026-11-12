@@ -40,7 +40,9 @@
     "has_recipe": {
       "trigger": "minecraft:recipe_unlocked",
       "conditions": {
-        "recipe": "basepower:item_filter_fuel"
+        "recipes": [
+          "basepower:item_filter_fuel"
+        ]
       }
     }
   },

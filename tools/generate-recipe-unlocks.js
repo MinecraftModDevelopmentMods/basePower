@@ -36,11 +36,13 @@ for (const file of fs.readdirSync(recipes).filter(name => name.endsWith('.json')
       conditions: {items: [{items: ingredient.item ? [ingredient.item] : '#' + ingredient.tag}]}
     };
   });
-  criteria.has_recipe = {trigger: 'minecraft:recipe_unlocked', conditions: {recipe: id}};
+  criteria.has_recipe = {trigger: 'minecraft:recipe_unlocked', conditions: {recipes: [id]}};
   const advancement = {
     parent: 'minecraft:recipes/root', criteria,
     requirements: [Object.keys(criteria)], rewards: {recipes: [id]}
   };
+  // Recipe criteria now resolve registry entries; inactive recipes need inactive unlocks too.
+  if (recipe['forge:condition']) advancement['forge:condition'] = recipe['forge:condition'];
   const text = JSON.stringify(advancement, null, 2) + '\n';
   const target = path.join(output, file);
   expected.add(file);
