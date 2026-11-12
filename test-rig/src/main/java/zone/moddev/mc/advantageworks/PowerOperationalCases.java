@@ -177,7 +177,7 @@ final class PowerOperationalCases {
 
     static net.minecraft.nbt.CompoundTag nativeChestLock(net.minecraft.core.HolderLookup.Provider registries) {
         net.minecraft.world.LockCode lock = new net.minecraft.world.LockCode(
-                net.minecraft.advancements.criterion.ItemPredicate.Builder.item().of(
+                net.minecraft.advancements.predicates.ItemPredicate.Builder.item().of(
                         registries.lookupOrThrow(net.minecraft.core.registries.Registries.ITEM), Items.STICK).build());
         net.minecraft.nbt.CompoundTag patch = new net.minecraft.nbt.CompoundTag();
         patch.put("lock", net.minecraft.world.LockCode.CODEC.encodeStart(

@@ -368,9 +368,9 @@ final class DimensionEntityProbe {
         ServerLevel destination = server.getLevel(Level.OVERWORLD);
         platform(destination);
         if (bedMode.equals("bed")) {
-            destination.setBlock(SPAWN, Blocks.RED_BED.defaultBlockState().setValue(BedBlock.FACING, Direction.EAST)
+            destination.setBlock(SPAWN, Blocks.BED.red().defaultBlockState().setValue(BedBlock.FACING, Direction.EAST)
                     .setValue(BedBlock.PART, net.minecraft.world.level.block.state.properties.BedPart.FOOT), 2);
-            destination.setBlock(SPAWN.east(), Blocks.RED_BED.defaultBlockState().setValue(BedBlock.FACING, Direction.EAST)
+            destination.setBlock(SPAWN.east(), Blocks.BED.red().defaultBlockState().setValue(BedBlock.FACING, Direction.EAST)
                     .setValue(BedBlock.PART, net.minecraft.world.level.block.state.properties.BedPart.HEAD), 2);
         }
         player.setRespawnPosition(new ServerPlayer.RespawnConfig(

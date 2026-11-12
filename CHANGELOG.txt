@@ -1,7 +1,11 @@
-basePower 2.4.17.2602001 (Minecraft 26.2, in development)
+basePower 2.4.17.2602001 (Minecraft 26.2, local test candidate)
 
-- Begin the Forge 65 port from the accepted 26.1.2 source, keeping existing machine identities and saved data.
+- Bring the accepted 26.1.2 source to Forge 65 and Java 25, keeping existing machine identities and saved data.
 - Update the native data and client resource format checks for Minecraft 26.2.
+- Use the current native GUI and rendering APIs without changing machine balance.
+- Recognise Minecraft's new sulfur-caves biome when checking saved registry snapshots.
+- Keep the shared Base Metals migration hook and qualify OreSpawn's retained-settings repair locally.
+- Complete machine, recipe progression, old-world migration, full-restart, graphical and two-world 30-minute endurance checks. Manual testing is next; nothing from 26.2 is published yet.
 
 basePower 2.4.16.2601021 (Minecraft 26.1.2)
 

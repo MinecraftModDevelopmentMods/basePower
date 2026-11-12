@@ -72,7 +72,7 @@ public final class ClientResourceProbe {
             failDisconnected(minecraft);
             if (Boolean.getBoolean("advantageworks.childRendererGeometry") && preLoginGeometry == null
                     && minecraft.level == null && minecraft.player == null && minecraft.getSingleplayerServer() == null
-                    && minecraft.getOverlay() == null && minecraft.getModelManager().getBlockStateModelSet() != null) {
+                    && minecraft.gui.overlay() == null && minecraft.getModelManager().getBlockStateModelSet() != null) {
                 preLoginGeometry = new JsonObject();
                 inspect("child_geometry", preLoginGeometry, () -> ChildRendererGeometryProbe.verify(minecraft, preLoginGeometry));
                 JsonObject context = new JsonObject();
@@ -85,7 +85,7 @@ public final class ClientResourceProbe {
             }
             FIXTURE_GATE.tick(minecraft, ticks, lastReadinessState);
         } catch (RuntimeException | LinkageError | AssertionError failure) { readinessFailure = failure; }
-        if (readinessFailure == null && (ticks < 5 || ((!componentsBound || minecraft.getOverlay() != null
+        if (readinessFailure == null && (ticks < 5 || ((!componentsBound || minecraft.gui.overlay() != null
                 || minecraft.getModelManager().getBlockStateModelSet() == null) && ticks < 2400))) return;
         if (readinessFailure == null && loggedIn && componentsBound && !worldOilComplete) {
             if (worldOil == null) worldOil = new NativeWorldOilProbe();
@@ -108,8 +108,8 @@ public final class ClientResourceProbe {
             if (preLoginGeometry != null) for (var row : preLoginGeometry.entrySet()) result.add(row.getKey(), row.getValue().deepCopy());
             if (worldOilReport != null) result.add("world_oil_visual", worldOilReport.deepCopy());
             if (readinessFailure != null) throw new IllegalStateException("Native login/fixture gate failed", readinessFailure);
-            require("26.1.2".equals(result.get("minecraft").getAsString())
-                    && "64.1.5".equals(result.get("forge").getAsString())
+            require("26.2".equals(result.get("minecraft").getAsString())
+                    && "65.1.0".equals(result.get("forge").getAsString())
                     && Runtime.version().feature() == 25, "Wrong native client target");
             require(loggedIn && componentsBound, "Native real-world login/component binding did not complete");
             var expectedWorld = Path.of("saves/AdvantageClientResources").toRealPath();
@@ -148,12 +148,12 @@ public final class ClientResourceProbe {
             result.add("mod_versions", versions);
             require(versions.has("basepower") && zone.moddev.mc.basepower.PowerAdvantage.VERSION
                     .equals(versions.get("basepower").getAsString()), "Power metadata does not match the compiled version");
-            require("2.4.16.2601021".equals(versions.get("basepower").getAsString()), "Wrong native Power candidate");
+            require("2.4.17.2602001".equals(versions.get("basepower").getAsString()), "Wrong native Power candidate");
             for (String id : new String[]{"basesteam", "baseelectric"}) {
-                if (versions.has(id)) require("2.2.17.2601021".equals(versions.get(id).getAsString()), "Wrong native expansion candidate: " + id);
+                if (versions.has(id)) require("2.2.18.2602001".equals(versions.get(id).getAsString()), "Wrong native expansion candidate: " + id);
             }
             require(minecraft.getModelManager().getBlockStateModelSet() != null, "Timed out before model baking");
-            require(minecraft.getOverlay() == null, "Timed out before native resource loading completed");
+            require(minecraft.gui.overlay() == null, "Timed out before native resource loading completed");
             verifyVanillaParticleControl(minecraft, result);
             boolean primary = inspect("registered_resources", result, () -> {
             int items = 0;
@@ -193,7 +193,7 @@ public final class ClientResourceProbe {
             require(items > 0 && states > 0, "Power Advantage content is not registered");
             require(!contents.isEmpty(), "Power Advantage creative tab is empty");
             require(!tab.getIconItem().isEmpty(), "Power Advantage creative tab has no icon");
-            require(I18n.exists("itemGroup.basepower") && tab.getDisplayName().getString().equals(I18n.get("itemGroup.basepower")),
+            require(net.minecraft.locale.Language.getInstance().has("itemGroup.basepower") && tab.getDisplayName().getString().equals(I18n.get("itemGroup.basepower")),
                     "The shared creative tab title is not translated");
             var creativeIds = new java.util.HashSet<Identifier>();
             for (ItemStack stack : contents) {
@@ -230,7 +230,7 @@ public final class ClientResourceProbe {
                     && "PASS".equals(worldOilReport.get("status").getAsString()),
                     "One or more native client probe scopes failed; inspect scope_results/world_oil_visual");
             result.addProperty("status", "PASS");
-            result.addProperty("screen", minecraft.screen == null ? "none" : minecraft.screen.getClass().getName());
+            result.addProperty("screen", minecraft.gui.screen() == null ? "none" : minecraft.gui.screen().getClass().getName());
         } catch (IOException | RuntimeException | LinkageError | AssertionError failure) {
             result.addProperty("status", "FAIL");
             result.addProperty("error", failure.toString());
@@ -244,20 +244,20 @@ public final class ClientResourceProbe {
     }
 
     private static void failDisconnected(Minecraft minecraft) {
-        if (minecraft.screen == null || minecraft.screen.getClass() != net.minecraft.client.gui.screens.DisconnectedScreen.class
-                || minecraft.getOverlay() != null) return;
-        if (minecraft.screen != disconnectedScreen) { disconnectedScreen = minecraft.screen; disconnectedTick = ticks; return; }
+        if (minecraft.gui.screen() == null || minecraft.gui.screen().getClass() != net.minecraft.client.gui.screens.DisconnectedScreen.class
+                || minecraft.gui.overlay() != null) return;
+        if (minecraft.gui.screen() != disconnectedScreen) { disconnectedScreen = minecraft.gui.screen(); disconnectedTick = ticks; return; }
         if (ticks - disconnectedTick < 20) return;
         try {
-            lastReadinessState.addProperty("nativeDisconnectNarration", minecraft.screen.getNarrationMessage().getString());
+            lastReadinessState.addProperty("nativeDisconnectNarration", minecraft.gui.screen().getNarrationMessage().getString());
             captureReadinessScreen(minecraft, lastReadinessState, Path.of("login-readiness/disconnected.png"));
             Files.writeString(Path.of("login-readiness/disconnected.json"), lastReadinessState.toString(), java.nio.file.StandardOpenOption.CREATE_NEW);
         } catch (IOException failure) { throw new IllegalStateException("Could not retain native disconnect failure", failure); }
-        throw new IllegalStateException("Native client disconnected: " + minecraft.screen.getNarrationMessage().getString());
+        throw new IllegalStateException("Native client disconnected: " + minecraft.gui.screen().getNarrationMessage().getString());
     }
 
     private static void captureReadinessScreen(Minecraft minecraft, JsonObject state, Path screenshot) throws IOException {
-        var image = NativeGuiProjection.read(minecraft.getMainRenderTarget());
+        var image = NativeGuiProjection.read(minecraft.gameRenderer.mainRenderTarget());
         try (var output = Files.newOutputStream(screenshot, java.nio.file.StandardOpenOption.CREATE_NEW)) {
             require(javax.imageio.ImageIO.write(image, "png", output), "No diagnostic PNG writer");
         }
@@ -275,10 +275,10 @@ public final class ClientResourceProbe {
 
     private static void recordReadiness(Minecraft minecraft, boolean loggedIn, boolean componentsBound) {
         JsonObject state = new JsonObject();
-        state.addProperty("screenClass", minecraft.screen == null ? "none" : minecraft.screen.getClass().getName());
-        state.addProperty("screenTitle", minecraft.screen == null ? "" : minecraft.screen.getTitle().getString());
-        state.addProperty("screenTitleComponent", minecraft.screen == null ? "" : minecraft.screen.getTitle().toString());
-        state.addProperty("overlayClass", minecraft.getOverlay() == null ? "none" : minecraft.getOverlay().getClass().getName());
+        state.addProperty("screenClass", minecraft.gui.screen() == null ? "none" : minecraft.gui.screen().getClass().getName());
+        state.addProperty("screenTitle", minecraft.gui.screen() == null ? "" : minecraft.gui.screen().getTitle().getString());
+        state.addProperty("screenTitleComponent", minecraft.gui.screen() == null ? "" : minecraft.gui.screen().getTitle().toString());
+        state.addProperty("overlayClass", minecraft.gui.overlay() == null ? "none" : minecraft.gui.overlay().getClass().getName());
         state.addProperty("levelPresent", minecraft.level != null);
         state.addProperty("playerPresent", minecraft.player != null);
         state.addProperty("integratedServer", minecraft.hasSingleplayerServer());

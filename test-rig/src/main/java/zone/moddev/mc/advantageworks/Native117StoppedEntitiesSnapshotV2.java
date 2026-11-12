@@ -37,8 +37,8 @@ import org.apache.logging.log4j.LogManager;
 
 /** Versioned stop-boundary observation. Native no-save helpers are never saved-state witnesses. */
 final class Native117StoppedEntitiesSnapshotV2 {
-    static final String CONTRACT = "native2612-helper-contract.json";
-    static final String POLICY = "native2612-leash-knot-nosave-v1";
+    static final String CONTRACT = "native262-helper-contract.json";
+    static final String POLICY = "native262-leash-knot-nosave-v1";
     private static final Map<MinecraftServer, String> BOOTS = Collections.synchronizedMap(new WeakHashMap<>());
 
     private Native117StoppedEntitiesSnapshotV2() {}
@@ -64,7 +64,7 @@ final class Native117StoppedEntitiesSnapshotV2 {
             if (control.get("format").getAsInt() != 1 || !POLICY.equals(control.get("policy").getAsString())
                     || !SharedConstants.getCurrentVersion().name().equals(control.get("minecraftVersion").getAsString())
                     || SharedConstants.getCurrentVersion().dataVersion().version() != control.get("dataVersion").getAsInt()
-                    || !"64.1.5".equals(control.get("forgeVersion").getAsString())) {
+                    || !"65.1.0".equals(control.get("forgeVersion").getAsString())) {
                 throw new IOException("Native helper control does not describe this pinned engine");
             }
         } catch (RuntimeException error) {
@@ -158,7 +158,7 @@ final class Native117StoppedEntitiesSnapshotV2 {
         for (Entity entity : available) {
             if (entity instanceof Player) continue;
             if (entity.level() != world) throw new IllegalStateException("Entity belongs to another world: " + diagnostic(entity));
-            if (entity.getClass() == LeashFenceKnotEntity.class && entity.getType() == EntityType.LEASH_KNOT
+            if (entity.getClass() == LeashFenceKnotEntity.class && entity.getType() == net.minecraft.world.entity.EntityTypes.LEASH_KNOT
                     && !entity.getType().canSerialize() && !entity.isRemoved() && !entity.isPassenger()
                     && entity.getPassengers().isEmpty()) {
                 if (!seen.add(entity.getUUID())) throw new IllegalStateException("Duplicate enumerated UUID: " + diagnostic(entity));

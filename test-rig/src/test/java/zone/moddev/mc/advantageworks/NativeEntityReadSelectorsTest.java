@@ -87,7 +87,7 @@ public class NativeEntityReadSelectorsTest {
     private static final class ObservedBoat extends Boat {
         int persistentReads;
         int serializations;
-        ObservedBoat(Level world) { super(EntityType.OAK_BOAT, world, () -> net.minecraft.world.item.Items.OAK_BOAT); }
+        ObservedBoat(Level world) { super(net.minecraft.world.entity.EntityTypes.OAK_BOAT, world, () -> net.minecraft.world.item.Items.OAK_BOAT); }
         @Override public CompoundTag getPersistentData() { persistentReads++; return super.getPersistentData(); }
         @Override public void saveWithoutId(ValueOutput output) { serializations++; super.saveWithoutId(output); }
     }

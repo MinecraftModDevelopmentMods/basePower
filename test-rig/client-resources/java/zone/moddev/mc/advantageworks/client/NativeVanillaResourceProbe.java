@@ -39,7 +39,7 @@ final class NativeVanillaResourceProbe implements PreparableReloadListener {
 
     private static JsonObject capture(ResourceManager resources) {
         JsonObject result = new JsonObject();
-        result.addProperty("protocol", "NATIVE64_VANILLA_RESOURCE_ROOTS_V1");
+        result.addProperty("protocol", "NATIVE65_VANILLA_RESOURCE_ROOTS_V1");
         result.addProperty("phase", "reload-preparation-before-atlas-upload");
         JsonArray rows = new JsonArray();
         result.add("resources", rows);

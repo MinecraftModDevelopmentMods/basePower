@@ -78,14 +78,14 @@ public class NativeExperimentalFixtureGateTest {
         index.put("aliases", new ListTag()); index.put("ids", new ListTag()); index.put("overrides", new ListTag());
         index.putIntArray("blocked", new int[0]);
         registries.put("minecraft:worldgen/biome", index); fml.put("Registries", registries); source.put("fml", fml);
-        CompoundTag data = new CompoundTag(); data.putInt("DataVersion", 4790); source.put("Data", data);
+        CompoundTag data = new CompoundTag(); data.putInt("DataVersion", 4903); source.put("Data", data);
         CompoundTag original = source.copy(), observed = source.copy();
         assertEquals("UNCHANGED_TYPED_ROOT", NativeExperimentalFixtureGate.verifyCopiedLevel(source, observed));
         observed.getCompound("fml").orElseThrow().getCompound("Registries").orElseThrow().remove("minecraft:worldgen/biome");
         assertEquals("ONLY_FML_LOWERCASE_EMPTY_BIOME_INDEX_REMOVED", NativeExperimentalFixtureGate.verifyCopiedLevel(source, observed));
         for (int mode = 0; mode < 4; mode++) {
             CompoundTag wrong = observed.copy();
-            if (mode == 0) wrong.getCompound("Data").orElseThrow().putLong("DataVersion", 4790L);
+            if (mode == 0) wrong.getCompound("Data").orElseThrow().putLong("DataVersion", 4903L);
             if (mode == 1) wrong.getCompound("Data").orElseThrow().putInt("SpawnX", 1);
             if (mode == 2) wrong.getCompound("fml").orElseThrow().putString("unknown", "change");
             if (mode == 3) wrong.getCompound("fml").orElseThrow().getCompound("Registries").orElseThrow().put("other:index", new CompoundTag());

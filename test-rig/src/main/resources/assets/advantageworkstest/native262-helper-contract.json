@@ -1,0 +1,55 @@
+{
+  "format": 1,
+  "policy": "native262-leash-knot-nosave-v1",
+  "minecraftVersion": "26.2",
+  "dataVersion": 4903,
+  "forgeVersion": "65.1.0",
+  "nativeClass": "net.minecraft.world.entity.decoration.LeashFenceKnotEntity",
+  "registryId": "minecraft:leash_knot",
+  "canSerialize": false,
+  "storageSelectorAccepts": true,
+  "encodedIdPresent": false,
+  "rootWriterAccepted": false,
+  "passengerWriterAccepted": false,
+  "refusedWritersLeaveNoPayload": true,
+  "observationalUuidPreserved": true,
+  "observationalStateUnchanged": true,
+  "observationalTagKeys": [
+    "Air",
+    "CanUpdate",
+    "Fire",
+    "Invulnerable",
+    "Motion",
+    "OnGround",
+    "PortalCooldown",
+    "Pos",
+    "Rotation",
+    "UUID",
+    "fall_distance"
+  ],
+  "noPower": true,
+  "powerAccessTransformerAbsent": true,
+  "noHarness": true,
+  "noServer": true,
+  "noTicks": true,
+  "nativeMethodsUnmodified": true,
+  "nativeClassSha256": {
+    "net.minecraft.world.entity.Entity": "377FCD4776D74C71369F2E695D608BB74D5B349594C499108E5255E8F32F0678",
+    "net.minecraft.world.entity.EntityType": "629BD57170F29614E4E9217B8B056C7BCC5E951696ECF3BA07AA015D5559ED47",
+    "net.minecraft.world.entity.decoration.LeashFenceKnotEntity": "E71C9728C1520FA923FFB3FE07B62622F02D22013F5C4475AF24508A273C316A",
+    "net.minecraft.util.datafix.fixes.BlockStateData": "3192DA9F2107E79270B73FB742CBDB1CB6BCD2B5228C579757E3C899A5C8E51A"
+  },
+  "engineJarSha256": "7C324FAF36362EDB1E1879EA11536CEA7F6E58BE3A0E783C13607BE7D7364DD6",
+  "engineSourcesSha256": "D06D76658C43DC91D8EB5BF0C1A519E261B84AAC17940E64E7050449D9DA86D9",
+  "nativeSourceSha256": {
+    "net/minecraft/world/entity/Entity.java": "D0451E3BDF7F730064C80071391EA14E1B7919030D12B00E845B748236F29C8F",
+    "net/minecraft/world/entity/EntityType.java": "6FDA0DB78417461E043400E5BB863B3EAC155D6711F65B8C0D41DFB8A14ADB83",
+    "net/minecraft/world/entity/decoration/LeashFenceKnotEntity.java": "B482036CCD277BC69229A4D89C33C3F36895D9138F231C445DD6DAE1BCE94DB2",
+    "net/minecraft/util/datafix/fixes/BlockStateData.java": "6196F9039890D5F67B59CB372EC06DA987E8A5EA80B49FD8BEE9EECA0A1784A4"
+  },
+  "controlSourceSha256": {
+    "platform-controls/NativePlatformSupport.java": "C3A2E65822218805CCC090955334523B78BED1A225AC5ACC5C9625CA95BA50DE",
+    "platform-controls/NativeLeashKnotPlatformControl.java": "3A86FC03838D1ED1B27F88AAB36054004793B7851B5AE1742EC03C92E9B54276",
+    "unit-support/zone/moddev/mc/advantageworks/unit/NativeEmptyEntityTracker.java": "CEB0DFC585351DAC03FA2BDD0ED119152CCA00F341FBC7AE3FD0B1C6C2C40C06"
+  }
+}

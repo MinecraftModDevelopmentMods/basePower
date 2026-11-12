@@ -1,5 +1,17 @@
 # Advantage Works Test Rig
 
+## Current Target: Minecraft 26.2
+
+Use the [26.2 instructions](NATIVE262.md) and the
+[family qualification record](../docs/26.2/QUALIFICATION.md) for this branch.
+The packaged machine, migration, graphical and two-world endurance campaigns
+have passed against frozen profile03. Final build checks and manual acceptance
+are recorded separately; do not substitute an older version's passing receipt.
+
+The following 26.1.2 section is retained history, including its original
+pending labels and failures. It is not the current 26.2 status or a command
+template for a 26.2 launch.
+
 ## Native 26.1.2: Local And Unqualified
 
 > **Current-instruction boundary:** Only this native26 section describes the

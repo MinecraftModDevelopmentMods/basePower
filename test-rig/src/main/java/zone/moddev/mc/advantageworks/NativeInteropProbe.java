@@ -202,7 +202,7 @@ final class NativeInteropProbe {
         BlockEntity chest = world.getBlockEntity(BELT.west());
         CompoundTag state = WorksBlockData.save(chest);
         net.minecraft.world.LockCode lock = new net.minecraft.world.LockCode(
-                net.minecraft.advancements.criterion.ItemPredicate.Builder.item().of(
+                net.minecraft.advancements.predicates.ItemPredicate.Builder.item().of(
                         world.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.ITEM),
                         net.minecraft.world.item.Items.STICK).build());
         state.put("lock", net.minecraft.world.LockCode.CODEC.encodeStart(

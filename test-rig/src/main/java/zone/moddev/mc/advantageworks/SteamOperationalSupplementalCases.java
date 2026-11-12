@@ -195,7 +195,7 @@ final class SteamOperationalSupplementalCases {
     }
 
     private static Cow target(MachineContext c, double x, double y, double z) {
-        Cow target = EntityType.COW.create(c.world, net.minecraft.world.entity.EntitySpawnReason.COMMAND);
+        Cow target = net.minecraft.world.entity.EntityTypes.COW.create(c.world, net.minecraft.world.entity.EntitySpawnReason.COMMAND);
         c.require(target != null, "Native living target is available");
         BlockPos origin = c.at(0, 0, 0);
         target.getAttribute(Attributes.MAX_HEALTH).setBaseValue(1000);

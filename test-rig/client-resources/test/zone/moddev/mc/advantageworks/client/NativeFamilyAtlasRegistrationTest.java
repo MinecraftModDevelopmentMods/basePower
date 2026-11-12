@@ -51,7 +51,7 @@ public class NativeFamilyAtlasRegistrationTest {
     @BeforeClass public static void nativeBootstrap() {
         SharedConstants.tryDetectVersion();
         Bootstrap.bootStrap();
-        assertEquals("26.1.2", SharedConstants.getCurrentVersion().name());
+        assertEquals("26.2", SharedConstants.getCurrentVersion().name());
         var sample = JsonParser.parseString("{\"type\":\"minecraft:single\",\"resource\":\"minecraft:block/stone\"}");
         if (SpriteSources.CODEC.parse(JsonOps.INSTANCE, sample).error().isPresent()) SpriteSources.bootstrap();
         assertTrue(SpriteSources.CODEC.parse(JsonOps.INSTANCE, sample).result().isPresent());

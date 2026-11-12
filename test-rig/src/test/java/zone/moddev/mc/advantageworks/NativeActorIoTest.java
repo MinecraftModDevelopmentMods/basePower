@@ -30,7 +30,7 @@ public class NativeActorIoTest {
         assertEquals("minecraft:item", saved.getString("id").orElseThrow());
         assertEquals(original.getUUID(), saved.read("UUID", UUIDUtil.CODEC).orElseThrow());
         assertFalse(NativeActorIo.saveWithoutId(original).contains("id"));
-        ItemEntity loaded = new ItemEntity(EntityType.ITEM, world);
+        ItemEntity loaded = new ItemEntity(net.minecraft.world.entity.EntityTypes.ITEM, world);
         NativeActorIo.load(loaded, saved);
         assertEquals(saved, NativeActorIo.save(loaded));
         assertEquals(7, loaded.getItem().getCount());
@@ -48,7 +48,7 @@ public class NativeActorIoTest {
 
     @Test public void codecEncodeProblemThrowsWithItsNestedPath() throws Exception {
         ServerLevel world = Native117EntityContextTest.world(Level.OVERWORLD);
-        ItemEntity broken = new ItemEntity(EntityType.ITEM, world) {
+        ItemEntity broken = new ItemEntity(net.minecraft.world.entity.EntityTypes.ITEM, world) {
             @Override public void saveWithoutId(ValueOutput output) {
                 output.child("outer").store("broken", Codec.intRange(0, 1), 2);
             }

@@ -30,8 +30,14 @@ public final class NativeEmptyEntityTracker {
     }
 
     private static void set(Object owner, String name, Object value) throws ReflectiveOperationException {
-        Field field = owner.getClass().getDeclaredField(name);
-        field.setAccessible(true);
-        field.set(owner, value);
+        for (Class<?> type = owner.getClass(); type != null; type = type.getSuperclass()) {
+            try {
+                Field field = type.getDeclaredField(name);
+                field.setAccessible(true);
+                field.set(owner, value);
+                return;
+            } catch (NoSuchFieldException absent) { }
+        }
+        throw new NoSuchFieldException(name);
     }
 }

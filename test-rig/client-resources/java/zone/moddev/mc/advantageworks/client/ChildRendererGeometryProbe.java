@@ -2,12 +2,12 @@ package zone.moddev.mc.advantageworks.client;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import com.mojang.blaze3d.PrimitiveTopology;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import cyano.poweradvantage.api.PoweredEntity;
 import net.minecraft.client.Minecraft;
 import com.mojang.blaze3d.vertex.BufferBuilder;
-import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
@@ -229,7 +229,7 @@ final class ChildRendererGeometryProbe {
         return buffers.vertices;
     }
 
-    private static final class Capture implements MultiBufferSource {
+    private static final class Capture {
         private final Minecraft minecraft;
         private final Identifier expectedTexture;
         private final JsonArray batches = new JsonArray();
@@ -243,14 +243,14 @@ final class ChildRendererGeometryProbe {
             row.add("native_buffers", batches);
         }
 
-        @Override public VertexConsumer getBuffer(RenderType type) {
-            require(type.mode() == com.mojang.blaze3d.vertex.VertexFormat.Mode.QUADS && type.format().equals(DefaultVertexFormat.ENTITY), "Unexpected production renderer vertex format/mode");
+        VertexConsumer getBuffer(RenderType type) {
+            require(type.primitiveTopology() == PrimitiveTopology.QUADS && type.format().equals(DefaultVertexFormat.ENTITY), "Unexpected production renderer vertex format/mode");
             BufferBuilder buffer = buffers.get(type);
             if (buffer == null) {
                 require(buffers.size() < 8, "Renderer requested too many buffers");
                 var allocation = new com.mojang.blaze3d.vertex.ByteBufferBuilder(4096);
                 storage.add(allocation);
-                buffer = new BufferBuilder(allocation, type.mode(), type.format());
+                buffer = new BufferBuilder(allocation, type.primitiveTopology(), type.format());
                 buffers.put(type, buffer);
             }
             return buffer;
@@ -271,10 +271,10 @@ final class ChildRendererGeometryProbe {
                 require(count <= 4096, "Renderer exceeded the bounded geometry fixture");
                 VertexFormat format = built.drawState().format();
                 ByteBuffer data = built.vertexBuffer();
-                int p = offset(format, VertexFormatElement.POSITION);
-                int uv = offset(format, VertexFormatElement.UV0);
-                int n = offset(format, VertexFormatElement.NORMAL);
-                int c = offset(format, VertexFormatElement.COLOR);
+                int p = offset(format, DefaultVertexFormat.POSITION_SEMANTIC_NAME);
+                int uv = offset(format, DefaultVertexFormat.UV0_SEMANTIC_NAME);
+                int n = offset(format, DefaultVertexFormat.NORMAL_SEMANTIC_NAME);
+                int c = offset(format, DefaultVertexFormat.COLOR_SEMANTIC_NAME);
                 for (int i = 0; i < count; i++) {
                     int base = i * format.getVertexSize();
                     float[] vertex = {data.getFloat(base + p), data.getFloat(base + p + 4), data.getFloat(base + p + 8),
@@ -370,12 +370,10 @@ final class ChildRendererGeometryProbe {
         throw new NoSuchFieldException(object.getClass().getName() + "." + name);
     }
 
-    private static int offset(VertexFormat format, VertexFormatElement required) {
-        for (int i = 0; i < format.getElements().size(); i++) {
-            VertexFormatElement element = format.getElements().get(i);
-            if (element.equals(required)) return format.getOffset(i);
-        }
-        throw new IllegalStateException("Native vertex format lacks " + required);
+    private static int offset(VertexFormat format, String required) {
+        VertexFormatElement element = format.getElement(required);
+        require(element != null, "Native vertex format lacks " + required);
+        return element.offset();
     }
 
     private static boolean different(List<float[]> a, List<float[]> b) {

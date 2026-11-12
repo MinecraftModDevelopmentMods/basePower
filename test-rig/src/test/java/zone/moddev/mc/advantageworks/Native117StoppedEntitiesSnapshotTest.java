@@ -95,7 +95,8 @@ public class Native117StoppedEntitiesSnapshotTest {
         ItemEntity entity = new ItemEntity(world, -0.25, 80, 8.5, new ItemStack(Items.DIRT, 7));
         entity.getPersistentData().putInt("Private", 42);
         CompoundTag saved = Native117StoppedEntitiesSnapshot.serialized(entity);
-        Entity loaded = EntityType.loadEntityRecursive(saved.copy(), world, EntitySpawnReason.LOAD, value -> value);
+        Entity loaded = EntityType.loadEntityRecursive(saved.copy(), world,
+                new net.minecraft.world.entity.EntitySpawnRequest(EntitySpawnReason.LOAD, false), value -> value);
         assertNotNull(loaded);
         assertEquals(saved, Native117StoppedEntitiesSnapshot.serialized(loaded));
     }
@@ -124,7 +125,7 @@ public class Native117StoppedEntitiesSnapshotTest {
 
     @Test public void nativeWriterRefusalIsAFailureNotASilentSkippedEntity() throws Exception {
         ServerLevel world = Native117EntityContextTest.world(Level.OVERWORLD);
-        LightningBolt transientEntity = new LightningBolt(EntityType.LIGHTNING_BOLT, world);
+        LightningBolt transientEntity = new LightningBolt(net.minecraft.world.entity.EntityTypes.LIGHTNING_BOLT, world);
         try {
             Native117StoppedEntitiesSnapshot.entities(world, List.of(transientEntity), new HashSet<>());
             fail("Native writer refusal was hidden");

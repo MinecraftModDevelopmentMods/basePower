@@ -136,9 +136,9 @@ final class NativePlatformSupport {
         proof.put("nativeSourceSha256", hashes);
         Map<String, String> controls = new LinkedHashMap<>();
         for (String source : List.of("NativePlatformSupport.java", "NativeLeashKnotPlatformControl.java")) {
-            controls.put(source, sha(Files.readAllBytes(Path.of("platform-controls", source))));
+            controls.put("platform-controls/" + source, sha(Files.readAllBytes(Path.of("platform-controls", source))));
         }
-        controls.put("NativeEmptyEntityTracker.java", sha(Files.readAllBytes(Path.of(
+        controls.put("unit-support/zone/moddev/mc/advantageworks/unit/NativeEmptyEntityTracker.java", sha(Files.readAllBytes(Path.of(
                 "unit-support/zone/moddev/mc/advantageworks/unit/NativeEmptyEntityTracker.java"))));
         proof.put("controlSourceSha256", controls);
     }
