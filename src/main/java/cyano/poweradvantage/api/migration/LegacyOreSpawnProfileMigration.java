@@ -326,8 +326,26 @@ public final class LegacyOreSpawnProfileMigration {
                 guard.addProperty("source_provider", owner);
                 destination.add(entry.getKey(), guard);
                 changes.add(path + "/" + section + "/" + entry.getKey() + ": seeded disabled owned default; legacy placement retained");
+                if (owner.equals(text(root.get("provider_modid")))
+                        && new JsonPrimitive(4).equals(root.get("schema_version"))
+                        && section.equals("ores") && requiresProviderSchemaFive(guard)) {
+                    root.addProperty("schema_version", 5);
+                    changes.add(path + "/schema_version: 4 -> 5; seeded ore fields require provider schema 5");
+                }
             }
         }
+    }
+
+    private static boolean requiresProviderSchemaFive(JsonObject ore) {
+        if (ore.has("material")) return true;
+        for (String section : List.of("dimensions", "dimension_selectors")) {
+            JsonElement placements = ore.get(section);
+            if (placements == null || !placements.isJsonObject()) continue;
+            for (JsonElement placement : placements.getAsJsonObject().asMap().values()) {
+                if (placement.isJsonObject() && placement.getAsJsonObject().has("placement_channel")) return true;
+            }
+        }
+        return false;
     }
 
     private static boolean validTarget(String value, String path, Predicate<String> exists, List<String> problems) {

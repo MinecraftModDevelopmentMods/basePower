@@ -183,8 +183,8 @@ dependencies {
 
     compileOnly files(baseMetalsDeobfJar, oreSpawnDeobfJar)
     runtimeOnly files(baseMetalsDeobfJar, oreSpawnDeobfJar)
-    // Migration tests invoke the real companion callback, not a local imitation.
-    testCompileOnly files(baseMetalsDeobfJar)
+    // Exercise the real migration callback and typed OreSpawn provider boundary.
+    testCompileOnly files(baseMetalsDeobfJar, oreSpawnDeobfJar)
     testImplementation 'junit:junit:4.13.2'
 }
 

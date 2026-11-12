@@ -12,9 +12,13 @@ import java.util.HexFormat;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
+import net.minecraft.resources.Identifier;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import zone.moddev.mc.orespawn.api.OreDimensionSelector;
+import zone.moddev.mc.orespawn.api.OrePattern;
+import zone.moddev.mc.orespawn.api.WorldgenProvider;
 
 public class LegacyOreSpawnProfileMigrationTest {
     @Rule public final TemporaryFolder temporary = new TemporaryFolder();
@@ -51,17 +55,42 @@ public class LegacyOreSpawnProfileMigrationTest {
     }
 
     private static JsonObject electricDefaults() {
-        return json("""
-                {"schema_version":5,"provider_modid":"baseelectric","provider_revision":1,
-                 "ores":{"baseelectric:ore/lithium":{"block":"baseelectric:li_ore","enabled":true,
-                   "retrogen":false,"dimensions":{"minecraft:overworld":{"enabled":true,
-                     "frequency":0.125,"min_y":1,"max_y":31,"min_quantity":6,"max_quantity":9,
-                     "node_size":4,"vertical_spread":4,"host_blocks":["minecraft:stone"]}}},
-                  "baseelectric:ore/sulfur":{"block":"baseelectric:sulfur_ore","enabled":true,
-                   "retrogen":false,"dimensions":{"minecraft:overworld":{"enabled":true,
-                     "frequency":1,"min_y":1,"max_y":31,"min_quantity":8,"max_quantity":23,
-                     "node_size":4,"vertical_spread":4,"host_blocks":["minecraft:stone"]}}}}}
-                """);
+        return typedElectricDefaults("dimensions");
+    }
+
+    private static JsonObject typedElectricDefaults(String field) {
+        return WorldgenProvider.builder("baseelectric", 1)
+                .ore(Identifier.parse("baseelectric:ore/lithium"), Identifier.parse("baseelectric:li_ore"), ore -> {
+                    ore.retrogen(false);
+                    if (field.equals("material")) ore.material(Identifier.parse("orespawn:lithium"));
+                    if (field.equals("dimension_selectors")) {
+                        ore.dimensionSelector(OreDimensionSelector.ALL_EXCEPT_NETHER_AND_END,
+                                LegacyOreSpawnProfileMigrationTest::lithiumDimension);
+                    } else {
+                        ore.dimension(Identifier.parse("minecraft:overworld"),
+                                LegacyOreSpawnProfileMigrationTest::lithiumDimension);
+                    }
+                })
+                .ore(Identifier.parse("baseelectric:ore/sulfur"), Identifier.parse("baseelectric:sulfur_ore"), ore -> ore
+                        .retrogen(false).dimension(Identifier.parse("minecraft:overworld"), dimension -> dimension
+                                .yRange(1, 31).attempts(1).quantityRange(8, 23).pattern(OrePattern.DEFAULT)
+                                .hostBlock(Identifier.parse("minecraft:stone"))))
+                .build().toJson();
+    }
+
+    private static void lithiumDimension(WorldgenProvider.OreDimensionDefinition.Builder dimension) {
+        dimension.yRange(1, 31).attempts(0.125).quantityRange(6, 9).pattern(OrePattern.DEFAULT)
+                .hostBlock(Identifier.parse("minecraft:stone"));
+    }
+
+    private static JsonObject schemaFourCompatibleElectricDefaults() {
+        JsonObject defaults = electricDefaults();
+        for (var entry : defaults.getAsJsonObject("ores").entrySet()) {
+            for (var placement : entry.getValue().getAsJsonObject().getAsJsonObject("dimensions").entrySet()) {
+                placement.getValue().getAsJsonObject().remove("placement_channel");
+            }
+        }
+        return defaults;
     }
 
     private static JsonObject legacyRule(JsonObject root) { return root.getAsJsonObject("ores").getAsJsonObject(OLD); }
@@ -217,6 +246,94 @@ public class LegacyOreSpawnProfileMigrationTest {
         assertEquals(Set.of(OLD), plan.getJson().getAsJsonObject("ores").keySet());
         assertFalse(plan.getJson().getAsJsonObject("fluid_deposits").has(CURRENT));
         assertFalse(plan.getWarnings().isEmpty());
+    }
+
+    private static JsonObject electricOverride() {
+        return json("""
+                {"schema_version":4,"provider_modid":"baseelectric","provider_revision":7,
+                 "user":{"schema_version":4,"placement_channel":"leave:user_data"},
+                 "profile_defaults":{"manage_vanilla_ores":false},"rocks":{},
+                 "ores":{"baseelectric:legacy/saved_lithium":{"block":"electricadvantage:li_ore",
+                  "enabled":false,"source_provider":"electricadvantage","private":{"keep":42},
+                  "dimension_selectors":{"orespawn:all_except_nether_end":{"enabled":true,
+                   "frequency":0.25,"min_y":3,"max_y":27,"node_size":8}}}}}
+                """);
+    }
+
+    @Test public void ownedSchemaFourPromotesOnlyWhenSeedAddsSchemaFiveOreFields() {
+        for (String field : List.of("material", "dimensions", "dimension_selectors")) {
+            JsonObject source = electricOverride(), original = source.deepCopy();
+            JsonObject defaults = typedElectricDefaults(field), originalDefaults = defaults.deepCopy();
+            assertEquals(5, defaults.get("schema_version").getAsInt());
+            JsonObject typedRule = defaults.getAsJsonObject("ores").getAsJsonObject("baseelectric:ore/lithium");
+            String placementSection = field.equals("dimension_selectors") ? field : "dimensions";
+            assertTrue(typedRule.getAsJsonObject(placementSection).entrySet().iterator().next().getValue()
+                    .getAsJsonObject().has("placement_channel"));
+            var plan = LegacyOreSpawnProfileMigration.plan(source, defaults, TARGETS);
+            assertFalse(field + plan.getProblems(), plan.isRefused());
+            JsonObject expected = source.deepCopy();
+            expected.addProperty("schema_version", 5);
+            expected.getAsJsonObject("ores").getAsJsonObject("baseelectric:legacy/saved_lithium")
+                    .addProperty("block", "baseelectric:li_ore");
+            JsonObject guard = defaults.getAsJsonObject("ores").getAsJsonObject("baseelectric:ore/lithium").deepCopy();
+            guard.addProperty("enabled", false); guard.addProperty("source_provider", "baseelectric");
+            expected.getAsJsonObject("ores").add("baseelectric:ore/lithium", guard);
+            assertEquals(field, expected, plan.getJson());
+            assertTrue(plan.getChanges().toString(), plan.getChanges().stream()
+                    .anyMatch(change -> change.contains("schema_version: 4 -> 5")));
+            assertEquals(original, source); assertEquals(originalDefaults, defaults);
+            assertFalse(LegacyOreSpawnProfileMigration.plan(plan.getJson(), defaults, TARGETS).isChanged());
+        }
+    }
+
+    @Test public void schemaFiveDefaultsAloneDoNotPromoteSchemaFourOrUnownedProviders() {
+        JsonObject source = electricOverride();
+        var plain = LegacyOreSpawnProfileMigration.plan(source, schemaFourCompatibleElectricDefaults(), TARGETS);
+        assertFalse(plain.isRefused()); assertEquals(4, plain.getJson().get("schema_version").getAsInt());
+        JsonObject defaults = electricDefaults();
+        source.getAsJsonObject("ores").add("baseelectric:ore/lithium",
+                schemaFourCompatibleElectricDefaults().getAsJsonObject("ores").get("baseelectric:ore/lithium").deepCopy());
+        var existing = LegacyOreSpawnProfileMigration.plan(source, defaults, TARGETS);
+        assertFalse(existing.isRefused()); assertEquals(4, existing.getJson().get("schema_version").getAsInt());
+        source = electricOverride(); source.addProperty("provider_modid", "electricadvantage");
+        var foreign = LegacyOreSpawnProfileMigration.plan(source, defaults, TARGETS);
+        assertFalse(foreign.isRefused()); assertEquals(4, foreign.getJson().get("schema_version").getAsInt());
+        assertFalse(foreign.getJson().getAsJsonObject("ores").has("baseelectric:ore/lithium"));
+    }
+
+    @Test public void typedSchemaFiveSeedsKeepGlobalWorldAndWrapperVersionsUnchanged() {
+        for (int schema : List.of(5, 7, 8)) for (String wrapper : List.of("flat", "profile", "worldgen")) {
+            JsonObject profile = electricOverride(); profile.addProperty("schema_version", schema);
+            if (schema != 5) profile.remove("provider_modid");
+            JsonObject source = wrapper.equals("flat") ? profile : new JsonObject();
+            if (!wrapper.equals("flat")) source.add(wrapper, profile);
+            JsonObject defaults = electricDefaults();
+            var plan = LegacyOreSpawnProfileMigration.plan(source, defaults, TARGETS);
+            assertFalse(plan.getProblems().toString(), plan.isRefused());
+            JsonObject result = wrapper.equals("flat") ? plan.getJson() : plan.getJson().getAsJsonObject(wrapper);
+            assertEquals(schema, result.get("schema_version").getAsInt());
+            JsonObject guard = defaults.getAsJsonObject("ores").getAsJsonObject("baseelectric:ore/lithium").deepCopy();
+            guard.addProperty("enabled", false); guard.addProperty("source_provider", "baseelectric");
+            assertEquals(guard, result.getAsJsonObject("ores").get("baseelectric:ore/lithium"));
+        }
+    }
+
+    @Test public void schemaPromotionUsesExistingAtomicBackupReportAndIdempotence() throws Exception {
+        Path file = temporary.newFile("baseelectric-orespawn.json").toPath();
+        Files.writeString(file, "\n" + electricOverride() + "\n");
+        byte[] before = Files.readAllBytes(file);
+        JsonObject defaults = electricDefaults();
+        var result = LegacyOreSpawnProfileMigration.migrate(file, defaults, TARGETS);
+        assertTrue(result.wasMigrated()); assertArrayEquals(before, Files.readAllBytes(result.backupFile()));
+        assertEquals(5, json(Files.readString(file)).get("schema_version").getAsInt());
+        JsonObject report = json(Files.readString(result.reportFile()));
+        assertEquals("MIGRATED", report.get("status").getAsString());
+        assertEquals(hash(before), report.get("source_sha256").getAsString());
+        assertEquals(hash(Files.readAllBytes(file)), report.get("result_sha256").getAsString());
+        byte[] after = Files.readAllBytes(file), receipt = Files.readAllBytes(result.reportFile());
+        assertEquals(LegacyOreSpawnProfileMigration.Status.UNCHANGED,
+                LegacyOreSpawnProfileMigration.migrate(file, defaults, TARGETS).status());
+        assertArrayEquals(after, Files.readAllBytes(file)); assertArrayEquals(receipt, Files.readAllBytes(result.reportFile()));
     }
 
     @Test public void quartzImplicitRuleAndWeightedOutputUseVerifiedNativeNameOnly() throws Exception {
