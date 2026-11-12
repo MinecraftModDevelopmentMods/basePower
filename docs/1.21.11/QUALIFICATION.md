@@ -87,6 +87,54 @@ The endurance receipt is
 The independent replay receipt is
 `D712C553D6498D7F0011A4FBF1D7031071AB583A963EB3D931A81EEAC88C5FEC`.
 
+## Release-Pin Recheck
+
+Power `2.4.15.121111` and Base Metals `3.1.2.121111` are now public on
+CurseForge, Maven and GitHub. The downloaded jars match the qualified builds.
+The expansions now pin Power's released source `9b004348` and CurseForge
+file `9566998`; the Base Metals release is source `6f4c44e4`, file `9566738`.
+
+Steam remains exactly F23DDC4A, including every one of its 324 files and 69
+classes. Electric's released-source manifest changes two provenance fields.
+Its final player SHA-256 is
+`7128973D7A7529463E8F4328D0949F45641BD1560008A9925B09C74F9BE94F6D`.
+All other 569 file entries, including all 101 classes and resources, are
+byte-identical to 54662C9A. The earlier table and receipts above still refer
+to that earlier manifest; they have not been relabelled.
+
+The new six-jar profile is
+`0A747F8E6D1AB33978420F3796265B63BF93401C297636E5620BEFE59BB88E52`.
+Against those exact jars, a fresh original-1.10 upgrade passes all 14 saved
+machine witnesses, useful operation and a full restart. The source fixture
+and runtime seed remain unchanged.
+
+Fresh and upgraded worlds then each complete 30 one-minute production
+batches, 1801.578 measured seconds, a full process restart and resumed
+processing. Each produces 480 conveyor items, 480 items through each of three
+filter lanes, 120 products from each of five processing lanes and 30,000 mB
+of distillate. Every batch's inputs and outputs are reconciled.
+
+Exact stopped-save replay passes all 66 checkpoints and 1,056 station
+snapshots, plus 526 raw saved rows across 54 chunks. It confirms genuine
+pre-run custody, with the seal written before setup. A separate read-only
+review rehashes the inputs, oracle closure and stopped files and finds no
+differences. Manual station results remain manual; this is not a new client
+or whole-modpack acceptance claim.
+
+| Final-Pin Evidence | SHA-256 |
+| --- | --- |
+| Original-1.10 upgrade | `4A629A57B8083F19042C973349362EEFA9659653329EBA05B1CBA86C8700986F` |
+| Pre-run seal | `79F99E2E9D351AE15991487AC265F37AD2D38DF4353BF76591D6FCE84AA3272A` |
+| Endurance producer | `1E6F9DC6C74A9620E17C56AAE0DD0AFDE8D68E9F7DA58FC1D2B3A8284CB4B607` |
+| Stopped freeze | `65FCA414627B3D00BBA336E4934F7B31DA7A07C7182B69434866ADD541868ED3` |
+| Exact replay | `37361DA79C1990D006E208A0839B9FFE6E989BBA8EC3C663CE464C25E9F518F1` |
+| Independent review | `0D112BE383034389EC1B2F2DE5EE6741DADE6431B6CB583499CB222E475BA986` |
+
+Reports are retained locally under `native12111-final-public-pins-20261112`.
+Publication of each expansion is separately gated on its merged-source CI,
+tag, artifact checks and actual public downloads. Updating these notes does
+not move Power's existing tag or upload it again.
+
 ## Repairs And Evidence Limits
 
 Release preparation also adds a CI upload-path regression. It first rejects
