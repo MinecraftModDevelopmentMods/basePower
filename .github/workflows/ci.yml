@@ -1,16 +1,16 @@
-name: basePower 26.2 CI
+name: basePower 26.3 CI
 
 on:
   push:
-    branches: [master-26.2, 'feature/**']
+    branches: [master-26.3, 'feature/**']
   pull_request:
-    branches: [master-26.2]
+    branches: [master-26.3]
 
 permissions:
   contents: read
 
 concurrency:
-  group: basepower-26.2-${{ github.workflow }}-${{ github.ref }}
+  group: basepower-26.3-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -23,7 +23,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Test target-derived dependency guards
         run: bash .github/test-base-metals-pin.sh
-      - name: Require the Base Metals pin on upstream master-26.2
+      - name: Require the Base Metals pin on upstream master-26.3
         id: base-metals-pin
         env:
           GH_TOKEN: ${{ github.token }}
@@ -34,13 +34,13 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           repository: MinecraftModDevelopmentMods/OreSpawn
-          ref: dcaaa933299dd8b1ebc73e31c9e5acd36dd7957c
+          ref: bbdd80a9c1f7972d81bedf8e6c2b1d4338ec9fa6
           path: .ci-dependencies/OreSpawn
       - name: Check out pinned Base Metals
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           repository: MinecraftModDevelopmentMods/BaseMetals
-          ref: 523335a59ecff399e40a7c66eb121a3aabdc45ba
+          ref: ac07e9cd960c4b48308fd3f245e06f108e4ac437
           path: .ci-dependencies/BaseMetals
       - name: Install Java 25 for Gradle, tools and Minecraft
         uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
@@ -68,8 +68,8 @@ jobs:
           (cd "$basemetals" && bash gradle/stage-orespawn-release.sh "$mirror")
           (cd "$orespawn" && bash gradlew $MMD_GRADLE_TOOLCHAINS jar --no-daemon --stacktrace)
           (cd "$basemetals" && bash gradlew $MMD_GRADLE_TOOLCHAINS jar -PorespawnVerificationRepository="$mirror" --no-daemon --stacktrace)
-          osjar="$orespawn/build/libs/OreSpawn-4.1.1.2602001.jar"
-          bmjar="$basemetals/build/libs/BaseMetals-3.1.2.2602001.jar"
+          osjar="$orespawn/build/libs/OreSpawn-4.1.1.2603001.jar"
+          bmjar="$basemetals/build/libs/BaseMetals-3.1.2.2603001.jar"
           test -f "$osjar" && test -f "$bmjar"
           echo "orespawn=$osjar" >> "$GITHUB_OUTPUT"
           echo "basemetals=$bmjar" >> "$GITHUB_OUTPUT"
@@ -85,7 +85,7 @@ jobs:
       - name: Upload audited release candidate
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: basePower-26.2-${{ github.sha }}
+          name: basePower-26.3-${{ github.sha }}
           if-no-files-found: error
           retention-days: 30
           path: |
@@ -96,7 +96,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: basePower-26.2-diagnostics-${{ github.sha }}
+          name: basePower-26.3-diagnostics-${{ github.sha }}
           if-no-files-found: ignore
           retention-days: 14
           path: |

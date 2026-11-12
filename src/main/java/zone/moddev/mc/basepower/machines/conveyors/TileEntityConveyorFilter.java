@@ -89,7 +89,7 @@ public abstract class TileEntityConveyorFilter extends TileEntityConveyor {
 	private void dropItem(BlockEntity target) {
 		Level w = getLevel();
 		BlockState bs = w.getBlockState(getBlockPos().below());
-		if (target == null && !bs.blocksMotion()) {
+		if (target == null && !bs.isSolid()) {
 			// drop item in the air
 			ItemEntity ie = new ItemEntity(w, getBlockPos().getX() + 0.5, getBlockPos().getY() - 0.5, getBlockPos().getZ() + 0.5, getInventory()[0]);
 			ie.setDeltaMovement(0, 0, 0);

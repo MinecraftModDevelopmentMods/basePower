@@ -133,8 +133,8 @@ public class StillTileEntity extends TileEntitySimpleFluidMachine {
 		getTank().fill(output, true);
 	}
 
-	private static short getFuelBurnTime(ItemStack item) {
-		return FuelRegistry.getActualBurntimeForItem(item);
+	private short getFuelBurnTime(ItemStack item) {
+		return FuelRegistry.getActualBurntimeForItem(item, this);
 	}
 
 	private void decrementFuel() {

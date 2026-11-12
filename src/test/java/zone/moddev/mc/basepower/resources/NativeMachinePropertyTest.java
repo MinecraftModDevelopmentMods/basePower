@@ -29,8 +29,8 @@ public class NativeMachinePropertyTest {
                 "property_test", GUIBlock.machineProperties(0.75F))).defaultBlockState();
         state.initCache();
         assertFalse(state.canOcclude());
-        assertTrue(state.blocksMotion());
-        assertEquals(PushReaction.BLOCK, state.getPistonPushReaction());
+        assertTrue(state.isSolid());
+        assertEquals(PushReaction.IMMOVEABLE, state.getPistonPushReaction());
     }
 
     @Test public void explicitNativePropertiesRetainBothSolidAndNonSolidChoices() {

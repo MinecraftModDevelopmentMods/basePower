@@ -3,7 +3,17 @@ package zone.moddev.mc.basepower.registry;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.Container;
+import net.minecraft.world.item.component.CookingFuel;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.storage.loot.LootContext;
+import net.minecraft.world.level.storage.loot.LootParams;
+import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
+import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
+import net.minecraft.world.level.storage.loot.providers.number.ints.ResolvableInt;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.event.ForgeEventFactory;
 
 import java.util.*;
@@ -139,16 +149,45 @@ public class FuelRegistry {
 	 * @return The number of ticks that the item should burn, or 0 if it isn't flammable
 	 */
 	public static short getActualBurntimeForItem(ItemStack fuel){
+		return getActualBurntimeForItem(fuel, null);
+	}
+
+	/** Resolves native cooking fuel in the machine's world and container context. */
+	public static short getActualBurntimeForItem(ItemStack fuel, BlockEntity machine){
 		if(fuel == null || fuel.isEmpty()) return 0;
 		int custom = getInstance().getBurnTime(fuel);
 		if (custom > 0) return (short) Math.min(Short.MAX_VALUE, custom);
-		var server = net.minecraftforge.server.ServerLifecycleHooks.getCurrentServer();
-        var values = server != null ? server.fuelValues()
-                : net.minecraft.world.level.block.entity.FuelValues.vanillaBurnTimes(
-                        net.minecraft.core.RegistryAccess.fromRegistryOfRegistries(net.minecraft.core.registries.BuiltInRegistries.REGISTRY),
-                        net.minecraft.world.flag.FeatureFlags.DEFAULT_FLAGS);
-        int burnTime = values.burnDuration(fuel, net.minecraft.world.item.crafting.RecipeType.SMELTING);
+		CookingFuel component = fuel.get(DataComponents.COOKING_FUEL);
+		LootContext context = component != null && component.burnTime() instanceof ResolvableInt.Reference
+				? fuelContext(machine) : null;
+		int vanilla = nativeBurnTime(component, context);
+		int burnTime = ForgeEventFactory.getItemBurnTime(fuel, vanilla, net.minecraft.world.item.crafting.RecipeType.SMELTING);
 		return (short) Math.min(Short.MAX_VALUE, Math.max(0, burnTime));
+	}
+
+	static int nativeBurnTime(CookingFuel component, LootContext context) {
+		if (component == null) return 0;
+		// A reference requires the server's reloaded data; do not invent a client-side value.
+		if (context == null && component.burnTime() instanceof ResolvableInt.Reference) return 0;
+		return component.burnTime().get(context, 0);
+	}
+
+	private static LootContext fuelContext(BlockEntity machine) {
+		var server = net.minecraftforge.server.ServerLifecycleHooks.getCurrentServer();
+		ServerLevel level = machine != null && machine.getLevel() instanceof ServerLevel world
+				? world : server == null ? null : server.overworld();
+		if (level == null) return null;
+		var parameters = new LootParams.Builder(level);
+		if (machine != null && machine.getLevel() == level) {
+			parameters.withParameter(LootContextParams.BLOCK_STATE, machine.getBlockState())
+					.withParameter(LootContextParams.BLOCK_ENTITY, machine)
+					.withParameter(LootContextParams.ORIGIN, Vec3.atCenterOf(machine.getBlockPos()));
+			if (machine instanceof Container container) {
+				parameters.withParameter(LootContextParams.CONTAINER, container);
+				return new LootContext.Builder(parameters.create(LootContextParamSets.CONTAINER_PROCESS)).create(Optional.empty());
+			}
+		}
+		return new LootContext.Builder(parameters.create()).create(Optional.empty());
 	}
 
 	/**

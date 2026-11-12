@@ -2,9 +2,9 @@ name: CodeQL
 
 on:
   push:
-    branches: [master-26.2, 'feature/**']
+    branches: [master-26.3, 'feature/**']
   pull_request:
-    branches: [master-26.2]
+    branches: [master-26.3]
   schedule:
     - cron: '47 7 * * 4'
 
@@ -23,7 +23,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Test target-derived dependency guards
         run: bash .github/test-base-metals-pin.sh
-      - name: Require the Base Metals pin on upstream master-26.2
+      - name: Require the Base Metals pin on upstream master-26.3
         id: base-metals-pin
         env:
           GH_TOKEN: ${{ github.token }}
@@ -34,13 +34,13 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           repository: MinecraftModDevelopmentMods/OreSpawn
-          ref: dcaaa933299dd8b1ebc73e31c9e5acd36dd7957c
+          ref: bbdd80a9c1f7972d81bedf8e6c2b1d4338ec9fa6
           path: .ci-dependencies/OreSpawn
       - name: Check out pinned Base Metals
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           repository: MinecraftModDevelopmentMods/BaseMetals
-          ref: 523335a59ecff399e40a7c66eb121a3aabdc45ba
+          ref: ac07e9cd960c4b48308fd3f245e06f108e4ac437
           path: .ci-dependencies/BaseMetals
       - name: Install Java 25 for Gradle, tools and Minecraft
         uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
@@ -69,8 +69,8 @@ jobs:
           chmod +x "$orespawn/gradlew" "$basemetals/gradlew"
           (cd "$orespawn" && ./gradlew $MMD_GRADLE_TOOLCHAINS jar --no-daemon --stacktrace)
           (cd "$basemetals" && ./gradlew $MMD_GRADLE_TOOLCHAINS jar -PorespawnVerificationRepository="$mirror" --no-daemon --stacktrace)
-          echo "orespawn=$orespawn/build/libs/OreSpawn-4.1.1.2602001.jar" >> "$GITHUB_OUTPUT"
-          echo "basemetals=$basemetals/build/libs/BaseMetals-3.1.2.2602001.jar" >> "$GITHUB_OUTPUT"
+          echo "orespawn=$orespawn/build/libs/OreSpawn-4.1.1.2603001.jar" >> "$GITHUB_OUTPUT"
+          echo "basemetals=$basemetals/build/libs/BaseMetals-3.1.2.2603001.jar" >> "$GITHUB_OUTPUT"
           echo "mavenizer=$mavenizer" >> "$GITHUB_OUTPUT"
       - name: Initialize CodeQL
         uses: github/codeql-action/init@db488ddef3bf6cb639b32c2e9a7c0a7ea8271d28 # v4

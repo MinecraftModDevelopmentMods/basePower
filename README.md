@@ -1,12 +1,12 @@
 # basePower
 
-**Minecraft 26.2 (Forge), version 2.4.17.2602001. Local test candidate.**
+**Minecraft 26.3 (Forge), version 2.4.18.2603001. In development.**
 
-This branch is a fresh port of the accepted 26.1.2 source. Its automated
-machine, migration, graphical and endurance checks have passed. It is ready
-for manual testing, not publication. See the
+This branch is a fresh port of the accepted 26.2 source. Its own qualification
+is in progress; the earlier tests do not qualify the new version. See the
+[26.3 port record](docs/26.3/PORT-STATUS.md). The
 [26.2 qualification](docs/26.2/QUALIFICATION.md) and
-[port record](docs/26.2/PORT-STATUS.md).
+[port record](docs/26.2/PORT-STATUS.md) remain historical evidence.
 The [26.1.2 qualification](docs/26.1.2/QUALIFICATION.md) and
 [port record](docs/26.1.2/PORT-STATUS.md) keep the earlier findings separate.
 The [1.21.11 qualification](docs/1.21.11/QUALIFICATION.md) remains historical
@@ -18,22 +18,23 @@ matching baseSteam and baseElectric candidates with basePower.
 basePower continues DrCyano's Power Advantage. It provides shared power,
 fluids and item transport for baseSteam and baseElectric.
 
-## Testing On 26.2
+## Testing On 26.3
 
-- Use the local MMD OreSpawn `4.1.1.2602001` on both client and server. This
+- Use the local MMD OreSpawn `4.1.1.2603001` on both client and server. This
   includes the retained-provider-settings fix used by the upgrade tests.
-- Use the local Base Metals `3.1.2.2602001` migration-hook build on both sides.
+- Use the local Base Metals `3.1.2.2603001` migration-hook build on both sides.
   Neither dependency fix is published. Older public jars are not substitutes
   for this test kit; exact source commits and hashes are in `gradle.properties`.
 - baseSteam and baseElectric are separate mods. Use only their matching
-  26.2 builds: version `2.2.18.2602001` for each. Additional Loot Tables is not
+  26.3 builds: version `2.2.19.2603001` for each. Additional Loot Tables is not
   needed for the built-in loot.
 
 **Back up the entire world before upgrading. Test only disposable copies.**
-The port keeps existing registry names and machine data. The upgrade checks
-used disposable copies of original Advantage and released base* saves,
-including connected machines, and check them after a full restart. Check that
-the other mods in your world support 26.2 before attempting an upgrade.
+The port keeps existing registry names and machine data. Its upgrade checks
+must pass on disposable copies of original Advantage and released base* saves,
+including connected machines, after a full restart. Those checks are still in
+progress for 26.3. Check that
+the other mods in your world support 26.3 before attempting an upgrade.
 The accepted [1.14 results](docs/1.14/BROADER-QUALIFICATION.md) are historical
 evidence, not qualification of this port or a whole modpack.
 
@@ -41,17 +42,17 @@ Recipe-book discovery now follows relevant ingredients. See the [all-Advantage m
 
 The [manufacturing progression audit](docs/1.13/MANUFACTURING-PROGRESSION.md) traces survival parts from raw resources, including configured material aliases, processing, loot-only parts and automated restart checks.
 
-## Building Minecraft 26.2
+## Building Minecraft 26.3
 
-The build uses Forge 65.1.0, official `26.2` names,
-MCP `20260616.103818`, ForgeGradle 7.0.34 and Gradle 9.6.1.
+The build uses Forge 66.0.0, official `26.3` names,
+MCP `20260918.230105`, ForgeGradle 7.0.34 and Gradle 9.6.1.
 Use Java `25.0.3+9` for Gradle, compilation, Mavenizer and Minecraft. Pass its home using
 `-Porg.gradle.java.installations.paths=<java25>` and disable
 automatic discovery and downloads for a reproducibility check.
 
-Use the pinned Base Metals `3.1.2.2602001` and OreSpawn `4.1.1.2602001` jars.
+Use the pinned Base Metals `3.1.2.2603001` and OreSpawn `4.1.1.2603001` jars.
 The source pins and checksums are in `gradle.properties`.
-Forge 65 also needs the Mavenizer compatibility jar in the pinned OreSpawn
+Forge 66 also needs the Mavenizer compatibility jar in the pinned OreSpawn
 checkout's `ci-fixtures/tools/` directory. This is the same checksum-verified
 source preparation tool used by OreSpawn; its manifest makes no source changes
 for this target. It is not part of the mod or game runtime.
@@ -69,8 +70,8 @@ gradlew.bat clean check build javadoc genEclipseRuns eclipse isolateEclipseProdu
 The default dependency jars are:
 
 ```text
-D:\BaseMetals\BaseMetals 262\BaseMetals\build\libs\BaseMetals-3.1.2.2602001.jar
-D:\MinecraftMineralogy\OS262\OreSpawn\build\libs\OreSpawn-4.1.1.2602001.jar
+D:\BaseMetals\BaseMetals 263\BaseMetals\build\libs\BaseMetals-3.1.2.2603001.jar
+D:\MinecraftMineralogy\OS263\OreSpawn\build\libs\OreSpawn-4.1.1.2603001.jar
 ```
 
 Other layouts can pass `-PbaseMetalsDeobfJar=<path>` and `-PoreSpawnDeobfJar=<path>`.
@@ -79,11 +80,11 @@ Dependencies are never embedded in PowerAdvantage artifacts.
 Dependency checksums and source commits are recorded in `gradle.properties`.
 Unknown artifacts fail the dependency audit. The release audit also rejects a
 player jar that differs from the frozen test kit. Hosted CI requires the Base
-Metals pin to be on its upstream `master-26.2` branch; a locally tested pin
+Metals pin to be on its upstream `master-26.3` branch; a locally tested pin
 does not qualify a hosted build. The current local dependency fixes still
 need their own review and publication before that gate can pass.
 
-Release jars are written to `build/libs`. Forge 65 uses the same mod jar for play
+Release jars are written to `build/libs`. Forge 66 uses the same mod jar for play
 and development; `deobfJar` is kept as a task alias for older build scripts.
 
 For Eclipse, import this repository as an existing Gradle project and run:
@@ -96,10 +97,10 @@ Refresh the project in Eclipse, allow its Java build to finish, and launch the g
 
 Eclipse copies production resources from `build/resources/main`, not directly from `src/main/resources`. This prevents its builder from overwriting the expanded `mods.toml` with raw `${version}` placeholders. After updating this setup, use **Gradle > Refresh Gradle Project**, then **Project > Clean** before relaunching. After editing resources or version properties, run `processResources` or refresh the Gradle project before the Eclipse build. See the [metadata regression notes](docs/1.13/ECLIPSE-METADATA.md).
 
-To prepare a combined client, build the baseSteam and baseElectric `2.2.18.2602001` jars,
+To prepare a combined client, build the baseSteam and baseElectric `2.2.19.2603001` jars,
 run `gradlew.bat prepareCombinedEclipseLaunch`, refresh Eclipse, then launch
 `runClientAllAdvantage.launch`. Inputs must match
-`test-rig/profiles/native262/dev-core.json`; alternative layouts can pass
+`test-rig/profiles/native263/dev-core.json`; alternative layouts can pass
 `-PsteamAdvantageDeobfJar=<path>` and `-PelectricAdvantageDeobfJar=<path>`.
 The ordinary `runClient.launch` remains Power-only. Both use the `run` directory;
 preparing a launch does not copy, open or qualify a save.

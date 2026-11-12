@@ -48,7 +48,7 @@ public class BlockPowerSwitch extends cyano.poweradvantage.api.ConduitBlock impl
 	 */
 	public BlockPowerSwitch(ConduitType powerType) {
 		this(powerType, zone.moddev.mc.basepower.init.Blocks.properties("fluid_switch",
-                Properties.of().mapColor(MapColor.STONE).pushReaction(PushReaction.BLOCK)
+                Properties.of().mapColor(MapColor.STONE).pushReaction(PushReaction.IMMOVEABLE)
 				.forceSolidOn().strength(0.75F)));
 	}
 

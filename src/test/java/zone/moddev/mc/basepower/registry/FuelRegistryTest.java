@@ -17,6 +17,32 @@ public class FuelRegistryTest {
         assertTrue(FuelRegistry.decrementFuelItem(new ItemStack(Items.COAL)).isEmpty());
     }
 
+    @Test public void nativeCookingComponentsRetainTheirExactConfiguredBurnTime() {
+        var fuel = new net.minecraft.world.item.component.CookingFuel(
+                new net.minecraft.world.level.storage.loot.providers.number.ints.ResolvableInt.Constant(937),
+                new net.minecraft.world.level.storage.loot.providers.number.floats.ResolvableFloat.Constant(1F));
+        assertEquals(937, FuelRegistry.nativeBurnTime(fuel, null));
+        assertEquals(0, FuelRegistry.nativeBurnTime(null, null));
+    }
+
+    @Test public void dataDrivenFuelNeedsARealReloadedServerContext() {
+        var fuel = new ItemStack(Items.COAL).get(net.minecraft.core.component.DataComponents.COOKING_FUEL);
+        assertNotNull(fuel);
+        assertTrue(fuel.burnTime() instanceof net.minecraft.world.level.storage.loot.providers.number.ints.ResolvableInt.Reference);
+        assertEquals(0, FuelRegistry.nativeBurnTime(fuel, null));
+    }
+
+    @Test public void explicitFuelAlgorithmsStillTakePriorityOverNativeComponents() {
+        var registry = FuelRegistry.getInstance();
+        Function<ItemStack, Short> algorithm = stack -> (short)523;
+        registry.registerFuel(Items.STICK, algorithm);
+        try {
+            assertEquals(523, FuelRegistry.getActualBurntimeForItem(new ItemStack(Items.STICK)));
+        } finally {
+            assertTrue(registry.getFuelAlgorithmsForItem(Items.STICK).remove(algorithm));
+        }
+    }
+
     @Test public void largerFuelStackConsumesExactlyOneItem() {
         ItemStack stack = new ItemStack(Items.COAL, 3);
         assertSame(stack, FuelRegistry.decrementFuelItem(stack));

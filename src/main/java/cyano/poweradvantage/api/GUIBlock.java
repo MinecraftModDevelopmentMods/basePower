@@ -45,7 +45,7 @@ public abstract class GUIBlock extends Block implements EntityBlock {
 
 	/** Defaults for machine blocks formerly made from the piston material. */
 	public static Block.Properties machineProperties(float hardness) {
-		return Block.Properties.of().mapColor(MapColor.STONE).pushReaction(PushReaction.BLOCK)
+		return Block.Properties.of().mapColor(MapColor.STONE).pushReaction(PushReaction.IMMOVEABLE)
 				.forceSolidOn().strength(hardness).noOcclusion().dynamicShape();
 	}
 

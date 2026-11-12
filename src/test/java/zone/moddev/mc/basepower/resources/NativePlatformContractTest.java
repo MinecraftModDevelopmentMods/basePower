@@ -38,7 +38,7 @@ public class NativePlatformContractTest {
         assertFalse(java.util.Arrays.stream(levels).anyMatch(level -> level.name().equals("JAVA_25")));
     }
 
-    @Test public void nativeRecipeAndAdvancementLoadingShareThePostponedTagContext() throws Exception {
+    @Test public void registryLoadedRecipesAndAdvancementsUseTheNativeConditionalDecoder() throws Exception {
         ClassNode node = read("net/minecraft/server/ReloadableServerResources");
         MethodNode constructor = node.methods.stream().filter(method -> method.name.equals("<init>"))
                 .findFirst().orElseThrow();
@@ -48,7 +48,7 @@ public class NativePlatformContractTest {
                 if (call.owner.equals("net/minecraftforge/common/crafting/conditions/ConditionContext")) contexts++;
                 if (call.owner.equals("net/minecraft/world/item/crafting/RecipeManager")) {
                     assertEquals(1, contexts);
-                    assertTrue(call.desc.contains("ICondition$IContext"));
+                    assertTrue(call.desc.contains("HolderLookup$Provider"));
                     recipes++;
                 }
                 if (call.owner.equals("net/minecraft/server/ServerAdvancementManager")) {
@@ -61,6 +61,18 @@ public class NativePlatformContractTest {
         assertEquals(1, contexts);
         assertEquals(1, recipes);
         assertEquals(1, advancements);
+        int wrappers = 0, loads = 0;
+        for (MethodNode method : read("net/minecraft/resources/ResourceManagerRegistryLoadTask").methods) {
+            for (AbstractInsnNode instruction : method.instructions.toArray()) {
+                if (!(instruction instanceof MethodInsnNode call)) continue;
+                if (call.owner.equals("net/minecraftforge/common/crafting/conditions/ConditionCodec")
+                        && call.name.equals("wrap")) wrappers++;
+                if (call.owner.equals("net/minecraft/resources/RegistryLoadTask$PendingRegistration")
+                        && call.name.equals("loadFromResource")) loads++;
+            }
+        }
+        assertEquals(1, wrappers);
+        assertEquals(1, loads);
     }
 
     @Test public void nativeLootLoaderCallsForgeEventAndNotTheRemovedAdvantageBridge() throws Exception {

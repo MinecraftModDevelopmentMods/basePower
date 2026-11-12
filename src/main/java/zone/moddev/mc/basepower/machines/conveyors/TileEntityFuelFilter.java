@@ -11,7 +11,7 @@ public class TileEntityFuelFilter extends TileEntityConveyorFilter {
 	@Override
 	public boolean matchesFilter(ItemStack item) {
 		if (item == null) return false;
-		return zone.moddev.mc.basepower.registry.FuelRegistry.getActualBurntimeForItem(item) > 0;
+		return zone.moddev.mc.basepower.registry.FuelRegistry.getActualBurntimeForItem(item, this) > 0;
 	}
 
 }

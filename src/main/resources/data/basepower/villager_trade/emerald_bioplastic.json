@@ -4,9 +4,9 @@
   "max_uses": 7,
   "xp": 1,
   "reputation_discount": 0,
-  "given_item_modifiers": [
+  "given_item_modifier": [
     {
-      "function": "minecraft:set_count",
+      "type": "minecraft:set_count",
       "count": { "type": "minecraft:uniform", "min": 4, "max": 8 }
     }
   ]

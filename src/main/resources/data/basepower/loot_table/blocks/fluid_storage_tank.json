@@ -9,7 +9,7 @@
           "name": "basepower:fluid_storage_tank",
           "functions": [
             {
-              "function": "minecraft:copy_custom_data",
+              "type": "minecraft:copy_custom_data",
               "source": "block_entity",
               "ops": [
                 {
@@ -29,7 +29,7 @@
       ],
       "conditions": [
         {
-          "condition": "minecraft:survives_explosion"
+          "type": "minecraft:survives_explosion"
         }
       ]
     }

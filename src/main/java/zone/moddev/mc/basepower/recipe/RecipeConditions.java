@@ -53,7 +53,17 @@ public final class RecipeConditions {
 
         @Override public MapCodec<Material> codec() { return empty ? EMPTY : NOT_EMPTY; }
         @Override public boolean test(IContext context, DynamicOps<?> ops) {
-            return context.getTag(ItemTags.create(tag)).isEmpty() == empty;
+            return materialTagEmpty(tag, context, ops) == empty;
         }
+    }
+
+    static boolean materialTagEmpty(Identifier tag, ICondition.IContext context, DynamicOps<?> ops) {
+        // Recipes are now registry-loaded; their pending tags live on RegistryOps.
+        if (context == ICondition.IContext.EMPTY && ops instanceof net.minecraft.resources.RegistryOps<?> registries) {
+            return registries.getter(net.minecraft.core.registries.Registries.ITEM)
+                    .flatMap(items -> items.get(ItemTags.create(tag)))
+                    .map(items -> items.size() == 0).orElse(true);
+        }
+        return context.getTag(ItemTags.create(tag)).isEmpty();
     }
 }
