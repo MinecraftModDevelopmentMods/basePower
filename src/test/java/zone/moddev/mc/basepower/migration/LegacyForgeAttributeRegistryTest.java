@@ -65,13 +65,13 @@ public class LegacyForgeAttributeRegistryTest {
             CompoundTag raw = (CompoundTag) DataFixers.getDataFixer().update(References.ENTITY,
                     new Dynamic<>(NbtOps.INSTANCE, source.copy()), 1343,
                     SharedConstants.getCurrentVersion().dataVersion().version()).getValue();
-            Wolf negative = new Wolf(EntityType.WOLF, world); NativeWolfTestWorld.load(negative, raw);
+            Wolf negative = new Wolf(net.minecraft.world.entity.EntityTypes.WOLF, world); NativeWolfTestWorld.load(negative, raw);
             AttributeInstance old = negative.getAttribute(ForgeRegistries.ATTRIBUTES.getHolder(
                     Identifier.parse(ALIASES[index][2])).orElseThrow());
             assertNotEquals(ALIASES[index][0], values[index], old.getBaseValue(), 0D);
             CompoundTag root = chunk(source);
             LegacyEntityDataFixes.prepare(root); LegacyEntityDataFixes.finish(root);
-            Wolf positive = new Wolf(EntityType.WOLF, world); NativeWolfTestWorld.load(positive, fixedEntity(root));
+            Wolf positive = new Wolf(net.minecraft.world.entity.EntityTypes.WOLF, world); NativeWolfTestWorld.load(positive, fixedEntity(root));
             AttributeInstance actual = positive.getAttribute(old.getAttribute());
             assertEquals(ALIASES[index][0], values[index], actual.getBaseValue(), 0D);
             assertEquals(0.125D, actual.getModifier(modifierId()).amount(), 0D);
@@ -175,7 +175,7 @@ public class LegacyForgeAttributeRegistryTest {
         LegacyEntityDataFixes.prepare(root);
         LegacyEntityDataFixes.finish(root);
         CompoundTag converted = fixedEntity(root);
-        Wolf nativeReader = new Wolf(EntityType.WOLF, NativeWolfTestWorld.create());
+        Wolf nativeReader = new Wolf(net.minecraft.world.entity.EntityTypes.WOLF, NativeWolfTestWorld.create());
         NativeWolfTestWorld.load(nativeReader, converted);
         AttributeInstance speed = nativeReader.getAttribute(ForgeMod.SWIM_SPEED.getHolder().orElseThrow());
         assertEquals(2D, speed.getBaseValue(), 0D);

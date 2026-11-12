@@ -1,9 +1,14 @@
 import com.google.gson.Gson;
 import java.lang.reflect.Field;
+import java.lang.management.ManagementFactory;
+import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.LinkedHashMap;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Pattern;
 import java.util.Map;
 import java.util.UUID;
 import net.minecraft.SharedConstants;
@@ -23,6 +28,49 @@ public final class NativeWolfPlatformControl {
     private static final UUID OWNER = UUID.fromString("a614e658-6270-33c3-9297-7ce80908964f");
     private static final UUID ID = UUID.fromString("a6ea8abd-6ab3-4e66-8ef5-d713aabbccdd");
 
+    private static void runtimeEvidence(Path root) throws Exception {
+        for (String key : List.of("JAVA_TOOL_OPTIONS", "JDK_JAVA_OPTIONS", "_JAVA_OPTIONS", "CLASSPATH")) {
+            if (!System.getenv().getOrDefault(key, "").isBlank())
+                throw new AssertionError("Native control inherited " + key);
+        }
+        Map<String, Object> proof = new LinkedHashMap<>();
+        proof.put("scope", "WORLDLESS_INDEPENDENT_NATIVE_WOLF_CONTROL_NOT_GAMEPLAY");
+        proof.put("minecraftVersion", SharedConstants.getCurrentVersion().name());
+        proof.put("targetDataVersion", SharedConstants.getCurrentVersion().dataVersion().version());
+        Path java = Path.of(System.getProperty("java.home"), "bin", "java.exe");
+        if (!Files.isRegularFile(java)) java = java.resolveSibling("java");
+        proof.put("java", java.toString());
+        proof.put("javaSha256", NativePlatformSupport.sha(Files.readAllBytes(java)));
+        proof.put("jvmArguments", ManagementFactory.getRuntimeMXBean().getInputArguments());
+        proof.put("mainClass", "NativeWolfPlatformControl");
+        proof.put("inheritedJvmEnvironmentAbsent", true);
+        List<Map<String, Object>> paths = new ArrayList<>();
+        for (String entry : System.getProperty("java.class.path").split(Pattern.quote(File.pathSeparator))) {
+            Path path = Path.of(entry).toAbsolutePath().normalize();
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("path", path.toString());
+            if (Files.isRegularFile(path)) row.put("sha256", NativePlatformSupport.sha(Files.readAllBytes(path)));
+            else if (Files.isDirectory(path)) {
+                Map<String, String> files = new LinkedHashMap<>();
+                try (var stream = Files.walk(path)) {
+                    for (Path file : stream.filter(Files::isRegularFile).sorted().toList())
+                        files.put(path.relativize(file).toString(), NativePlatformSupport.sha(Files.readAllBytes(file)));
+                }
+                row.put("files", files);
+            } else throw new AssertionError("Missing control classpath: " + path);
+            paths.add(row);
+        }
+        proof.put("classpath", paths);
+        proof.put("nativeClassSha256", NativePlatformSupport.classHashes(Wolf.class, net.minecraft.world.entity.Entity.class));
+        Map<String, String> source = new LinkedHashMap<>();
+        for (String name : List.of("platform-controls/NativeWolfPlatformControl.java",
+                "platform-controls/NativePlatformSupport.java",
+                "unit-support/zone/moddev/mc/advantageworks/unit/NativeEmptyEntityTracker.java"))
+            source.put(name, NativePlatformSupport.sha(Files.readAllBytes(Path.of(name))));
+        proof.put("controlSourceSha256", source);
+        Files.writeString(root.resolve("control-runtime.json"), new Gson().toJson(proof) + "\n");
+    }
+
     private static ServerLevel context() throws Exception {
         ServerLevel world = NativePlatformSupport.context(true);
         // Native navigation now consults debug subscribers even before any entity ticks.
@@ -38,7 +86,7 @@ public final class NativeWolfPlatformControl {
     }
 
     private static Wolf wolf(ServerLevel world) {
-        Wolf wolf = new Wolf(EntityType.WOLF, world); wolf.setUUID(ID); return wolf;
+        Wolf wolf = new Wolf(net.minecraft.world.entity.EntityTypes.WOLF, world); wolf.setUUID(ID); return wolf;
     }
 
     private static void control(Path root, ServerLevel world, boolean tame, float health) throws Exception {
@@ -124,6 +172,7 @@ public final class NativeWolfPlatformControl {
         ServerLevel world = context();
         control(root, world, true, 8); control(root, world, true, 20); control(root, world, false, 8);
         legacyControl(root, world, 512); legacyControl(root, world, 1343);
+        runtimeEvidence(root);
         System.out.println("WOLF_CONTROL_DONE no_server_started=true no_ticks=true native_entity_methods_unmodified=true");
     }
 }

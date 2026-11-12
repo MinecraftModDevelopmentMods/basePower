@@ -65,6 +65,26 @@ public final class WorksRunner {
     private WorksRunner() {
     }
 
+    private record CalendarTarget(String minecraft, String forge, String suffix, String id,
+            String shimHash, String installerHash, String loggingHash) {
+        String shim() { return "forge-" + forge + "-shim.jar"; }
+        String loggingPrefix() { return "forge" + forge.split("-")[1].split("\\.")[0]; }
+    }
+
+    private static final List<CalendarTarget> CALENDAR_TARGETS = List.of(
+            new CalendarTarget("26.1.2", "26.1.2-64.1.5", ".2601021", "native2612",
+                    "0C74CB2A8E7A71AEB7055396C1E25864584A2D837D7DD42136A06D0B41ADD545",
+                    "6E01323837051176762BD466340A601DA122F179FE6A00AC616E05429AE07648",
+                    "7299C7AF7AE427C44C9AE83A92508F7BB09764DC30D21A4E8E86C7FFF2B0C4BC"),
+            new CalendarTarget("26.2", "26.2-65.1.0", ".2602001", "native262",
+                    "8D113D3DFFF0F0978A1989E22A8040FAD0FE5E332EF766B3702EB29687C9F4D2",
+                    "813FBBFECC3086A492783B9F5023AE15007737B42E17AAB75F48BA77403314DF",
+                    "7D1A733519C86FE2665110BF660DCF4B7358B97F416975444906E5CC77F163BE"));
+
+    private static CalendarTarget calendarTarget(String minecraft) {
+        return CALENDAR_TARGETS.stream().filter(target -> target.minecraft.equals(minecraft)).findFirst().orElse(null);
+    }
+
     public static void main(String[] args) throws Exception {
         Arguments arguments = Arguments.parse(args);
         Profile profile = readRunnerProfile(arguments.profile);
@@ -80,10 +100,11 @@ public final class WorksRunner {
             if ("packaged".equals(profile.mode)) {
                 runtimeJavaHome(profile);
                 if (profile.preparedSeed != null) {
-                    if ("26.1.2".equals(profile.minecraftVersion)) {
+                    if (calendarTarget(profile.minecraftVersion) != null) {
                         requireModularLauncher(profile.preparedSeed.root.toFile(), serverLauncherPath(profile));
-                        native2612LoggingBytes(profile.preparedSeed.root.resolve(
-                                "libraries/net/minecraftforge/fmlloader/26.1.2-64.1.5/fmlloader-26.1.2-64.1.5.jar").toFile());
+                        nativeLoggingBytes(profile.preparedSeed.root.resolve(
+                                "libraries/net/minecraftforge/fmlloader/" + profile.forge.version
+                                + "/fmlloader-" + profile.forge.version + ".jar").toFile(), calendarTarget(profile.minecraftVersion));
                     } else packagedCommand(profile, profile.preparedSeed.root.toFile());
                 }
             }
@@ -316,8 +337,8 @@ public final class WorksRunner {
         try (ZipFile jar = new ZipFile(loggingJar)) {
             if (jar.getEntry("log4j2.xml") == null) throw new IllegalStateException("Forge logging configuration missing");
         }
-        String logging = "26.1.2".equals(profile.minecraftVersion)
-                ? native2612LoggingConfiguration(runtime, loggingJar)
+        String logging = calendarTarget(profile.minecraftVersion) != null
+                ? nativeLoggingConfiguration(runtime, loggingJar, calendarTarget(profile.minecraftVersion))
                 : "jar:" + loggingJar.toURI().toASCIIString() + "!/log4j2.xml";
         return Arrays.asList(java.getAbsolutePath(), "-Xms512M", "-Xmx2G", "--add-opens",
                 "java.base/java.lang.invoke=ALL-UNNAMED",
@@ -326,7 +347,11 @@ public final class WorksRunner {
     }
 
     static byte[] native2612LoggingBytes(File loggingJar) throws Exception {
-        String sourceJarSha = "7299C7AF7AE427C44C9AE83A92508F7BB09764DC30D21A4E8E86C7FFF2B0C4BC";
+        return nativeLoggingBytes(loggingJar, calendarTarget("26.1.2"));
+    }
+
+    private static byte[] nativeLoggingBytes(File loggingJar, CalendarTarget target) throws Exception {
+        String sourceJarSha = target.loggingHash;
         String sourceXmlSha = "9680BAF9F936C8CD009CD3A8D75253B476FCA9C316F8D5B5C51700053BEAE440";
         if (!sourceJarSha.equals(sha256(loggingJar))) throw new IllegalArgumentException("Forge 64 logging jar changed");
         byte[] original;
@@ -341,11 +366,19 @@ public final class WorksRunner {
     }
 
     static String native2612LoggingConfiguration(File runtime, File loggingJar) throws Exception {
-        byte[] modified = native2612LoggingBytes(loggingJar);
-        Path config = runtime.toPath().resolve("forge64-log4j2-plain-stacktraces.xml");
-        Path custody = runtime.toPath().resolve("forge64-logging-custody.json");
+        return nativeLoggingConfiguration(runtime, loggingJar, calendarTarget("26.1.2"));
+    }
+
+    static String native262LoggingConfiguration(File runtime, File loggingJar) throws Exception {
+        return nativeLoggingConfiguration(runtime, loggingJar, calendarTarget("26.2"));
+    }
+
+    private static String nativeLoggingConfiguration(File runtime, File loggingJar, CalendarTarget target) throws Exception {
+        byte[] modified = nativeLoggingBytes(loggingJar, target);
+        Path config = runtime.toPath().resolve(target.loggingPrefix() + "-log4j2-plain-stacktraces.xml");
+        Path custody = runtime.toPath().resolve(target.loggingPrefix() + "-logging-custody.json");
         Map<String, String> receipt = new LinkedHashMap<>();
-        receipt.put("sourceJarSha256", "7299C7AF7AE427C44C9AE83A92508F7BB09764DC30D21A4E8E86C7FFF2B0C4BC");
+        receipt.put("sourceJarSha256", target.loggingHash);
         receipt.put("sourceXmlSha256", "9680BAF9F936C8CD009CD3A8D75253B476FCA9C316F8D5B5C51700053BEAE440");
         receipt.put("configSha256", java.util.HexFormat.of().withUpperCase().formatHex(MessageDigest.getInstance("SHA-256").digest(modified)));
         receipt.put("modification", "Exactly two %xEx renderers to %ex; all other source bytes retained");
@@ -367,12 +400,14 @@ public final class WorksRunner {
         Path args = root.resolve(launcher);
         PreparedServerSeed.requirePlain(args);
         boolean forge61 = launcher.startsWith("libraries/net/minecraftforge/forge/1.21.11-61.1.0/");
-        if (launcher.startsWith("libraries/net/minecraftforge/forge/26.1.2-64.1.5/")) {
-            Path jar = root.resolve("forge-26.1.2-64.1.5-shim.jar");
+        CalendarTarget calendar = CALENDAR_TARGETS.stream().filter(target ->
+                launcher.startsWith("libraries/net/minecraftforge/forge/" + target.forge + "/")).findFirst().orElse(null);
+        if (calendar != null) {
+            Path jar = root.resolve(calendar.shim());
             PreparedServerSeed.requirePlain(jar);
             if (!Files.readString(args, StandardCharsets.UTF_8).strip().equals(
-                    "-Djava.net.preferIPv6Addresses=system -XX:+UseCompactObjectHeaders -jar forge-26.1.2-64.1.5-shim.jar")
-                    || !sha256(jar.toFile()).equals("0C74CB2A8E7A71AEB7055396C1E25864584A2D837D7DD42136A06D0B41ADD545"))
+                    "-Djava.net.preferIPv6Addresses=system -XX:+UseCompactObjectHeaders -jar " + calendar.shim())
+                    || !sha256(jar.toFile()).equals(calendar.shimHash))
                 throw new IllegalArgumentException("Unexpected selected Forge 64 shim command");
             return;
         }
@@ -866,8 +901,8 @@ public final class WorksRunner {
         }
         return new PreparedServerSeed(preparedPath(testRig, arguments.preparedServerSeed),
                 preparedPath(testRig, arguments.preparedServerSeedInventory), arguments.preparedServerSeedSha256,
-                serverLauncherPath(profile), "26.1.2".equals(profile.minecraftVersion)
-                        ? "forge-26.1.2-64.1.5-shim.jar"
+                serverLauncherPath(profile), calendarTarget(profile.minecraftVersion) != null
+                        ? calendarTarget(profile.minecraftVersion).shim()
                         : "1.21.11".equals(profile.minecraftVersion)
                         ? "forge-1.21.11-61.1.0-shim.jar"
                         : "1.21.1".equals(profile.minecraftVersion)
@@ -922,13 +957,15 @@ public final class WorksRunner {
         final Set<String> directories = new LinkedHashSet<>();
         final List<Process> processes = new ArrayList<>();
         final boolean forge50, forge52, forge61, forge64;
+        final CalendarTarget calendar;
 
         PreparedServerSeed(Path root, Path inventory, String expectedHash, String launcher, String minecraft)
                 throws Exception {
             forge50 = "forge-1.20.6-50.2.0-shim.jar".equals(minecraft);
             forge52 = "forge-1.21.1-52.1.0-shim.jar".equals(minecraft);
             forge61 = "forge-1.21.11-61.1.0-shim.jar".equals(minecraft);
-            forge64 = "forge-26.1.2-64.1.5-shim.jar".equals(minecraft);
+            calendar = CALENDAR_TARGETS.stream().filter(target -> target.shim().equals(minecraft)).findFirst().orElse(null);
+            forge64 = calendar != null;
             this.root = root.toAbsolutePath().normalize();
             this.inventory = inventory.toAbsolutePath().normalize();
             if (expectedHash == null || !expectedHash.matches("[0-9A-F]{64}")) {
@@ -998,8 +1035,8 @@ public final class WorksRunner {
                 reader.endObject();
                 if (forge64) {
                     Map<String, String> expected = new LinkedHashMap<>();
-                    expected.put("forge", "26.1.2-64.1.5");
-                    expected.put("installerSha256", "6E01323837051176762BD466340A601DA122F179FE6A00AC616E05429AE07648");
+                    expected.put("forge", calendar.forge);
+                    expected.put("installerSha256", calendar.installerHash);
                     expected.put("javaSha256", "D5F1B9E03E298EBFB04D2326ECC1E2AF3E6817F9B4D7F9F151FE856D56975650");
                     expected.put("javaVersion", "25.0.3+9");
                     for (var entry : expected.entrySet()) {
@@ -1223,12 +1260,12 @@ public final class WorksRunner {
         return "1.17.1".equals(profile.minecraftVersion) || "1.18.2".equals(profile.minecraftVersion)
                 || "1.20.1".equals(profile.minecraftVersion) || "1.20.6".equals(profile.minecraftVersion)
                 || "1.21.1".equals(profile.minecraftVersion) || "1.21.11".equals(profile.minecraftVersion)
-                || "26.1.2".equals(profile.minecraftVersion);
+                || calendarTarget(profile.minecraftVersion) != null;
     }
 
     private static File runtimeJavaHome(Profile profile) throws Exception {
         if (!modularForge(profile)) return java8Home(profile);
-        if ("26.1.2".equals(profile.minecraftVersion)) {
+        if (calendarTarget(profile.minecraftVersion) != null) {
             requireNative2612Environment(System.getenv());
             String configured = profile.java25Home;
             if (configured == null || configured.isBlank()) configured = System.getenv("ADVANTAGE_WORKS_JAVA25_HOME");
@@ -1285,6 +1322,10 @@ public final class WorksRunner {
                 throw new IllegalArgumentException("Forge 61 cannot inherit JVM options or agents from " + variable);
             }
         }
+    }
+
+    static void requireNative262Environment(Map<String, String> environment) {
+        requireNative2612Environment(environment);
     }
 
     static void requireNative2612Environment(Map<String, String> environment) {
@@ -1382,7 +1423,7 @@ public final class WorksRunner {
                 + "spawn-npcs=false\n"
                 + "spawn-protection=0\n"
                 + "view-distance=10\n";
-        if ("1.21.11".equals(profile.minecraftVersion) || "26.1.2".equals(profile.minecraftVersion)) {
+        if ("1.21.11".equals(profile.minecraftVersion) || calendarTarget(profile.minecraftVersion) != null) {
             properties += "pause-when-empty-seconds=-1\n";
         }
         write(new File(runtime, "server.properties"), properties);
@@ -1471,6 +1512,9 @@ public final class WorksRunner {
         try (InputStreamReader reader = new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8)) {
             JsonObject metadata = GSON.fromJson(reader, JsonObject.class);
             if (metadata != null && metadata.has("minecraftVersion")
+                    && "26.2".equals(metadata.get("minecraftVersion").getAsString()))
+                return readNative262Profile(file);
+            if (metadata != null && metadata.has("minecraftVersion")
                     && "26.1.2".equals(metadata.get("minecraftVersion").getAsString()))
                 return readNative2612Profile(file);
             if (metadata != null && metadata.has("minecraftVersion")
@@ -1489,6 +1533,17 @@ public final class WorksRunner {
         profile.mods.forEach(input -> ids.add(input.id));
         if (!ids.containsAll(Set.of("basepower", "advantageworkstest", "basemetals", "orespawn")))
             throw new IllegalArgumentException("Forge 64 requires the actual Base Metals dependency as well as Power, OreSpawn and harness");
+        return profile;
+    }
+
+    static Profile readNative262Profile(File file) throws Exception {
+        Profile profile = readNativeShimProfile(file, "26.2", "26.2-65.1.0", ".2602001");
+        if (!"build/works-native262".equals(profile.runtimeBase))
+            throw new IllegalArgumentException("Forge 65 must use isolated build/works-native262 runtimes");
+        Set<String> ids = new LinkedHashSet<>();
+        profile.mods.forEach(input -> ids.add(input.id));
+        if (!ids.containsAll(Set.of("basepower", "advantageworkstest", "basemetals", "orespawn")))
+            throw new IllegalArgumentException("Forge 65 requires the complete pinned dependency family");
         return profile;
     }
 

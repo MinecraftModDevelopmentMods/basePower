@@ -17,7 +17,6 @@ import net.minecraft.client.Screenshot;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.render.GuiRenderer;
 import net.minecraft.client.renderer.state.gui.GuiRenderState;
-import net.minecraft.client.renderer.fog.FogRenderer;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.state.WindowRenderState;
 
@@ -36,23 +35,23 @@ final class NativeGuiProjection implements AutoCloseable {
 
     private NativeGuiProjection(Minecraft minecraft, int width, int height, int scale) throws ReflectiveOperationException {
         this.minecraft = minecraft;
-        original = minecraft.getMainRenderTarget();
+        original = minecraft.gameRenderer.mainRenderTarget();
         var window = minecraft.getWindow();
         this.width = window.getWidth();
         this.height = window.getHeight();
         this.scale = window.getGuiScale();
-        windowState = minecraft.gameRenderer.getGameRenderState().windowRenderState;
+        windowState = minecraft.gameRenderer.gameRenderState().windowRenderState;
         stateWidth = windowState.width;
         stateHeight = windowState.height;
         stateScale = windowState.guiScale;
-        targetField = Minecraft.class.getDeclaredField("mainRenderTarget");
+        targetField = net.minecraft.client.renderer.GameRenderer.class.getDeclaredField("mainRenderTarget");
         targetField.setAccessible(true);
         widthField = window.getClass().getDeclaredField("framebufferWidth");
         heightField = window.getClass().getDeclaredField("framebufferHeight");
         widthField.setAccessible(true);
         heightField.setAccessible(true);
-        target = new TextureTarget("Advantage native GUI witness", width, height, true);
-        targetField.set(minecraft, target);
+        target = new TextureTarget("Advantage native GUI witness", width, height, true, original.getColorTexture().getFormat());
+        targetField.set(minecraft.gameRenderer, target);
         widthField.setInt(window, width);
         heightField.setInt(window, height);
         window.setGuiScale(scale);
@@ -85,7 +84,7 @@ final class NativeGuiProjection implements AutoCloseable {
             cases.add(row);
         }
         com.google.gson.JsonObject result = new com.google.gson.JsonObject();
-        result.addProperty("protocol", "NATIVE64_GUI_PROJECTION_PIXEL_RULER_V1");
+        result.addProperty("protocol", "NATIVE65_GUI_PROJECTION_PIXEL_RULER_V1");
         result.addProperty("status", "PASS");
         result.add("cases", cases);
         return result;
@@ -119,18 +118,15 @@ final class NativeGuiProjection implements AutoCloseable {
             Function<GuiRenderState, GuiGraphicsExtractor> graphicsFactory, Consumer<GuiGraphicsExtractor> draw) {
         NativeGuiEvidence.State state = new NativeGuiEvidence.State();
         try (NativeGuiProjection scope = new NativeGuiProjection(minecraft, width, height, scale);
-                GuiRenderer renderer = new GuiRenderer(state, minecraft.renderBuffers().bufferSource(),
-                        minecraft.gameRenderer.getSubmitNodeStorage(),
-                        minecraft.gameRenderer.getFeatureRenderDispatcher(), List.of())) {
+                GuiRenderer renderer = new GuiRenderer(state, minecraft.gameRenderer.featureRenderDispatcher(), List.of())) {
             RenderSystem.getDevice().createCommandEncoder().clearColorAndDepthTextures(
-                    scope.target.getColorTexture(), background, scope.target.getDepthTexture(), 1.0);
+                    scope.target.getColorTexture(), new org.joml.Vector4f((background >>> 16 & 255) / 255F,
+                            (background >>> 8 & 255) / 255F, (background & 255) / 255F, (background >>> 24 & 255) / 255F),
+                    scope.target.getDepthTexture(), RenderSystem.DEFAULT_DEPTH_CLEAR_VALUE);
             GuiGraphicsExtractor graphics = graphicsFactory.apply(state);
             draw.accept(graphics);
             graphics.extractDeferredElements(-100, -100, 0F);
-            Field fogField = minecraft.gameRenderer.getClass().getDeclaredField("fogRenderer");
-            fogField.setAccessible(true);
-            FogRenderer fog = (FogRenderer) fogField.get(minecraft.gameRenderer);
-            renderer.render(fog.getBuffer(FogRenderer.FogMode.NONE));
+            renderer.render();
             BufferedImage image = read(scope.target);
             var extraction = state.extracted();
             extraction.addProperty("extractor", graphics.getClass().getName());
@@ -148,7 +144,9 @@ final class NativeGuiProjection implements AutoCloseable {
     static BufferedImage read(RenderTarget target) {
         AtomicReference<NativeImage> captured = new AtomicReference<>();
         Screenshot.takeScreenshot(target, captured::set);
-        try (var fence = RenderSystem.getDevice().createCommandEncoder().createFence()) {
+        var encoder = RenderSystem.getDevice().createCommandEncoder();
+        try (var fence = encoder.createFence()) {
+            encoder.submit();
             if (!fence.awaitCompletion(10_000_000_000L)) throw new IllegalStateException("Native GUI readback fence timed out");
             RenderSystem.executePendingTasks();
             NativeImage image = captured.get();
@@ -164,7 +162,7 @@ final class NativeGuiProjection implements AutoCloseable {
 
     @Override public void close() throws ReflectiveOperationException {
         try {
-            targetField.set(minecraft, original);
+            targetField.set(minecraft.gameRenderer, original);
             widthField.setInt(minecraft.getWindow(), width);
             heightField.setInt(minecraft.getWindow(), height);
             minecraft.getWindow().setGuiScale(scale);
@@ -173,8 +171,6 @@ final class NativeGuiProjection implements AutoCloseable {
             windowState.guiScale = stateScale;
             RenderSystem.setProjectionMatrix(projection, projectionType);
         } finally {
-            minecraft.gameRenderer.getSubmitNodeStorage().endFrame();
-            minecraft.gameRenderer.getFeatureRenderDispatcher().endFrame();
             target.destroyBuffers();
         }
     }

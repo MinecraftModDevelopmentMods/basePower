@@ -94,14 +94,14 @@ public class SimpleMachineGuiNativeTest {
         var inventory = fixture.target.texts.get(1);
         assertEquals("Machine", text(title));
         assertEquals("Inventory", text(inventory));
-        assertEquals(67, title.x);
-        assertEquals(1, title.y);
-        assertEquals(8, inventory.x);
-        assertEquals(140, inventory.y);
+        assertEquals(67, get(title, "x"));
+        assertEquals(1, get(title, "y"));
+        assertEquals(8, get(inventory, "x"));
+        assertEquals(140, get(inventory, "y"));
         for (var caption : fixture.target.texts) {
-            assertEquals(0xFFFFFFFF, caption.color);
-            assertTrue(caption.dropShadow);
-            assertSame(fixture.font, caption.font);
+            assertEquals(0xFFFFFFFF, get(caption, "color"));
+            assertTrue((Boolean) get(caption, "dropShadow"));
+            assertSame(fixture.font, get(caption, "font"));
             assertEquals(new Matrix3x2f(fixture.pose), new Matrix3x2f(caption.pose));
         }
         fixture.pose.translate(50, 50);
@@ -115,8 +115,8 @@ public class SimpleMachineGuiNativeTest {
         assertEquals(2, fixture.target.texts.size());
         assertEquals("M".repeat(29) + "...", text(fixture.target.texts.get(0)));
         assertEquals("I".repeat(23) + "...", text(fixture.target.texts.get(1)));
-        assertEquals(-8, fixture.target.texts.get(0).x);
-        assertEquals(8, fixture.target.texts.get(1).x);
+        assertEquals(-8, get(fixture.target.texts.get(0), "x"));
+        assertEquals(8, get(fixture.target.texts.get(1), "x"));
     }
 
     @Test public void nativeScreenWrapperExtractsBackgroundOnceAndReleasesDecorationContext() throws Exception {
@@ -190,7 +190,6 @@ public class SimpleMachineGuiNativeTest {
         set(screen, "minecraft", extraction.minecraft);
         var inventoryItems = new Inventory(null, new EntityEquipment());
         set(screen, "menu", gui.createMenu(1, inventoryItems, new SimpleContainer(0)));
-        set(screen, "draggingItem", net.minecraft.world.item.ItemStack.EMPTY);
         set(screen, "renderables", List.of());
         set(screen, "playerInventoryLabel", Component.literal(inventory));
         set(screen, "title", Component.literal(title));
@@ -243,9 +242,10 @@ public class SimpleMachineGuiNativeTest {
         @Override public void addText(GuiTextRenderState text) { texts.add(text); }
     }
 
-    private static String text(GuiTextRenderState state) {
+    private static String text(GuiTextRenderState state) throws Exception {
         var text = new StringBuilder();
-        state.text.accept((index, style, point) -> { text.appendCodePoint(point); return true; });
+        ((net.minecraft.util.FormattedCharSequence) get(state, "text"))
+                .accept((index, style, point) -> { text.appendCodePoint(point); return true; });
         return text.toString();
     }
 

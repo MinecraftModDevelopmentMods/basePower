@@ -44,7 +44,7 @@ public final class VanillaRegistryRemaps {
             Biomes.WARM_OCEAN, Biomes.LUKEWARM_OCEAN, Biomes.DEEP_LUKEWARM_OCEAN, Biomes.OCEAN,
             Biomes.DEEP_OCEAN, Biomes.COLD_OCEAN, Biomes.DEEP_COLD_OCEAN, Biomes.FROZEN_OCEAN,
             Biomes.DEEP_FROZEN_OCEAN, Biomes.MUSHROOM_FIELDS, Biomes.DRIPSTONE_CAVES,
-            Biomes.LUSH_CAVES, Biomes.DEEP_DARK, Biomes.NETHER_WASTES, Biomes.WARPED_FOREST,
+            Biomes.LUSH_CAVES, Biomes.DEEP_DARK, Biomes.SULFUR_CAVES, Biomes.NETHER_WASTES, Biomes.WARPED_FOREST,
             Biomes.CRIMSON_FOREST, Biomes.SOUL_SAND_VALLEY, Biomes.BASALT_DELTAS, Biomes.THE_END,
             Biomes.END_HIGHLANDS, Biomes.END_MIDLANDS, Biomes.SMALL_END_ISLANDS, Biomes.END_BARRENS);
     private static final Set<String> LEGACY_PAINTINGS = Set.of("kebab", "aztec", "alban", "aztec2", "bomb",

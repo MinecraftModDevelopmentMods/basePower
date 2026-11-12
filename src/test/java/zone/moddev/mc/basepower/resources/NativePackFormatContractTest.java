@@ -44,13 +44,13 @@ public class NativePackFormatContractTest {
                 SharedConstants.RESOURCE_PACK_FORMAT_MAJOR, SharedConstants.RESOURCE_PACK_FORMAT_MINOR)));
         assertTrue(server.supportedFormats().isValueInRange(PackFormat.of(
                 SharedConstants.DATA_PACK_FORMAT_MAJOR, SharedConstants.DATA_PACK_FORMAT_MINOR)));
-        assertEquals(PackFormat.of(84, 0).minorRange(), client.supportedFormats());
-        assertEquals(PackFormat.of(101, 1), server.supportedFormats().minInclusive());
-        assertEquals(PackFormat.of(101, 1), server.supportedFormats().maxInclusive());
+        assertEquals(PackFormat.of(88, 0).minorRange(), client.supportedFormats());
+        assertEquals(PackFormat.of(107, 1), server.supportedFormats().minInclusive());
+        assertEquals(PackFormat.of(107, 1), server.supportedFormats().maxInclusive());
         assertFalse(client.supportedFormats().isValueInRange(PackFormat.of(83)));
         assertFalse(client.supportedFormats().isValueInRange(PackFormat.of(85)));
-        assertFalse(server.supportedFormats().isValueInRange(PackFormat.of(101, 0)));
-        assertFalse(server.supportedFormats().isValueInRange(PackFormat.of(101, 2)));
+        assertFalse(server.supportedFormats().isValueInRange(PackFormat.of(107, 0)));
+        assertFalse(server.supportedFormats().isValueInRange(PackFormat.of(107, 2)));
         assertFalse(server.supportedFormats().isValueInRange(PackFormat.of(102)));
         assertFalse(client.supportedFormats().isValueInRange(PackFormat.of(94, 1)));
         assertFalse(server.supportedFormats().isValueInRange(PackFormat.of(75, 0)));

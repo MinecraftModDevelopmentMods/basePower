@@ -100,7 +100,7 @@ final class OilRenderProbe {
             }
         };
         try (var storage = new com.mojang.blaze3d.vertex.ByteBufferBuilder(4096)) {
-        BufferBuilder buffer = new BufferBuilder(storage, com.mojang.blaze3d.vertex.VertexFormat.Mode.QUADS, DefaultVertexFormat.BLOCK);
+        BufferBuilder buffer = new BufferBuilder(storage, com.mojang.blaze3d.PrimitiveTopology.QUADS, DefaultVertexFormat.BLOCK);
         var models = minecraft.getModelManager().getFluidStateModelSet();
         var nativeModel = net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions.of(state)
                 .getModel(state, world, BlockPos.ZERO, models.get(state));
@@ -119,10 +119,10 @@ final class OilRenderProbe {
                 .getSprite(Identifier.parse(texture));
         require(vertices >= 4, "Native fluid renderer emitted no top face for " + state);
         ByteBuffer data = built.vertexBuffer();
-        int uvOffset = elementOffset(VertexFormatElement.UV0);
+        int uvOffset = elementOffset(DefaultVertexFormat.UV0_SEMANTIC_NAME);
         float u = data.getFloat(uvOffset);
         float v = data.getFloat(uvOffset + 4);
-        int colorOffset = elementOffset(VertexFormatElement.COLOR);
+        int colorOffset = elementOffset(DefaultVertexFormat.COLOR_SEMANTIC_NAME);
         int rgb = (data.get(colorOffset) & 255) << 16 | (data.get(colorOffset + 1) & 255) << 8 | data.get(colorOffset + 2) & 255;
         boolean correctSprite = !"missingno".equals(sprite.contents().name().getPath())
                 && u >= sprite.getU0() && u <= sprite.getU1() && v >= sprite.getV0() && v <= sprite.getV1();
@@ -140,12 +140,10 @@ final class OilRenderProbe {
         }
     }
 
-    private static int elementOffset(VertexFormatElement required) {
-        for (int i = 0; i < DefaultVertexFormat.BLOCK.getElements().size(); i++) {
-            VertexFormatElement element = DefaultVertexFormat.BLOCK.getElements().get(i);
-            if (element.equals(required)) return DefaultVertexFormat.BLOCK.getOffset(i);
-        }
-        throw new IllegalStateException("Native block vertex format lacks " + required);
+    private static int elementOffset(String required) {
+        VertexFormatElement element = DefaultVertexFormat.BLOCK.getElement(required);
+        if (element == null) throw new IllegalStateException("Native block vertex format lacks " + required);
+        return element.offset();
     }
 
     private static BlockState blockAt(FluidState state, boolean flowing, BlockPos pos) {

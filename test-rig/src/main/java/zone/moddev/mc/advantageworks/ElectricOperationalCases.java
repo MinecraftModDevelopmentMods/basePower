@@ -584,7 +584,7 @@ public final class ElectricOperationalCases {
                         if (mode != 1) c.power(8, 1, Z, ELECTRICITY, mode == 2 ? 999 : 1500);
                         if (mode == 3) for (int y = 1; y <= 4; y++) for (int z = Z - 2; z <= Z + 2; z++)
                             c.block(12, y, z, "minecraft:stone");
-                        Husk husk = EntityType.HUSK.create(c.world, net.minecraft.world.entity.EntitySpawnReason.COMMAND);
+                        Husk husk = net.minecraft.world.entity.EntityTypes.HUSK.create(c.world, net.minecraft.world.entity.EntitySpawnReason.COMMAND);
                         c.require(husk != null, "Created a real hostile target");
                         husk.snapTo(c.at(16, 1, Z).getX() + 0.5, c.at(16, 1, Z).getY(), c.at(16, 1, Z).getZ() + 0.5, 0, 0);
                         husk.setNoAi(true);
@@ -639,7 +639,7 @@ public final class ElectricOperationalCases {
                     c.world.getScoreboard().addPlayerToTeam(player.getScoreboardName(), team[0]);
                     c.world.addNewPlayer(player);
                     c.invoke(8, 1, Z, "setOwner", new Class<?>[] {Player.class}, player);
-                    Husk husk = EntityType.HUSK.create(c.world, net.minecraft.world.entity.EntitySpawnReason.COMMAND);
+                    Husk husk = net.minecraft.world.entity.EntityTypes.HUSK.create(c.world, net.minecraft.world.entity.EntitySpawnReason.COMMAND);
                     c.require(husk != null, "Created ownership target");
                     victim[0] = husk;
                     husk.snapTo(c.at(16, 1, Z).getX() + 0.5, c.at(16, 1, Z).getY(), c.at(16, 1, Z).getZ() + 0.5, 0, 0);

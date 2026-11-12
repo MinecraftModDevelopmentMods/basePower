@@ -48,7 +48,7 @@ public class Native117StoppedEntitiesSnapshotV2Test {
 
     @Test public void unexpectedNoSaveTypeFailsWithActualNativeIdentity() throws Exception {
         ServerLevel world = Native117EntityContextTest.world(Level.END);
-        LightningBolt bolt = new LightningBolt(EntityType.LIGHTNING_BOLT, world);
+        LightningBolt bolt = new LightningBolt(net.minecraft.world.entity.EntityTypes.LIGHTNING_BOLT, world);
         try {
             Native117StoppedEntitiesSnapshotV2.partition(world, List.of(bolt), new HashSet<>());
             fail("Unproven no-save type was skipped");

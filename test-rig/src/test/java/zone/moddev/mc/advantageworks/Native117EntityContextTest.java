@@ -88,6 +88,7 @@ public class Native117EntityContextTest {
         Field field = unsafe.getDeclaredField("theUnsafe"); field.setAccessible(true);
         ServerLevel world = (ServerLevel) unsafe.getMethod("allocateInstance", Class.class)
                 .invoke(field.get(null), EntityFixtureWorld.class);
+        zone.moddev.mc.advantageworks.unit.NativeEmptyEntityTracker.install(world);
         set(world, "dimension", key);
         set(world, "random", net.minecraft.util.RandomSource.create(0));
         Field ticks = ServerLevel.class.getDeclaredField("entityTickList"); ticks.setAccessible(true);
@@ -96,7 +97,7 @@ public class Native117EntityContextTest {
     }
 
     static Boat boat(ServerLevel world) {
-        return new Boat(EntityType.OAK_BOAT, world, () -> net.minecraft.world.item.Items.OAK_BOAT);
+        return new Boat(net.minecraft.world.entity.EntityTypes.OAK_BOAT, world, () -> net.minecraft.world.item.Items.OAK_BOAT);
     }
 
     private static void set(ServerLevel world, String name, Object value) throws Exception {

@@ -24,7 +24,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class Native12111HelperContractTest {
-    private static final String SHA = "C2407DA9E3785032E26FCFB739133B2F4DEA8F1B537AD81F8AC562E2A61A59E8";
+    private static final String SHA = "272085E5730D6C95525017714BC496BC6AF358F35ED6FDF8678A428F740D4EF5";
 
     @BeforeClass public static void bootstrap() { SharedConstants.tryDetectVersion(); Bootstrap.bootStrap(); }
 
@@ -32,10 +32,10 @@ public class Native12111HelperContractTest {
         byte[] bytes = Native117StoppedEntitiesSnapshotV2.contract();
         assertEquals(SHA, Native117StoppedEntitiesSnapshotV2.sha(bytes));
         JsonObject control = JsonParser.parseString(new String(bytes, StandardCharsets.UTF_8)).getAsJsonObject();
-        assertEquals("native2612-leash-knot-nosave-v1", control.get("policy").getAsString());
+        assertEquals("native262-leash-knot-nosave-v1", control.get("policy").getAsString());
         assertEquals(SharedConstants.getCurrentVersion().name(), control.get("minecraftVersion").getAsString());
         assertEquals(SharedConstants.getCurrentVersion().dataVersion().version(), control.get("dataVersion").getAsInt());
-        assertEquals("64.1.5", control.get("forgeVersion").getAsString());
+        assertEquals("65.1.0", control.get("forgeVersion").getAsString());
         for (String key : List.of("noPower", "powerAccessTransformerAbsent", "noHarness", "noServer", "noTicks", "nativeMethodsUnmodified",
                 "observationalUuidPreserved", "observationalStateUnchanged", "refusedWritersLeaveNoPayload")) {
             assertTrue(key, control.get(key).getAsBoolean());
@@ -67,7 +67,7 @@ public class Native12111HelperContractTest {
             }
         }
         for (var entry : control.getAsJsonObject("controlSourceSha256").entrySet()) {
-            assertEquals(entry.getKey(), entry.getValue().getAsString(), sha(Files.readAllBytes(Path.of("platform-controls", entry.getKey()))));
+            assertEquals(entry.getKey(), entry.getValue().getAsString(), sha(Files.readAllBytes(Path.of(entry.getKey()))));
         }
     }
 
@@ -81,7 +81,7 @@ public class Native12111HelperContractTest {
         var knot = new LeashFenceKnotEntity(world, new BlockPos(154, 100, 8));
         var before = NativeActorIo.saveWithoutId(knot).copy();
         assertTrue(knot.shouldBeSaved());
-        assertFalse(EntityType.LEASH_KNOT.canSerialize());
+        assertFalse(net.minecraft.world.entity.EntityTypes.LEASH_KNOT.canSerialize());
         assertNull(knot.getEncodeId());
         TagValueOutput root = TagValueOutput.createWithContext(NativeActorIo.reporter("root control"), world.registryAccess());
         TagValueOutput passenger = TagValueOutput.createWithContext(NativeActorIo.reporter("passenger control"), world.registryAccess());

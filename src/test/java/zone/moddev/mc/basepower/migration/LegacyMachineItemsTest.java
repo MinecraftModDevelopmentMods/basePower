@@ -47,7 +47,7 @@ public class LegacyMachineItemsTest {
             TileEntityConveyor conveyor = new TileEntityConveyor(net.minecraft.core.BlockPos.ZERO, Blocks.HOPPER.defaultBlockState());
             conveyor.loadWithComponents(net.minecraft.world.level.storage.TagValueInput.create(
                     net.minecraft.util.ProblemReporter.DISCARDING, registries(), tile));
-            assertSame(Items.RED_WOOL, conveyor.getItem(0).getItem());
+            assertSame(Items.WOOL.red(), conveyor.getItem(0).getItem());
             assertEquals(7, conveyor.getItem(0).getCount());
         } finally { zone.moddev.mc.basepower.init.Entities.CONVEYOR = previous; }
     }

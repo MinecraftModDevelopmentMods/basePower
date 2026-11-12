@@ -45,7 +45,7 @@ public class NativeBlockEntityFactoryTest {
                         net.minecraft.core.RegistryAccess.fromRegistryOfRegistries(net.minecraft.core.registries.BuiltInRegistries.REGISTRY), saved));
                 assertEquals("NBT cannot replace the native factory's final position", position, tile.getBlockPos());
             }
-            assertNull(block.getTicker(null, state, BlockEntityType.CHEST));
+            assertNull(block.getTicker(null, state, net.minecraft.world.level.block.entity.BlockEntityTypes.CHEST));
         } finally { Entities.CONVEYOR = old; }
     }
 

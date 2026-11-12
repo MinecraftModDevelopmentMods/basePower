@@ -60,17 +60,17 @@ final class RecipeBookGroupingProbe {
         try (Stream<Path> files = Files.list(root)) {
             Map<Identifier, ForgeRegistry.Snapshot> registry = RegistryManager.ACTIVE.takeSnapshot(false);
             CompoundTag level = NbtIo.readCompressed(root.resolve("server-registries.dat"), NbtAccounter.unlimitedHeap());
-            require("26.1.2".equals(compound(compound(level, "Data"), "Version").getString("Name").orElseThrow())
-                    && compound(level, "Data").getInt("DataVersion").orElseThrow() == 4790,
-                    "Recipe fixture is not a native 26.1.2 server export");
+            require("26.2".equals(compound(compound(level, "Data"), "Version").getString("Name").orElseThrow())
+                    && compound(level, "Data").getInt("DataVersion").orElseThrow() == 4903,
+                    "Recipe fixture is not a native 26.2 server export");
             boolean nativeForge = false;
             for (var entry : compound(level, "fml").getList("LoadingModList").orElseThrow()) {
                 require(entry instanceof CompoundTag, "Malformed native loading-mod entry");
                 CompoundTag mod = (CompoundTag) entry;
                 if ("forge".equals(mod.getString("ModId").orElseThrow()))
-                    nativeForge = "64.1.5".equals(mod.getString("ModVersion").orElseThrow());
+                    nativeForge = "65.1.0".equals(mod.getString("ModVersion").orElseThrow());
             }
-            require(nativeForge, "Recipe fixture was not saved by Forge 64.1.5");
+            require(nativeForge, "Recipe fixture was not saved by Forge 65.1.0");
             CompoundTag saved = compound(compound(level, "fml"), "Registries");
             for (String key : List.of(ForgeRegistries.ITEMS.getRegistryName().toString(),
                     ForgeRegistries.BLOCKS.getRegistryName().toString())) {

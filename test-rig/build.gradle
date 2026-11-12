@@ -5,7 +5,7 @@ plugins {
     id 'net.minecraftforge.gradle' version '7.0.34'
 }
 
-ext.forge64MavenizerDefault = '../../../../MinecraftMineralogy/OS2612/OreSpawn/ci-fixtures/tools/minecraft-mavenizer-0.5.21-orespawn-compat.jar'
+ext.forge64MavenizerDefault = '../../../../MinecraftMineralogy/OS262/OreSpawn/ci-fixtures/tools/minecraft-mavenizer-0.5.21-orespawn-compat.jar'
 apply from: '../gradle/forge64-mavenizer.gradle'
 
 // Saves, pinned inputs and evidence are siblings, never Gradle cleanup targets.
@@ -70,7 +70,7 @@ repositories {
 }
 
 def powerCompileJar = file(project.findProperty('powerAdvantageReleaseJar')
-        ?: '../build/libs/basePower-2.4.16.2601021.jar')
+        ?: '../build/libs/basePower-2.4.17.2602001.jar')
 def exploratoryPowerSha = providers.gradleProperty('worksExploratoryPowerSha256')
 def powerCompileSha = exploratoryPowerSha.orElse(providers.gradleProperty('works_power_sha256'))
 
@@ -97,6 +97,7 @@ def unitBootstrapJar = tasks.register('unitBootstrapJar', Jar) {
     manifest.attributes('Premain-Class': 'zone.moddev.mc.advantageworks.unit.ForgeCapabilityBootstrap')
 }
 tasks.withType(Test).configureEach {
+    maxHeapSize = '2G'
     dependsOn unitBootstrapJar
     doFirst { jvmArgs "-javaagent:${unitBootstrapJar.get().archiveFile.get().asFile}" }
 }
@@ -107,7 +108,7 @@ tasks.register('verifyWorksCompileInputPin') {
     inputs.file(powerCompileJar)
     inputs.property('powerSha256', powerCompileSha.orElse(''))
     doLast {
-        if (!powerCompileJar.isFile()) throw new GradleException("Missing 26.1.2 Power compile input: ${powerCompileJar}")
+        if (!powerCompileJar.isFile()) throw new GradleException("Missing 26.2 Power compile input: ${powerCompileJar}")
         if (!(powerCompileSha.getOrElse('') ==~ /[A-Fa-f0-9]{64}/)) {
             throw new GradleException('Missing or invalid Power SHA-256 pin')
         }
@@ -259,7 +260,7 @@ tasks.register('verifyWorksNative12111Inputs', JavaExec) {
 
 tasks.register('verifyWorksNative2612Inputs', JavaExec) {
     group = 'verification'
-    description = 'Checks actual 26.1.2 candidate/Java/seed identities without opening a world.'
+    description = 'Checks actual 26.2 candidate/Java/seed identities without opening a world.'
     dependsOn tasks.named('runnerClasses'), tasks.named('jar')
     classpath = sourceSets.runner.runtimeClasspath
     mainClass = 'zone.moddev.mc.advantageworks.runner.WorksRunner'
@@ -327,7 +328,22 @@ tasks.register('verifyNativeWolfPlatform', JavaExec) {
         def output = providers.gradleProperty('nativeControlOutput').orNull
         if (!output || file(output).exists()) throw new GradleException('Supply a new -PnativeControlOutput directory')
         args file(output).absolutePath
+        environment 'CLASSPATH', ''
         jvmArgs "-javaagent:${unitBootstrapJar.get().archiveFile.get().asFile}"
+    }
+}
+
+tasks.register('verifyNativeSystemReportPlatform', JavaExec) {
+    group = 'verification'
+    dependsOn compilePlatformControls
+    classpath = files(compilePlatformControls.flatMap { it.destinationDirectory }) + nativeControlClasspath
+    mainClass = 'NativeSystemReportPlatformControl'
+    javaLauncher = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(25) }
+    doFirst {
+        def output = providers.gradleProperty('nativeControlOutput').orNull
+        if (!output || file(output).exists()) throw new GradleException('Supply a new -PnativeControlOutput directory')
+        args file(output).absolutePath
+        environment 'CLASSPATH', ''
     }
 }
 

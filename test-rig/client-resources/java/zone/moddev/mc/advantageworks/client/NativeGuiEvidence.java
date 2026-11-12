@@ -56,12 +56,12 @@ final class NativeGuiEvidence {
         @Override public void addText(GuiTextRenderState text) {
             JsonObject row = new JsonObject();
             StringBuilder value = new StringBuilder();
-            text.text.accept((index, style, codepoint) -> { value.appendCodePoint(codepoint); return true; });
+            field(text, "text", net.minecraft.util.FormattedCharSequence.class).accept((index, style, codepoint) -> { value.appendCodePoint(codepoint); return true; });
             row.addProperty("text", value.toString());
-            row.addProperty("x", text.x);
-            row.addProperty("y", text.y);
-            row.addProperty("color", text.color);
-            row.addProperty("dropShadow", text.dropShadow);
+            row.addProperty("x", field(text, "x", Integer.class));
+            row.addProperty("y", field(text, "y", Integer.class));
+            row.addProperty("color", field(text, "color", Integer.class));
+            row.addProperty("dropShadow", field(text, "dropShadow", Boolean.class));
             row.add("pose", matrix(text.pose));
             texts.add(row);
             super.addText(text);
@@ -109,6 +109,16 @@ final class NativeGuiEvidence {
         }
     }
 
+    private static <T> T field(GuiTextRenderState state, String name, Class<T> type) {
+        try {
+            var field = GuiTextRenderState.class.getDeclaredField(name);
+            field.setAccessible(true);
+            return type.cast(field.get(state));
+        } catch (ReflectiveOperationException failure) {
+            throw new IllegalStateException("Cannot inspect native GUI text field " + name, failure);
+        }
+    }
+
     private static JsonArray matrix(org.joml.Matrix3x2fc pose) {
         JsonArray result = new JsonArray();
         result.add(pose.m00()); result.add(pose.m01()); result.add(pose.m10());
@@ -132,7 +142,7 @@ final class NativeGuiEvidence {
                     output.write(color & 255); output.write(color >>> 24 & 255);
                 }
             }
-            extraction.addProperty("protocol", "NATIVE64_GUI_FRAMEBUFFER_FENCED_V1");
+            extraction.addProperty("protocol", "NATIVE65_GUI_FRAMEBUFFER_FENCED_V1");
             extraction.addProperty("width", image.getWidth());
             extraction.addProperty("height", image.getHeight());
             Files.writeString(nativeState, extraction.toString(), StandardOpenOption.CREATE_NEW);

@@ -143,7 +143,7 @@ final class SteamOperationalActors {
                             shot.player.getInventory().setItem(1, new ItemStack(cartridge));
                         }
                         shot.expectedAmmo = mode.equals("infinity") ? 1 : 0;
-                        shot.target = EntityType.COW.create(c.world, net.minecraft.world.entity.EntitySpawnReason.COMMAND);
+                        shot.target = net.minecraft.world.entity.EntityTypes.COW.create(c.world, net.minecraft.world.entity.EntitySpawnReason.COMMAND);
                         c.require(shot.target != null, "Native living target created");
                         shot.target.getAttribute(Attributes.MAX_HEALTH).setBaseValue(1000);
                         shot.target.setHealth(1000);

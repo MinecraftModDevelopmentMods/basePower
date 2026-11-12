@@ -52,10 +52,10 @@ final class NativeWorldOilProbe {
             require(minecraft.getSingleplayerServer().getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT).toRealPath()
                     .equals(Path.of("saves/AdvantageClientResources").toRealPath()), "Oil scene cannot write outside the disposable copy");
             if (phase.equals("NEW")) {
-                report.addProperty("protocol", "NATIVE64_LEVEL_RENDERER_OIL_RELOAD_V1");
+                report.addProperty("protocol", "NATIVE65_LEVEL_RENDERER_OIL_RELOAD_V1");
                 report.addProperty("status", "RUNNING"); report.add("frames", frames);
                 report.addProperty("scope", "ACTUAL_LEVEL_RENDERER_NOT_GUI_OR_SYNTHETIC_WORLD");
-                originalHideGui = minecraft.options.hideGui; minecraft.options.hideGui = true;
+                originalHideGui = minecraft.gui.hud.isHidden(); setHudHidden(minecraft, true);
                 require(minecraft.options.mipmapLevels().get() == 4, "World oil proof requires default mipmap level4");
                 report.addProperty("mipmapLevel", 4);
                 serverWork = scene(minecraft, "oil", true);
@@ -85,7 +85,7 @@ final class NativeWorldOilProbe {
                     report.add("nativeGeometryAfterReload", geometry);
                     JsonArray controls = compareControls(); report.add("pixelControls", controls);
                     report.addProperty("status", "PASS"); phase = "DONE";
-                    minecraft.options.hideGui = originalHideGui;
+                    setHudHidden(minecraft, originalHideGui);
                     Files.writeString(Path.of("world-oil-evidence/result.json"), report.toString(), StandardOpenOption.CREATE_NEW);
                     return report();
                 }
@@ -93,7 +93,7 @@ final class NativeWorldOilProbe {
             }
             return null;
         } catch (IOException | RuntimeException | LinkageError | AssertionError failure) {
-            minecraft.options.hideGui = originalHideGui;
+            setHudHidden(minecraft, originalHideGui);
             report.addProperty("status", "FAIL"); report.addProperty("phase", phase); report.addProperty("error", failure.toString());
             throw new IllegalStateException("Native world oil proof failed in " + phase, failure);
         }
@@ -108,8 +108,8 @@ final class NativeWorldOilProbe {
                 require(level != null, "Missing actual Overworld");
                 if (initialize) {
                     for (int x = 502; x <= 521; x++) for (int z = 508; z <= 515; z++) {
-                        level.setBlock(new BlockPos(x, Y - 1, z), Blocks.WHITE_CONCRETE.defaultBlockState(), 3);
-                        level.setBlock(new BlockPos(x, Y, z), Blocks.WHITE_CONCRETE.defaultBlockState(), 3);
+                        level.setBlock(new BlockPos(x, Y - 1, z), Blocks.CONCRETE.white().defaultBlockState(), 3);
+                        level.setBlock(new BlockPos(x, Y, z), Blocks.CONCRETE.white().defaultBlockState(), 3);
                     }
                     server.getCommands().performPrefixedCommand(server.createCommandSourceStack(), "time set noon");
                     server.getCommands().performPrefixedCommand(server.createCommandSourceStack(), "weather clear");
@@ -130,14 +130,14 @@ final class NativeWorldOilProbe {
     }
 
     private boolean ready(Minecraft minecraft, String mode) {
-        if (minecraft.getOverlay() != null || minecraft.screen != null || !minecraft.level.dimension().equals(Level.OVERWORLD)) return false;
+        if (minecraft.gui.overlay() != null || minecraft.gui.screen() != null || !minecraft.level.dimension().equals(Level.OVERWORLD)) return false;
         if (minecraft.player.position().distanceToSqr(512.5, 14, 527) > 0.0001) return false;
         for (int pool = 0; pool < 3; pool++) for (int x = 0; x < 4; x++) for (int z = 0; z < 4; z++) {
             BlockPos pos = new BlockPos(X[pool] + x, Y, Z + z);
             Fluid expected = pool == 2 || mode.equals("water") ? Fluids.WATER : mode.equals("empty") ? Fluids.EMPTY : OILS[pool];
             if (minecraft.level.getFluidState(pos).getType() != expected || !minecraft.levelRenderer.isSectionCompiledAndVisible(pos)) return false;
         }
-        return minecraft.levelRenderer.countRenderedSections() > 0;
+        return !minecraft.levelRenderer.visibleSections().isEmpty();
     }
 
     private JsonArray models(Minecraft minecraft, boolean before) {
@@ -168,7 +168,7 @@ final class NativeWorldOilProbe {
     }
 
     private void capture(Minecraft minecraft, String name) throws IOException {
-        BufferedImage image = NativeGuiProjection.read(minecraft.getMainRenderTarget());
+        BufferedImage image = NativeGuiProjection.read(minecraft.gameRenderer.mainRenderTarget());
         Path folder = Path.of("world-oil-evidence"); Files.createDirectories(folder);
         Path png = folder.resolve(name + ".png"), raw = folder.resolve(name + ".rgba");
         try (var output = Files.newOutputStream(png, StandardOpenOption.CREATE_NEW)) { require(ImageIO.write(image, "png", output), "No world PNG encoder"); }
@@ -182,12 +182,12 @@ final class NativeWorldOilProbe {
         frame.add("png", artifact(png)); frame.add("rgba", artifact(raw)); frame.addProperty("fenceCompleted", true);
         frame.addProperty("renderer", minecraft.levelRenderer.getClass().getName());
         frame.addProperty("dimension", minecraft.level.dimension().identifier().toString());
-        frame.addProperty("hudHidden", minecraft.options.hideGui);
-        frame.addProperty("renderedSections", minecraft.levelRenderer.countRenderedSections());
-        JsonArray camera = new JsonArray(); Vec3 position = minecraft.gameRenderer.getMainCamera().position();
+        frame.addProperty("hudHidden", minecraft.gui.hud.isHidden());
+        frame.addProperty("renderedSections", minecraft.levelRenderer.visibleSections().size());
+        JsonArray camera = new JsonArray(); Vec3 position = minecraft.gameRenderer.mainCamera().position();
         camera.add(position.x); camera.add(position.y); camera.add(position.z); frame.add("camera", camera);
         JsonArray matrix = new JsonArray(); float[] values = new float[16];
-        minecraft.gameRenderer.getMainCamera().getViewRotationProjectionMatrix(new org.joml.Matrix4f()).get(values);
+        minecraft.gameRenderer.mainCamera().getViewRotationProjectionMatrix(new org.joml.Matrix4f()).get(values);
         for (float value : values) matrix.add(value); frame.add("viewRotationProjection", matrix);
         JsonArray pools = new JsonArray();
         for (int pool = 0; pool < 3; pool++) {
@@ -236,5 +236,10 @@ final class NativeWorldOilProbe {
         catch (NoSuchAlgorithmException failure) { throw new IllegalStateException(failure); }
         return row;
     }
+    private static void setHudHidden(Minecraft minecraft, boolean hidden) {
+        if (minecraft.gui.hud.isHidden() != hidden) minecraft.gui.hud.toggle();
+        require(minecraft.gui.hud.isHidden() == hidden, "Native HUD did not change visibility");
+    }
+
     private static void require(boolean value, String message) { if (!value) throw new IllegalStateException(message); }
 }

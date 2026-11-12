@@ -23,13 +23,13 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 /** Native resource/field codecs only. Full Power-item trade decoding and offers need the packaged server. */
-public class Native2612VillagerTradeResourceTest {
+public class Native262VillagerTradeResourceTest {
     private static final Path DATA = Path.of("src/main/resources/data");
 
     @BeforeClass public static void bootstrap() {
         SharedConstants.tryDetectVersion();
         Bootstrap.bootStrap();
-        assertEquals("26.1.2", SharedConstants.getCurrentVersion().name());
+        assertEquals("26.2", SharedConstants.getCurrentVersion().name());
     }
 
     @Test public void nativeTradeFieldsRetainBothHistoricalExchangeRates() throws Exception {
@@ -108,7 +108,7 @@ public class Native2612VillagerTradeResourceTest {
         var function = LootItemFunctions.ROOT_CODEC.parse(ops, modifier).getOrThrow();
         assertTrue(function instanceof SetItemCountFunction);
         var encoded = LootItemFunctions.ROOT_CODEC.encodeStart(ops, function).getOrThrow().getAsJsonObject();
-        assertFalse(encoded.get("add").getAsBoolean());
+        assertFalse(encoded.has("add") && encoded.get("add").getAsBoolean());
         var count = NumberProviders.CODEC.parse(ops, encoded.get("count")).getOrThrow();
         assertTrue(count instanceof UniformGenerator);
         var uniform = (UniformGenerator) count;

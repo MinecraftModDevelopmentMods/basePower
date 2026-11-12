@@ -29,8 +29,8 @@ import net.minecraft.nbt.NbtIo;
 
 /** One approved native warning action for an authenticated, completed native broad fixture copy. */
 final class NativeExperimentalFixtureGate {
-    static final String PROTOCOL = "NATIVE64_SEALED_EXPERIMENTAL_FIXTURE_SKIP_V2";
-    static final String SCOPE = "COMPLETED_NATIVE64_BROAD_PACKAGED_CURRENT_COPY";
+    static final String PROTOCOL = "NATIVE65_SEALED_EXPERIMENTAL_FIXTURE_SKIP_V2";
+    static final String SCOPE = "COMPLETED_NATIVE65_BROAD_PACKAGED_CURRENT_COPY";
     static final String TITLE = "selectWorld.backupQuestion.experimental";
     static final String SKIP = "selectWorld.backupJoinSkipButton";
     private Screen observed;
@@ -52,20 +52,20 @@ final class NativeExperimentalFixtureGate {
     }
 
     void tick(Minecraft minecraft, int tick, JsonObject readiness) {
-        Screen screen = minecraft.screen;
+        Screen screen = minecraft.gui.screen();
         if (screen == null || screen.getClass() != BackupConfirmScreen.class || !exactTranslation(screen.getTitle(), TITLE)) return;
         if (used) {
             require(screen == observed, "Repeated experimental warning after the once-only fixture action");
             return;
         }
-        if (minecraft.getOverlay() != null) { observed = screen; firstTick = tick; return; }
+        if (minecraft.gui.overlay() != null) { observed = screen; firstTick = tick; return; }
         if (screen != observed) { observed = screen; firstTick = tick; return; }
         if (tick - firstTick < 20) return;
         try {
             Path folder = Path.of("login-readiness");
             Files.createDirectories(folder);
             Path screenshot = folder.resolve("experimental-before-action.png");
-            var image = NativeGuiProjection.read(minecraft.getMainRenderTarget());
+            var image = NativeGuiProjection.read(minecraft.gameRenderer.mainRenderTarget());
             try (var output = Files.newOutputStream(screenshot, StandardOpenOption.CREATE_NEW)) {
                 require(ImageIO.write(image, "png", output), "Missing native warning PNG writer");
             }
@@ -86,7 +86,7 @@ final class NativeExperimentalFixtureGate {
             Files.writeString(folder.resolve("experimental-screen.json"), action.toString(), StandardOpenOption.CREATE_NEW);
             Button skip = select(screen.getClass(), screen.getTitle(), screen.children());
             require(minecraft.level == null && minecraft.player == null && minecraft.getConnection() == null
-                    && minecraft.getSingleplayerServer() == null && !minecraft.hasSingleplayerServer() && minecraft.getOverlay() == null,
+                    && minecraft.getSingleplayerServer() == null && !minecraft.hasSingleplayerServer() && minecraft.gui.overlay() == null,
                     "Experimental fixture action is only allowed before native server/login");
             JsonObject policy = verifyPolicy(Path.of(""));
             action.addProperty("status", "RECORDED_BEFORE_NATIVE_ACTION");
@@ -131,9 +131,9 @@ final class NativeExperimentalFixtureGate {
         Path sourceReceipt = Path.of(input.get("sourceWorldReceipt").getAsString());
         require(sha(sourceReceipt).equals(policy.get("sourceReceiptSha256").getAsString()), "Unapproved source receipt");
         JsonObject receipt = read(sourceReceipt), profileData = read(profile);
-        require("26.1.2".equals(profileData.get("minecraftVersion").getAsString())
-                && "26.1.2-64.1.5".equals(profileData.getAsJsonObject("forge").get("version").getAsString())
-                && "26.1.2".equals(receipt.get("minecraft").getAsString()) && "64.1.5".equals(receipt.get("forge").getAsString())
+        require("26.2".equals(profileData.get("minecraftVersion").getAsString())
+                && "26.2-65.1.0".equals(profileData.getAsJsonObject("forge").get("version").getAsString())
+                && "26.2".equals(receipt.get("minecraft").getAsString()) && "65.1.0".equals(receipt.get("forge").getAsString())
                 && "PASS".equals(receipt.get("status").getAsString()) && receipt.get("inputsUnchanged").getAsBoolean()
                 && receipt.get("seedUnchanged").getAsBoolean() && profileSha.equals(receipt.get("profileSha256").getAsString())
                 && "PACKAGED_WALKABLE_WORKS_AND_TWELVE_DRILL_WITNESSES".equals(receipt.get("scope").getAsString()), "Source receipt is not an eligible completed native broad run");
@@ -151,8 +151,8 @@ final class NativeExperimentalFixtureGate {
         require(levelSha.matches("[0-9A-F]{64}") && levelSha.equals(sha(source.resolve("level.dat"))), "Unapproved source/copied level bytes");
         // Pinned BM6786 removes only this empty obsolete Forge index during getUnfixedDataTag.
         CompoundTag sourceLevel = NbtIo.readCompressed(source.resolve("level.dat"), NbtAccounter.unlimitedHeap());
-        require(sourceLevel.getCompound("Data").orElseThrow().getInt("DataVersion").orElseThrow() == 4790
-                && "26.1.2".equals(sourceLevel.getCompound("Data").orElseThrow().getCompound("Version").orElseThrow().getString("Name").orElseThrow()), "Not a stopped native world");
+        require(sourceLevel.getCompound("Data").orElseThrow().getInt("DataVersion").orElseThrow() == 4903
+                && "26.2".equals(sourceLevel.getCompound("Data").orElseThrow().getCompound("Version").orElseThrow().getString("Name").orElseThrow()), "Not a stopped native world");
         String copyTransform = verifyCopiedLevel(sourceLevel,
                 NbtIo.readCompressed(copy.resolve("level.dat"), NbtAccounter.unlimitedHeap()));
         JsonObject copyCustody = new JsonObject();

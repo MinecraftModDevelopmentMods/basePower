@@ -1,0 +1,53 @@
+{
+  "purpose": "EXACT_SOURCE_AND_BINARY_BOUND_NATIVE_NETTY_CAPABILITY_FALLBACK",
+  "source": "NettyJava25PlatformControl independently ran direct allocation/cleaning against Netty 4.2.15.Final on Java25, without Minecraft or mods",
+  "blocks": [
+    {
+      "thread": "Server thread",
+      "level": "DEBUG",
+      "logger": "io.netty.util.internal.CleanerJava9/",
+      "message": "java.nio.ByteBuffer.cleaner(): unavailable",
+      "body": [
+        "java.lang.UnsupportedOperationException: sun.misc.Unsafe unavailable",
+        "\tat SECURE-BOOTSTRAP/io.netty.common@4.2.15.Final/io.netty.util.internal.CleanerJava9.<clinit>(CleanerJava9.java:70)",
+        "\tat SECURE-BOOTSTRAP/io.netty.common@4.2.15.Final/io.netty.util.internal.PlatformDependent.<clinit>(PlatformDependent.java:209)",
+        "\tat SECURE-BOOTSTRAP/io.netty.common@4.2.15.Final/io.netty.util.internal.ClassInitializerUtil.tryLoadClasses(ClassInitializerUtil.java:32)",
+        "\tat SECURE-BOOTSTRAP/io.netty.transport.classes.kqueue@4.2.15.Final/io.netty.channel.kqueue.Native.<clinit>(Native.java:65)",
+        "\tat SECURE-BOOTSTRAP/io.netty.transport.classes.kqueue@4.2.15.Final/io.netty.channel.kqueue.KQueue.<clinit>(KQueue.java:38)",
+        "\tat TRANSFORMER/minecraft@26.2/net.minecraft.server.network.EventLoopGroupHolder.remote(EventLoopGroupHolder.java:59)",
+        "\tat TRANSFORMER/minecraft@26.2/net.minecraft.server.network.ServerConnectionListener.startTcpServerListener(ServerConnectionListener.java:60)",
+        "\tat TRANSFORMER/minecraft@26.2/net.minecraft.server.dedicated.DedicatedServer.initServer(DedicatedServer.java:217)",
+        "\tat TRANSFORMER/minecraft@26.2/net.minecraft.server.MinecraftServer.runServer(MinecraftServer.java:728)",
+        "\tat TRANSFORMER/minecraft@26.2/net.minecraft.server.MinecraftServer.lambda$spin$0(MinecraftServer.java:299)",
+        "\tat java.base/java.lang.Thread.run(Thread.java:1474)"
+      ]
+    },
+    {
+      "thread": "Server thread",
+      "level": "DEBUG",
+      "logger": "io.netty.util.internal.CleanerJava24Linker/",
+      "message": "java.nio.ByteBuffer.cleaner(): unavailable",
+      "body": [
+        "java.lang.UnsupportedOperationException: Native access (restricted methods) is not enabled for the io.netty.common module.",
+        "\tat SECURE-BOOTSTRAP/io.netty.common@4.2.15.Final/io.netty.util.internal.CleanerJava24Linker.<clinit>(CleanerJava24Linker.java:78)",
+        "\tat SECURE-BOOTSTRAP/io.netty.common@4.2.15.Final/io.netty.util.internal.PlatformDependent.<clinit>(PlatformDependent.java:211)",
+        "\tat SECURE-BOOTSTRAP/io.netty.common@4.2.15.Final/io.netty.util.internal.ClassInitializerUtil.tryLoadClasses(ClassInitializerUtil.java:32)",
+        "\tat SECURE-BOOTSTRAP/io.netty.transport.classes.kqueue@4.2.15.Final/io.netty.channel.kqueue.Native.<clinit>(Native.java:65)",
+        "\tat SECURE-BOOTSTRAP/io.netty.transport.classes.kqueue@4.2.15.Final/io.netty.channel.kqueue.KQueue.<clinit>(KQueue.java:38)",
+        "\tat TRANSFORMER/minecraft@26.2/net.minecraft.server.network.EventLoopGroupHolder.remote(EventLoopGroupHolder.java:59)",
+        "\tat TRANSFORMER/minecraft@26.2/net.minecraft.server.network.ServerConnectionListener.startTcpServerListener(ServerConnectionListener.java:60)",
+        "\tat TRANSFORMER/minecraft@26.2/net.minecraft.server.dedicated.DedicatedServer.initServer(DedicatedServer.java:217)",
+        "\tat TRANSFORMER/minecraft@26.2/net.minecraft.server.MinecraftServer.runServer(MinecraftServer.java:728)",
+        "\tat TRANSFORMER/minecraft@26.2/net.minecraft.server.MinecraftServer.lambda$spin$0(MinecraftServer.java:299)",
+        "\tat java.base/java.lang.Thread.run(Thread.java:1474)"
+      ]
+    },
+    {
+      "thread": "Server thread",
+      "level": "DEBUG",
+      "logger": "io.netty.util.internal.CleanerJava25/",
+      "message": "java.nio.ByteBuffer.cleaner(): available",
+      "body": []
+    }
+  ]
+}
