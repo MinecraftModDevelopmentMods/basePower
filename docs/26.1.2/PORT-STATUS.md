@@ -12,7 +12,7 @@ This is a local work in progress, not a qualified release. Nothing from the
 
 ## Checks So Far
 The full build and release audits pass with the new Forge API and the exact
-local dependency pins. All 304 unit tests pass under both Gradle and Eclipse's
+local dependency pins. All 309 unit tests pass under both Gradle and Eclipse's
 compiler. The Eclipse check also rejects an incomplete test inventory: a
 filtered run cannot count as the full suite. Another 37 focused resource,
 trade and GUI extraction checks pass. Earlier failed runs are retained.
@@ -22,6 +22,12 @@ container-lock handling. The fix uses the native lock API for single chests
 and checks both halves of double chests. Six new regression tests include
 locked, unlocked, wrapped and nested inventories; five failed before the fix.
 The rebuilt jar still needs the live machine and restart checks below.
+
+A fuel-helper regression also showed that consuming the last lava bucket
+lost its empty bucket. The helper now captures the native remainder before
+emptying the stack. Ordinary fuels, larger stacks, empty and legacy null
+inputs, and explicit post-burn rules keep their existing behaviour. The
+failing bucket test and its passing rerun are retained separately.
 
 These are not rendered-client or gameplay results. Packaged machine operation,
 full world migration, endurance and manual testing remain open. An early

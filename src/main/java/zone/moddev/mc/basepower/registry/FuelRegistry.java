@@ -161,9 +161,9 @@ public class FuelRegistry {
 		if(fuelItem == null) return null;
 		List<Function<ItemStack, ItemStack>> list = FuelRegistry.getInstance().getPostBurnAlgorithmsForItem(fuelItem.getItem());
 		if(list.isEmpty()){
+			var remainder = fuelItem.getCount() == 1 ? fuelItem.getCraftingRemainder() : null;
 			fuelItem.shrink(1);
 			if(fuelItem.isEmpty()){
-				var remainder = fuelItem.getCraftingRemainder();
 				fuelItem = remainder == null ? ItemStack.EMPTY : remainder.create();
 			}
 		} else {
