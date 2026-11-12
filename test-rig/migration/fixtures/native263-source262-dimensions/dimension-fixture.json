@@ -1,0 +1,41 @@
+{
+  "dimension": -1,
+  "entities": [
+    {
+      "uuid": "382ee065-9b64-3e5d-ba95-28d25fe76f39",
+      "witness": "boat"
+    },
+    {
+      "uuid": "8fcfc8b9-ad2c-3649-8bbc-9985c0044121",
+      "witness": "horse"
+    },
+    {
+      "uuid": "56a3698a-8a5b-3f03-9088-7283f466f0e2",
+      "witness": "hydroturbine"
+    },
+    {
+      "uuid": "5e0e0ed0-34bb-3d03-8b5a-b262336b07e4",
+      "witness": "leash-knot"
+    },
+    {
+      "uuid": "b1a56f21-95c0-3e04-a77d-b160826c9c7f",
+      "witness": "passenger-wolf"
+    }
+  ],
+  "generator": {
+    "name": "electricadvantage:hydroelectric_generator",
+    "x": 176,
+    "y": 101,
+    "z": 8
+  },
+  "geometry": {
+    "maxX": 176,
+    "minX": 144,
+    "y": 100,
+    "z": 8
+  },
+  "nativeOnLoad": true,
+  "playerName": "AdvWorksDimensionPlayer",
+  "playerUuid": "e036830e-303d-3ac3-bd23-062b72eed895",
+  "universalBucket": false
+}

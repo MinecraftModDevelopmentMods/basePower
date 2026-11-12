@@ -12,6 +12,7 @@ import traceback
 import uuid
 import json
 import sys
+import tempfile
 from types import SimpleNamespace
 
 import nbtlib
@@ -101,6 +102,11 @@ def exact_items(expected, observed, path=""):
 
 
 def source_components(state, version):
+    if type(version) is not int:
+        raise ValueError("Source data version must be an exact integer")
+    if version == 4903:
+        from native263_source262 import components
+        return components(state)
     if version in (3839, 3955):
         from native12111_upgrade import expected_components as modern_components
         return modern_components(state, source_version={3839: "1.20.6", 3955: "1.21.1"}[version])
@@ -110,6 +116,9 @@ def source_components(state, version):
 
 
 def baseline(source, kind):
+    level = nbtlib.load(source / WORLD / "level.dat")["Data"]
+    if type(level.get("DataVersion")) is nbtlib.Int and int(level["DataVersion"]) == 4903:
+        return baseline262(source, kind)
     source_baseline = bind(historical.baseline,
                            capture_dimensions=bind(capture_dimensions, semantic=player_semantic))
     state, label = source_baseline(source, kind)
@@ -130,6 +139,36 @@ def baseline(source, kind):
     else:
         result["hostAuthority"] = None
     return result, label
+
+
+def baseline262(source, kind):
+    from native263_source262 import components, player, source_layout, source_protocol
+    source_protocol(source)
+    if kind not in ("actors", "dimensions"):
+        raise ValueError("Unknown native26.2 fixture kind")
+    prefix = "dimension-semantic-" if kind == "dimensions" else "semantic-"
+    label = next((key for key in ("runtime-restart", "restarted", "source")
+                  if (source / (prefix + key + ".json")).is_file()), None)
+    if label is None:
+        raise AssertionError("26.2 source lacks its retained native serializer checkpoint")
+    definition = native.read_json(source / ("dimension-fixture.json" if kind == "dimensions" else "actor-fixture.json"))
+    world = source / WORLD
+    player(world, definition["playerUuid"])
+    capture = (bind(capture_dimensions, semantic=player_semantic, entity_state=dimension_entity_state,
+                    parse_nbt=native_dimension_nbt) if kind == "dimensions"
+               else bind(capture_actors, semantic=player_semantic))
+    # The retained oracles accept an evidence player.dat; never move or rewrite the source save.
+    with tempfile.TemporaryDirectory(prefix="native263-source262-") as temporary:
+        evidence = Path(temporary)
+        shutil.copyfile(source_layout.player_file(world, definition["playerUuid"]), evidence / "player.dat")
+        state = components(capture(source, label, evidence))
+    if "embedded" in state:
+        raise AssertionError("26.2 serializer reports historical embedded host data")
+    authority = source_layout.singleplayer_uuid(world)
+    if authority is not None and str(authority) != definition["playerUuid"]:
+        raise AssertionError("26.2 host authority differs from its native player")
+    state["hostAuthority"] = str(authority) if authority else None
+    return (historical.native_dimension_state(state) if kind == "dimensions" else state), label
 
 
 def expected_player_equipment(player):

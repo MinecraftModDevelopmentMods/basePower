@@ -206,6 +206,8 @@ class Native263UpgradeTest(unittest.TestCase):
             status="PASS", snapshotSha256=digest(source / "migration-restarted.json"), serialized=dict(nativeDataVersion=data_version))})
         path = source / "receipt.json"
         write_json(path, receipt)
+        if version == "26.2":
+            self.save(source / WORLD / "level.dat", n.Compound(Data=n.Compound(DataVersion=n.Int(4903))))
         return SimpleNamespace(source=source, legacy_reference=None, source_receipt_name=path.name,
                                receipt_sha256=digest(path), source_route=route or version), receipt
 

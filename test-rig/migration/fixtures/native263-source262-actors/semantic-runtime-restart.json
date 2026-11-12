@@ -1,0 +1,1109 @@
+{
+  "adapter": {
+    "Dimension": 0,
+    "EnderItems": [
+      {
+        "Slot": 0,
+        "components": {
+          "minecraft:custom_data": {
+            "MigrationWitness": "steamadvantage:musket",
+            "Nested": {
+              "OwnerNote": "keep-this-verbatim"
+            }
+          },
+          "minecraft:damage": 5,
+          "minecraft:enchantments": {
+            "basesteam:high_explosive": 1,
+            "basesteam:powderless": 1,
+            "basesteam:rapid_reload": 1,
+            "basesteam:recoil": 1
+          }
+        },
+        "count": 1,
+        "id": "basesteam:musket"
+      },
+      {
+        "Slot": 1,
+        "components": {
+          "minecraft:custom_data": {
+            "MigrationWitness": "electricadvantage:lithium_battery",
+            "Nested": {
+              "OwnerNote": "keep-this-verbatim"
+            },
+            "energy": 123.0
+          }
+        },
+        "count": 1,
+        "id": "baseelectric:lithium_battery"
+      },
+      {
+        "Slot": 2,
+        "components": {
+          "minecraft:custom_data": {
+            "MigrationWitness": "electricadvantage:lead_acid_battery",
+            "Nested": {
+              "OwnerNote": "keep-this-verbatim"
+            },
+            "energy": 123.0
+          }
+        },
+        "count": 1,
+        "id": "baseelectric:lead_acid_battery"
+      },
+      {
+        "Slot": 3,
+        "components": {
+          "minecraft:custom_data": {
+            "MigrationWitness": "electricadvantage:alkaline_battery",
+            "Nested": {
+              "OwnerNote": "keep-this-verbatim"
+            },
+            "energy": 123.0
+          }
+        },
+        "count": 1,
+        "id": "baseelectric:alkaline_battery"
+      },
+      {
+        "Slot": 4,
+        "components": {
+          "minecraft:custom_data": {
+            "MigrationWitness": "electricadvantage:nickel_hydride_battery",
+            "Nested": {
+              "OwnerNote": "keep-this-verbatim"
+            },
+            "energy": 123.0
+          }
+        },
+        "count": 1,
+        "id": "baseelectric:nickel_hydride_battery"
+      },
+      {
+        "Slot": 5,
+        "components": {
+          "minecraft:custom_data": {
+            "MigrationWitness": "poweradvantage:sprocket",
+            "Nested": {
+              "OwnerNote": "keep-this-verbatim"
+            }
+          }
+        },
+        "count": 3,
+        "id": "basepower:sprocket"
+      },
+      {
+        "Slot": 6,
+        "components": {
+          "minecraft:custom_data": {
+            "MigrationWitness": "minecraft:dirt",
+            "Nested": {
+              "OwnerNote": "keep-this-verbatim"
+            }
+          }
+        },
+        "count": 3,
+        "id": "minecraft:dirt"
+      },
+      {
+        "Slot": 7,
+        "components": {
+          "minecraft:custom_data": {
+            "MigrationWitness": "minecraft:apple",
+            "Nested": {
+              "OwnerNote": "keep-this-verbatim"
+            }
+          }
+        },
+        "count": 3,
+        "id": "minecraft:apple"
+      },
+      {
+        "Slot": 8,
+        "components": {
+          "minecraft:custom_data": {
+            "MigrationWitness": "poweradvantage:crude_oil",
+            "Nested": {
+              "OwnerNote": "keep-this-verbatim"
+            }
+          }
+        },
+        "count": 1,
+        "id": "basepower:crude_oil"
+      },
+      {
+        "Slot": 9,
+        "components": {
+          "minecraft:custom_data": {
+            "MigrationWitness": "electricadvantage:lithium_battery",
+            "Nested": {
+              "OwnerNote": "keep-this-verbatim"
+            },
+            "energy": 123.0
+          }
+        },
+        "count": 1,
+        "id": "baseelectric:lithium_battery"
+      },
+      {
+        "Slot": 10,
+        "components": {
+          "minecraft:custom_data": {
+            "MigrationWitness": "electricadvantage:lithium_battery",
+            "Nested": {
+              "OwnerNote": "keep-this-verbatim"
+            },
+            "energy": 123.0
+          }
+        },
+        "count": 1,
+        "id": "baseelectric:lithium_battery"
+      },
+      {
+        "Slot": 11,
+        "components": {
+          "minecraft:custom_data": {
+            "MigrationWitness": "electricadvantage:lead_acid_battery",
+            "Nested": {
+              "OwnerNote": "keep-this-verbatim"
+            },
+            "energy": 123.0
+          }
+        },
+        "count": 1,
+        "id": "baseelectric:lead_acid_battery"
+      },
+      {
+        "Slot": 12,
+        "components": {
+          "minecraft:custom_data": {
+            "MigrationWitness": "electricadvantage:lead_acid_battery",
+            "Nested": {
+              "OwnerNote": "keep-this-verbatim"
+            },
+            "energy": 123.0
+          }
+        },
+        "count": 1,
+        "id": "baseelectric:lead_acid_battery"
+      },
+      {
+        "Slot": 13,
+        "components": {
+          "minecraft:custom_data": {
+            "MigrationWitness": "electricadvantage:alkaline_battery",
+            "Nested": {
+              "OwnerNote": "keep-this-verbatim"
+            },
+            "energy": 123.0
+          }
+        },
+        "count": 1,
+        "id": "baseelectric:alkaline_battery"
+      },
+      {
+        "Slot": 14,
+        "components": {
+          "minecraft:custom_data": {
+            "MigrationWitness": "electricadvantage:alkaline_battery",
+            "Nested": {
+              "OwnerNote": "keep-this-verbatim"
+            },
+            "energy": 123.0
+          }
+        },
+        "count": 1,
+        "id": "baseelectric:alkaline_battery"
+      },
+      {
+        "Slot": 15,
+        "components": {
+          "minecraft:custom_data": {
+            "MigrationWitness": "electricadvantage:nickel_hydride_battery",
+            "Nested": {
+              "OwnerNote": "keep-this-verbatim"
+            },
+            "energy": 123.0
+          }
+        },
+        "count": 1,
+        "id": "baseelectric:nickel_hydride_battery"
+      },
+      {
+        "Slot": 16,
+        "components": {
+          "minecraft:custom_data": {
+            "MigrationWitness": "electricadvantage:nickel_hydride_battery",
+            "Nested": {
+              "OwnerNote": "keep-this-verbatim"
+            },
+            "energy": 123.0
+          }
+        },
+        "count": 1,
+        "id": "baseelectric:nickel_hydride_battery"
+      }
+    ],
+    "Health": 17.0,
+    "Inventory": [
+      {
+        "Slot": 0,
+        "components": {
+          "minecraft:custom_data": {
+            "MigrationWitness": "steamadvantage:musket",
+            "Nested": {
+              "OwnerNote": "keep-this-verbatim"
+            }
+          },
+          "minecraft:damage": 5,
+          "minecraft:enchantments": {
+            "basesteam:high_explosive": 1,
+            "basesteam:powderless": 1,
+            "basesteam:rapid_reload": 1,
+            "basesteam:recoil": 1
+          }
+        },
+        "count": 1,
+        "id": "basesteam:musket"
+      },
+      {
+        "Slot": 1,
+        "components": {
+          "minecraft:custom_data": {
+            "MigrationWitness": "electricadvantage:lithium_battery",
+            "Nested": {
+              "OwnerNote": "keep-this-verbatim"
+            },
+            "energy": 123.0
+          }
+        },
+        "count": 3,
+        "id": "baseelectric:lithium_battery"
+      },
+      {
+        "Slot": 2,
+        "components": {
+          "minecraft:custom_data": {
+            "MigrationWitness": "electricadvantage:lead_acid_battery",
+            "Nested": {
+              "OwnerNote": "keep-this-verbatim"
+            },
+            "energy": 123.0
+          }
+        },
+        "count": 3,
+        "id": "baseelectric:lead_acid_battery"
+      },
+      {
+        "Slot": 3,
+        "components": {
+          "minecraft:custom_data": {
+            "MigrationWitness": "electricadvantage:alkaline_battery",
+            "Nested": {
+              "OwnerNote": "keep-this-verbatim"
+            },
+            "energy": 123.0
+          }
+        },
+        "count": 3,
+        "id": "baseelectric:alkaline_battery"
+      },
+      {
+        "Slot": 4,
+        "components": {
+          "minecraft:custom_data": {
+            "MigrationWitness": "electricadvantage:nickel_hydride_battery",
+            "Nested": {
+              "OwnerNote": "keep-this-verbatim"
+            },
+            "energy": 123.0
+          }
+        },
+        "count": 3,
+        "id": "baseelectric:nickel_hydride_battery"
+      },
+      {
+        "Slot": 5,
+        "components": {
+          "minecraft:custom_data": {
+            "MigrationWitness": "poweradvantage:sprocket",
+            "Nested": {
+              "OwnerNote": "keep-this-verbatim"
+            }
+          }
+        },
+        "count": 3,
+        "id": "basepower:sprocket"
+      },
+      {
+        "Slot": 6,
+        "components": {
+          "minecraft:custom_data": {
+            "MigrationWitness": "minecraft:dirt",
+            "Nested": {
+              "OwnerNote": "keep-this-verbatim"
+            }
+          }
+        },
+        "count": 3,
+        "id": "minecraft:dirt"
+      },
+      {
+        "Slot": 7,
+        "components": {
+          "minecraft:custom_data": {
+            "MigrationWitness": "minecraft:apple",
+            "Nested": {
+              "OwnerNote": "keep-this-verbatim"
+            }
+          }
+        },
+        "count": 3,
+        "id": "minecraft:apple"
+      },
+      {
+        "Slot": 8,
+        "components": {
+          "minecraft:custom_data": {
+            "MigrationWitness": "poweradvantage:crude_oil",
+            "Nested": {
+              "OwnerNote": "keep-this-verbatim"
+            }
+          }
+        },
+        "count": 1,
+        "id": "basepower:crude_oil"
+      }
+    ],
+    "Pos": [
+      144.5,
+      80.0,
+      8.5
+    ],
+    "Rotation": [
+      37.0,
+      -12.0
+    ],
+    "SelectedItemSlot": 7,
+    "UUIDLeast": -7883695286662949297,
+    "UUIDMost": -6479300696596270141,
+    "XpLevel": 23,
+    "XpP": 0.375,
+    "XpTotal": 751,
+    "equipment": {
+      "chest": {
+        "components": {
+          "minecraft:custom_data": {
+            "MigrationWitness": "minecraft:iron_chestplate",
+            "Nested": {
+              "OwnerNote": "keep-this-verbatim"
+            }
+          },
+          "minecraft:damage": 11
+        },
+        "count": 1,
+        "id": "minecraft:iron_chestplate"
+      },
+      "feet": {
+        "components": {
+          "minecraft:custom_data": {
+            "MigrationWitness": "minecraft:iron_boots",
+            "Nested": {
+              "OwnerNote": "keep-this-verbatim"
+            }
+          },
+          "minecraft:damage": 9
+        },
+        "count": 1,
+        "id": "minecraft:iron_boots"
+      },
+      "head": {
+        "components": {
+          "minecraft:custom_data": {
+            "MigrationWitness": "minecraft:iron_helmet",
+            "Nested": {
+              "OwnerNote": "keep-this-verbatim"
+            }
+          },
+          "minecraft:damage": 12
+        },
+        "count": 1,
+        "id": "minecraft:iron_helmet"
+      },
+      "legs": {
+        "components": {
+          "minecraft:custom_data": {
+            "MigrationWitness": "minecraft:iron_leggings",
+            "Nested": {
+              "OwnerNote": "keep-this-verbatim"
+            }
+          },
+          "minecraft:damage": 10
+        },
+        "count": 1,
+        "id": "minecraft:iron_leggings"
+      },
+      "offhand": {
+        "components": {
+          "minecraft:custom_data": {
+            "MigrationWitness": "minecraft:shield",
+            "Nested": {
+              "OwnerNote": "keep-this-verbatim"
+            }
+          },
+          "minecraft:damage": 5
+        },
+        "count": 1,
+        "id": "minecraft:shield"
+      }
+    },
+    "foodLevel": 16,
+    "foodSaturationLevel": 3.5
+  },
+  "entities": {
+    "cart": {
+      "ForgeData": {
+        "AdvWorksActor": "cart"
+      },
+      "Items": [
+        {
+          "Slot": 0,
+          "components": {
+            "minecraft:custom_data": {
+              "MigrationWitness": "electricadvantage:lithium_battery",
+              "Nested": {
+                "OwnerNote": "keep-this-verbatim"
+              },
+              "energy": 123.0
+            }
+          },
+          "count": 3,
+          "id": "baseelectric:lithium_battery"
+        },
+        {
+          "Slot": 1,
+          "components": {
+            "minecraft:custom_data": {
+              "MigrationWitness": "steamadvantage:musket",
+              "Nested": {
+                "OwnerNote": "keep-this-verbatim"
+              }
+            },
+            "minecraft:damage": 5,
+            "minecraft:enchantments": {
+              "basesteam:high_explosive": 1,
+              "basesteam:powderless": 1,
+              "basesteam:rapid_reload": 1,
+              "basesteam:recoil": 1
+            }
+          },
+          "count": 1,
+          "id": "basesteam:musket"
+        }
+      ],
+      "Motion": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Pos": [
+        148.5,
+        80.0,
+        8.5
+      ],
+      "Rotation": [
+        0.0,
+        0.0
+      ],
+      "UUIDLeast": -6147145620446952036,
+      "UUIDMost": -5870330759139214681,
+      "id": "minecraft:chest_minecart"
+    },
+    "dropped-musket": {
+      "ForgeData": {
+        "AdvWorksActor": "dropped-musket"
+      },
+      "Item": {
+        "components": {
+          "minecraft:custom_data": {
+            "MigrationWitness": "steamadvantage:musket",
+            "Nested": {
+              "OwnerNote": "keep-this-verbatim"
+            }
+          },
+          "minecraft:damage": 5,
+          "minecraft:enchantments": {
+            "basesteam:high_explosive": 1,
+            "basesteam:powderless": 1,
+            "basesteam:rapid_reload": 1,
+            "basesteam:recoil": 1
+          }
+        },
+        "count": 1,
+        "id": "basesteam:musket"
+      },
+      "Motion": [
+        0.0,
+        -0.04,
+        0.0
+      ],
+      "Pos": [
+        152.5,
+        80.0,
+        8.5
+      ],
+      "Rotation": [
+        218.08621215820312,
+        0.0
+      ],
+      "UUIDLeast": -7434810442624460340,
+      "UUIDMost": -1653074974384048064,
+      "id": "minecraft:item"
+    },
+    "dropped-oil": {
+      "ForgeData": {
+        "AdvWorksActor": "dropped-oil"
+      },
+      "Item": {
+        "components": {
+          "minecraft:custom_data": {
+            "MigrationWitness": "poweradvantage:crude_oil",
+            "Nested": {
+              "OwnerNote": "keep-this-verbatim"
+            }
+          }
+        },
+        "count": 1,
+        "id": "basepower:crude_oil"
+      },
+      "Motion": [
+        0.0,
+        -0.08,
+        0.0
+      ],
+      "Pos": [
+        156.5,
+        80.0,
+        8.5
+      ],
+      "Rotation": [
+        231.93890380859375,
+        0.0
+      ],
+      "UUIDLeast": -9178415371462304176,
+      "UUIDMost": -1563349165232800853,
+      "id": "minecraft:item"
+    },
+    "hydroturbine": {
+      "ForgeData": {
+        "AdvWorksActor": "hydroturbine"
+      },
+      "Motion": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Pos": [
+        164.5,
+        80.0,
+        8.5
+      ],
+      "Rotation": [
+        0.0,
+        0.0
+      ],
+      "UUIDLeast": -5032249493117728499,
+      "UUIDMost": -9014291490481488382,
+      "id": "baseelectric:hydroturbine",
+      "parentPos": [
+        164,
+        81,
+        8
+      ]
+    },
+    "owned-wolf": {
+      "ForgeData": {
+        "AdvWorksActor": "owned-wolf"
+      },
+      "Motion": [
+        0.0,
+        -0.0784000015258789,
+        0.0
+      ],
+      "OwnerUUID": "a614e658-6270-33c3-9297-7ce80908964f",
+      "Pos": [
+        160.5,
+        80.0,
+        8.5
+      ],
+      "Rotation": [
+        42.0,
+        0.0
+      ],
+      "Sitting": 1,
+      "UUIDLeast": -6740529603542625373,
+      "UUIDMost": -1767247258114444277,
+      "id": "minecraft:wolf"
+    }
+  },
+  "file": {
+    "Dimension": 0,
+    "EnderItems": [
+      {
+        "Slot": 0,
+        "components": {
+          "minecraft:custom_data": {
+            "MigrationWitness": "steamadvantage:musket",
+            "Nested": {
+              "OwnerNote": "keep-this-verbatim"
+            }
+          },
+          "minecraft:damage": 5,
+          "minecraft:enchantments": {
+            "basesteam:high_explosive": 1,
+            "basesteam:powderless": 1,
+            "basesteam:rapid_reload": 1,
+            "basesteam:recoil": 1
+          }
+        },
+        "count": 1,
+        "id": "basesteam:musket"
+      },
+      {
+        "Slot": 1,
+        "components": {
+          "minecraft:custom_data": {
+            "MigrationWitness": "electricadvantage:lithium_battery",
+            "Nested": {
+              "OwnerNote": "keep-this-verbatim"
+            },
+            "energy": 123.0
+          }
+        },
+        "count": 1,
+        "id": "baseelectric:lithium_battery"
+      },
+      {
+        "Slot": 2,
+        "components": {
+          "minecraft:custom_data": {
+            "MigrationWitness": "electricadvantage:lead_acid_battery",
+            "Nested": {
+              "OwnerNote": "keep-this-verbatim"
+            },
+            "energy": 123.0
+          }
+        },
+        "count": 1,
+        "id": "baseelectric:lead_acid_battery"
+      },
+      {
+        "Slot": 3,
+        "components": {
+          "minecraft:custom_data": {
+            "MigrationWitness": "electricadvantage:alkaline_battery",
+            "Nested": {
+              "OwnerNote": "keep-this-verbatim"
+            },
+            "energy": 123.0
+          }
+        },
+        "count": 1,
+        "id": "baseelectric:alkaline_battery"
+      },
+      {
+        "Slot": 4,
+        "components": {
+          "minecraft:custom_data": {
+            "MigrationWitness": "electricadvantage:nickel_hydride_battery",
+            "Nested": {
+              "OwnerNote": "keep-this-verbatim"
+            },
+            "energy": 123.0
+          }
+        },
+        "count": 1,
+        "id": "baseelectric:nickel_hydride_battery"
+      },
+      {
+        "Slot": 5,
+        "components": {
+          "minecraft:custom_data": {
+            "MigrationWitness": "poweradvantage:sprocket",
+            "Nested": {
+              "OwnerNote": "keep-this-verbatim"
+            }
+          }
+        },
+        "count": 3,
+        "id": "basepower:sprocket"
+      },
+      {
+        "Slot": 6,
+        "components": {
+          "minecraft:custom_data": {
+            "MigrationWitness": "minecraft:dirt",
+            "Nested": {
+              "OwnerNote": "keep-this-verbatim"
+            }
+          }
+        },
+        "count": 3,
+        "id": "minecraft:dirt"
+      },
+      {
+        "Slot": 7,
+        "components": {
+          "minecraft:custom_data": {
+            "MigrationWitness": "minecraft:apple",
+            "Nested": {
+              "OwnerNote": "keep-this-verbatim"
+            }
+          }
+        },
+        "count": 3,
+        "id": "minecraft:apple"
+      },
+      {
+        "Slot": 8,
+        "components": {
+          "minecraft:custom_data": {
+            "MigrationWitness": "poweradvantage:crude_oil",
+            "Nested": {
+              "OwnerNote": "keep-this-verbatim"
+            }
+          }
+        },
+        "count": 1,
+        "id": "basepower:crude_oil"
+      },
+      {
+        "Slot": 9,
+        "components": {
+          "minecraft:custom_data": {
+            "MigrationWitness": "electricadvantage:lithium_battery",
+            "Nested": {
+              "OwnerNote": "keep-this-verbatim"
+            },
+            "energy": 123.0
+          }
+        },
+        "count": 1,
+        "id": "baseelectric:lithium_battery"
+      },
+      {
+        "Slot": 10,
+        "components": {
+          "minecraft:custom_data": {
+            "MigrationWitness": "electricadvantage:lithium_battery",
+            "Nested": {
+              "OwnerNote": "keep-this-verbatim"
+            },
+            "energy": 123.0
+          }
+        },
+        "count": 1,
+        "id": "baseelectric:lithium_battery"
+      },
+      {
+        "Slot": 11,
+        "components": {
+          "minecraft:custom_data": {
+            "MigrationWitness": "electricadvantage:lead_acid_battery",
+            "Nested": {
+              "OwnerNote": "keep-this-verbatim"
+            },
+            "energy": 123.0
+          }
+        },
+        "count": 1,
+        "id": "baseelectric:lead_acid_battery"
+      },
+      {
+        "Slot": 12,
+        "components": {
+          "minecraft:custom_data": {
+            "MigrationWitness": "electricadvantage:lead_acid_battery",
+            "Nested": {
+              "OwnerNote": "keep-this-verbatim"
+            },
+            "energy": 123.0
+          }
+        },
+        "count": 1,
+        "id": "baseelectric:lead_acid_battery"
+      },
+      {
+        "Slot": 13,
+        "components": {
+          "minecraft:custom_data": {
+            "MigrationWitness": "electricadvantage:alkaline_battery",
+            "Nested": {
+              "OwnerNote": "keep-this-verbatim"
+            },
+            "energy": 123.0
+          }
+        },
+        "count": 1,
+        "id": "baseelectric:alkaline_battery"
+      },
+      {
+        "Slot": 14,
+        "components": {
+          "minecraft:custom_data": {
+            "MigrationWitness": "electricadvantage:alkaline_battery",
+            "Nested": {
+              "OwnerNote": "keep-this-verbatim"
+            },
+            "energy": 123.0
+          }
+        },
+        "count": 1,
+        "id": "baseelectric:alkaline_battery"
+      },
+      {
+        "Slot": 15,
+        "components": {
+          "minecraft:custom_data": {
+            "MigrationWitness": "electricadvantage:nickel_hydride_battery",
+            "Nested": {
+              "OwnerNote": "keep-this-verbatim"
+            },
+            "energy": 123.0
+          }
+        },
+        "count": 1,
+        "id": "baseelectric:nickel_hydride_battery"
+      },
+      {
+        "Slot": 16,
+        "components": {
+          "minecraft:custom_data": {
+            "MigrationWitness": "electricadvantage:nickel_hydride_battery",
+            "Nested": {
+              "OwnerNote": "keep-this-verbatim"
+            },
+            "energy": 123.0
+          }
+        },
+        "count": 1,
+        "id": "baseelectric:nickel_hydride_battery"
+      }
+    ],
+    "Health": 17.0,
+    "Inventory": [
+      {
+        "Slot": 0,
+        "components": {
+          "minecraft:custom_data": {
+            "MigrationWitness": "steamadvantage:musket",
+            "Nested": {
+              "OwnerNote": "keep-this-verbatim"
+            }
+          },
+          "minecraft:damage": 5,
+          "minecraft:enchantments": {
+            "basesteam:high_explosive": 1,
+            "basesteam:powderless": 1,
+            "basesteam:rapid_reload": 1,
+            "basesteam:recoil": 1
+          }
+        },
+        "count": 1,
+        "id": "basesteam:musket"
+      },
+      {
+        "Slot": 1,
+        "components": {
+          "minecraft:custom_data": {
+            "MigrationWitness": "electricadvantage:lithium_battery",
+            "Nested": {
+              "OwnerNote": "keep-this-verbatim"
+            },
+            "energy": 123.0
+          }
+        },
+        "count": 3,
+        "id": "baseelectric:lithium_battery"
+      },
+      {
+        "Slot": 2,
+        "components": {
+          "minecraft:custom_data": {
+            "MigrationWitness": "electricadvantage:lead_acid_battery",
+            "Nested": {
+              "OwnerNote": "keep-this-verbatim"
+            },
+            "energy": 123.0
+          }
+        },
+        "count": 3,
+        "id": "baseelectric:lead_acid_battery"
+      },
+      {
+        "Slot": 3,
+        "components": {
+          "minecraft:custom_data": {
+            "MigrationWitness": "electricadvantage:alkaline_battery",
+            "Nested": {
+              "OwnerNote": "keep-this-verbatim"
+            },
+            "energy": 123.0
+          }
+        },
+        "count": 3,
+        "id": "baseelectric:alkaline_battery"
+      },
+      {
+        "Slot": 4,
+        "components": {
+          "minecraft:custom_data": {
+            "MigrationWitness": "electricadvantage:nickel_hydride_battery",
+            "Nested": {
+              "OwnerNote": "keep-this-verbatim"
+            },
+            "energy": 123.0
+          }
+        },
+        "count": 3,
+        "id": "baseelectric:nickel_hydride_battery"
+      },
+      {
+        "Slot": 5,
+        "components": {
+          "minecraft:custom_data": {
+            "MigrationWitness": "poweradvantage:sprocket",
+            "Nested": {
+              "OwnerNote": "keep-this-verbatim"
+            }
+          }
+        },
+        "count": 3,
+        "id": "basepower:sprocket"
+      },
+      {
+        "Slot": 6,
+        "components": {
+          "minecraft:custom_data": {
+            "MigrationWitness": "minecraft:dirt",
+            "Nested": {
+              "OwnerNote": "keep-this-verbatim"
+            }
+          }
+        },
+        "count": 3,
+        "id": "minecraft:dirt"
+      },
+      {
+        "Slot": 7,
+        "components": {
+          "minecraft:custom_data": {
+            "MigrationWitness": "minecraft:apple",
+            "Nested": {
+              "OwnerNote": "keep-this-verbatim"
+            }
+          }
+        },
+        "count": 3,
+        "id": "minecraft:apple"
+      },
+      {
+        "Slot": 8,
+        "components": {
+          "minecraft:custom_data": {
+            "MigrationWitness": "poweradvantage:crude_oil",
+            "Nested": {
+              "OwnerNote": "keep-this-verbatim"
+            }
+          }
+        },
+        "count": 1,
+        "id": "basepower:crude_oil"
+      }
+    ],
+    "Pos": [
+      144.5,
+      80.0,
+      8.5
+    ],
+    "Rotation": [
+      37.0,
+      -12.0
+    ],
+    "SelectedItemSlot": 7,
+    "UUIDLeast": -7883695286662949297,
+    "UUIDMost": -6479300696596270141,
+    "XpLevel": 23,
+    "XpP": 0.375,
+    "XpTotal": 751,
+    "equipment": {
+      "chest": {
+        "components": {
+          "minecraft:custom_data": {
+            "MigrationWitness": "minecraft:iron_chestplate",
+            "Nested": {
+              "OwnerNote": "keep-this-verbatim"
+            }
+          },
+          "minecraft:damage": 11
+        },
+        "count": 1,
+        "id": "minecraft:iron_chestplate"
+      },
+      "feet": {
+        "components": {
+          "minecraft:custom_data": {
+            "MigrationWitness": "minecraft:iron_boots",
+            "Nested": {
+              "OwnerNote": "keep-this-verbatim"
+            }
+          },
+          "minecraft:damage": 9
+        },
+        "count": 1,
+        "id": "minecraft:iron_boots"
+      },
+      "head": {
+        "components": {
+          "minecraft:custom_data": {
+            "MigrationWitness": "minecraft:iron_helmet",
+            "Nested": {
+              "OwnerNote": "keep-this-verbatim"
+            }
+          },
+          "minecraft:damage": 12
+        },
+        "count": 1,
+        "id": "minecraft:iron_helmet"
+      },
+      "legs": {
+        "components": {
+          "minecraft:custom_data": {
+            "MigrationWitness": "minecraft:iron_leggings",
+            "Nested": {
+              "OwnerNote": "keep-this-verbatim"
+            }
+          },
+          "minecraft:damage": 10
+        },
+        "count": 1,
+        "id": "minecraft:iron_leggings"
+      },
+      "offhand": {
+        "components": {
+          "minecraft:custom_data": {
+            "MigrationWitness": "minecraft:shield",
+            "Nested": {
+              "OwnerNote": "keep-this-verbatim"
+            }
+          },
+          "minecraft:damage": 5
+        },
+        "count": 1,
+        "id": "minecraft:shield"
+      }
+    },
+    "foodLevel": 16,
+    "foodSaturationLevel": 3.5
+  },
+  "hostAuthority": "a614e658-6270-33c3-9297-7ce80908964f"
+}

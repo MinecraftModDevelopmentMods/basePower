@@ -1,4 +1,4 @@
-"""Forge 66.1.0 server custody and process control; historical engines stay unchanged."""
+"""Forge 66.0.0 server custody and process control; historical engines stay unchanged."""
 
 import argparse
 import hashlib
@@ -10,7 +10,7 @@ import socket
 import subprocess
 from zipfile import ZipFile
 
-from matrix import digest, stage as stage_server, write_json
+from matrix import WORLD, digest, stage as stage_server, write_json
 from native117 import jar_identity, require_disjoint
 from native117_code import NativeLaunch, code_files
 from native117_interop import mark_runtime
@@ -331,13 +331,36 @@ def require_complete_boot(text, *, stop_sent, returncode):
         raise AssertionError("Native66 requires its owned stop command and a zero process exit")
     markers = (f"Forge mod loading, version {FORGE}, for MC {MINECRAFT} with MCP {MCP}",
                f"Starting minecraft server version {MINECRAFT}", "Done (", "Stopping server",
-               "All dimensions are saved")
+               "Saving players", "Saving worlds")
     cursor = 0
     for marker in markers:
         position = text.find(marker, cursor)
         if position < 0:
             raise AssertionError("Missing or out-of-order native66 startup / cold-stop witness: " + marker)
         cursor = position + len(marker)
+    # Actual 66.0.0 stopServer has no final "All dimensions are saved" log and does
+    # not specify getAllLevels() iteration order. Exit and lock release prove completion.
+    tail = text[cursor:]
+    dimensions = re.findall(r"Saving chunks for level 'ServerLevel\[([^\]]+)\]'/minecraft:([a-z_]+)", tail)
+    if (len(dimensions) != 3 or len({world for world, _ in dimensions}) != 1
+            or {key for _, key in dimensions} != {"overworld", "the_nether", "the_end"}):
+        raise AssertionError("Missing, duplicate or mixed-world native66 shutdown dimension save request")
+    if re.search(r"/(?:ERROR|FATAL)\]|Exception closing the level|Failed to unlock level|Error while shutting down",
+                 text[text.index("Stopping server"):]):
+        raise AssertionError("Native66 shutdown reported an error")
+
+
+def require_released_session_lock(runtime):
+    import msvcrt
+    path = Path(runtime) / WORLD / "session.lock"
+    before = digest(path)
+    with path.open("r+b") as stream:
+        stream.seek(0)
+        msvcrt.locking(stream.fileno(), msvcrt.LK_NBLCK, 1)
+        stream.seek(0)
+        msvcrt.locking(stream.fileno(), msvcrt.LK_UNLCK, 1)
+    if digest(path) != before:
+        raise AssertionError("Native66 session-lock observation changed its bytes")
 
 
 class Server(NativeLaunch):
@@ -413,6 +436,7 @@ class Server(NativeLaunch):
             super().close()
             text = (self.native_runtime / f"console-{self.native_label}.log").read_text(encoding="utf-8")
             require_complete_boot(text, stop_sent=self.stop_sent, returncode=self.process.returncode)
+            require_released_session_lock(self.native_runtime)
             logging_jar = self.native_runtime / f"libraries/net/minecraftforge/fmlloader/{FORGE_VERSION}/fmlloader-{FORGE_VERSION}.jar"
             self.logging_configuration(logging_jar)
         finally:

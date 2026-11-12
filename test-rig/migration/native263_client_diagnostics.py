@@ -3,7 +3,7 @@
 from pathlib import Path
 
 from native262_client_diagnostics import sdk_payload_sha
-from native263_platform_diagnostics import classify, COMMON_JAR_SHA, OSHI_JAR_SHA
+from native263_platform_diagnostics import strict as classify, COMMON_JAR_SHA, OSHI_JAR_SHA
 
 SDK_NAME = "forge-26.3-66.0.0.jar"
 SDK_PAYLOAD_SHA = "F897BBC12BBB715702E7DF8A85BFAEDE5B65673D2C609A1BD856DE3BB046B6DC"

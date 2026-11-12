@@ -13,7 +13,7 @@ import native263 as native
 
 
 SDK = Path(os.environ.get("NATIVE263_TEST_SDK",
-           "D:/PowerAdvantage/_verification/base-263-port-20261112/server-code-seed-01"))
+           "D:/PowerAdvantage/_verification/base-263-port-20261112/server-seed-66.0.0"))
 LOGGING = SDK / f"libraries/net/minecraftforge/fmlloader/{native.FORGE_VERSION}/fmlloader-{native.FORGE_VERSION}.jar"
 
 
@@ -143,7 +143,10 @@ class Native263GuardsTest(unittest.TestCase):
     def complete_log():
         return "\n".join((f"Forge mod loading, version {native.FORGE}, for MC {native.MINECRAFT} with MCP {native.MCP}",
                           f"Starting minecraft server version {native.MINECRAFT}", "Done (0.1s)!",
-                          "Stopping server", "All dimensions are saved"))
+                          "Stopping server", "Saving players", "Saving worlds",
+                          "Saving chunks for level 'ServerLevel[Test]'/minecraft:overworld",
+                          "Saving chunks for level 'ServerLevel[Test]'/minecraft:the_nether",
+                          "Saving chunks for level 'ServerLevel[Test]'/minecraft:the_end"))
 
     def test_real_boot_requires_all_witnesses_in_order(self):
         text = self.complete_log()
@@ -166,18 +169,39 @@ class Native263GuardsTest(unittest.TestCase):
         text = self.complete_log().replace("Done (", "All dimensions are saved\nDone (")
         text = text.replace("Stopping server", "All dimensions are saved\nStopping server")
         native.require_complete_boot(text, stop_sent=True, returncode=0)
-        without_final = text.rsplit("All dimensions are saved", 1)[0]
-        with self.assertRaisesRegex(AssertionError, "All dimensions are saved"):
+        without_final = text.rsplit("Saving worlds", 1)[0]
+        with self.assertRaisesRegex(AssertionError, "Saving worlds"):
             native.require_complete_boot(without_final, stop_sent=True, returncode=0)
 
     def test_stop_before_done_or_save_before_stop_cannot_qualify(self):
         misordered = self.complete_log().replace("Done (0.1s)!\nStopping server", "Stopping server\nDone (0.1s)!")
         with self.assertRaisesRegex(AssertionError, "Stopping server"):
             native.require_complete_boot(misordered, stop_sent=True, returncode=0)
-        no_final_flush = self.complete_log().replace("Stopping server\nAll dimensions are saved",
-                                                   "All dimensions are saved\nStopping server")
-        with self.assertRaisesRegex(AssertionError, "All dimensions are saved"):
+        no_final_flush = self.complete_log().replace("Stopping server\nSaving players\nSaving worlds",
+                                                   "Saving players\nSaving worlds\nStopping server")
+        with self.assertRaisesRegex(AssertionError, "Saving players"):
             native.require_complete_boot(no_final_flush, stop_sent=True, returncode=0)
+
+    def test_native_dimension_iteration_order_is_not_fixed_but_exact_membership_is(self):
+        lines = self.complete_log().splitlines()
+        native.require_complete_boot("\n".join(lines[:-3] + list(reversed(lines[-3:]))), stop_sent=True, returncode=0)
+        for text in (self.complete_log() + "\n" + lines[-1],
+                     self.complete_log().replace("/minecraft:the_end", "/minecraft:unproven"),
+                     self.complete_log().replace("[Test]'/minecraft:the_end", "[Other]'/minecraft:the_end"),
+                     self.complete_log() + "\n[now] [Server thread/ERROR] [minecraft/]: Exception closing the level"):
+            with self.subTest(text=text), self.assertRaises(AssertionError):
+                native.require_complete_boot(text, stop_sent=True, returncode=0)
+
+    def test_stopped_session_lock_observation_preserves_all_bytes(self):
+        path = self.root / native.WORLD / "session.lock"
+        path.parent.mkdir()
+        path.write_bytes(b"native-lock-observation")
+        before = native.digest(path)
+        native.require_released_session_lock(self.root)
+        self.assertEqual(before, native.digest(path))
+        path.unlink()
+        with self.assertRaises(FileNotFoundError):
+            native.require_released_session_lock(self.root)
 
     def test_formatter_faults_and_debug_runtime_errors_stay_failures(self):
         for text in ("Unable to write to stream DebugFile", "java.lang.ExceptionInInitializerError",

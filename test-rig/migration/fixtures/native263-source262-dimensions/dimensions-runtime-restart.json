@@ -1,0 +1,142 @@
+{
+  "definition": {
+    "dimension": -1,
+    "entities": [
+      {
+        "uuid": "382ee065-9b64-3e5d-ba95-28d25fe76f39",
+        "witness": "boat"
+      },
+      {
+        "uuid": "8fcfc8b9-ad2c-3649-8bbc-9985c0044121",
+        "witness": "horse"
+      },
+      {
+        "uuid": "56a3698a-8a5b-3f03-9088-7283f466f0e2",
+        "witness": "hydroturbine"
+      },
+      {
+        "uuid": "5e0e0ed0-34bb-3d03-8b5a-b262336b07e4",
+        "witness": "leash-knot"
+      },
+      {
+        "uuid": "b1a56f21-95c0-3e04-a77d-b160826c9c7f",
+        "witness": "passenger-wolf"
+      }
+    ],
+    "generator": {
+      "name": "electricadvantage:hydroelectric_generator",
+      "x": 176,
+      "y": 101,
+      "z": 8
+    },
+    "geometry": {
+      "maxX": 176,
+      "minX": 144,
+      "y": 100,
+      "z": 8
+    },
+    "nativeOnLoad": true,
+    "playerName": "AdvWorksDimensionPlayer",
+    "playerUuid": "e036830e-303d-3ac3-bd23-062b72eed895",
+    "universalBucket": false
+  },
+  "operation": "read",
+  "dimension": -1,
+  "worldDimensionKey": "minecraft:the_nether",
+  "nativeEntityContextVersion": 1,
+  "gameTime": 420,
+  "frozen": false,
+  "nativeOnLoad": true,
+  "playerAdapter": true,
+  "playerWorldDimension": -1,
+  "player": {
+    "nbtBase64": "H4sIAAAAAAAA/+1Yz28bRRQeZ+1N7DTBImkaJFqp5EAlqMQBcYhUcH40baS2iXBCw2kY77x4R56dWWZn4/jMhX+AQ2/9Nzgg8eOa3jnyFwAnzrzZXcd24kMrmcgELK3lnXnz3ve9efN2P9cIqZFZA0nMumqeeLFOCCEeXi/x4nitloh/rE0AvFQhlVjYIMRRMkeqXESgEqEVWYqEgsCwY7uuT8B0tZG8Qrwe6zpTjFDZNEyoGpmLINJGAAaZIbWmBIgP0IshpERu7KqTVCowrCUB72s7TMod2ROqjYAW97WxTG5pLbnuKue2QuobrUSb2CKGjUinyubRqqwlpLAYBr2KUa9+xHrHsuf8C5VY1kqF5Oiq2mWy04wB+IOzs1clRMp6m26u5PjnKCpkDn/lRk/OXmGkmoFAxLCpdafq0uhukoxzlSxYvQnbIokl6wHPBjFqdYupw5gzC6UZUt0GZkOXAZdz/yhuouu94/Bnj8wexQcaCWOi/pgn5cPD3W1cX/7tk28WP3qw/ssPa/4H5vdfv8PEZP7NIxbBQS+GPMp8AqC2DHBhE4TiP9UuR36xtWM/FeI/BiZtuPGtu1k61po3mU0Nc0ufwAnIxldZduHrVMS49Zb4ZOEYN4lygZlUAfR9zRBvQ5jSh5jGPfXI4M5wVzDb5wWzPCgYGwJVgN+mSuY+R8ouXMU52Vwm5KeGg4zJyADg6C2P3AtSYzA8FVGcygRooJWFU0uxjMHStmEBUJsl1eFd7jLDQdGsxKnF2Q4YjyzgsMJdpbLwjHFWrQg6CU0EcqGSJZYWRvn0YlBUH83sSD5aaQbaQL7n3r5Osiw3WvVsuvFlnpHG3X5myjvCWePxOIr3P/3Rrao9VBzMroUoqaHNItZVoKNYKySJIyuDZIEKQqasS36CcFssgcQCi9ZD0Q4pnMZSJ+LEgSl5ZHkwHesuRpCQJPlUfTCFRauFzIdXhoZZLDhmVGrGs5LCRQMcnEWs7cJUauTmYDhIE6sjitXNasR/5lxx3Pe9Lp6/Z9oCebuDJ/6+DUVyH/tEC/c6wsKoPxXtvMyeC6scyJsZCMZPkCwGWo/SpAM2y3ZQnHM8l+Wm1BbXzwg+zKgwvpDFfwLmXZAQWCOCAVLsO6FII4qLLJgenipAr+3e5l9FtVzEX8rxv+vw991d9HIVXNbGcAHGKQuwDl6bzUzO5s4om4t+roLPe5f5YIdnEiO9Ph0vp3N7hM5FN1fB5t5lNgp7EEga9rgR/A04lXNOayOcxju7Cmar2Jvw6XxOKzApAsha0hjwlRz8kgOfLRyy/5cceH9KDvwkuMxOCZfJNK+5qWlek+FTnRo+E2nGtWlpxhNhMz8tbCb4aLkxXY+WCTJbeANm+EKPv4xopRayF/qir7w1oMgMymCflJ27cwWWW60OrCIU0+5VH6UL6sLC/LPvX7x4OTC/NeTUWtQ2NH8371v/OeL8zsC6o3TQabkFKJsK/TYe0TsXcFOr03boMjzefnFgL9OgM95oSAFG7JSGmfQsTBsfj5iuXKI4nI9GvTD2yPw2lswXYDKJSZbe90jVqdi+dKwXqvbhaciwxPqqlmTy5nYuD1FGGkZjZlDhoVyiWlGncFG3zT1Oje1L9XozKwLgTrRlKgRHq6S6q05wv7TpuW33/9dx/wEd510rHeddLx3nXUMd5113HeeRBdemD5BK8ecwfv4GYEi3A6kWAAA\u003d"
+  },
+  "entities": [
+    {
+      "nbtBase64": "H4sIAAAAAAAA/5VUTWsTURS903x0Mm1j/cDqRihuCn5QKIgWrEkb0wZiG6pFXMj4MnOTPDLzXnzzJmkXouhv6Eq34rpbQRD8B7px2Z07/4Lel48mrSnUt5iBvHPvPefcM3EALMhsynXF2lzvWRlIP5KaS5EGgAScchzIFKWqY4FpZsNc3m8/laoZFXiIIqLih0JTM0hWJdPUf7ok2nEgULFqgFYaZmosCFyfR5oJDwdNJyCR58q6aYG9JdaVjIVPDLIVqTQL1qQMfNkRBpgBe1tqZlimunX9Q0LWmNhp+UwjCXEqLIpQ1FFFjrml63wdy9Jrok8KUquKceGAHWIoFccIYApSWx2iSejk4Z132cX7y9++XE/fUL9/7p9RcrY1GHqrI4MacZp8zLXmom6d9MECp0g+FIM9uiWlpr+HPnE0YmyYiYwFbpspzoSG8yEX6ClW08teQEO4N9acFMzmq5FULWNPPqQWGrqrTJdEWbbxH6OSkGWGr4s0TJOcP/0zAZkCMt14Qr8ZPpMDJtkhkxYjIXCxQh7TNpG2uY0vY67Qt2yY4P4o1vgxBcmdnVLBGHzwUc7vf11Jfnp18OJt8OF1gtZf79ObWpNBwBQ9pcqeLZIpSG8gC3Qj/8Z0cMpY0xtM+LTr/wmcBclNmS9ZJzO2utCrScCCFyuFQrs8bMVBhK4nhcZd7SqMULt1xTzs+tiLaqIioy7xnDfb7ZB7Nt17zw9YJItkmCE9Q1upcK+50ypLqanYYVorXo01diNs9zw9N/SUKcpumj40Fh3Jgh7q8hBVIzdlx1Vmz31wbvEY+MoQHFJIQqMvaiH6ffiDH0tLubG95e5eHYVblSKOxhOZG6GrNfOars9CNmQyewx9bYhuCvpWq6aArO3vbvyIqycccbWM6w2B0SmULo3IZbtuoxucAZ/CUTzsjVjpXvzHbxLGb7I35MKISazpmv/CkfjfvX2I7/2V55/3F767v+Q9+AuJ3w9OigUAAA\u003d\u003d",
+      "witness": "boat",
+      "worldDimensionKey": "minecraft:the_nether",
+      "sameWorld": true,
+      "entityWorlds": {
+        "382ee065-9b64-3e5d-ba95-28d25fe76f39": "minecraft:the_nether",
+        "b1a56f21-95c0-3e04-a77d-b160826c9c7f": "minecraft:the_nether"
+      },
+      "uuid": "382ee065-9b64-3e5d-ba95-28d25fe76f39",
+      "ticksExisted": 86,
+      "entityId": 2,
+      "instanceId": 430836667,
+      "vehicleUuid": null,
+      "passengerUuids": [
+        "b1a56f21-95c0-3e04-a77d-b160826c9c7f"
+      ],
+      "leashHolderUuid": null,
+      "leashHolderType": null,
+      "leashHolderPosition": null
+    },
+    {
+      "nbtBase64": "H4sIAAAAAAAA/71UMY8bRRR+PnuX3b3kcgokAQqkiCYSiZQqRaQI+3K5nNHlcoruiKhW451n7+DdecvM7N25i4SoKEiTIv8gTX5AJJAi0VCcREtJRclv4M16jSExKRnJhcefv/e9933zEoAOxIMJ7lE2RQkJBFtGKJ1AVGJJRqH1iN6hKLGzDsHDE40GAHq/3/p24+ad2z//9Gn4mfnzt2cJxDtkJrgtnIjgykAePyYztduqRG0V6XvaKTeDICdjkRnPDfVxXTCZGBXY6UCyI4pip5gpPYFuw5WhZF1ci7+v51RiaoRUNeuBoAsbB2ScKO4SFZJOtIcFsDkYWTKV43qDkmrt/DWr3zLcWhfCod6jY5xfxneFPqqkcL76xj3huPKumFknsimsQbyNwuWHLN+D3z9AY5V1qDN8hN/Uigk7EawpCRdKpTEzYuxuN72tQ+/oaLjtZ/TDr7+8enn91vD7H59/97o3uNqFbttRDOED8jLDpr3/OAGEuygKl28dAjsT+8IVz9MlEFohZYEJJBmVFWm+tAlcWmrJauuoTLk/weh9ZO0ygrjxb58cwsUpYnXD5creOEYz4v5LiGDzgZoY4ZU9Vk6jtbC55JzX9IKDrJ1uO4S3QQn0RiRn/4PAj5ecypBOGxdSYTi9q6S+E8453MOx2xVacmJCOD/mVKaSnRfs/MKXNfZRmc71DkQP9X3D/NKnbJ8Gw04M0SNyjcCggbanC9ey2hgeQ6rKqi64Zkba4alLDVp0KXeVYeqawHm3z0lDVZrlvrANFob3m1g0o+3Pad/7Uhgl5lGPoXtAtslUXz5t6va/mtfvX11o7+1wev0/w0Msq+Y1s/rz/BwOVDY9qvaIHDMlwjmjRrVD9g0geivtzchC1iLs35OBOeryEjWmoqATfrp6gi24f/Nf4A+X4JJfp893aitE2cI/Pzs7e72Sm05nE9TpiHRtVwu5sgR/XZdVah07MHH5gvqPcXNa9CdL9FTzPhzxKvDutPavLvHRGxNJHdWT3CdzNf6Df7QrTtO8eeCLyXzxZOFStFsbN18/vHYLFDZvV8UL/khPtw5RsxYrsm/+BH8BxFuGIdgFAAA\u003d",
+      "witness": "horse",
+      "worldDimensionKey": "minecraft:the_nether",
+      "sameWorld": true,
+      "entityWorlds": {
+        "8fcfc8b9-ad2c-3649-8bbc-9985c0044121": "minecraft:the_nether"
+      },
+      "uuid": "8fcfc8b9-ad2c-3649-8bbc-9985c0044121",
+      "ticksExisted": 86,
+      "entityId": 4,
+      "instanceId": 419263578,
+      "vehicleUuid": null,
+      "passengerUuids": [],
+      "leashHolderUuid": "20fe0f9f-f1cc-4cd5-b6a1-ce7b579568b8",
+      "leashHolderType": "minecraft:leash_knot",
+      "leashHolderPosition": [
+        168,
+        100,
+        8
+      ]
+    },
+    {
+      "nbtBase64": "H4sIAAAAAAAA/3WPMU7DQBBFx7GxvElAdIiSnhPQ4CgmKAUiQjIIUaC1dw0rlplovA5KTYNS5Q5cgDNxAgoOwNokEg1fmmr+f/q/DyAgviBnCGMACOEf9UFMiB90Jp1M4GCkFjfET3VmnjXWPnyGzrglDB+Xisk1XBjUEMBwiovGomZZWB3EsFtJa++VqZ3EUm/hPQhHhoPjAJJLPGdqUPkmezNiJ+2YyCp6wdY4ADGXrNHNqN60/fDXghIByRU52S7Z6ZgbBSDGEvO5kk4HAkIf7Zam1X73T29/fenRtkw0MeyRCfSMgsNC1lpbXTo25cnfeQOI8nya+Uh0/W5Wq7vTcP3Gr9/V1yf8ACRAFHdYAQAA",
+      "witness": "hydroturbine",
+      "worldDimensionKey": "minecraft:the_nether",
+      "sameWorld": true,
+      "entityWorlds": {
+        "56a3698a-8a5b-3f03-9088-7283f466f0e2": "minecraft:the_nether"
+      },
+      "uuid": "56a3698a-8a5b-3f03-9088-7283f466f0e2",
+      "ticksExisted": 86,
+      "entityId": 5,
+      "instanceId": 1829224269,
+      "vehicleUuid": null,
+      "passengerUuids": [],
+      "leashHolderUuid": null,
+      "leashHolderType": null,
+      "leashHolderPosition": null
+    },
+    {
+      "nbtBase64": "H4sIAAAAAAAA/3VTzW7TQBAeNz9N3DYUgShckCoulQCpUiUOlYCkDaGRAo0KEeJkNvYkWcXeDbvjpD0gEDxDb1wR5z4AEhKPwIUjT8ArwGx+mha1Ptjy+pv5fmbsA3hQrHSxocM+RuBDbscIqXwoJJhoI9ECLEFuf6TQAED294NPpc2H2z++3cnfNX9+HftQrGnTxaogUYC1SjR8pU3fVmWCykqtniiSdASlgbAWVRfN/ZGOO0y6+EISSdX1PFiuq2EaM4Fox8jvfk3EcS0+4q+QGfcPMWKNzA8FWLE6VVEwFEYKRXA1kQpDIzq0HcZMIsMMlJrakIh3tY4jPVKuLgerlbbVZkAsqpJwC3LHGcjXVUMPx705iV2hWoNIEHpZKAmnN0AmI7bzd3otQLGKgnov+czpWZwpKc2VDAQbgWtNNFZaQhXiAb5NpcHIK8CCjM5iXR5LkG216lUX8MkXvX78/VH267uTNx/jz+8zkJla92BpV8exMHzXplSE/DPt3OTHPi65cpDfQxFTr/LBdfAb2KE9oSKedR5WOhx0ELFEwRJnJQvMKI13z4PCvnpqXNpcmX2uK3WvCIUDTcLR5hx0Z2NSk4GNMDUGFQUyGaSxxSDUivCQAoMWKegaEeI4RwcvQqap7Vh4OVwddyi/Xp4812cqsjUOzIle4ak0ZdhvDRpaExf7gsjIdkpofbcTk0yvzDMVhnc3D9m2sKe2YIK6MUd1OE09Coyb8xRc3jwHvjkHJ7wkifNnB4jRFP7459ZW+cLe+vCoiypoa5Xai4WsnZFLJMJ+EIlEzJWsnkPfnqP7iv/VtivgaKezu5ji1n+JBKTTbk+hvUTS9TN2xWHQGy/OTE/1dD0Ke6mhyfrDP14u90hBBAAA",
+      "witness": "passenger-wolf",
+      "worldDimensionKey": "minecraft:the_nether",
+      "sameWorld": true,
+      "entityWorlds": {
+        "b1a56f21-95c0-3e04-a77d-b160826c9c7f": "minecraft:the_nether"
+      },
+      "uuid": "b1a56f21-95c0-3e04-a77d-b160826c9c7f",
+      "ticksExisted": 86,
+      "entityId": 3,
+      "instanceId": 279396180,
+      "vehicleUuid": "382ee065-9b64-3e5d-ba95-28d25fe76f39",
+      "passengerUuids": [],
+      "leashHolderUuid": null,
+      "leashHolderType": null,
+      "leashHolderPosition": null
+    }
+  ],
+  "generator": {
+    "actualName": "baseelectric:hydroelectric_generator",
+    "tile": {
+      "nbtBase64": "H4sIAAAAAAAA/zVNuw2EMBQzIFAurMEUV0PBFAjCE0Q6EpS8gtxUjMhLQWFZ/ska0NDGH6d35DiiRTM4ClsCUAhQobiEbuHs0Qf1yHTEnElDWWe5l3Eu/sVSCqVd0S1zJPqR4WDNd09r8K+aNpKHmX3AA0wepTt/AAAA"
+    }
+  }
+}

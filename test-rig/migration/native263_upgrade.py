@@ -25,7 +25,7 @@ import native263_layout as layout
 MINECRAFT, FORGE, DATA_VERSION = "26.3", "66.0.0", 5023
 SOURCE_VERSIONS = {"1.13.2": 1631, "1.14.4": 1976, "1.15.2": 2230, "1.16.5": 2586,
                    "1.17.1": 2730, "1.18.2": 2975, "1.19.4": 3337,
-                   **previous.COMPONENT_SOURCE_VERSIONS, "1.21.11": 4671, "26.1.2": 4790}
+                   **previous.COMPONENT_SOURCE_VERSIONS, "1.21.11": 4671, "26.1.2": 4790, "26.2": 4903}
 LEGACY_ROUTES = ("original110", "released110", "maintained112", "released112")
 LEGACY_SOURCE_VERSIONS = dict(original110=512, released110=512, maintained112=1343, released112=1343)
 MOD_IDS = frozenset(("basepower", "basesteam", "baseelectric", "basemetals", "orespawn", "advantageworkstest"))
@@ -49,7 +49,7 @@ def read_json(path):
 def engine():
     module = importlib.import_module("native263")
     if (module.MINECRAFT, module.FORGE) != (MINECRAFT, FORGE):
-        raise AssertionError("Migration requires the handed-off Forge66.1.0 engine")
+        raise AssertionError("Migration requires the handed-off Forge66.0.0 engine")
     for name in ("Server", "java25", "read_family_target", "stage", "verify_runtime", "LAUNCHER"):
         if not hasattr(module, name):
             raise AssertionError("Missing native263 engine contract: " + name)
@@ -68,7 +68,7 @@ def expected_components(value, *, source_version):
         return previous.expected_components(value, source_version=source_version)
     if SOURCE_VERSIONS[source_version] < 3465:
         return previous.components(copy.deepcopy(value))
-    # 1.21.11 and 26.1.2 already have native counts and unwrapped enchantment maps. Never
+    # 1.21.11, 26.1.2 and 26.2 have native counts and unwrapped enchantment maps. Never
     # recursively reinterpret unknown component payloads as another item schema.
     def walk(node):
         if isinstance(node, list):
@@ -282,6 +282,9 @@ def read_source(args):
         raise AssertionError("Missing passing immutable source and restart proof")
     if not args.legacy_reference and args.source_route in SOURCE_VERSIONS and args.source_route != version:
         raise AssertionError("Source route differs from the sealed receipt platform")
+    if version == "26.2":
+        from native263_source262 import source_protocol
+        source_protocol(source)
     if args.source_route in LEGACY_ROUTES and not args.legacy_reference:
         raise AssertionError("Raw historical routes require their independent reference")
     snapshot = reference / "migration-restarted.json"
@@ -324,6 +327,7 @@ def run(args, *, server_type=None, stage_function=None, hook_only=False):
                   minecraft=MINECRAFT, forge=FORGE, runtime=str(runtime),
                   qualificationStatus="EXPLORATORY_UNQUALIFIED",
                   route=args.source_route, source=str(source), sourceReceiptSha256=digest(prior_path),
+                  sourceDataVersion=SOURCE_VERSIONS[version], sourceEngineProtocol="NATIVE65" if version == "26.2" else "HISTORICAL",
                   profileSha256=digest(args.profile), javaSha256=digest(java), javaVersion=java_version,
                   playerConversionQualified=False, inputHashes={str(path): sha for path, sha in protected.items()}, phases={})
     if hook_only:

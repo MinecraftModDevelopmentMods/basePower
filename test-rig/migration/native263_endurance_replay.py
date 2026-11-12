@@ -79,7 +79,7 @@ def engine_inputs(path, expected, budget):
     pin(budget.read(path), expected)
     proof = budget.json(path)
     require(proof.get("status") == "STRICT_CLASSIFIER_AND_ORDERED_COLDSTOP_READY"
-            and proof.get("noJvmFlagsAdded") is True and proof.get("debugNotSuppressed") is True
+            and proof.get("noJvmCompatibilityFlagsAdded") is True and proof.get("debugNotSuppressed") is True
             and proof.get("coreSha256") == budget.digest(Path(native.__file__))
             and proof.get("classifierSha256") == budget.digest(Path(platform_diagnostics.__file__)),
             "Engine proof does not describe the actual current reviewed core/classifier")

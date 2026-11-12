@@ -12,7 +12,7 @@ A historical pass is not a result for this target. No push or publication is aut
 - Power `2.4.18.2603001`; Steam/Electric `2.2.19.2603001`;
   harness `1.1.8.2603001`; Base Metals `3.1.2.2603001`; OreSpawn `4.1.1.2603001`.
 - `profiles/native263/dev-core.json` has the parent-verified Power pin
-  `812F648DB32866B2522CA5C7BEE0E6CA4C423B14CDAED5592A2FD90436C86F6F`;
+  `5241EA6024AAB3D898ADEA164527CA10EF6BDE2DE155F89B1F7DFD18363676AB`;
   both child hashes remain zero and the profile remains unqualified.
 - Harness cache: `D:/GradleCaches/advantageworks-263-port/harness`.
   Evidence: `D:/PowerAdvantage/_verification/base-263-port-20261112/harness`.
@@ -77,10 +77,28 @@ Build the server harness, run `check build`,
 `clientProbeTest clientProbeJar`, and create the source inventory against those
 exact files. The parent owns gameplay orchestration and final source/jar pins.
 
-Server/client diagnostic classifiers intentionally accept no inherited stack
-waivers. Actual ordered 66 startup/cold-stop and exact console/file/client
-sequences must be independently reviewed before enabling any runtime exceptions
-or sealing qualified endurance. The worldless receipt cannot satisfy that gate.
+The server classifier accepts only exact captured 66.0.0 sequences from independent
+Forge-only fresh/cold-restart controls. Both the official and harness plain-stack
+renderers were actually run. The official extended renderer's Log4j appender faults
+remain rejected; the current harness's plain renderer reproduces clean formatting.
+OSHI, cleaner selection, default-disabled Unsafe, and Windows KQueue/Epoll fallback
+have new binary/source-bound controls and complete, mutation-tested stack fixtures.
+`native263_server_proof.py` seals the actual lifecycle, VM/classpath/raw logs,
+primary sources, current core/classifier and oracle closure for server preseal.
+Client classification remains closed. This is not machine-operation qualification.
+
+The `26.2` migration route is explicitly Native65 / Forge65.1.0 / DataVersion4903,
+verified from the sealed engine's actual `version.json`. Its player/dimension source
+paths use `players/data` and namespaced dimension storage, never legacy fallbacks.
+Real accepted profile03 actor/player and Nether serializer fixtures are retained
+under `migration/fixtures/native263-source262-*`; complete ordinary stopped source
+copies for machines, actors and dimensions are sealed in external evidence under
+`harness/source262-fixtures-01`. Historical 26.1.2 remains its separate 4790 route.
+
+Both interop phases now require an actual placed normal-furnace coal oracle and
+both public FuelRegistry overloads to return exactly 1600 with no custom/item
+override. All three input stacks must retain their full components and count.
+The compiled probe and strict report verifier do not claim that gameplay has run.
 
 Retain all partial/failing logs. Never retrofit profile-03 hashes, retrospective
 seals or old native-control receipts to obtain a 263 pass. Graphical unit/resource

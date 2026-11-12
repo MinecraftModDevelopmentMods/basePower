@@ -9,9 +9,13 @@ import native263_interop as adapter
 
 
 def observation(phase="exercise"):
-    ids = adapter.contracts.EXERCISE_CHECK_IDS if phase == "exercise" else adapter.contracts.RESTORED_CHECK_IDS
+    ids = adapter.EXERCISE_CHECK_IDS if phase == "exercise" else adapter.RESTORED_CHECK_IDS
     return dict(phase=phase, status="PASS", worldTime=20,
                 checks=[dict(id=key, status="PASS") for key in sorted(ids)],
+                normalCoalFuel=dict(item="minecraft:coal", inputCount=1, machine="minecraft:furnace",
+                                    customAlgorithms=0, itemOverride=-1, referenceProvider=True,
+                                    oracleBurnTime=1600, legacyBurnTime=1600, machineBurnTime=1600,
+                                    oracleStackUnchanged=True, legacyStackUnchanged=True, machineStackUnchanged=True),
                 sharedChecks=[dict(id="basemetals/native-power-crushing", status="PASS")])
 
 
@@ -23,6 +27,31 @@ class Native263InteropTest(unittest.TestCase):
         for phase in ("exercise", "restored"):
             self.validate(observation(phase), phase)
         self.assertEqual(("26.3", "66.0.0"), (adapter.native.MINECRAFT, adapter.native.FORGE))
+
+    def test_coal_requires_exact_native_oracle_and_both_immutable_public_overloads(self):
+        bad = dict(item="minecraft:charcoal", inputCount=2, machine="minecraft:blast_furnace",
+                   customAlgorithms=1, itemOverride=1600, referenceProvider=False,
+                   oracleBurnTime=0, legacyBurnTime=0, machineBurnTime=800,
+                   oracleStackUnchanged=False, legacyStackUnchanged=False, machineStackUnchanged=False)
+        for phase in ("exercise", "restored"):
+            for field, value in bad.items():
+                changed = observation(phase)
+                changed["normalCoalFuel"][field] = value
+                with self.subTest(phase=phase, field=field), self.assertRaises(AssertionError):
+                    self.validate(changed, phase)
+            for value in (None, {}, dict(observation(phase)["normalCoalFuel"], oracleBurnTime=1600.0),
+                          dict(observation(phase)["normalCoalFuel"], customAlgorithms=False)):
+                changed = observation(phase)
+                if value is None:
+                    del changed["normalCoalFuel"]
+                else:
+                    changed["normalCoalFuel"] = value
+                with self.subTest(phase=phase, evidence=value), self.assertRaises(AssertionError):
+                    self.validate(changed, phase)
+
+    def test_historical_contract_sets_are_not_changed(self):
+        self.assertNotIn(adapter.FUEL_CHECK, adapter.contracts.EXERCISE_CHECK_IDS)
+        self.assertNotIn(adapter.FUEL_CHECK, adapter.contracts.RESTORED_CHECK_IDS)
 
     def test_missing_duplicate_and_failed_capability_witnesses_are_rejected(self):
         document = observation()

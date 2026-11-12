@@ -97,7 +97,8 @@ def audit_saved(runtime, fixture, evidence):
 
 
 def native_load_sources():
-    sources = native.RIG.parent / f".gradle/mavenizer/repo/net/minecraftforge/forge/{native.FORGE_VERSION}/forge-{native.FORGE_VERSION}-sources.jar"
+    sources = native.RIG / f".gradle/mavenizer/repo/net/minecraftforge/forge/{native.FORGE_VERSION}/forge-{native.FORGE_VERSION}-sources.jar"
+    native.validate_hash(sources, "4571742629CD247753B109B272C8D6BBC583E6D3D5B2E79FA7DEC1EA09D25F8E")
     expected = {"net/minecraft/world/entity/Entity.java":
                 "E53CA0AA2777622317A05540183B66FFC4EA47B634D46B57C82AA05C88F2FF66",
                 "net/minecraft/world/entity/LivingEntity.java":

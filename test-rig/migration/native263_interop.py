@@ -4,20 +4,37 @@ from pathlib import Path
 import traceback
 
 from matrix import digest, write_json
-from native117_interop import require_checks, require_probe_order
+from native117_interop import require_probe_order
 from native117_readiness import await_ready
 import native117_interop as contracts
 import native12111 as previous
 import native263 as native
-from native263_resources import arguments, preflight
+from native263_resources import arguments, bind, preflight
 
 
 RECEIPT = "native263-interop-results.json"
+FUEL_CHECK = "fuel/normal-coal-public-overloads"
+EXERCISE_CHECK_IDS = contracts.EXERCISE_CHECK_IDS | {FUEL_CHECK}
+RESTORED_CHECK_IDS = contracts.RESTORED_CHECK_IDS | {FUEL_CHECK}
+require_checks = bind(contracts.require_checks, EXERCISE_CHECK_IDS=EXERCISE_CHECK_IDS,
+                      RESTORED_CHECK_IDS=RESTORED_CHECK_IDS)
+
+
+def require_normal_coal(document):
+    evidence = document.get("normalCoalFuel", {})
+    expected = dict(item="minecraft:coal", inputCount=1, machine="minecraft:furnace",
+                    customAlgorithms=0, itemOverride=-1, referenceProvider=True,
+                    oracleBurnTime=1600, legacyBurnTime=1600, machineBurnTime=1600,
+                    oracleStackUnchanged=True, legacyStackUnchanged=True, machineStackUnchanged=True)
+    for key, value in expected.items():
+        if type(evidence.get(key)) is not type(value) or evidence[key] != value:
+            raise AssertionError("Native ordinary coal fuel API regression: " + key)
 
 
 def validate_observation(document, phase, readiness):
     require_probe_order(document, readiness)
     require_checks(document, phase)
+    require_normal_coal(document)
     previous.require_shared_crushing(document)
 
 

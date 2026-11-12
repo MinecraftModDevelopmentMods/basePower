@@ -14,7 +14,8 @@ DRIVERS = ("native263", "native263_broad", "native263_machines", "native263_netw
            "native263_strict_migration", "native263_upgrade", "native263_actors",
            "native263_actor_fixtures", "native263_stopped_actor_reference", "native263_actor_comparison",
            "native263_transformer_order", "native263_actor_transformer_order", "native263_client",
-           "native263_endurance", "native263_endurance_replay", "native263_engine_proof")
+           "native263_endurance", "native263_endurance_replay", "native263_engine_proof", "native263_server_proof",
+           "native263_source262")
 
 
 def inventory():
@@ -36,7 +37,9 @@ def inventory():
         files.update(file for file in (root / path).rglob("*") if file.is_file()
                      and file.suffix in (".java", ".json", ".properties", ".toml", ".mcmeta", ".ps1", ".py", ".md"))
     files.update(root / name for name in ("build.gradle", "gradle.properties", "NATIVE263.md"))
-    files.add(root / "migration/fixtures/native263-mixed-palette.dat")
+    fixtures = root / "migration/fixtures"
+    files.update(path for path in fixtures.rglob("*") if path.is_file()
+                 and path.relative_to(fixtures).parts[0].startswith("native263"))
     for name in DRIVERS:
         if root / "migration" / (name + ".py") not in files:
             raise AssertionError("Missing required Native66 driver: " + name)
