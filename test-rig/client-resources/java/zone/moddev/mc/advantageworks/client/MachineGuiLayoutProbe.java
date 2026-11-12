@@ -22,7 +22,7 @@ import java.util.Map;
 import javax.imageio.ImageIO;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.Font;
 import net.minecraft.world.inventory.tooltip.TooltipComponent;
 import net.minecraft.client.player.LocalPlayer;
@@ -45,6 +45,7 @@ final class MachineGuiLayoutProbe {
         JsonArray screens = new JsonArray();
         result.add("machine_gui_layouts", screens);
         result.addProperty("machine_gui_text_spec", 2);
+        result.addProperty("machine_gui_framebuffer_spec", 3);
         int textChecks = 0, negativeControls = 0;
         List<String> problems = new ArrayList<>();
         LocalPlayer originalPlayer = minecraft.player;
@@ -55,20 +56,13 @@ final class MachineGuiLayoutProbe {
                 expectations = new JsonParser().parse(new InputStreamReader(stream, StandardCharsets.UTF_8)).getAsJsonObject();
             }
             require("Inventory".equals(net.minecraft.client.resources.language.I18n.get("container.inventory")), "GUI label audit requires en_us");
-            // ContainerScreen needs a carried-item inventory, but no world or connection.
+            require(originalPlayer != null && minecraft.level != null, "Machine GUI requires actual native login");
+            // Inventory contents are isolated; the owner retains its real connection and registry context.
             Class<?> allocator = Class.forName("sun.misc.Unsafe");
             Field singleton = allocator.getDeclaredField("theUnsafe");
             singleton.setAccessible(true);
-            LocalPlayer player = (LocalPlayer) allocator.getMethod("allocateInstance", Class.class)
-                    .invoke(singleton.get(null), LocalPlayer.class);
+            LocalPlayer player = originalPlayer;
             Inventory inventory = new Inventory(player, new net.minecraft.world.entity.EntityEquipment());
-            Field inventoryField = Player.class.getDeclaredField("inventory");
-            inventoryField.setAccessible(true);
-            inventoryField.set(player, inventory);
-            Field cooldowns = Player.class.getDeclaredField("cooldowns");
-            cooldowns.setAccessible(true);
-            cooldowns.set(player, new net.minecraft.world.item.ItemCooldowns());
-            minecraft.player = player;
             Field definitionsField = MachineGUIRegistry.class.getDeclaredField("DEFINITIONS");
             definitionsField.setAccessible(true);
             Map<?, ?> definitions = (Map<?, ?>) definitionsField.get(null);
@@ -102,12 +96,10 @@ final class MachineGuiLayoutProbe {
                     GuiWorld world = (GuiWorld) allocator.getMethod("allocateInstance", Class.class)
                             .invoke(singleton.get(null), GuiWorld.class);
                     world.state = block.defaultBlockState();
+                    world.registries = minecraft.level.registryAccess();
                     Field clientSide = net.minecraft.world.level.Level.class.getDeclaredField("isClientSide");
                     clientSide.setAccessible(true);
                     clientSide.setBoolean(world, true);
-                    Field playerLevel = net.minecraft.world.entity.Entity.class.getDeclaredField("level");
-                    playerLevel.setAccessible(true);
-                    playerLevel.set(player, world);
                     tile.setLevel(world);
                     SimpleMachineGUI.Container menu = ((SimpleMachineGUI) definition).createMenu(1, inventory, (Container) tile);
                     require(expectations.getAsJsonObject("machines").has(id), "No human-facing label expectation for " + id);
@@ -121,6 +113,8 @@ final class MachineGuiLayoutProbe {
                     row.addProperty("expected_title", expectedTitle);
                     row.addProperty("menu_title", title.getString());
                     row.addProperty("slots", menu.slots.size());
+                    JsonArray frameProofs = new JsonArray();
+                    row.add("framebuffer_cases", frameProofs);
                     int renders = 0;
                     for (int[] viewport : VIEWPORTS) {
                         screen.init(viewport[0], viewport[1]);
@@ -147,6 +141,17 @@ final class MachineGuiLayoutProbe {
                             screen.labels = LabelMode.PRODUCTION;
                             String labelError = labelError(actual, expected, background, screen, viewport[2]);
                             require(labelError == null, labelError);
+                            JsonObject proof = new JsonObject();
+                            proof.add("actual", NativeGuiEvidence.frame(actual));
+                            proof.add("expected", NativeGuiEvidence.frame(expected));
+                            proof.add("background", NativeGuiEvidence.frame(background));
+                            JsonArray viewportProof = new JsonArray();
+                            for (int value : viewport) viewportProof.add(value);
+                            proof.add("viewport", viewportProof);
+                            proof.addProperty("fill", fill);
+                            proof.addProperty("left", screen.getLeft()); proof.addProperty("top", screen.getTop());
+                            proof.add("slot_pixels", verifySlotPixels(minecraft, actual, screen, viewport, texture));
+                            frameProofs.add(proof);
                             textChecks++;
                             if (fill == 0 && viewport == VIEWPORTS[0]) verifyNoTextOverArtwork(actual, background, screen);
                             require(title.getString().equals(expectedTitle), "Menu title differs from the equipment name: " + title.getString());
@@ -157,6 +162,7 @@ final class MachineGuiLayoutProbe {
                             negativeControls++;
                         }
                     }
+                    row.add("garbled_background_control", verifyGarbledBackgroundControl(minecraft, screen, texture));
                     inventory.setItem(0, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.DIAMOND, 2));
                     screen.init(320, 240);
                     BufferedImage tooltip = render(minecraft, screen, VIEWPORTS[0], false, true);
@@ -170,9 +176,11 @@ final class MachineGuiLayoutProbe {
                     }
                     if (block == zone.moddev.mc.basepower.init.Blocks.metal_storage_tank) {
                         verifyHelperLimits(minecraft, screen);
+                        negativeControls += verifyBackgroundControl(minecraft, screen);
                     }
                     row.addProperty("renders", renders);
                     row.addProperty("tooltip_and_inventory_hitbox", "PASS");
+                    row.addProperty("background_extraction_calls", 1);
                     row.addProperty("required_text", "PASS");
                     row.addProperty("blank_label_controls_rejected", 9);
                     row.addProperty("status", "PASS");
@@ -201,11 +209,17 @@ final class MachineGuiLayoutProbe {
         }
     }
 
-    private static void verifySlots(SimpleMachineGUI.GUIContainer screen, SimpleMachineGUI.Container menu) {
+    private static void verifySlots(RecordingScreen screen, SimpleMachineGUI.Container menu) {
         require(screen.getLeft() >= 0 && screen.getTop() >= 0
                 && screen.getLeft() + screen.getXSize() <= screen.width
                 && screen.getTop() + screen.getYSize() <= screen.height, "Screen is clipped at a supported GUI size");
         require(menu.slots.size() >= 36, "Missing player inventory");
+        require(menu.slots.size() == screen.expectedMachineSlots.size() + 36, "Machine slot count differs from GUI declaration");
+        for (int i = 0; i < screen.expectedMachineSlots.size(); i++) {
+            int[] expected = screen.expectedMachineSlots.get(i);
+            require(menu.slots.get(i).x == expected[0] && menu.slots.get(i).y == expected[1],
+                    "Machine slot differs from independent GUI declaration: " + i);
+        }
         for (int i = 0; i < menu.slots.size(); i++) {
             Slot slot = menu.slots.get(i);
             require(slot.x >= 0 && slot.y >= 0 && slot.x + 16 <= screen.getXSize()
@@ -244,19 +258,120 @@ final class MachineGuiLayoutProbe {
     private static BufferedImage render(Minecraft minecraft, RecordingScreen screen,
             int[] viewport, boolean backgroundOnly, boolean hover) throws Exception {
         int width = viewport[0] * viewport[2], height = viewport[1] * viewport[2];
-        return NativeGuiProjection.render(minecraft, width, height, viewport[2], 0xFF1E2D3A,
+        BufferedImage image = NativeGuiProjection.render(minecraft, width, height, viewport[2], 0xFF1E2D3A,
                 state -> screen.recordingGraphics(minecraft, state), graphics -> {
+            screen.beginFrame();
+            if (screen.duplicateBackground) screen.extractBackground(graphics, -100, -100, 0F);
             if (backgroundOnly) {
                 LabelMode original = screen.labels;
                 screen.labels = LabelMode.HIDDEN;
-                try { screen.render(graphics, -100, -100, 0F); }
+                try { screen.extractRenderStateWithTooltipAndSubtitles(graphics, -100, -100, 0F); }
                 finally { screen.labels = original; }
             } else {
                 Slot hotbar = screen.getMenu().slots.get(screen.getMenu().slots.size() - 9);
-                screen.render(graphics, screen.hoverTitle ? screen.width / 2 : hover ? screen.getLeft() + hotbar.x + 1 : -100,
+                screen.extractRenderStateWithTooltipAndSubtitles(graphics, screen.hoverTitle ? screen.width / 2 : hover ? screen.getLeft() + hotbar.x + 1 : -100,
                         screen.hoverTitle ? screen.getTop() + 4 : hover ? screen.getTop() + hotbar.y + 1 : -100, 0F);
             }
         });
+        if (screen.duplicateBackground) ImageIO.write(image, "png", new File("machine-gui-layouts/double-background-control.png"));
+        require(screen.backgroundCalls == 1, "Native screen background must be extracted exactly once, got " + screen.backgroundCalls);
+        return image;
+    }
+
+    private static int verifyBackgroundControl(Minecraft minecraft, RecordingScreen screen) throws Exception {
+        screen.duplicateBackground = true;
+        try {
+            boolean rejected = false;
+            try { render(minecraft, screen, VIEWPORTS[0], false); }
+            catch (IllegalStateException expected) {
+                if (!expected.getMessage().startsWith("Native screen background must be extracted exactly once")) throw expected;
+                rejected = true;
+            }
+            require(rejected, "Duplicate native background extraction was not rejected");
+            return 1;
+        } finally {
+            screen.duplicateBackground = false;
+        }
+    }
+
+    private static JsonObject verifyGarbledBackgroundControl(Minecraft minecraft, RecordingScreen screen,
+            net.minecraft.resources.Identifier texture) throws Exception {
+        screen.init(VIEWPORTS[0][0], VIEWPORTS[0][1]);
+        screen.garbleBackground = true;
+        try {
+            BufferedImage broken = render(minecraft, screen, VIEWPORTS[0], false);
+            boolean rejected = false;
+            try { verifySlotPixels(minecraft, broken, screen, VIEWPORTS[0], texture); }
+            catch (IllegalStateException expected) {
+                if (!expected.getMessage().startsWith("Slot framebuffer pixels differ")) throw expected;
+                rejected = true;
+            }
+            require(rejected, "Garbled native background was accepted by slot pixel checks");
+            return NativeGuiEvidence.frame(broken);
+        } finally {
+            screen.garbleBackground = false;
+        }
+    }
+
+    private static JsonObject verifySlotPixels(Minecraft minecraft, BufferedImage actual, RecordingScreen screen,
+            int[] viewport, net.minecraft.resources.Identifier texture) {
+        var inventory = NativeGuiEvidence.source(minecraft, SimpleMachineGUI.playerInventoryBox);
+        var machine = NativeGuiEvidence.source(minecraft, texture);
+        JsonObject proof = new JsonObject();
+        proof.add("inventory_source", inventory.proof().deepCopy());
+        proof.add("machine_source", machine.proof().deepCopy());
+        JsonArray points = new JsonArray(), slots = new JsonArray(), slotColors = new JsonArray(), expectedPositions = new JsonArray();
+        for (int[] pos : screen.expectedMachineSlots) {
+            JsonArray row = new JsonArray(); row.add(pos[0] - 1); row.add(pos[1] - 1); expectedPositions.add(row);
+        }
+        for (int y = 0; y < 18; y++) for (int x = 0; x < 18; x++) if (x == 0 || x == 17 || y == 0 || y == 17) {
+            JsonArray point = new JsonArray(); point.add(x); point.add(y);
+            point.add(texel(inventory.image(), 7 + x, 139 + y)); points.add(point);
+        }
+        int firstPlayer = screen.getMenu().slots.size() - 36;
+        int checked = 0;
+        for (int index = 0; index < screen.getMenu().slots.size(); index++) {
+            Slot slot = screen.getMenu().slots.get(index);
+            JsonArray position = new JsonArray(); position.add(slot.x - 1); position.add(slot.y - 1); slots.add(position);
+            boolean player = index >= firstPlayer;
+            BufferedImage source = player ? inventory.image() : machine.image();
+            int u = slot.x - 1, v = player ? 132 + slot.y - 150 - 1 : slot.y - 12 - 1;
+            JsonArray colors = new JsonArray();
+            java.util.Set<Integer> contrast = new java.util.HashSet<>();
+            for (int y = 0; y < 18; y++) for (int x = 0; x < 18; x++) {
+                if (x != 0 && x != 17 && y != 0 && y != 17) continue;
+                int reference = texel(source, u + x, v + y);
+                if (player) require(reference == texel(inventory.image(), 7 + x, 139 + y), "Player inventory border changed");
+                for (int dy = 0; dy < viewport[2]; dy++) for (int dx = 0; dx < viewport[2]; dx++) {
+                    int physicalReference = texel(source, u + x, v + y, dx, dy, viewport[2]);
+                    colors.add(physicalReference); contrast.add(physicalReference);
+                    int pixelX = (screen.getLeft() + slot.x - 1 + x) * viewport[2] + dx;
+                    int pixelY = (screen.getTop() + slot.y - 1 + y) * viewport[2] + dy;
+                    require(actual.getRGB(pixelX, pixelY) == physicalReference,
+                            "Slot framebuffer pixels differ from independent artwork: " + index + " at " + pixelX + "," + pixelY);
+                    checked++;
+                }
+            }
+            require(contrast.size() >= 2, "Slot source crop has no border contrast: " + index + "/" + texture);
+            slotColors.add(colors);
+        }
+        proof.add("border_points", points); proof.add("slots", slots);
+        proof.add("slot_border_colors", slotColors); proof.add("expected_machine_slots", expectedPositions);
+        proof.addProperty("logical_texture_size", 256);
+        proof.addProperty("source_sampling", "PHYSICAL_PIXEL_CENTERS_ON_256_LOGICAL_UV_V1");
+        proof.addProperty("checked_pixels", checked);
+        return proof;
+    }
+
+    private static int texel(BufferedImage source, int u, int v) {
+        return texel(source, u, v, 0, 0, 1);
+    }
+
+    static int texel(BufferedImage source, int u, int v, int dx, int dy, int scale) {
+        require(u >= 0 && v >= 0 && u < 256 && v < 256, "Slot source UV escaped the logical GUI atlas");
+        require(scale >= 1 && dx >= 0 && dx < scale && dy >= 0 && dy < scale, "Invalid physical source texel sample");
+        return source.getRGB((int) ((u + (dx + 0.5F) / scale) * source.getWidth() / 256F),
+                (int) ((v + (dy + 0.5F) / scale) * source.getHeight() / 256F));
     }
 
     private static String labelError(BufferedImage actual, BufferedImage expected, BufferedImage background,
@@ -335,7 +450,7 @@ final class MachineGuiLayoutProbe {
     private static void verifyHelperLimits(Minecraft minecraft, RecordingScreen screen) throws Exception {
         for (String name : new String[]{"zone.moddev.mc.baseelectric.gui.GUIHelper",
                 "zone.moddev.mc.basesteam.gui.GUIHelper"}) {
-            if (!net.minecraftforge.fml.ModList.get().isLoaded(name.contains("baseelectric") ? "baseelectric" : "basesteam")) continue;
+            if (!net.minecraftforge.fml.ModList.isLoaded(name.contains("baseelectric") ? "baseelectric" : "basesteam")) continue;
             String[] methods = name.contains("baseelectric") ? new String[]{"drawProgressBar"}
                     : new String[]{"drawDownArrowProgress", "drawFlameProgress"};
             for (String method : methods) {
@@ -361,11 +476,13 @@ final class MachineGuiLayoutProbe {
 
     private static final class GuiWorld extends ClientLevel {
         private net.minecraft.world.level.block.state.BlockState state;
+        private net.minecraft.core.RegistryAccess registries;
         private GuiWorld() {
             super(null, null, net.minecraft.world.level.Level.OVERWORLD, null, 0, 0, null, false, 0, 0);
             throw new AssertionError("Allocate the read-only GUI fixture without a world constructor");
         }
         @Override public net.minecraft.world.level.block.state.BlockState getBlockState(BlockPos pos) { return state; }
+        @Override public net.minecraft.core.RegistryAccess registryAccess() { return registries; }
         @Override public net.minecraft.world.flag.FeatureFlagSet enabledFeatures() {
             return net.minecraft.world.flag.FeatureFlags.DEFAULT_FLAGS;
         }
@@ -380,6 +497,7 @@ final class MachineGuiLayoutProbe {
         private int itemTooltipCalls;
         private LabelMode labels = LabelMode.PRODUCTION;
         private final String expectedTitle, expectedInventory;
+        private final List<int[]> expectedMachineSlots = new ArrayList<>();
         private boolean hoverTitle;
         private String titleTooltip;
         RecordingScreen(SimpleMachineGUI definition, SimpleMachineGUI.Container menu, Inventory inventory,
@@ -387,9 +505,21 @@ final class MachineGuiLayoutProbe {
             definition.super(menu, inventory, title);
             this.expectedTitle = expectedTitle;
             this.expectedInventory = expectedInventory;
+            try {
+                Field coordinates = SimpleMachineGUI.class.getDeclaredField("inventorySlotCoordinates");
+                coordinates.setAccessible(true);
+                for (var point : (zone.moddev.mc.basepower.math.Integer2D[]) coordinates.get(definition))
+                    expectedMachineSlots.add(new int[]{point.X, point.Y + 12});
+            } catch (ReflectiveOperationException failure) {
+                throw new IllegalStateException("Cannot read the independent GUI slot declaration", failure);
+            }
         }
-        @Override protected void renderLabels(GuiGraphics graphics, int x, int y) {
-            if (labels == LabelMode.PRODUCTION) { super.renderLabels(graphics, x, y); return; }
+        private int backgroundCalls;
+        private boolean duplicateBackground;
+        private boolean garbleBackground;
+
+        @Override protected void extractLabels(GuiGraphicsExtractor graphics, int x, int y) {
+            if (labels == LabelMode.PRODUCTION) { super.extractLabels(graphics, x, y); return; }
             if (labels == LabelMode.HIDDEN) return;
             if (labels != LabelMode.INVENTORY_ONLY) {
                 String text = labels == LabelMode.WRONG_TEXT ? "Untranslated machine.name" : expectedTitle;
@@ -398,20 +528,24 @@ final class MachineGuiLayoutProbe {
                     text += "...";
                 }
                 int textX = (176 - font.width(text)) / 2;
-                graphics.drawString(font, text, textX, labels == LabelMode.OVER_GAUGE ? 20 : 1, 0xFFFFFFFF);
+                graphics.text(font, text, textX, labels == LabelMode.OVER_GAUGE ? 20 : 1, 0xFFFFFFFF);
             }
-            if (labels != LabelMode.TITLE_ONLY) graphics.drawString(font, expectedInventory, 8, 140, 0xFFFFFFFF);
+            if (labels != LabelMode.TITLE_ONLY) graphics.text(font, expectedInventory, 8, 140, 0xFFFFFFFF);
         }
-        @Override public void render(GuiGraphics graphics, int x, int y, float ticks) {
+        void beginFrame() {
             draws.clear(); tooltipCalls = 0; itemTooltipCalls = 0; titleTooltip = null;
-            super.render(graphics, x, y, ticks);
+            backgroundCalls = 0;
         }
-        @Override protected void renderTooltip(GuiGraphics graphics, int x, int y) {
+        @Override public void extractBackground(GuiGraphicsExtractor graphics, int x, int y, float ticks) {
+            backgroundCalls++;
+            super.extractBackground(graphics, x, y, ticks);
+        }
+        @Override protected void extractTooltip(GuiGraphicsExtractor graphics, int x, int y) {
             tooltipCalls++;
-            super.renderTooltip(graphics, x, y);
+            super.extractTooltip(graphics, x, y);
         }
-        GuiGraphics recordingGraphics(Minecraft minecraft, net.minecraft.client.gui.render.state.GuiRenderState state) {
-            return new GuiGraphics(minecraft, state, -100, -100) {
+        GuiGraphicsExtractor recordingGraphics(Minecraft minecraft, net.minecraft.client.renderer.state.gui.GuiRenderState state) {
+            return new GuiGraphicsExtractor(minecraft, state, -100, -100) {
                 @Override public void setTooltipForNextFrame(Font font, List<net.minecraft.network.chat.Component> lines,
                         java.util.Optional<TooltipComponent> component, net.minecraft.world.item.ItemStack item,
                         int x, int y) {
@@ -440,7 +574,7 @@ final class MachineGuiLayoutProbe {
                 bottom = Math.max(bottom, relativeY);
             }
             draws.add(new DrawBounds(left, top, right, bottom, u, v, width, height));
-            super.blit(texture, x, y, u, v, width, height);
+            super.blit(texture, x, y, garbleBackground ? u + 1 : u, v, width, height);
             if (helperCheck != null) {
                 Runnable check = helperCheck;
                 helperCheck = null;

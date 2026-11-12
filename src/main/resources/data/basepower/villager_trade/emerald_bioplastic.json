@@ -1,0 +1,13 @@
+{
+  "wants": { "id": "minecraft:emerald", "count": 1 },
+  "gives": { "id": "basepower:bioplastic_ingot" },
+  "max_uses": 7,
+  "xp": 1,
+  "reputation_discount": 0,
+  "given_item_modifiers": [
+    {
+      "function": "minecraft:set_count",
+      "count": { "type": "minecraft:uniform", "min": 4, "max": 8 }
+    }
+  ]
+}

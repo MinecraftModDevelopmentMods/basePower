@@ -37,7 +37,7 @@ import org.apache.logging.log4j.core.appender.AbstractAppender;
 import org.apache.logging.log4j.core.config.Property;
 import org.apache.logging.log4j.core.layout.PatternLayout;
 
-/** Runs real Forge discovery in a child VM so ModList and native registry state cannot leak into other tests. */
+/** Runs native Forge resource loading in an isolated VM, not dependency or gameplay qualification. */
 public final class NativePackResourceProof {
     private static JsonObject receipt;
 
@@ -47,7 +47,7 @@ public final class NativePackResourceProof {
         if (receipt != null) return receipt.deepCopy();
         Path evidenceRoot = Path.of("build/native-pack-resources").toAbsolutePath();
         Files.createDirectories(evidenceRoot);
-        Path evidence = Files.createTempDirectory(evidenceRoot, "forge61-");
+        Path evidence = Files.createTempDirectory(evidenceRoot, "forge64-");
         String classpath = Arrays.stream(System.getProperty("basepower.nativePackClasspath",
                 System.getProperty("java.class.path")).split(java.util.regex.Pattern.quote(java.io.File.pathSeparator)))
                 .map(entry -> new java.io.File(entry).getAbsolutePath())
@@ -90,6 +90,15 @@ public final class NativePackResourceProof {
             throw new AssertionError("The redirected proof child must not initialise an interactive terminal");
         }
         SharedConstants.tryDetectVersion();
+        if (Runtime.version().feature() != 25
+                || !"26.1.2".equals(SharedConstants.getCurrentVersion().name())
+                || !"64.1.5".equals(net.minecraftforge.versions.forge.ForgeVersion.getVersion())
+                || !net.minecraft.server.packs.metadata.pack.PackFormat.of(84, 0).equals(
+                        SharedConstants.getCurrentVersion().packVersion(PackType.CLIENT_RESOURCES))
+                || !net.minecraft.server.packs.metadata.pack.PackFormat.of(101, 1).equals(
+                        SharedConstants.getCurrentVersion().packVersion(PackType.SERVER_DATA))) {
+            throw new AssertionError("Resource proof requires actual Forge 64.1.5 / Minecraft 26.1.2 on Java 25");
+        }
         Bootstrap.bootStrap();
         Path resources = Path.of(args[0]);
         Path evidence = Path.of(args[1]);
@@ -107,7 +116,7 @@ public final class NativePackResourceProof {
         }
         ModFile mod = new ModFile(SecureJar.from(jar), new ForgeDevLocator(), ModFileParser::modsTomlParser);
         if (mod.getModFileInfo().showAsResourcePack()) throw new AssertionError("Power must use Forge's hidden client pack");
-        ModList.of(List.of(mod), mod.getModInfos().stream().map(ModInfo.class::cast).toList());
+        initializeResourceDiscovery(mod);
         List<String> diagnostics = new ArrayList<>();
         AbstractAppender appender = new AbstractAppender("PowerPackContract", null,
                 PatternLayout.createDefaultLayout(), false, Property.EMPTY_ARRAY) {
@@ -120,6 +129,10 @@ public final class NativePackResourceProof {
         logger.addAppender(appender);
         JsonObject result = new JsonObject();
         result.addProperty("interactiveTerminalDisabled", true);
+        result.addProperty("discoveryScope", "RESOURCE_PACK_ONLY");
+        result.addProperty("minecraft", SharedConstants.getCurrentVersion().name());
+        result.addProperty("forge", net.minecraftforge.versions.forge.ForgeVersion.getVersion());
+        result.addProperty("javaFeature", Runtime.version().feature());
         JsonArray dependencies = new JsonArray();
         for (var dependency : mod.getModInfos().getFirst().getDependencies()) {
             JsonObject entry = new JsonObject();
@@ -160,8 +173,10 @@ public final class NativePackResourceProof {
                     side.addProperty("resourcesClass", opened.getClass().getName());
                     side.addProperty("acceptsClient", formats.isValueInRange(SharedConstants.getCurrentVersion().packVersion(PackType.CLIENT_RESOURCES)));
                     side.addProperty("acceptsServer", formats.isValueInRange(SharedConstants.getCurrentVersion().packVersion(PackType.SERVER_DATA)));
-                    side.addProperty("accepts74", formats.isValueInRange(net.minecraft.server.packs.metadata.pack.PackFormat.of(74)));
-                    side.addProperty("accepts95", formats.isValueInRange(net.minecraft.server.packs.metadata.pack.PackFormat.of(95)));
+                    side.addProperty("accepts83", formats.isValueInRange(net.minecraft.server.packs.metadata.pack.PackFormat.of(83)));
+                    side.addProperty("accepts102", formats.isValueInRange(net.minecraft.server.packs.metadata.pack.PackFormat.of(102)));
+                    side.addProperty("acceptsPreviousClient", formats.isValueInRange(net.minecraft.server.packs.metadata.pack.PackFormat.of(75, 0)));
+                    side.addProperty("acceptsPreviousServer", formats.isValueInRange(net.minecraft.server.packs.metadata.pack.PackFormat.of(94, 1)));
                     side.add("nativeMetadata", encoded);
                     if (type == PackType.CLIENT_RESOURCES) {
                         if (opened.getChildren() == null || opened.getChildren().size() != 1) {
@@ -207,5 +222,34 @@ public final class NativePackResourceProof {
         Files.writeString(evidence.resolve("receipt.json"), result.toString(), StandardCharsets.UTF_8);
         if (!diagnostics.isEmpty()) throw new AssertionError("Native Forge resource diagnostics: " + diagnostics);
         System.out.println("BASEPOWER_NATIVE_PACK_RESOURCES_PASS " + result);
+    }
+
+    private static void initializeResourceDiscovery(ModFile mod) throws Exception {
+        if (net.minecraftforge.fml.loading.FMLLoader.getGamePath() != null) {
+            throw new AssertionError("Resource-only discovery must not run inside Forge");
+        }
+        // Forge64 removed ModList.of. Seed its native lazy discovery record without claiming
+        // dependency sorting, access-transformer application, or loading production mod classes.
+        Class<?> stateType = Class.forName("net.minecraftforge.fml.loading.ModSorter$State");
+        var constructor = stateType.getDeclaredConstructor(List.class, List.class);
+        constructor.setAccessible(true);
+        Object state = constructor.newInstance(List.of(mod),
+                mod.getModInfos().stream().map(ModInfo.class::cast).toList());
+        Class<?> discovery = Class.forName("net.minecraftforge.fml.loading.LoadingModListImpl");
+        var temporaryState = discovery.getDeclaredField("temp");
+        temporaryState.setAccessible(true);
+        if (temporaryState.get(null) != null) throw new AssertionError("Discovery is already initializing");
+        temporaryState.set(null, state);
+        try {
+            ModList.init();
+        } finally {
+            temporaryState.set(null, null);
+        }
+        if (ModList.getMods().size() != 1 || !ModList.getModFiles().equals(List.of(mod.getModFileInfo()))
+                || !ModList.getMods().equals(mod.getModInfos())
+                || !net.minecraftforge.fml.loading.LoadingModList.getErrors().isEmpty()
+                || !net.minecraftforge.fml.loading.LoadingModList.getBrokenFiles().isEmpty()) {
+            throw new AssertionError("Native resource-only discovery did not retain the exact parsed mod");
+        }
     }
 }

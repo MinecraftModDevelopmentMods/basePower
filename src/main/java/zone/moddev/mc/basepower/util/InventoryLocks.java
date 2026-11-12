@@ -1,20 +1,28 @@
 package zone.moddev.mc.basepower.util;
 
 import java.lang.reflect.Field;
-import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.CompoundContainer;
+import net.minecraft.world.Container;
 import net.minecraft.world.level.block.entity.BaseContainerBlockEntity;
-import net.minecraft.world.LockCode;
-import net.minecraftforge.fml.util.ObfuscationReflectionHelper;
 
 /** Keeps automation from bypassing vanilla container locks. */
 public final class InventoryLocks {
-    // Ordinary inventories need no vanilla field access or Forge name remapper.
+    // CompoundContainer exposes no child getters; single containers use the native API.
     private static final class Fields {
-        static final Field CODE = ObfuscationReflectionHelper.findField(BaseContainerBlockEntity.class, "f_58621_");
-        static final Field FIRST = ObfuscationReflectionHelper.findField(
-                net.minecraft.world.CompoundContainer.class, "f_18910_");
-        static final Field SECOND = ObfuscationReflectionHelper.findField(
-                net.minecraft.world.CompoundContainer.class, "f_18911_");
+        static final Field FIRST = child("container1");
+        static final Field SECOND = child("container2");
+
+        private static Field child(String name) {
+            try {
+                Field field = CompoundContainer.class.getDeclaredField(name);
+                if (field.getType() != Container.class || !field.trySetAccessible()) {
+                    throw new IllegalStateException("Cannot inspect vanilla compound inventory: " + name);
+                }
+                return field;
+            } catch (NoSuchFieldException failure) {
+                throw new ExceptionInInitializerError(failure);
+            }
+        }
     }
 
     private InventoryLocks() {}
@@ -22,10 +30,9 @@ public final class InventoryLocks {
     public static boolean isLocked(Object inventory) {
         if (inventory instanceof InventoryWrapper) return ((InventoryWrapper) inventory).isLocked();
         try {
-            if (inventory instanceof net.minecraft.world.CompoundContainer)
+            if (inventory instanceof CompoundContainer)
                 return isLocked(Fields.FIRST.get(inventory)) || isLocked(Fields.SECOND.get(inventory));
-            return inventory instanceof BaseContainerBlockEntity
-                    && !((LockCode) Fields.CODE.get(inventory)) .unlocksWith(ItemStack.EMPTY);
+            return inventory instanceof BaseContainerBlockEntity container && container.isLocked();
         } catch (IllegalAccessException failure) {
             throw new IllegalStateException("Cannot inspect vanilla inventory lock", failure);
         }

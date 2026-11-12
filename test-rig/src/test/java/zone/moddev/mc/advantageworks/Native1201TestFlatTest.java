@@ -37,7 +37,7 @@ public class Native1201TestFlatTest {
             var lookups = net.minecraft.tags.TagLoader.buildUpdatedLookups(
                     base.getAccessForLoading(RegistryLayer.WORLDGEN), pendingTags);
             var worldgen = RegistryDataLoader.load(resources, lookups,
-                    RegistryDataLoader.WORLDGEN_REGISTRIES);
+                    RegistryDataLoader.WORLDGEN_REGISTRIES, Runnable::run).join();
             registries = base.replaceFrom(RegistryLayer.WORLDGEN, worldgen).compositeAccess();
         }
     }
@@ -66,7 +66,8 @@ public class Native1201TestFlatTest {
                 new WorldGenSettings(settings.worldOptions, dimensions))
                 .getOrThrow(AssertionError::new).getAsJsonObject();
         assertEquals(42L, saved.get("seed").getAsLong());
-        assertFalse(saved.get("generate_features").getAsBoolean());
+        assertFalse(saved.has("generate_features"));
+        assertFalse(saved.get("generate_structures").getAsBoolean());
         assertFalse(saved.get("bonus_chest").getAsBoolean());
         JsonObject dimensionsTag = saved.getAsJsonObject("dimensions");
         assertEquals(3, dimensionsTag.entrySet().size());

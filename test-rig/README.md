@@ -1,6 +1,231 @@
-# Advantage Works 1.21.1 Test Rig
+# Advantage Works Test Rig
 
-The current target is Minecraft 1.21.1, Forge 52.1.0 and Java 21. Start with
+## Native 26.1.2: Local And Unqualified
+
+> **Current-instruction boundary:** Only this native26 section describes the
+> current port. Every section from **Retained 1.21.1 Reference** onward is
+> historical, not current native26 launch or qualification instructions.
+> In particular, the Java8/17 commands and decoupled-without-BaseMetals profiles
+> below must not be used for native26. **Base Metals is mandatory for native26**;
+> there is no supported native26 decoupled qualification profile.
+
+The native26 adapters target Minecraft **26.1.2**, Forge **64.1.5**, MCP
+**20260409.101008**, and the hash-pinned **Temurin 25.0.3+9** runtime. They are
+additive: do not replace historical `native*` drivers, profiles, source readers,
+or expectations with a global version substitution.
+
+**Final qualification profile: PENDING.** Candidate07 is awaiting the retained
+OreSpawn profile-migration and client gates. Earlier candidate05/06 machine
+and endurance receipts are historical, scoped evidence, not a final family
+pass. No filename or hash in this section stands in for the future final
+profile. Never retarget an old receipt after rebuilding any input.
+
+### Strict Inputs And Build
+
+The server core accepts only an explicitly materialized JSON profile with
+`mode: packaged`, `minecraftVersion: 26.1.2`, `forge.version: 26.1.2-64.1.5`,
+and `qualificationStatus: EXPLORATORY_UNQUALIFIED`. A future "final" profile
+still needs this supported input status; individual `PASS` receipts do not
+authorize publication or imply overall acceptance.
+
+All six ordinary inputs are mandatory. Every `mods` row must provide the exact
+`id`, `version`, `file`, `path`, and full SHA-256 of the actual frozen jar:
+
+| Mod ID | Required version |
+| --- | --- |
+| `basepower` | `2.4.16.2601021` |
+| `basesteam` | `2.2.17.2601021` |
+| `baseelectric` | `2.2.17.2601021` |
+| `basemetals` | `3.1.2.2601021` |
+| `orespawn` | `4.1.1.2601021` |
+| `advantageworkstest` | `1.1.6.2601021` |
+
+Missing, duplicate, unexpected, wrong-version or changed inputs fail closed.
+Relative mod paths resolve from `test-rig/`, not the shell's working directory.
+Freeze independent, read-only copies outside compiler outputs and caches; do not
+point a qualification profile at jars another build can overwrite.
+The harness manifest must pin the exact staged ordinary Power jar through
+`Power-Input-SHA256`, with the selected `Built-On` and unqualified status.
+Build the harness against that actual Power artifact, not a stale deobf jar
+or an invented hash. `test-rig/gradle.properties` owns `works_power_sha256`.
+
+From the repository root, with the selected Java25 installation:
+
+```powershell
+$env:JAVA_HOME = '<Temurin-25.0.3+9-home>'
+./gradlew.bat -p test-rig check build
+if ($LASTEXITCODE -ne 0) { throw 'Harness build/check failed' }
+```
+
+Compiler outputs remain in `test-rig/build/gradle/`; `clean` is restricted to
+that directory. Do not run concurrent Gradle builds against the same project
+cache. A build, worldless unit bootstrap, or preflight is not a real-server
+qualification.
+
+Use a separately sealed, fresh **code-only** Forge64 SDK seed: only the selected
+shim jar and `libraries/`, with no worlds or user configuration. The core checks
+the Java executable, shim, native binary, official launch arguments and full
+code inventory. It does not reuse an older-version seed. `native2612.py seal`
+creates this SDK inventory; it is **not** the endurance pre-run seal.
+
+Ordinary qualification launches require a free loopback TCP port, disabled empty-server pausing,
+and no inherited `JAVA_TOOL_OPTIONS`, `JDK_JAVA_OPTIONS`, `_JAVA_OPTIONS` or
+`CLASSPATH` overrides. An occupied port is an error, never permission to kill
+another process. Use an explicit Python executable with `nbtlib` and a reviewed
+dependency closure. Endurance custody also pins the interpreter, base executable,
+imported NumPy code and native libraries. Keep the same Python/PYTHONPATH closure
+for seal, producer, freeze and replay; do not bypass alias or hard-link guards.
+
+### Native26 CLI
+
+Run these examples from `test-rig/migration/`. Replace every angle-bracket
+placeholder with a verified input or a **new**, disjoint output path. The port
+numbers are examples: check ownership and availability immediately before launch.
+Stop on any failure and retain its original output.
+
+```powershell
+$Python = '<explicit-reviewed-python-executable>'
+$Profile = '<PENDING-final-native2612-profile.json>'
+$ProfileSha = '<actual-profile-SHA256>'
+$Seed = '<sealed-Forge64-code-only-seed>'
+$Inventory = '<native2612-code-inventory.json>'
+$InventorySha = '<actual-inventory-SHA256>'
+$Java = '<Temurin-25.0.3+9-home>/bin/java.exe'
+$Inputs = @('--profile', $Profile, '--seed', $Seed,
+    '--inventory', $Inventory, '--inventory-sha256', $InventorySha, '--java', $Java)
+
+if ($ProfileSha -notmatch '^[A-Fa-f0-9]{64}$' -or
+    (Get-FileHash -LiteralPath $Profile -Algorithm SHA256).Hash -ne $ProfileSha) {
+    throw 'Frozen profile hash differs; do not launch'
+}
+& $Python -B native2612.py verify @Inputs
+if ($LASTEXITCODE -ne 0) { throw 'Native input preflight failed' }
+& $Python -B native2612_operations.py @Inputs --group all `
+    --output '<new-finite132-runtime>' --port 25620
+if ($LASTEXITCODE -ne 0) { throw 'Finite operation/restart/raw audit failed' }
+```
+
+Preflight opens no world. `--group all` requires all 132 finite cases, an actual
+cold restart, both stopped raw-storage audits and unchanged seed custody.
+Smaller groups are focused checks, not the full finite-operation gate.
+
+Other native26 entry points have their own required inputs; inspect their
+`--help` rather than copying historical runner defaults:
+
+| Entry point under `migration/` | Separate scope |
+| --- | --- |
+| `native2612_broad.py`, `native2612_interop.py` | Walkable Works/lifecycle and real cross-mod interoperability |
+| `native2612_machines.py`, `native2612_networks.py` | Harvest, movement, physical unload/reload orders and extended drill/network controls |
+| `native2612_upgrade.py` | Explicit historical source route, native conversion, operation, restart and raw saved witnesses |
+| `native2612_actors.py`, `native2612_actor_transformer_order.py` | Player/entity/dimension authority and actor-inclusive real transformer orders; not replaced by machine-only migration |
+| `native2612_resources.py` | Real ingredient acquisition, recipe unlock and manufacturing progression |
+| `native2612_worldgen.py`, `native2612_retained_worldgen.py`, `native2612_oil.py` | Normal/retained generation semantics and bounded oil processing/transport, not superflat station coverage |
+| `native2612_client.py` | Separate real-client rendering evidence; server or unit results do not replace it |
+
+Native destination readers use DataVersion 4790, explicit
+`dimensions/<namespace>/<path>/` terrain/entity storage, `players/data/`, and
+the separate worldgen SavedData. Historical source layouts remain version-specific.
+Do not infer destination dimensions from a legacy `DIM*` basename or discard
+unknown NBT to make a comparison pass.
+
+### Genuine Endurance, Freeze And Replay
+
+Before **any** endurance setup, finish the full finite gate and a new full
+`original110` machine migration against the same frozen profile. A hook-only,
+provisional, old-candidate or machine-only result cannot stand in for a separately
+required actor/player campaign. The retained endurance input must be the stopped
+runtime and exact successful full `original110` receipt, including operation.
+
+The reviewed engine receipt is a separate required input. It binds the actual
+core/classifier and primary native source/binary proof; `seal` does not manufacture
+that review. Keep the complete transitive oracle/runtime closure unchanged.
+
+```powershell
+$EngineReceipt = '<reviewed-engine-proof.json>'
+$EngineSha = '<actual-engine-receipt-SHA256>'
+$Retained = '<stopped-current-profile-original110-runtime>'
+$RetainedReceipt = '<current-profile-original110-upgrade-results.json>'
+$RetainedSha = '<actual-retained-receipt-SHA256>'
+$Seal = '<new-pre-run-seal.json>'
+$Run = '<new-two-world-endurance-output>'
+$Frozen = '<new-stopped-freeze-directory>'
+
+& $Python -B native2612_endurance_replay.py seal --profile $Profile `
+    --profile-sha256 $ProfileSha --specification '../src/main/resources/assets/advantageworkstest/works/works-1.13.2.json' `
+    --inventory $Inventory --inventory-sha256 $InventorySha --java $Java `
+    --engine-receipt $EngineReceipt --engine-receipt-sha256 $EngineSha `
+    --retained-receipt $RetainedReceipt --retained-receipt-sha256 $RetainedSha --output $Seal
+if ($LASTEXITCODE -ne 0) { throw 'Preseal failed; do not begin setup' }
+$SealSha = (Get-FileHash -LiteralPath $Seal -Algorithm SHA256).Hash
+
+& $Python -B native2612_endurance.py @Inputs --seal $Seal --seal-sha256 $SealSha `
+    --retained $Retained --retained-receipt $RetainedReceipt `
+    --retained-receipt-sha256 $RetainedSha --seconds 1800 --port 25621 --output $Run
+if ($LASTEXITCODE -ne 0) { throw 'Endurance incomplete; retain failure or hold receipt' }
+
+$Receipt = Join-Path $Run 'native2612-endurance-results.json'
+$ReceiptSha = (Get-FileHash -LiteralPath $Receipt -Algorithm SHA256).Hash
+& $Python -B native2612_endurance_replay.py freeze --run $Run --seal $Seal `
+    --seal-sha256 $SealSha --receipt-sha256 $ReceiptSha --output $Frozen
+if ($LASTEXITCODE -ne 0) { throw 'Stopped freeze failed' }
+$FreezeSha = (Get-FileHash -LiteralPath (Join-Path $Frozen 'freeze.json') -Algorithm SHA256).Hash
+& $Python -B native2612_endurance_replay.py replay --frozen $Frozen `
+    --freeze-sha256 $FreezeSha --seal-sha256 $SealSha --output '<new-independent-replay.json>'
+if ($LASTEXITCODE -ne 0) { throw 'Independent stopped replay failed' }
+```
+
+The producer requires two adjacent free ports and runs separate fresh and retained
+worlds with independent native clocks. Each needs at least 1,800 measured seconds,
+30 natural-tick batches, at least 18 TPS in every measured interval, a full process
+restart, and at least 60 seconds of resumed processing. A below-threshold resource
+throughput failure remains a failure, not a waived gameplay pass. A
+`hold-endurance.request` produces `HELD`, never qualification.
+
+After final tick-frozen observations and owned save/stop, `freeze` requires stopped
+worlds and exact source/copy inventories. Independent replay checks all 66 ledger
+checkpoints, every batch, interval clocks, feed conservation and exact typed raw
+native4790 machine state/NBT. It launches no Minecraft process and does not prove
+client appearance, player conversion, every worldgen rule or manual gameplay.
+`--retrospective` is diagnostic only: its replay is explicitly
+`PASS_RETROSPECTIVE_REPLAY_NOT_PRE_RUN_CUSTODY`, not a genuine presealed pass.
+Record the full profile, seal, producer, freeze and replay hashes plus process/port
+closure. Never overwrite a failed attempt or substitute later jars into its proof.
+
+### Retained Failures And Negative Controls
+
+Known historical failures are evidence, not runtime ignore rules:
+
+| Retained observation | Required distinction |
+| --- | --- |
+| Obsolete InventoryLocks SRG field lookup; nullable Steam fuel remainder; last-fuel container loss | Real production failures with retained RED evidence; new jars need new full input pins and campaigns |
+| Saved Steam enchantment IDs flattened as vanilla curses before selected-world context preparation | Machine-only migration/endurance could pass while actor preservation failed; require the independent actor/order scope |
+| Global atlas directories importing foreign low-resolution sprites | A dedicated-server pass does not qualify native mip-level client startup or geometry |
+| Active legacy OreSpawn profiles retaining obsolete Power/Electric output IDs | Preserved JSON and valid new defaults do not establish equivalent retained generation; final profile-migration qualification remains pending |
+
+Focused controls reject wrong Java or shim bytes, modified launch arguments,
+missing/duplicate mods, harness/Power pin mismatch, inherited JVM overrides,
+occupied ports, empty-server pausing, incomplete cold stop and tampered evidence.
+A crash can exit 0: exit code alone is insufficient. Native identity and `Done`
+must precede an owned stop and the final post-stop dimension-save witness; an
+earlier startup/autosave cannot replace the final flush.
+
+The Forge64 logging adapter changes exactly two source-hash-bound `%xEx` tokens
+to `%ex`; it does not disable DEBUG, filters or diagnostics. The strict Netty
+classifier recognizes only the reviewed, source/binary-bound Java25 capability
+probe sequence followed by successful Java25 cleaner availability. Raw logs are
+retained. Changed counts, levels, messages, frames or missing success are errors,
+not a blanket exception whitelist or a reason to re-enable Unsafe.
+
+---
+
+> **Historical references below, not native26 instructions.** Their Java versions,
+> profiles, optional-mod rules and example commands belong to their stated older
+> targets. Native26 requires all six pinned inputs, including Base Metals; use
+> only the native26 section above for the current port.
+
+## Retained 1.21.1 Reference
+
+The retained target is Minecraft 1.21.1, Forge 52.1.0 and Java 21. Start with
 the [native test instructions](profiles/native1211/README.md) and the
 [port record](../docs/1.21.1/PORT-STATUS.md). Use only the current hash-pinned
 inputs in disposable worlds. Earlier results do not qualify a rebuilt jar.

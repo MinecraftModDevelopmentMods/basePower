@@ -6,7 +6,7 @@ import cyano.poweradvantage.api.GUIBlock;
 import cyano.poweradvantage.api.simple.SimpleMachineGUI;
 import cyano.poweradvantage.api.simple.TileEntitySimpleFluidMachine;
 import io.netty.buffer.Unpooled;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.client.Minecraft;
@@ -78,15 +78,16 @@ final class TankVisualProbe {
         require(container.getType() == MachineGUIRegistry.TYPE && MachineGUIRegistry.TYPE != null,
                 "Tank GUI is not backed by the registered native container type");
         var screen = definition.new GUIContainer(container, inventory, net.minecraft.network.chat.Component.literal(name)) {
-            void renderTank(GuiGraphics graphics) { renderBg(graphics, 0F, -100, -100); }
+            void renderTank(GuiGraphicsExtractor graphics) { extractBackground(graphics, -100, -100, 0F); }
         };
         screen.init(WIDTH, HEIGHT);
         Identifier texture = Identifier.fromNamespaceAndPath("basepower", "textures/gui/container/" + art);
         BufferedImage empty = render(minecraft, screen::renderTank);
         BufferedImage emptyReference = reference(minecraft, texture, null, 0);
-        compare(name, "empty", 0, 0, empty, emptyReference, emptyReference, cases);
+        compareEvidence(name, "empty", 0, 0, empty, emptyReference, emptyReference, null, texture, cases);
         for (Sample sample : new Sample[] {
-                new Sample("water", net.minecraft.world.level.material.Fluids.WATER, "minecraft:block/water_still", 0x3F76E4),
+                new Sample("water", net.minecraft.world.level.material.Fluids.WATER, "minecraft:block/water_still",
+                        net.minecraft.client.renderer.BiomeColors.getAverageWaterColor(minecraft.level, minecraft.player.blockPosition())),
                 new Sample("lava", net.minecraft.world.level.material.Fluids.LAVA, "minecraft:block/lava_still", 0xFFFFFF),
                 new Sample("crude-oil", zone.moddev.mc.basepower.init.Fluids.crude_oil, "basepower:blocks/crude_oil_still", 0xFFFFFF),
                 new Sample("refined-oil", zone.moddev.mc.basepower.init.Fluids.refined_oil, "basepower:blocks/refined_oil_still", 0xFFFFFF) }) {
@@ -100,8 +101,11 @@ final class TankVisualProbe {
                 syncTank(server, client, packetLevel, registries);
                 require(client.getTank().getFluidAmount() == amount && client.getTank().getFluid().getFluid() == sample.fluid(),
                         name + " tank update lost fluid identity or amount");
-                compare(name, sample.name(), amount, rows, render(minecraft, screen::renderTank),
-                        reference(minecraft, texture, sample, rows), emptyReference, cases);
+                Sample wrong = new Sample(sample.name(), sample.fluid(), sample.name().equals("water")
+                        ? "minecraft:block/lava_still" : "minecraft:block/water_still", sample.tint());
+                compareEvidence(name, sample.name(), amount, rows, render(minecraft, screen::renderTank),
+                        reference(minecraft, texture, sample, rows), emptyReference,
+                        reference(minecraft, texture, wrong, rows), texture, cases);
                 require(handler.drain(amount, FluidAction.EXECUTE).getAmount() == amount, name + " tank did not drain");
                 syncTank(server, client, packetLevel, registries);
                 require(client.getTank().getFluidAmount() == 0, name + " tank update retained old fluid");
@@ -180,6 +184,9 @@ final class TankVisualProbe {
 
     private static BufferedImage reference(Minecraft minecraft, Identifier texture, Sample sample, int rows) {
         return render(minecraft, graphics -> {
+            graphics.fillGradient(0, 0, WIDTH, HEIGHT, -1072689136, -804253680);
+            graphics.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED,
+                    SimpleMachineGUI.playerInventoryBox, 0, 150, 0, 132, 176, 90, 256, 256);
             graphics.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED,
                     texture, 0, PANEL_TOP, 0, 0, WIDTH, 128, 256, 256);
             if (sample != null) {
@@ -188,9 +195,14 @@ final class TankVisualProbe {
                 require(sprite.contents().name().equals(Identifier.parse(sample.sprite())), "Missing reference sprite: " + sample.sprite());
                 int tint = sample.tint();
                 // Use Minecraft's full-sprite blit, not the production UV or clipped-tile calculations.
-                for (int y = GAUGE_Y + GAUGE_HEIGHT - rows; y < GAUGE_Y + GAUGE_HEIGHT; y += TILE) {
-                    graphics.blitSprite(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED,
-                            sprite, GAUGE_X, y, TILE, TILE, tint | 0xFF000000);
+                graphics.enableScissor(GAUGE_X, GAUGE_Y + GAUGE_HEIGHT - rows, GAUGE_X + TILE, GAUGE_Y + GAUGE_HEIGHT);
+                try {
+                    for (int y = GAUGE_Y + GAUGE_HEIGHT - rows; y < GAUGE_Y + GAUGE_HEIGHT; y += TILE) {
+                        graphics.blitSprite(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED,
+                                sprite, GAUGE_X, y, TILE, TILE, tint | 0xFF000000);
+                    }
+                } finally {
+                    graphics.disableScissor();
                 }
             }
             graphics.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED,
@@ -198,23 +210,53 @@ final class TankVisualProbe {
         });
     }
 
+    private static void compareEvidence(String tank, String fluid, int amount, int rows, BufferedImage actual,
+            BufferedImage expected, BufferedImage empty, BufferedImage garbled, Identifier artwork, JsonArray cases) {
+        compare(tank, fluid, amount, rows, actual, expected, empty, cases);
+        JsonObject result = cases.get(cases.size() - 1).getAsJsonObject();
+        result.add("actual_frame", NativeGuiEvidence.frame(actual));
+        result.add("expected_frame", NativeGuiEvidence.frame(expected));
+        result.add("empty_frame", NativeGuiEvidence.frame(empty));
+        result.add("source_artwork", NativeGuiEvidence.source(Minecraft.getInstance(), artwork).proof().deepCopy());
+        int different = differences(actual, expected);
+        result.addProperty("whole_panel_different_pixels", different);
+        if (garbled != null) {
+            result.add("garbled_frame", NativeGuiEvidence.frame(garbled));
+            result.addProperty("blank_control_different_pixels", differences(empty, expected));
+            result.addProperty("garbled_control_different_pixels", differences(garbled, expected));
+            require(differences(empty, expected) > 0 && differences(garbled, expected) > 0,
+                    "Blank/garbled fluid control was accepted: " + tank + "/" + fluid + "/" + amount);
+        }
+        require(different == 0, "Whole tank background/frame/player panel differs, not just its gauge: " + tank + "/" + fluid);
+    }
+
+    private static int differences(BufferedImage actual, BufferedImage expected) {
+        require(actual.getWidth() == expected.getWidth() && actual.getHeight() == expected.getHeight(), "Mismatched framebuffer size");
+        int count = 0;
+        for (int y = 0; y < actual.getHeight(); y++) for (int x = 0; x < actual.getWidth(); x++)
+            if (actual.getRGB(x, y) != expected.getRGB(x, y)) count++;
+        return count;
+    }
+
     private static void compare(String tank, String fluid, int amount, int rows, BufferedImage actual,
             BufferedImage expected, BufferedImage empty, JsonArray cases) {
+        int scale = 2;
         int different = 0, visible = 0;
         int bottom = GAUGE_Y + GAUGE_HEIGHT;
-        for (int y = GAUGE_Y; y < bottom + 3; y++) {
-            for (int x = GAUGE_X; x < GAUGE_X + TILE; x++) {
-                int expectedPixel = y < bottom ? expected.getRGB(x, y) : empty.getRGB(x, y);
+        for (int y = GAUGE_Y * scale; y < (bottom + 3) * scale; y++) {
+            for (int x = GAUGE_X * scale; x < (GAUGE_X + TILE) * scale; x++) {
+                int expectedPixel = y < bottom * scale ? expected.getRGB(x, y) : empty.getRGB(x, y);
                 if (actual.getRGB(x, y) != expectedPixel) different++;
                 if (expectedPixel != empty.getRGB(x, y)) visible++;
             }
         }
-        require(visible >= rows * TILE / 2, "Fluid reference is blank or obscured: " + tank + " " + fluid);
+        require(visible >= rows * TILE * scale * scale / 2, "Fluid reference is blank or obscured: " + tank + " " + fluid);
         var result = new JsonObject();
         result.addProperty("tank", tank);
         result.addProperty("fluid", fluid);
         result.addProperty("amount_mb", amount);
         result.addProperty("fill_rows", rows);
+        result.addProperty("render_scale", scale);
         result.addProperty("different_pixels", different);
         cases.add(result);
         try {
@@ -226,8 +268,8 @@ final class TankVisualProbe {
         }
     }
 
-    private static BufferedImage render(Minecraft minecraft, Consumer<GuiGraphics> draw) {
-        return NativeGuiProjection.render(minecraft, WIDTH, HEIGHT, 1, 0xFF000000, draw);
+    private static BufferedImage render(Minecraft minecraft, Consumer<GuiGraphicsExtractor> draw) {
+        return NativeGuiProjection.render(minecraft, WIDTH * 2, HEIGHT * 2, 2, 0xFF000000, draw);
     }
 
     private static void require(boolean condition, String message) {

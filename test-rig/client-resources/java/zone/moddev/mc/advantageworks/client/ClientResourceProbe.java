@@ -4,8 +4,9 @@ import com.google.gson.JsonObject;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.block.model.BakedQuad;
-import net.minecraft.client.renderer.block.model.BlockStateModel;
+import net.minecraft.client.resources.model.geometry.BakedQuad;
+import net.minecraft.client.renderer.block.dispatch.BlockStateModel;
+import net.minecraft.client.renderer.block.dispatch.BlockStateModelPart;
 import net.minecraft.client.renderer.item.ItemStackRenderState;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.world.item.Item;
@@ -25,42 +26,120 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.util.RandomSource;
 
-/** Runs after native resource baking, without opening or generating a world. */
+/** Runs after real native login and resource baking in a disposable copied world. */
 @Mod(ClientResourceProbe.MODID)
 public final class ClientResourceProbe {
     static final String MODID = "advantageclientresources";
     private static boolean finished;
     private static int ticks;
+    private static String lastReadiness = "";
+    private static JsonObject lastReadinessState;
+    private static final NativeExperimentalFixtureGate FIXTURE_GATE = new NativeExperimentalFixtureGate();
+    private static JsonObject preLoginGeometry;
+    private static net.minecraft.client.gui.screens.Screen disconnectedScreen;
+    private static int disconnectedTick;
+    private static NativeWorldOilProbe worldOil;
+    private static JsonObject worldOilReport;
+    private static boolean worldOilComplete;
+    private static net.minecraft.network.Connection loggedInConnection;
 
     public ClientResourceProbe() {
+        NativeVanillaResourceProbe.register();
+        net.minecraftforge.client.event.ClientPlayerNetworkEvent.LoggingIn.BUS.addListener(
+                event -> loggedInConnection = event.getConnection());
         TickEvent.ClientTickEvent.Post.BUS.addListener(ClientResourceProbe::tick);
     }
 
     public static void tick(TickEvent.ClientTickEvent.Post event) {
         if (!Boolean.getBoolean("advantageworks.clientResources") || finished) return;
         Minecraft minecraft = Minecraft.getInstance();
-        if (++ticks < 5 || ((minecraft.getOverlay() != null || minecraft.getModelManager().getMissingBlockStateModel() == null) && ticks < 1200)) return;
+        boolean loggedIn = minecraft.level != null && minecraft.player != null
+                && minecraft.getConnection() != null && minecraft.hasSingleplayerServer()
+                && minecraft.getConnection().getConnection() == loggedInConnection
+                && loggedInConnection != null && loggedInConnection.isConnected()
+                && minecraft.getConnection().hasClientLoaded();
+        boolean componentsBound = loggedIn && net.minecraft.core.registries.BuiltInRegistries.ITEM.listElements()
+                .allMatch(net.minecraft.core.Holder.Reference::areComponentsBound);
+        ++ticks;
+        Throwable readinessFailure = null;
+        try {
+            recordReadiness(minecraft, loggedIn, componentsBound);
+            failDisconnected(minecraft);
+            if (Boolean.getBoolean("advantageworks.childRendererGeometry") && preLoginGeometry == null
+                    && minecraft.level == null && minecraft.player == null && minecraft.getSingleplayerServer() == null
+                    && minecraft.getOverlay() == null && minecraft.getModelManager().getBlockStateModelSet() != null) {
+                preLoginGeometry = new JsonObject();
+                inspect("child_geometry", preLoginGeometry, () -> ChildRendererGeometryProbe.verify(minecraft, preLoginGeometry));
+                JsonObject context = new JsonObject();
+                context.addProperty("stage", "GENUINELY_WORLDLESS_BEFORE_LOGIN");
+                context.addProperty("tick", ticks);
+                context.addProperty("levelPresent", minecraft.level != null);
+                context.addProperty("playerPresent", minecraft.player != null);
+                context.addProperty("singleplayerServerPresent", minecraft.getSingleplayerServer() != null);
+                preLoginGeometry.add("child_geometry_context", context);
+            }
+            FIXTURE_GATE.tick(minecraft, ticks, lastReadinessState);
+        } catch (RuntimeException | LinkageError | AssertionError failure) { readinessFailure = failure; }
+        if (readinessFailure == null && (ticks < 5 || ((!componentsBound || minecraft.getOverlay() != null
+                || minecraft.getModelManager().getBlockStateModelSet() == null) && ticks < 2400))) return;
+        if (readinessFailure == null && loggedIn && componentsBound && !worldOilComplete) {
+            if (worldOil == null) worldOil = new NativeWorldOilProbe();
+            try {
+                worldOilReport = worldOil.tick(minecraft, ticks);
+                if (worldOilReport == null) return;
+            } catch (RuntimeException | LinkageError | AssertionError failure) {
+                worldOilReport = worldOil.report();
+                LogManager.getLogger(MODID).error("ADVANTAGE_CLIENT_WORLD_OIL FAIL", failure);
+            }
+            worldOilComplete = true;
+        }
         finished = true;
         JsonObject result = new JsonObject();
         try {
             result.addProperty("minecraft", net.minecraftforge.versions.mcp.MCPVersion.getMCVersion());
             result.addProperty("forge", net.minecraftforge.versions.forge.ForgeVersion.getVersion());
-            require("1.21.11".equals(result.get("minecraft").getAsString())
-                    && "61.1.0".equals(result.get("forge").getAsString()), "Wrong native client target");
-            require(minecraft.level == null && minecraft.player == null && !minecraft.hasSingleplayerServer(),
-                    "Resource probe must not open a world or connect to a server");
+            if (lastReadinessState != null) result.add("loginReadiness", lastReadinessState.deepCopy());
+            result.add("experimentalFixtureGate", FIXTURE_GATE.report());
+            if (preLoginGeometry != null) for (var row : preLoginGeometry.entrySet()) result.add(row.getKey(), row.getValue().deepCopy());
+            if (worldOilReport != null) result.add("world_oil_visual", worldOilReport.deepCopy());
+            if (readinessFailure != null) throw new IllegalStateException("Native login/fixture gate failed", readinessFailure);
+            require("26.1.2".equals(result.get("minecraft").getAsString())
+                    && "64.1.5".equals(result.get("forge").getAsString())
+                    && Runtime.version().feature() == 25, "Wrong native client target");
+            require(loggedIn && componentsBound, "Native real-world login/component binding did not complete");
+            var expectedWorld = Path.of("saves/AdvantageClientResources").toRealPath();
+            var actualWorld = minecraft.getSingleplayerServer()
+                    .getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT).toRealPath();
+            require(actualWorld.equals(expectedWorld), "Integrated server opened a world other than the disposable copy");
+            JsonObject login = new JsonObject();
+            login.addProperty("status", "PASS");
+            login.addProperty("realWorld", true);
+            login.addProperty("integratedServer", true);
+            login.addProperty("nativeComponentsBound", true);
+            login.addProperty("syntheticComponentBinding", false);
+            login.addProperty("loggingInEventObserved", true);
+            login.addProperty("connectionConnected", true);
+            login.addProperty("clientLoaded", true);
+            login.addProperty("copiedWorldPath", actualWorld.toString());
+            login.addProperty("itemHolders", net.minecraft.core.registries.BuiltInRegistries.ITEM.listElements().count());
+            login.addProperty("dimension", minecraft.level.dimension().identifier().toString());
+            result.add("login", login);
+            JsonObject calibration = NativeGuiProjection.calibrate(minecraft);
+            require("PASS".equals(calibration.get("status").getAsString()), "Native projection calibration failed");
+            result.add("projectionCalibration", calibration);
             verifyNetworkBootstrap(result);
             com.google.gson.JsonArray mods = new com.google.gson.JsonArray();
             JsonObject versions = new JsonObject();
             for (String id : new String[]{"basepower", "basesteam", "baseelectric"}) {
-                boolean loaded = net.minecraftforge.fml.ModList.get().isLoaded(id);
+                boolean loaded = net.minecraftforge.fml.ModList.isLoaded(id);
                 if (loaded) {
                     mods.add(id);
-                    versions.addProperty(id, net.minecraftforge.fml.ModList.get().getModContainerById(id).get()
+                    versions.addProperty(id, net.minecraftforge.fml.ModList.getModContainerById(id).orElseThrow()
                             .getModInfo().getVersion().toString());
                 }
                 if (Boolean.getBoolean("advantageworks.requireExtensions")) require(loaded, "Combined launch omitted " + id);
@@ -69,11 +148,11 @@ public final class ClientResourceProbe {
             result.add("mod_versions", versions);
             require(versions.has("basepower") && zone.moddev.mc.basepower.PowerAdvantage.VERSION
                     .equals(versions.get("basepower").getAsString()), "Power metadata does not match the compiled version");
-            require("2.4.15.121111".equals(versions.get("basepower").getAsString()), "Wrong native Power candidate");
+            require("2.4.16.2601021".equals(versions.get("basepower").getAsString()), "Wrong native Power candidate");
             for (String id : new String[]{"basesteam", "baseelectric"}) {
-                if (versions.has(id)) require("2.2.16.121111".equals(versions.get(id).getAsString()), "Wrong native expansion candidate: " + id);
+                if (versions.has(id)) require("2.2.17.2601021".equals(versions.get(id).getAsString()), "Wrong native expansion candidate: " + id);
             }
-            require(minecraft.getModelManager().getMissingBlockStateModel() != null, "Timed out before model baking");
+            require(minecraft.getModelManager().getBlockStateModelSet() != null, "Timed out before model baking");
             require(minecraft.getOverlay() == null, "Timed out before native resource loading completed");
             verifyVanillaParticleControl(minecraft, result);
             boolean primary = inspect("registered_resources", result, () -> {
@@ -84,7 +163,7 @@ public final class ClientResourceProbe {
             var hidden = java.util.Set.of("basepower:fluid_pipe_terminal", "basepower:crude_oil", "basepower:refined_oil",
                     "basesteam:pump_pipe_steam", "basesteam:drillbit",
                     "baseelectric:pump_pipe_electric", "baseelectric:laser_turret_evil");
-            BlockStateModel missing = minecraft.getModelManager().getMissingBlockStateModel();
+            BlockStateModel missing = minecraft.getModelManager().getBlockStateModelSet().missingModel();
             for (Item item : ForgeRegistries.ITEMS) {
                 Identifier id = ForgeRegistries.ITEMS.getKey(item);
                 if (id == null || !included(id.getNamespace())) continue;
@@ -100,7 +179,7 @@ public final class ClientResourceProbe {
                 Identifier id = ForgeRegistries.BLOCKS.getKey(block);
                 if (id == null || !included(id.getNamespace())) continue;
                 for (BlockState state : block.getStateDefinition().getPossibleStates()) {
-                    BlockStateModel model = minecraft.getModelManager().getBlockModelShaper().getBlockModel(state);
+                    BlockStateModel model = minecraft.getModelManager().getBlockStateModelSet().get(state);
                     capture("block-model/" + state, resourceFailures,
                             () -> verifyModel(model, missing, state, state.toString(), !(block instanceof net.minecraft.world.level.block.LiquidBlock)));
                     states++;
@@ -108,8 +187,8 @@ public final class ClientResourceProbe {
             }
             CreativeModeTab tab = ItemGroups.tab_powerAdvantage;
             require(tab != null, "The shared creative tab was not registered");
-            tab.buildContents(new CreativeModeTab.ItemDisplayParameters(FeatureFlags.DEFAULT_FLAGS, false,
-                    RegistryAccess.EMPTY));
+            tab.buildContents(new CreativeModeTab.ItemDisplayParameters(minecraft.level.enabledFeatures(), false,
+                    minecraft.level.registryAccess()));
             var contents = tab.getDisplayItems();
             require(items > 0 && states > 0, "Power Advantage content is not registered");
             require(!contents.isEmpty(), "Power Advantage creative tab is empty");
@@ -145,18 +224,88 @@ public final class ClientResourceProbe {
             result.addProperty("primary_resource_status", primary ? "PASS" : "FAIL");
             boolean geometry = true;
             if (Boolean.getBoolean("advantageworks.childRendererGeometry"))
-                geometry = inspect("child_geometry", result, () -> ChildRendererGeometryProbe.verify(minecraft, result));
-            require(primary && geometry, "One or more native client probe scopes failed; inspect scope_results");
+                geometry = preLoginGeometry != null && "PASS".equals(preLoginGeometry.getAsJsonObject("scope_results")
+                        .getAsJsonObject("child_geometry").get("status").getAsString());
+            require(primary && geometry && worldOilComplete && worldOilReport != null
+                    && "PASS".equals(worldOilReport.get("status").getAsString()),
+                    "One or more native client probe scopes failed; inspect scope_results/world_oil_visual");
             result.addProperty("status", "PASS");
             result.addProperty("screen", minecraft.screen == null ? "none" : minecraft.screen.getClass().getName());
-        } catch (RuntimeException | LinkageError | AssertionError failure) {
+        } catch (IOException | RuntimeException | LinkageError | AssertionError failure) {
             result.addProperty("status", "FAIL");
             result.addProperty("error", failure.toString());
+            if (failure.getCause() != null) result.addProperty("cause", failure.getCause().toString());
             LogManager.getLogger(MODID).error("ADVANTAGE_CLIENT_RESOURCES FAIL", failure);
         } finally {
             try { Files.write(Paths.get("client-resources.json"), result.toString().getBytes(StandardCharsets.UTF_8)); }
             catch (IOException failure) { throw new IllegalStateException("Could not write client resource result", failure); }
             finally { minecraft.stop(); }
+        }
+    }
+
+    private static void failDisconnected(Minecraft minecraft) {
+        if (minecraft.screen == null || minecraft.screen.getClass() != net.minecraft.client.gui.screens.DisconnectedScreen.class
+                || minecraft.getOverlay() != null) return;
+        if (minecraft.screen != disconnectedScreen) { disconnectedScreen = minecraft.screen; disconnectedTick = ticks; return; }
+        if (ticks - disconnectedTick < 20) return;
+        try {
+            lastReadinessState.addProperty("nativeDisconnectNarration", minecraft.screen.getNarrationMessage().getString());
+            captureReadinessScreen(minecraft, lastReadinessState, Path.of("login-readiness/disconnected.png"));
+            Files.writeString(Path.of("login-readiness/disconnected.json"), lastReadinessState.toString(), java.nio.file.StandardOpenOption.CREATE_NEW);
+        } catch (IOException failure) { throw new IllegalStateException("Could not retain native disconnect failure", failure); }
+        throw new IllegalStateException("Native client disconnected: " + minecraft.screen.getNarrationMessage().getString());
+    }
+
+    private static void captureReadinessScreen(Minecraft minecraft, JsonObject state, Path screenshot) throws IOException {
+        var image = NativeGuiProjection.read(minecraft.getMainRenderTarget());
+        try (var output = Files.newOutputStream(screenshot, java.nio.file.StandardOpenOption.CREATE_NEW)) {
+            require(javax.imageio.ImageIO.write(image, "png", output), "No diagnostic PNG writer");
+        }
+        JsonObject proof = new JsonObject();
+        proof.addProperty("file", screenshot.toString().replace('\\', '/'));
+        try {
+            proof.addProperty("sha256", java.util.HexFormat.of().withUpperCase().formatHex(
+                    java.security.MessageDigest.getInstance("SHA-256").digest(Files.readAllBytes(screenshot))));
+        } catch (java.security.NoSuchAlgorithmException failure) { throw new IllegalStateException(failure); }
+        proof.addProperty("width", image.getWidth()); proof.addProperty("height", image.getHeight());
+        proof.addProperty("fenceCompleted", true);
+        proof.addProperty("scope", "NATIVE_LOAD_SCREEN_DIAGNOSTIC_NOT_GUI_QUALIFICATION");
+        state.add("screenshot", proof);
+    }
+
+    private static void recordReadiness(Minecraft minecraft, boolean loggedIn, boolean componentsBound) {
+        JsonObject state = new JsonObject();
+        state.addProperty("screenClass", minecraft.screen == null ? "none" : minecraft.screen.getClass().getName());
+        state.addProperty("screenTitle", minecraft.screen == null ? "" : minecraft.screen.getTitle().getString());
+        state.addProperty("screenTitleComponent", minecraft.screen == null ? "" : minecraft.screen.getTitle().toString());
+        state.addProperty("overlayClass", minecraft.getOverlay() == null ? "none" : minecraft.getOverlay().getClass().getName());
+        state.addProperty("levelPresent", minecraft.level != null);
+        state.addProperty("playerPresent", minecraft.player != null);
+        state.addProperty("integratedServer", minecraft.hasSingleplayerServer());
+        state.addProperty("singleplayerServerPresent", minecraft.getSingleplayerServer() != null);
+        state.addProperty("connectionPresent", minecraft.getConnection() != null);
+        state.addProperty("loggingInEventObserved", loggedInConnection != null);
+        state.addProperty("connectionConnected", minecraft.getConnection() != null && minecraft.getConnection().getConnection().isConnected());
+        state.addProperty("clientLoaded", minecraft.getConnection() != null && minecraft.getConnection().hasClientLoaded());
+        state.addProperty("nativeComponentsBound", componentsBound);
+        state.addProperty("stage", !minecraft.hasSingleplayerServer() ? "BEFORE_INTEGRATED_SERVER"
+                : !loggedIn ? "WAITING_NATIVE_LOGIN" : !componentsBound ? "WAITING_COMPONENT_BINDING" : "NATIVE_LOGIN_READY");
+        String signature = state.toString();
+        lastReadinessState = state;
+        if (signature.equals(lastReadiness) && ticks % 300 != 0) return;
+        lastReadiness = signature;
+        state.addProperty("tick", ticks);
+        try {
+            Path folder = Path.of("login-readiness");
+            Files.createDirectories(folder);
+            if (!loggedIn && ticks >= 300 && ticks % 300 == 0) {
+                Path screenshot = folder.resolve("screen-" + ticks + ".png");
+                captureReadinessScreen(minecraft, state, screenshot);
+            }
+            Files.writeString(folder.resolve("state-" + ticks + ".json"), state.toString(), java.nio.file.StandardOpenOption.CREATE_NEW);
+            LogManager.getLogger(MODID).info("ADVANTAGE_CLIENT_READINESS {}", state);
+        } catch (IOException failure) {
+            throw new IllegalStateException("Could not retain actual native login readiness", failure);
         }
     }
 
@@ -205,9 +354,11 @@ public final class ClientResourceProbe {
         Identifier modelId = stack.get(net.minecraft.core.component.DataComponents.ITEM_MODEL);
         require(modelId != null && minecraft.getModelManager().getItemModels().containsKey(modelId), "Missing native item definition: " + id);
         ItemStackRenderState state = new ItemStackRenderState();
-        minecraft.getItemModelResolver().updateForTopItem(state, stack, net.minecraft.world.item.ItemDisplayContext.GUI, null, null, 0);
+        minecraft.getItemModelResolver().updateForTopItem(state, stack, net.minecraft.world.item.ItemDisplayContext.GUI,
+                minecraft.level, minecraft.player, 0);
         require(!state.isEmpty(), "Empty native item model: " + id);
-        require(!"missingno".equals(state.pickParticleIcon(RandomSource.create(42L)).contents().name().getPath()), "Missing particle texture: " + id);
+        var particle = state.pickParticleMaterial(RandomSource.create(42L));
+        require(particle != null && !"missingno".equals(particle.sprite().contents().name().getPath()), "Missing particle texture: " + id);
         try {
             var countField = ItemStackRenderState.class.getDeclaredField("activeLayerCount");
             var layersField = ItemStackRenderState.class.getDeclaredField("layers");
@@ -217,7 +368,7 @@ public final class ClientResourceProbe {
             int quads = 0;
             for (int i = 0; i < countField.getInt(state); i++) {
                 for (BakedQuad quad : layers[i].prepareQuadList()) {
-                    require(!"missingno".equals(quad.sprite().contents().name().getPath()), "Missing face texture: " + id);
+                    require(!"missingno".equals(quad.materialInfo().sprite().contents().name().getPath()), "Missing face texture: " + id);
                     quads++;
                 }
             }
@@ -229,26 +380,28 @@ public final class ClientResourceProbe {
 
     private static void verifyModel(BlockStateModel model, BlockStateModel missing, BlockState state, String id, boolean requireQuads) {
         require(model != missing, "Missing baked model: " + id);
-        require(!"missingno".equals(model.particleIcon(net.minecraftforge.client.model.data.ModelData.EMPTY)
-                .contents().name().getPath()), "Missing particle texture: " + id);
+        require(!"missingno".equals(model.particleMaterial(net.minecraftforge.client.model.data.ModelData.EMPTY)
+                .sprite().contents().name().getPath()), "Missing particle texture: " + id);
         RandomSource random = RandomSource.create(42L);
         List<BakedQuad> quads = new ArrayList<>();
-        for (var part : model.collectParts(random, net.minecraftforge.client.model.data.ModelData.EMPTY, null)) {
-            require(!"missingno".equals(part.particleIcon().contents().name().getPath()), "Missing part texture: " + id);
+        List<BlockStateModelPart> parts = new ArrayList<>();
+        model.collectParts(random, parts, net.minecraftforge.client.model.data.ModelData.EMPTY);
+        for (var part : parts) {
+            require(!"missingno".equals(part.particleMaterial().sprite().contents().name().getPath()), "Missing part texture: " + id);
             quads.addAll(part.getQuads(null));
             for (Direction side : Direction.values()) quads.addAll(part.getQuads(side));
         }
         require(!requireQuads || !quads.isEmpty(), "Empty baked model: " + id);
-        for (BakedQuad quad : quads) require(!"missingno".equals(quad.sprite().contents().name().getPath()), "Missing face texture: " + id);
+        for (BakedQuad quad : quads) require(!"missingno".equals(quad.materialInfo().sprite().contents().name().getPath()), "Missing face texture: " + id);
     }
 
     private static void verifyVanillaParticleControl(Minecraft minecraft, JsonObject report) {
         var state = net.minecraft.world.level.block.Blocks.STONE.defaultBlockState();
-        var shaper = minecraft.getModelManager().getBlockModelShaper();
-        var model = shaper.getBlockModel(state);
-        var legacy = model.particleIcon();
-        var nativeIcon = model.particleIcon(net.minecraftforge.client.model.data.ModelData.EMPTY);
-        var shaperIcon = shaper.getParticleIcon(state);
+        var models = minecraft.getModelManager().getBlockStateModelSet();
+        var model = models.get(state);
+        var legacy = model.particleMaterial().sprite();
+        var nativeIcon = model.particleMaterial(net.minecraftforge.client.model.data.ModelData.EMPTY).sprite();
+        var shaperIcon = models.getParticleMaterial(state).sprite();
         JsonObject control = new JsonObject();
         report.add("vanilla_stone_particle_control", control);
         control.addProperty("model_class", model.getClass().getName());
@@ -258,7 +411,7 @@ public final class ClientResourceProbe {
         Identifier expected = Identifier.parse("minecraft:block/stone");
         require(nativeIcon.contents().name().equals(expected) && shaperIcon.contents().name().equals(expected),
                 "Native vanilla STONE particle control failed: " + control);
-        verifyModel(model, minecraft.getModelManager().getMissingBlockStateModel(), state, "vanilla STONE control", true);
+        verifyModel(model, models.missingModel(), state, "vanilla STONE control", true);
         control.addProperty("status", "PASS");
     }
 

@@ -9,7 +9,7 @@ final class Native118ChunkTicking {
 
     static boolean withEntitiesLoaded(ServerLevel world, BlockPos pos) {
         // The native combined check became private in 1.18.
-        long key = ChunkPos.asLong(pos);
+        long key = ChunkPos.pack(pos);
         return world.areEntitiesLoaded(key) && world.getChunkSource().isPositionTicking(key);
     }
 }

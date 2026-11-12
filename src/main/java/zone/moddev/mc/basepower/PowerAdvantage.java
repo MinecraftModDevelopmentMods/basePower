@@ -14,13 +14,14 @@ import cyano.poweradvantage.api.migration.LegacyConfigMigration.ValueType;
 import cyano.poweradvantage.api.migration.LegacyOreSpawnConfigBridge;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.fml.DistExecutor;
+import net.minecraftforge.fml.loading.FMLEnvironment;
 
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.eventbus.api.bus.BusGroup;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.minecraftforge.fml.event.lifecycle.FMLLoadCompleteEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.fml.loading.FMLPaths;
 import zone.moddev.mc.basepower.config.PowerAdvantageConfig;
@@ -42,7 +43,7 @@ import zone.moddev.mc.basepower.migration.BaseMetalsLegacyMigration;
 public final class PowerAdvantage {
     public static final String MODID = "basepower";
     public static final String NAME = "basePower";
-    public static final String VERSION = "2.4.15.121111";
+    public static final String VERSION = "2.4.16.2601021";
     public static final Logger LOGGER = LogManager.getLogger(MODID);
 
     private static PowerAdvantage instance;
@@ -77,13 +78,15 @@ public final class PowerAdvantage {
 
         AdvantageLegacyMigrations.registerPowerAdvantage();
         zone.moddev.mc.basepower.migration.VanillaRegistryRemaps.register();
+        zone.moddev.mc.basepower.migration.OreSpawnProfileMigration.registerServerHook();
         net.minecraftforge.event.level.ChunkEvent.Load.BUS.addListener(ConduitRegistry.getInstance()::onChunkLoad);
         net.minecraftforge.event.level.ChunkEvent.Unload.BUS.addListener(ConduitRegistry.getInstance()::onChunkUnload);
         net.minecraftforge.event.entity.player.PlayerEvent.PlayerLoggedInEvent.BUS.addListener(RecipeDiscovery::onPlayerLogin);
-        net.minecraftforge.event.village.VillagerTradesEvent.BUS.addListener(zone.moddev.mc.basepower.init.Villages::onTrades);
         net.minecraftforge.event.AddPackFindersEvent.BUS.addListener(
                 zone.moddev.mc.basepower.recipe.MaterialTags::registerPack);
         net.minecraftforge.registries.RegisterEvent.getBus(modBus).addListener(zone.moddev.mc.basepower.init.Blocks::registerBlocks);
+        net.minecraftforge.registries.RegisterEvent.getBus(modBus).addListener(
+                zone.moddev.mc.basepower.migration.LegacyOreSpawnRegistryAliases::register);
         net.minecraftforge.registries.RegisterEvent.getBus(modBus).addListener(zone.moddev.mc.basepower.init.Blocks::registerBlockItems);
         net.minecraftforge.registries.RegisterEvent.getBus(modBus).addListener(zone.moddev.mc.basepower.init.Items::register);
         net.minecraftforge.registries.RegisterEvent.getBus(modBus).addListener(zone.moddev.mc.basepower.init.Fluids::registerFluids);
@@ -101,15 +104,15 @@ public final class PowerAdvantage {
         net.minecraftforge.fml.event.config.ModConfigEvent.Loading.getBus(modBus).addListener(PowerAdvantageConfig::onConfigLoading);
         net.minecraftforge.fml.event.config.ModConfigEvent.Reloading.getBus(modBus).addListener(PowerAdvantageConfig::onConfigLoading);
         FMLCommonSetupEvent.getBus(modBus).addListener(this::commonSetup);
+        FMLLoadCompleteEvent.getBus(modBus).addListener(this::finishOreSpawnMigration);
 
-        DistExecutor.runWhenOn(Dist.CLIENT, () -> () -> {
+        if (FMLEnvironment.dist == Dist.CLIENT) {
             net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent.getBus(modBus).addListener(
                     (net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent event) ->
                             event.enqueueWork(() -> {
                                 MachineGUIRegistry.registerScreens();
-                                zone.moddev.mc.basepower.client.ClientOilRenderer.configureRenderLayers();
                             }));
-        });
+        }
     }
 
     private static void migrateLegacyOreSpawnConfiguration() {
@@ -120,8 +123,9 @@ public final class PowerAdvantage {
                 LOGGER.info("Imported {} legacy Power Advantage OreSpawn rule(s) from '{}' into '{}'",
                         result.getRuleCount(), result.getSource(), result.getTarget());
             }
+            zone.moddev.mc.basepower.migration.OreSpawnProfileMigration.registerPowerProvider(FMLPaths.CONFIGDIR.get());
         } catch (IOException exception) {
-            LOGGER.error("Could not migrate legacy Power Advantage OreSpawn configuration", exception);
+            throw new IllegalStateException("Could not safely migrate legacy Power Advantage OreSpawn configuration", exception);
         }
     }
 
@@ -148,7 +152,7 @@ public final class PowerAdvantage {
     private void commonSetup(FMLCommonSetupEvent event) {
         Fuels.init();
         GUI.init();
-        if (ModList.get().isLoaded("basemetals")) {
+        if (ModList.isLoaded("basemetals")) {
             event.enqueueWork(() -> BaseMetalsLegacyMigration.register());
         }
         // Forge's shared hook list is not safe to mutate during parallel mod construction.
@@ -156,6 +160,22 @@ public final class PowerAdvantage {
         ModSupport.configureForgeEnergyConversions();
         Recipes.initDistillationRecipes(PowerAdvantageConfig.distillationRecipes());
         LOGGER.info("Power Advantage {} common setup complete", VERSION);
+    }
+
+    private void finishOreSpawnMigration(FMLLoadCompleteEvent event) {
+        event.enqueueWork(() -> {
+            try {
+                // Both queued bake orders read the repaired file, before any world is opened.
+                if (zone.moddev.mc.basepower.migration.OreSpawnProfileMigration
+                        .migrateLateProfiles(FMLPaths.CONFIGDIR.get())) {
+                    zone.moddev.mc.orespawn.worldgen.GeomeConfig.bake();
+                    zone.moddev.mc.orespawn.worldgen.OreSpawnOreGeneration.refreshWorldConfig();
+                    zone.moddev.mc.orespawn.worldgen.FluidDepositFeature.refreshWorldConfig();
+                }
+            } catch (IOException exception) {
+                throw new IllegalStateException("Could not safely finish OreSpawn profile migration", exception);
+            }
+        });
     }
 
     /** Legacy API retained for add-ons that pass the mod owner to GUIBlock. */

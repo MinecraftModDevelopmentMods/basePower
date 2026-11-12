@@ -72,8 +72,12 @@ public class CooperativeChunkReturnHooksTest {
         Constructor<?> constructor = type.getDeclaredConstructor();
         constructor.setAccessible(true);
         Method handler = type.getDeclaredMethod(mod + "$finishChunk", CompoundTag.class, int.class,
-                CompoundTag.class, CallbackInfoReturnable.class);
+                CompoundTag.class, int.class, CallbackInfoReturnable.class);
+        assertThrows("The removed three-argument chunk ABI must not satisfy this test", NoSuchMethodException.class,
+                () -> type.getDeclaredMethod(mod + "$finishChunk", CompoundTag.class, int.class,
+                        CompoundTag.class, CallbackInfoReturnable.class));
         handler.setAccessible(true);
-        handler.invoke(constructor.newInstance(), root, 0, null, callback);
+        handler.invoke(constructor.newInstance(), root, 0, null,
+                net.minecraft.SharedConstants.getCurrentVersion().dataVersion().version(), callback);
     }
 }

@@ -96,7 +96,9 @@ public class BuildWorkflowContractTest {
             assertTrue(name, workflow.contains("master-" + pins.getProperty("minecraft_version")));
             assertTrue(name, workflow.contains("java-version: '25.0.3+9.0.LTS'"));
             assertTrue(name, workflow.contains("java-version: '" + pins.getProperty("java_setup_version") + "'"));
-            assertTrue(name, workflow.contains("java-version: '8.0.502+7'"));
+            assertFalse(name, workflow.contains("java-version: '8.0.502+7'"));
+            assertTrue(name, workflow.contains("-Porg.gradle.java.installations.paths=$JAVA_HOME"));
+            assertFalse(name, workflow.contains("JAVA_HOME_8_X64"));
             assertFalse(name, workflow.contains("JAVA_HOME_16_X64"));
             assertTrue(name, workflow.contains("-Porg.gradle.java.installations.paths="));
             assertTrue(name, workflow.contains("-Porg.gradle.java.installations.auto-detect=false"));

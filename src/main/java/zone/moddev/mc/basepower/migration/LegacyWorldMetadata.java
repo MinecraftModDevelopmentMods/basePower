@@ -23,17 +23,17 @@ public final class LegacyWorldMetadata {
     public static CompoundTag read(File levelDat) throws IOException {
         LegacyWorldDataHook.prepareForgeRegistryMetadata(levelDat);
         CompoundTag root = NbtIo.readCompressed(levelDat.toPath(), NbtAccounter.unlimitedHeap());
-        remap(root, ModList.get()::isLoaded);
+        remap(root, ModList::isLoaded);
         return root;
     }
 
     public static Tag remapLightweight(Tag root) {
-        if (root instanceof CompoundTag compound) remap(compound, ModList.get()::isLoaded);
+        if (root instanceof CompoundTag compound) remap(compound, ModList::isLoaded);
         return root;
     }
 
     public static CompoundTag remapRaw(CompoundTag root) {
-        remap(root, ModList.get()::isLoaded);
+        remap(root, ModList::isLoaded);
         return root;
     }
 

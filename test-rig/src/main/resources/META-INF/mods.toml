@@ -1,5 +1,5 @@
 modLoader="javafml"
-loaderVersion="[61,62)"
+loaderVersion="[64,65)"
 license="LGPL-3.0-only"
 
 [[mods]]
@@ -13,20 +13,20 @@ description='''Server-side commissioning harness for the Advantage family. Not f
 [[dependencies.advantageworkstest]]
 modId="basepower"
 mandatory=true
-versionRange="[2.4.15.121111,3.0.0)"
+versionRange="[2.4.16.2601021,3.0.0)"
 ordering="AFTER"
 side="SERVER"
 
 [[dependencies.advantageworkstest]]
 modId="forge"
 mandatory=true
-versionRange="[61.1.0,62)"
+versionRange="[64.1.5,65)"
 ordering="NONE"
 side="SERVER"
 
 [[dependencies.advantageworkstest]]
 modId="minecraft"
 mandatory=true
-versionRange="[1.21.11]"
+versionRange="[26.1.2]"
 ordering="NONE"
 side="SERVER"

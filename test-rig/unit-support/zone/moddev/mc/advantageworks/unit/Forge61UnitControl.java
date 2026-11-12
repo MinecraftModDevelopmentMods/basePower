@@ -13,16 +13,16 @@ import net.minecraftforge.registries.ForgeRegistries;
 /** Proves the test-only fixture reaches Forge's native item, registry, and capability paths. */
 public final class Forge61UnitControl {
     public static void main(String[] args) throws Exception {
-        net.minecraftforge.fml.ModLoader.get();
+        net.minecraftforge.fml.ModList.init();
         SharedConstants.tryDetectVersion();
         Bootstrap.bootStrap();
         if (new ItemStack(Items.DIRT, 16).get(DataComponents.MAX_STACK_SIZE) != 64)
             throw new AssertionError("Native item component gathering did not complete");
         if (!net.minecraftforge.fml.ModLoader.isLoadingStateValid())
             throw new AssertionError("The native unit loader is invalid");
-        if (net.minecraftforge.fml.ModList.get().size() != 0)
+        if (net.minecraftforge.fml.ModList.size() != 0)
             throw new AssertionError("The native unit loader contains mods: "
-                    + net.minecraftforge.fml.ModList.get().size());
+                    + net.minecraftforge.fml.ModList.size());
         for (int run = 0; run < 2; run++) {
             ForgeUnitRegistries.registerVanillaFluidTypes();
             ForgeUnitRegistries.registerForgeEntries("ATTRIBUTES", ForgeRegistries.Keys.ATTRIBUTES, ForgeRegistries.ATTRIBUTES);
@@ -35,6 +35,6 @@ public final class Forge61UnitControl {
                 || (Object) ForgeCapabilities.FLUID_HANDLER == ForgeCapabilities.ITEM_HANDLER) {
             throw new AssertionError("Native Forge capability tokens were not transformed");
         }
-        System.out.println("Forge 61 plain-JUnit bootstrap control PASS");
+        System.out.println("Forge 64 plain-JUnit bootstrap control PASS");
     }
 }

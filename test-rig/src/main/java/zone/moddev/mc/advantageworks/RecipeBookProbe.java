@@ -105,7 +105,7 @@ final class RecipeBookProbe {
                 require(starch.matches(grid.asCraftInput(), world), "Potato recipe rejected slot/stack " + slot + "/" + count);
                 RecipeHolder<?> selected = world.recipeAccess().getRecipeFor(RecipeType.CRAFTING, grid.asCraftInput(), world).orElse(null);
                 require(selected != null && selected.id().equals(starchId), "Conflicting native potato crafting recipe");
-                ItemStack result = starch.assemble(grid.asCraftInput(), world.registryAccess());
+                ItemStack result = starch.assemble(grid.asCraftInput());
                 require(id(result).equals("basepower:starch") && result.getCount() == 1, "Starch output changed");
                 require(grid.getItem(slot).getCount() == count, "Result preview mutated input");
                 ItemStack consumed = grid.removeItem(slot, 1);

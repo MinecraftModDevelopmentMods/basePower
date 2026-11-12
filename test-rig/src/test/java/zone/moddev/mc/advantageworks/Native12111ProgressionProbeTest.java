@@ -84,12 +84,14 @@ public class Native12111ProgressionProbeTest {
             @Override public boolean matches(SingleRecipeInput input, Level world) {
                 return input.item().is(Items.POTATO) && input.item().getCount() == 1;
             }
-            @Override public ItemStack assemble(SingleRecipeInput input, HolderLookup.Provider registries) {
+            @Override public ItemStack assemble(SingleRecipeInput input) {
                 return new ItemStack(Items.CARROT);
             }
-            @Override public RecipeSerializer<? extends Recipe<SingleRecipeInput>> getSerializer() { return RecipeSerializer.SMELTING_RECIPE; }
+            @Override public RecipeSerializer<? extends Recipe<SingleRecipeInput>> getSerializer() { return net.minecraft.world.item.crafting.SmeltingRecipe.SERIALIZER; }
             @Override public RecipeType<? extends Recipe<SingleRecipeInput>> getType() { return RecipeType.SMELTING; }
             @Override public boolean isSpecial() { return true; }
+            @Override public boolean showNotification() { return false; }
+            @Override public String group() { return ""; }
             @Override public PlacementInfo placementInfo() { return PlacementInfo.NOT_PLACEABLE; }
             @Override public RecipeBookCategory recipeBookCategory() { return RecipeBookCategories.FURNACE_FOOD; }
         };

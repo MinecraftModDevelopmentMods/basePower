@@ -9,8 +9,12 @@ Set-StrictMode -Version Latest
 $ProjectRoot = (Resolve-Path -LiteralPath $ProjectRoot).Path
 $Evidence = [IO.Path]::GetFullPath($Evidence)
 if (Test-Path -LiteralPath $Evidence) { throw 'Refusing to replace Eclipse evidence' }
-if ((Get-Content -LiteralPath (Join-Path $JavaHome 'release') -Raw) -notmatch '(?m)^JAVA_VERSION="21(?:\.|\+|")') {
-    throw 'The native Eclipse build requires Java 21'
+if ((Get-Content -LiteralPath (Join-Path $JavaHome 'release') -Raw) -notmatch '(?m)^IMPLEMENTOR_VERSION="Temurin-25\.0\.3\+9"') {
+    throw 'The native Eclipse build requires Temurin 25.0.3+9'
+}
+if ((Get-FileHash -LiteralPath $Compiler -Algorithm SHA256).Hash -cne
+        'D0D43F8E2D7003E5EFED612E2CBB5F01870043397D8F1BBE536FD9128F4FCBF7') {
+    throw 'The Eclipse compiler must match the pinned ECJ 3.46.0 binary'
 }
 $null = New-Item -ItemType Directory -Path $Evidence
 $java = Join-Path $JavaHome 'bin/java.exe'
@@ -47,7 +51,7 @@ try {
         $null = New-Item -ItemType Directory -Path $output
         $outputs[$scope] = $output
         if ($scope -eq 'test') { $libraries += @($outputs.main, (Join-Path $ProjectRoot 'build/resources/main')) }
-        $arguments = @('-21','-proc:none','-encoding','UTF-8','-warn:none','-classpath',
+        $arguments = @('-25','-proc:none','-encoding','UTF-8','-warn:none','-classpath',
             ('"' + ($libraries -join ';') + '"'), '-d', ('"' + $output + '"'))
         $arguments += @($sources | Sort-Object FullName | ForEach-Object { '"' + $_.FullName + '"' })
         $argFile = Join-Path $Evidence "$scope.args"
@@ -60,7 +64,7 @@ try {
         if (-not $classes.Count) { throw "No Eclipse $scope classes" }
         foreach ($file in $classes) {
             $bytes = [IO.File]::ReadAllBytes($file.FullName)
-            if ($bytes[6] * 256 + $bytes[7] -ne 65) { throw "Non-Java-21 class: $file" }
+            if ($bytes[6] * 256 + $bytes[7] -ne 69) { throw "Non-Java-25 class: $file" }
         }
         $report.compilations[$scope].classes = $classes.Count
     }
@@ -78,6 +82,13 @@ try {
     $runtime = @($outputs.test, $outputs.main, (Join-Path $ProjectRoot 'build/resources/main'),
             (Join-Path $ProjectRoot 'build/resources/test')) + $libraries
     $runtimeClasspath = $runtime -join ';'
+    $inventoryFile = Join-Path $Evidence 'gradle-test-inventory.txt'
+    [IO.File]::WriteAllLines($inventoryFile, ($inventory | Sort-Object -Unique), [Text.UTF8Encoding]::new($false))
+    $inventoryValidator = Join-Path $PSScriptRoot 'EclipseTestInventory.java'
+    $inventoryLog = Join-Path $Evidence 'inventory-validation.log'
+    & $java -cp $runtimeClasspath $inventoryValidator $outputs.test $inventoryFile $expected *> $inventoryLog
+    if ($LASTEXITCODE -ne 0) { throw 'Gradle results are filtered, stale or incomplete; inspect inventory-validation.log' }
+    $report['inventoryValidatorSha256'] = (Get-FileHash -LiteralPath $inventoryValidator -Algorithm SHA256).Hash
     $bootstrap = Join-Path $ProjectRoot 'build/unit-bootstrap/forge-native-unit-bootstrap.jar'
     if (-not (Test-Path -LiteralPath $bootstrap -PathType Leaf)) { throw 'Missing native unit bootstrap' }
     $testArgs = @('-Xmx2G', ('"-javaagent:' + $bootstrap.Replace('\', '/') + '"'),

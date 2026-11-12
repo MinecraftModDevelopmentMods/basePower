@@ -24,9 +24,18 @@ public class NativePlatformContractTest {
         assertEquals(1, config.getAsJsonObject("injectors").get("defaultRequire").getAsInt());
         java.util.Set<String> hooks = new java.util.HashSet<>();
         config.getAsJsonArray("mixins").forEach(value -> hooks.add(value.getAsString()));
-        assertEquals(java.util.Set.of("BlockStateDataMixin", "LevelStorageSourceMixin", "PlayerDataStorageMixin",
+        assertEquals(java.util.Set.of("BlockStateDataMixin", "LevelStorageSourceMixin", "SelectedWorldStorageMixin", "PlayerDataStorageMixin",
                 "SimpleRegionStorageMixin", "WorldGenRegionMixin"), hooks);
         for (String name : hooks) assertNotNull(read("zone/moddev/mc/basepower/mixin/" + name));
+    }
+
+    @Test public void java25BytecodeIsIndependentOfNativeMixinCompatibilityLevel() throws Exception {
+        assertEquals(25, Runtime.version().feature());
+        assertEquals(69, read("cyano/poweradvantage/api/simple/SimpleMachineGUI").version & 0xFFFF);
+        assertEquals(69, read("zone/moddev/mc/basepower/mixin/SelectedWorldStorageMixin").version & 0xFFFF);
+        var levels = org.spongepowered.asm.mixin.MixinEnvironment.CompatibilityLevel.values();
+        assertTrue(java.util.Arrays.stream(levels).anyMatch(level -> level.name().equals("JAVA_21")));
+        assertFalse(java.util.Arrays.stream(levels).anyMatch(level -> level.name().equals("JAVA_25")));
     }
 
     @Test public void nativeRecipeAndAdvancementLoadingShareThePostponedTagContext() throws Exception {

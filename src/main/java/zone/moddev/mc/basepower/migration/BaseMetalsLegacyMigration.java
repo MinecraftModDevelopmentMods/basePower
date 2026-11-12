@@ -17,6 +17,11 @@ public final class BaseMetalsLegacyMigration implements Legacy112MigrationExtens
     }
 
     @Override
+    public void prepareWorld(CompoundTag levelSnapshot) {
+        LegacyWorldDataHook.prepareLegacyEnchantmentContext(levelSnapshot);
+    }
+
+    @Override
     public boolean prepareData(CompoundTag payload, int dataVersion, Payload kind) {
         return LegacyWorldDataHook.prepareExternalPayload(payload, kind == Payload.PLAYER);
     }

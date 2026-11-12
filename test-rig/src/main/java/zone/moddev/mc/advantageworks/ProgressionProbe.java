@@ -314,7 +314,7 @@ final class ProgressionProbe {
         var input = inventory instanceof CraftingContainer grid ? grid.asCraftInput()
                 : new net.minecraft.world.item.crafting.SingleRecipeInput(inventory.getItem(0));
         Recipe<net.minecraft.world.item.crafting.RecipeInput> typed = (Recipe<net.minecraft.world.item.crafting.RecipeInput>) recipe;
-        return typed.matches(input, world) ? typed.assemble(input, world.registryAccess()) : ItemStack.EMPTY;
+        return typed.matches(input, world) ? typed.assemble(input) : ItemStack.EMPTY;
     }
 
     private static boolean advantage(ItemStack stack) { return !stack.isEmpty() && owned(net.minecraftforge.registries.ForgeRegistries.ITEMS.getKey(stack.getItem())); }

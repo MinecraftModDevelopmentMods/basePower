@@ -4,7 +4,7 @@ package cyano.poweradvantage.api.simple;
 import zone.moddev.mc.basepower.PowerAdvantage;
 import zone.moddev.mc.basepower.math.Integer2D;
 import zone.moddev.mc.basepower.registry.ITileEntityGUI;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.player.Inventory;
@@ -13,8 +13,6 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.resources.Identifier;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraft.client.renderer.RenderPipelines;
 import org.joml.Matrix3x2fStack;
 import net.minecraft.network.chat.Component;
@@ -115,7 +113,6 @@ guiContainer.blit(arrowTexture, x+79, y+35, 0, 0, arrowLength, 17);
 	 * the GUI
 	 * @param z This is the z coordinate (no units) into the depth of the screen
 	 */
-	@OnlyIn(Dist.CLIENT)
 	public void drawGUIDecorations(Object srcEntity, GUIContainer guiContainer, int x, int y, float z){}
 
 	/**
@@ -147,12 +144,10 @@ guiContainer.blit(arrowTexture, x+79, y+35, 0, 0, arrowLength, 17);
 	 * @return An instance of net.minecraft.client.gui.screen.inventory.ContainerScreen
 	 */
 	@Override
-	@OnlyIn(Dist.CLIENT)
 	public AbstractContainerScreen getContainerGUI(BlockEntity e, Player player) {
 		return ClientScreens.legacy(this, e, player);
 	}
 
-	@OnlyIn(Dist.CLIENT)
 	private static final class ClientScreens {
 		private static AbstractContainerScreen legacy(SimpleMachineGUI gui, BlockEntity tile, Player player) {
 			return gui.new GUIContainer(player.getInventory(), (net.minecraft.world.Container) tile);
@@ -188,7 +183,6 @@ guiContainer.blit(arrowTexture, x+79, y+35, 0, 0, arrowLength, 17);
 			bindPlayerInventory(playerItems, PLAYER_SLOTS_TOP);
 		}
 
-        @OnlyIn(Dist.CLIENT)
         public GUIContainer createScreen(Inventory inventory, Component title) {
             return new GUIContainer(this, inventory, title);
         }
@@ -252,11 +246,10 @@ guiContainer.blit(arrowTexture, x+79, y+35, 0, 0, arrowLength, 17);
 	 * requirements of the interface ITileEntityGUI.
 	 */
 
-	@OnlyIn(Dist.CLIENT)
 	public class GUIContainer extends net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<Container>{
 		private final Object entity;
 		private final Component playerInventoryLabel;
-		private GuiGraphics graphics;
+		private GuiGraphicsExtractor graphics;
 
         public net.minecraft.client.Minecraft getMinecraft() { return minecraft; }
 		public GUIContainer(Inventory playerItems, net.minecraft.world.Container entity) {
@@ -264,19 +257,15 @@ guiContainer.blit(arrowTexture, x+79, y+35, 0, 0, arrowLength, 17);
         }
 
         public GUIContainer(Container container, Inventory playerItems, Component title) {
-            super(container, playerItems, title);
+            super(container, playerItems, title, guiWidth, guiHeight);
             this.playerInventoryLabel = playerItems.getDisplayName();
 //System.out.println("Size: "+this.xSize+"x"+this.ySize+" at coordinate ("+this.guiLeft+","+this.guiTop+")");
-			this.imageWidth = guiWidth;
-			this.imageHeight = guiHeight;
 			this.entity = container.entity;
 		}
 
 		@Override
-		public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
-			this.renderBackground(graphics, mouseX, mouseY, partialTicks);
-			super.render(graphics, mouseX, mouseY, partialTicks);
-			this.renderTooltip(graphics, mouseX, mouseY);
+		public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
+			super.extractRenderState(graphics, mouseX, mouseY, partialTicks);
 			if (font.width(title.getString()) > width - 8
 					&& mouseY >= topPos + 1 && mouseY < topPos + MACHINE_TOP) {
 				graphics.setTooltipForNextFrame(font, title, mouseX, mouseY);
@@ -284,10 +273,10 @@ guiContainer.blit(arrowTexture, x+79, y+35, 0, 0, arrowLength, 17);
 		}
 
 		@Override
-		protected void renderLabels(GuiGraphics graphics, int mouseX, int mouseY) {
+		protected void extractLabels(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
 			String machineName = fitLabel(title.getString(), width - 8);
-			graphics.drawString(font, machineName, (imageWidth - font.width(machineName)) / 2, 1, 0xFFFFFFFF);
-			graphics.drawString(font, fitLabel(playerInventoryLabel.getString(), imageWidth - 16),
+			graphics.text(font, machineName, (imageWidth - font.width(machineName)) / 2, 1, 0xFFFFFFFF);
+			graphics.text(font, fitLabel(playerInventoryLabel.getString(), imageWidth - 16),
 					8, MACHINE_TOP + MACHINE_HEIGHT, 0xFFFFFFFF);
 		}
 
@@ -297,7 +286,8 @@ guiContainer.blit(arrowTexture, x+79, y+35, 0, 0, arrowLength, 17);
 		}
 
 		@Override
-		protected void renderBg(GuiGraphics graphics, float partialTicks, int mouseX, int mouseY) {
+		public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
+			super.extractBackground(graphics, mouseX, mouseY, partialTicks);
 			this.graphics = graphics;
 			int x = (width - imageWidth) / 2;
 			int y = (height - imageHeight) / 2;
@@ -322,7 +312,7 @@ guiContainer.blit(arrowTexture, x+79, y+35, 0, 0, arrowLength, 17);
 		}
 
 		/** The active render context, available while drawing decorations. */
-		public GuiGraphics getGraphics() { return graphics; }
+		public GuiGraphicsExtractor getGraphics() { return graphics; }
 
         /** Native GUI transforms are two-dimensional; rotations use radians. */
 		public Matrix3x2fStack getMatrices() { return getGraphics().pose(); }

@@ -134,8 +134,8 @@ public class ConduitNetworkManager {
 	public void invalidateChunk(net.minecraft.resources.ResourceKey<Level> dimension, ChunkPos chunk) {
 		lock.writeLock().lock();
 		try {
-			int minX = (chunk.x << 4) - 1;
-			int minZ = (chunk.z << 4) - 1;
+			int minX = (chunk.x() << 4) - 1;
+			int minZ = (chunk.z() << 4) - 1;
 			for (BlockPos4D coord : new ArrayList<>(networkCache.keySet())) {
 				if (coord.dimension.equals(dimension) && coord.pos.getX() >= minX
 						&& coord.pos.getX() <= minX + 17 && coord.pos.getZ() >= minZ

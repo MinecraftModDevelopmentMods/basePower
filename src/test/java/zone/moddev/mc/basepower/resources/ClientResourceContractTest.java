@@ -13,6 +13,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.HashSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -70,22 +72,28 @@ public class ClientResourceContractTest {
             assertEquals(file.toString(), "basepower:item/" + name.replace(".json", ""), node.get("model").getAsString());
             verifyReference(node.get("model").getAsString(), "models", ".json", file);
         }
-        JsonObject atlas = read(ROOT.resolve("assets/minecraft/atlases/items.json"));
-        assertEquals("The item atlas must not shadow block or material sprites", 1,
-                atlas.getAsJsonArray("sources").size());
-        JsonObject source = atlas.getAsJsonArray("sources").get(0).getAsJsonObject();
-        assertEquals("directory", source.get("type").getAsString());
-        assertEquals("items", source.get("source").getAsString());
-        assertEquals("items/", source.get("prefix").getAsString());
+        Set<String> blocks = atlasResources("blocks"), items = atlasResources("items");
+        assertTrue("The item atlas must not shadow block or material sprites",
+                java.util.Collections.disjoint(blocks, items));
+        for (String item : items) assertTrue("Only item artwork belongs in the item atlas: " + item,
+                item.startsWith("basepower:items/"));
+        for (String fluid : new String[] {"crude_oil_still", "crude_oil_flow", "refined_oil_still", "refined_oil_flow"}) {
+            assertTrue("Missing manually requested fluid sprite " + fluid, blocks.contains("basepower:blocks/" + fluid));
+        }
+    }
+
+    @Test public void developmentProfilePinsTheActualNative2612Family() throws IOException {
         String build = Files.readString(Paths.get("build.gradle"), StandardCharsets.UTF_8);
-        assertTrue("Combined Eclipse defaults must select the native 1.21.11 profile",
+        assertTrue("Combined Eclipse defaults must select the native 26.1.2 profile",
+                build.contains("'test-rig/profiles/native2612/dev-core.json'"));
+        assertFalse("A CLI override must not hide a stale 1.21.11 default",
                 build.contains("'test-rig/profiles/native12111/dev-core.json'"));
         assertFalse("A CLI override must not hide a stale 1.21.1 default",
                 build.contains("'test-rig/profiles/native1211/dev-core.json'"));
-        JsonObject profile = read(Paths.get("test-rig/profiles/native12111/dev-core.json"));
+        JsonObject profile = read(Paths.get("test-rig/profiles/native2612/dev-core.json"));
         assertEquals("development", profile.get("mode").getAsString());
-        assertEquals("1.21.11", profile.get("minecraftVersion").getAsString());
-        assertEquals("61.1.0", profile.get("forgeVersion").getAsString());
+        assertEquals("26.1.2", profile.get("minecraftVersion").getAsString());
+        assertEquals("64.1.5", profile.get("forgeVersion").getAsString());
         java.util.Properties pins = new java.util.Properties();
         try (Reader reader = Files.newBufferedReader(Paths.get("gradle.properties"), StandardCharsets.UTF_8)) {
             pins.load(reader);
@@ -149,6 +157,25 @@ public class ClientResourceContractTest {
         boolean found = namespace.equals("basepower") ? Files.isRegularFile(ROOT.resolve(resource))
                 : ClientResourceContractTest.class.getClassLoader().getResource(resource) != null;
         assertTrue(file + " references missing resource " + resource, found);
+    }
+
+    private static Set<String> atlasResources(String name) throws IOException {
+        Path file = ROOT.resolve("assets/minecraft/atlases/" + name + ".json");
+        JsonObject atlas = read(file);
+        assertEquals(file.toString(), Set.of("sources"), atlas.keySet());
+        Set<String> resources = new HashSet<>();
+        for (JsonElement value : atlas.getAsJsonArray("sources")) {
+            JsonObject source = value.getAsJsonObject();
+            assertEquals("No global imports, aliases or hidden selectors in " + file,
+                    Set.of("type", "resource"), source.keySet());
+            assertEquals(file.toString(), "minecraft:single", source.get("type").getAsString());
+            String resource = source.get("resource").getAsString();
+            assertTrue("Foreign sprite in " + file + ": " + resource, resource.startsWith("basepower:"));
+            assertTrue("Duplicate sprite in " + file + ": " + resource, resources.add(resource));
+            verifyReference(resource, "textures", ".png", file);
+        }
+        assertFalse("An empty atlas would hide the registration failure", resources.isEmpty());
+        return resources;
     }
 
     private static JsonObject read(Path file) throws IOException {

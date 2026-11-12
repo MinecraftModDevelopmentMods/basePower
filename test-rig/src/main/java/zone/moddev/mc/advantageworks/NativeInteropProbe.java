@@ -336,7 +336,7 @@ final class NativeInteropProbe {
         report.addProperty("status", java.util.stream.StreamSupport.stream(checks.spliterator(), false)
                 .allMatch(row -> row.getAsJsonObject().get("status").getAsString().equals("PASS")) ? "PASS" : "FAIL");
         report.add("checks", checks);
-        if (net.minecraftforge.fml.ModList.get().isLoaded("basemetals")) {
+        if (net.minecraftforge.fml.ModList.isLoaded("basemetals")) {
             JsonArray shared = new JsonArray();
             check(shared, "basemetals/native-power-crushing", () -> sharedCrushing(world));
             report.add("sharedChecks", shared);
@@ -359,7 +359,7 @@ final class NativeInteropProbe {
         for (var potato : List.of(net.minecraft.world.item.Items.POTATO, net.minecraft.world.item.Items.POISONOUS_POTATO)) {
             var input = new net.minecraft.world.item.crafting.SingleRecipeInput(new ItemStack(potato, 3));
             require(recipe.matches(input, world), "Shared crusher rejected " + potato);
-            ItemStack result = recipe.assemble(input, world.registryAccess());
+            ItemStack result = recipe.assemble(input);
             require(result.getCount() == 1 && Identifier.fromNamespaceAndPath("basepower", "starch").equals(
                     ForgeRegistries.ITEMS.getKey(result.getItem())), "Incorrect shared crushing result: " + result);
             require(input.getItem(0).getCount() == 3, "Assembling a recipe preview mutated its input");

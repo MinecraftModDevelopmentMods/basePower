@@ -109,7 +109,8 @@ public class Native12111BiomeRegistryMappingTest {
 
     private static String fixName(String name) {
         var original = new Dynamic<>(NbtOps.INSTANCE, StringTag.valueOf(name));
-        var fixed = DataFixers.getDataFixer().update(References.BIOME, original, 1631, 4671);
+        var fixed = DataFixers.getDataFixer().update(References.BIOME, original, 1631,
+                SharedConstants.getCurrentVersion().dataVersion().version());
         assertEquals("DFU must not mutate the original saved name", name, original.asString().result().orElseThrow());
         return fixed.asString().result().orElseThrow();
     }

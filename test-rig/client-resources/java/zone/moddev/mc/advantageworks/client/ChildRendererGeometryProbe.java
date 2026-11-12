@@ -51,7 +51,8 @@ final class ChildRendererGeometryProbe {
         result.add("child_renderer_geometry", report);
         try {
             require(Boolean.getBoolean("advantageworks.requireExtensions"), "Child renderer geometry requires the combined profile");
-            require(minecraft.level == null && minecraft.player == null && !minecraft.hasSingleplayerServer(), "Geometry probe must remain worldless");
+            require(minecraft.level == null && minecraft.player == null && minecraft.getSingleplayerServer() == null
+                    && !minecraft.hasSingleplayerServer(), "Geometry probe must remain genuinely worldless");
             steam(minecraft, cases);
             drill(minecraft, cases);
             turret(minecraft, cases);
@@ -206,7 +207,7 @@ final class ChildRendererGeometryProbe {
                         geometry.render(submitted.last(), buffers.getBuffer(pipeline));
                         return null;
                     });
-            renderer.submit(state, matrices, collector, new net.minecraft.client.renderer.state.CameraRenderState());
+            renderer.submit(state, matrices, collector, new net.minecraft.client.renderer.state.level.CameraRenderState());
         } catch (RuntimeException | LinkageError | AssertionError failure) {
             renderFailure = failure;
             row.addProperty("render_error", failure.toString());
@@ -243,7 +244,7 @@ final class ChildRendererGeometryProbe {
         }
 
         @Override public VertexConsumer getBuffer(RenderType type) {
-            require(type.mode() == com.mojang.blaze3d.vertex.VertexFormat.Mode.QUADS && type.format().equals(DefaultVertexFormat.NEW_ENTITY), "Unexpected production renderer vertex format/mode");
+            require(type.mode() == com.mojang.blaze3d.vertex.VertexFormat.Mode.QUADS && type.format().equals(DefaultVertexFormat.ENTITY), "Unexpected production renderer vertex format/mode");
             BufferBuilder buffer = buffers.get(type);
             if (buffer == null) {
                 require(buffers.size() < 8, "Renderer requested too many buffers");
@@ -270,10 +271,10 @@ final class ChildRendererGeometryProbe {
                 require(count <= 4096, "Renderer exceeded the bounded geometry fixture");
                 VertexFormat format = built.drawState().format();
                 ByteBuffer data = built.vertexBuffer();
-                int p = offset(format, VertexFormatElement.Usage.POSITION, 0);
-                int uv = offset(format, VertexFormatElement.Usage.UV, 0);
-                int n = offset(format, VertexFormatElement.Usage.NORMAL, 0);
-                int c = offset(format, VertexFormatElement.Usage.COLOR, 0);
+                int p = offset(format, VertexFormatElement.POSITION);
+                int uv = offset(format, VertexFormatElement.UV0);
+                int n = offset(format, VertexFormatElement.NORMAL);
+                int c = offset(format, VertexFormatElement.COLOR);
                 for (int i = 0; i < count; i++) {
                     int base = i * format.getVertexSize();
                     float[] vertex = {data.getFloat(base + p), data.getFloat(base + p + 4), data.getFloat(base + p + 8),
@@ -369,12 +370,12 @@ final class ChildRendererGeometryProbe {
         throw new NoSuchFieldException(object.getClass().getName() + "." + name);
     }
 
-    private static int offset(VertexFormat format, VertexFormatElement.Usage usage, int index) {
+    private static int offset(VertexFormat format, VertexFormatElement required) {
         for (int i = 0; i < format.getElements().size(); i++) {
             VertexFormatElement element = format.getElements().get(i);
-            if (element.usage() == usage && element.index() == index) return format.getOffset(i);
+            if (element.equals(required)) return format.getOffset(i);
         }
-        throw new IllegalStateException("Native vertex format lacks " + usage + " " + index);
+        throw new IllegalStateException("Native vertex format lacks " + required);
     }
 
     private static boolean different(List<float[]> a, List<float[]> b) {

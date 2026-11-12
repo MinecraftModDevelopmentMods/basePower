@@ -104,7 +104,7 @@ public class Native117EntityContextTest {
     }
 
     private static final class EntityFixtureWorld extends ServerLevel {
-        private EntityFixtureWorld() { super(null, null, null, null, null, null, false, 0L, java.util.List.of(), false, null); }
+        private EntityFixtureWorld() { super(null, null, null, null, null, null, false, 0L, java.util.List.of(), false); }
 
         @Override public net.minecraft.world.flag.FeatureFlagSet enabledFeatures() {
             return net.minecraft.world.flag.FeatureFlags.DEFAULT_FLAGS;

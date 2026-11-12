@@ -60,24 +60,30 @@ final class RecipeBookGroupingProbe {
         try (Stream<Path> files = Files.list(root)) {
             Map<Identifier, ForgeRegistry.Snapshot> registry = RegistryManager.ACTIVE.takeSnapshot(false);
             CompoundTag level = NbtIo.readCompressed(root.resolve("server-registries.dat"), NbtAccounter.unlimitedHeap());
-            require("1.21.11".equals(compound(compound(level, "Data"), "Version").getString("Name").orElseThrow()),
-                    "Recipe fixture is not a native 1.21.11 server export");
+            require("26.1.2".equals(compound(compound(level, "Data"), "Version").getString("Name").orElseThrow())
+                    && compound(level, "Data").getInt("DataVersion").orElseThrow() == 4790,
+                    "Recipe fixture is not a native 26.1.2 server export");
             boolean nativeForge = false;
             for (var entry : compound(level, "fml").getList("LoadingModList").orElseThrow()) {
                 require(entry instanceof CompoundTag, "Malformed native loading-mod entry");
                 CompoundTag mod = (CompoundTag) entry;
                 if ("forge".equals(mod.getString("ModId").orElseThrow()))
-                    nativeForge = "61.1.0".equals(mod.getString("ModVersion").orElseThrow());
+                    nativeForge = "64.1.5".equals(mod.getString("ModVersion").orElseThrow());
             }
-            require(nativeForge, "Recipe fixture was not saved by Forge 61.1.0");
+            require(nativeForge, "Recipe fixture was not saved by Forge 64.1.5");
             CompoundTag saved = compound(compound(level, "fml"), "Registries");
             for (String key : List.of(ForgeRegistries.ITEMS.getRegistryName().toString(),
                     ForgeRegistries.BLOCKS.getRegistryName().toString())) {
                 require(!compound(saved, key).getList("ids").orElseThrow().isEmpty(), "Missing native server registry snapshot: " + key);
+                var expected = ForgeRegistry.Snapshot.read(compound(saved, key));
+                var active = registry.get(Identifier.parse(key));
+                require(active != null && active.ids.equals(expected.ids) && active.aliases.equals(expected.aliases)
+                        && active.blocked.equals(expected.blocked) && active.overrides.equals(expected.overrides),
+                        "Actual logged-in registry differs from native recipe export: " + key);
             }
-            for (String key : saved.keySet()) registry.put(Identifier.parse(key), ForgeRegistry.Snapshot.read(compound(saved, key)));
-            require(GameData.injectSnapshot(registry, false, false).isEmpty(), "Client lacks a server registry entry");
-            RegistryAccess registries = RegistryAccess.fromRegistryOfRegistries(BuiltInRegistries.REGISTRY);
+            require(minecraft.level != null && minecraft.getConnection() != null, "Recipe decoding requires actual native login");
+            report.addProperty("recipe_registry_ids_match_actual_login", true);
+            RegistryAccess registries = minecraft.level.registryAccess();
             List<Path> packets = files.filter(file -> file.getFileName().toString()
                     .matches("recipes-(normal|tech|apocalyptic)-sweep\\.bin")).sorted().toList();
             Set<String> packetNames = packets.stream().map(file -> file.getFileName().toString()).collect(Collectors.toSet());
@@ -260,8 +266,8 @@ final class RecipeBookGroupingProbe {
                 RecipeButton button = new RecipeButton(() -> 0);
                 button.init(shown.get(i), false, page, context);
                 button.setPosition(x, y);
-                button.render(graphics, -1, -1, 1F);
-                graphics.drawString(minecraft.font, result(shown.get(i).getRecipes().getFirst(), context).getHoverName(),
+                button.extractRenderState(graphics, -1, -1, 1F);
+                graphics.text(minecraft.font, result(shown.get(i).getRecipes().getFirst(), context).getHoverName(),
                         x + 30, y + 8, 0xFFFFFFFF, false);
             }
         });

@@ -16,8 +16,6 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.extensions.IForgeMenuType;
 import net.minecraft.resources.Identifier;
 import net.minecraftforge.registries.ForgeRegistries;
@@ -74,7 +72,6 @@ public final class MachineGUIRegistry {
         return (SimpleMachineGUI) gui;
     }
 
-    @OnlyIn(Dist.CLIENT)
     public static void registerScreens() {
         MenuScreens.<SimpleMachineGUI.Container, SimpleMachineGUI.GUIContainer>register(TYPE,
                 (container, inventory, title) -> container.createScreen(inventory, title));
@@ -108,7 +105,6 @@ public final class MachineGUIRegistry {
         return gui == null || tile == null ? null : gui.getContainer(tile, player);
     }
 
-    @OnlyIn(Dist.CLIENT)
     public Object getClientGuiElement(int id, Player player, Level world, int x, int y, int z) {
         ITileEntityGUI gui = DEFINITIONS.get(id);
         BlockEntity tile = world.getBlockEntity(new BlockPos(x, y, z));

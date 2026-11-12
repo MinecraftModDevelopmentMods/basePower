@@ -27,6 +27,10 @@ public class NativePackProcessContractTest {
 
     @Test public void nativeProofActuallyRunsWithTerminalDisabled() throws Exception {
         var proof = NativePackResourceProof.read();
+        assertEquals("26.1.2", proof.get("minecraft").getAsString());
+        assertEquals("RESOURCE_PACK_ONLY", proof.get("discoveryScope").getAsString());
+        assertEquals("64.1.5", proof.get("forge").getAsString());
+        assertEquals(25, proof.get("javaFeature").getAsInt());
         assertTrue(proof.get("interactiveTerminalDisabled").getAsBoolean());
         assertEquals(0, proof.getAsJsonArray("warningsAndErrors").size());
         assertTrue(proof.getAsJsonObject("CLIENT_RESOURCES").get("resourcesVerified").getAsInt() > 0);
