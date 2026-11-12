@@ -118,8 +118,9 @@ public final class PowerAdvantage {
                 LOGGER.info("Imported {} legacy Power Advantage OreSpawn rule(s) from '{}' into '{}'",
                         result.getRuleCount(), result.getSource(), result.getTarget());
             }
+            zone.moddev.mc.basepower.migration.OreSpawnProfileMigration.registerPowerProvider(FMLPaths.CONFIGDIR.get());
         } catch (IOException exception) {
-            LOGGER.error("Could not migrate legacy Power Advantage OreSpawn configuration", exception);
+            throw new IllegalStateException("Could not safely migrate legacy Power Advantage OreSpawn configuration", exception);
         }
     }
 

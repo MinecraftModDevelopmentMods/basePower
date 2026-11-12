@@ -64,9 +64,10 @@ public final class LegacyWorldDataHook {
         LEGACY_ENCHANTMENTS.clear();
         LEGACY_CHUNKS.clear();
         LEGACY_BLOCK_COUNTS.clear();
-        prepareForgeRegistryMetadata(levelDat);
-        File source = legacyRegistrySource(levelDat);
         try {
+            OreSpawnProfileMigration.migrateWorld(levelDat.toPath().toAbsolutePath().getParent());
+            prepareForgeRegistryMetadata(levelDat);
+            File source = legacyRegistrySource(levelDat);
             if (source != null) {
                 try (FileInputStream input = new FileInputStream(source)) {
                     CompoundTag registryArchive = NbtIo.readCompressed(input, NbtAccounter.unlimitedHeap());
