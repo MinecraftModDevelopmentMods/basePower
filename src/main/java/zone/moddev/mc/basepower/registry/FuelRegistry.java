@@ -157,15 +157,17 @@ public class FuelRegistry {
 		if(fuel == null || fuel.isEmpty()) return 0;
 		int custom = getInstance().getBurnTime(fuel);
 		if (custom > 0) return (short) Math.min(Short.MAX_VALUE, custom);
+		int itemOverride = fuel.getBurnTime(net.minecraft.world.item.crafting.RecipeType.SMELTING);
 		CookingFuel component = fuel.get(DataComponents.COOKING_FUEL);
-		LootContext context = component != null && component.burnTime() instanceof ResolvableInt.Reference
+		LootContext context = itemOverride < 0 && component != null && component.burnTime() instanceof ResolvableInt.Reference
 				? fuelContext(machine) : null;
-		int vanilla = nativeBurnTime(component, context);
+		int vanilla = nativeBurnTime(itemOverride, component, context);
 		int burnTime = ForgeEventFactory.getItemBurnTime(fuel, vanilla, net.minecraft.world.item.crafting.RecipeType.SMELTING);
 		return (short) Math.min(Short.MAX_VALUE, Math.max(0, burnTime));
 	}
 
-	static int nativeBurnTime(CookingFuel component, LootContext context) {
+	static int nativeBurnTime(int itemOverride, CookingFuel component, LootContext context) {
+		if (itemOverride >= 0) return itemOverride;
 		if (component == null) return 0;
 		// A reference requires the server's reloaded data; do not invent a client-side value.
 		if (context == null && component.burnTime() instanceof ResolvableInt.Reference) return 0;

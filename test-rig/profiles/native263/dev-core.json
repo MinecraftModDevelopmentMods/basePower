@@ -5,7 +5,7 @@
   "qualificationStatus": "DEVELOPMENT_ONLY_NOT_QUALIFIED",
   "minecraftVersion": "26.3",
   "forgeVersion": "66.0.0",
-  "powerDeobfSha256": "BA2A5D52A0D929280FACAF652B864A7F4D2E5B2E20B005BD546500B0807C2F62",
+  "powerDeobfSha256": "D03CB5DB644075CE6C2E0CC663DD62FBB5CCDDCDB0EBC6C0CA09088F1FE616E1",
   "mods": [
     {
       "id": "basesteam",

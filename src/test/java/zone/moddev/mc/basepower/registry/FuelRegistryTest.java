@@ -21,15 +21,17 @@ public class FuelRegistryTest {
         var fuel = new net.minecraft.world.item.component.CookingFuel(
                 new net.minecraft.world.level.storage.loot.providers.number.ints.ResolvableInt.Constant(937),
                 new net.minecraft.world.level.storage.loot.providers.number.floats.ResolvableFloat.Constant(1F));
-        assertEquals(937, FuelRegistry.nativeBurnTime(fuel, null));
-        assertEquals(0, FuelRegistry.nativeBurnTime(null, null));
+        assertEquals(937, FuelRegistry.nativeBurnTime(-1, fuel, null));
+        assertEquals(0, FuelRegistry.nativeBurnTime(-1, null, null));
+        assertEquals(237, FuelRegistry.nativeBurnTime(237, fuel, null));
+        assertEquals("An explicit item override can disable a native fuel", 0, FuelRegistry.nativeBurnTime(0, fuel, null));
     }
 
     @Test public void dataDrivenFuelNeedsARealReloadedServerContext() {
         var fuel = new ItemStack(Items.COAL).get(net.minecraft.core.component.DataComponents.COOKING_FUEL);
         assertNotNull(fuel);
         assertTrue(fuel.burnTime() instanceof net.minecraft.world.level.storage.loot.providers.number.ints.ResolvableInt.Reference);
-        assertEquals(0, FuelRegistry.nativeBurnTime(fuel, null));
+        assertEquals(0, FuelRegistry.nativeBurnTime(-1, fuel, null));
     }
 
     @Test public void explicitFuelAlgorithmsStillTakePriorityOverNativeComponents() {
@@ -40,6 +42,30 @@ public class FuelRegistryTest {
             assertEquals(523, FuelRegistry.getActualBurntimeForItem(new ItemStack(Items.STICK)));
         } finally {
             assertTrue(registry.getFuelAlgorithmsForItem(Items.STICK).remove(algorithm));
+        }
+    }
+
+    @Test public void nativeComponentValuesStillPassThroughTheForgeFuelEvent() {
+        var stack = new ItemStack(Items.COAL);
+        var component = new net.minecraft.world.item.component.CookingFuel(
+                new net.minecraft.world.level.storage.loot.providers.number.ints.ResolvableInt.Constant(937),
+                new net.minecraft.world.level.storage.loot.providers.number.floats.ResolvableFloat.Constant(1F));
+        stack.set(net.minecraft.core.component.DataComponents.COOKING_FUEL, component);
+        var calls = new java.util.concurrent.atomic.AtomicInteger();
+        var listener = net.minecraftforge.event.furnace.FurnaceFuelBurnTimeEvent.BUS.addListener(event -> {
+            if (event.getItemStack() == stack) {
+                assertEquals(937, event.getBurnTime());
+                assertSame(net.minecraft.world.item.crafting.RecipeType.SMELTING, event.getRecipeType());
+                calls.incrementAndGet();
+                event.setBurnTime(222);
+            }
+        });
+        try {
+            assertEquals(222, FuelRegistry.getActualBurntimeForItem(stack));
+            assertEquals(1, calls.get());
+            assertSame(component, stack.get(net.minecraft.core.component.DataComponents.COOKING_FUEL));
+        } finally {
+            net.minecraftforge.event.furnace.FurnaceFuelBurnTimeEvent.BUS.removeListener(listener);
         }
     }
 

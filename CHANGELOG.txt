@@ -4,6 +4,7 @@ basePower 2.4.18.2603001 (Minecraft 26.3, in development)
 - Keep historical block-state flattening separate from Minecraft's new native state format.
 - Remove the redundant flattening-table access transformer; the required migration Mixin owns that change.
 - Read native cooking-fuel components in the machine's world without changing existing fuel overrides or burn rates.
+- Retain explicit Forge item burn-time overrides, including zero-valued overrides, before the native fuel fallback.
 - Update trade modifiers, loot predicates and chest count providers to the current resource format.
 - Resolve recipe material tags from the native registry-loading context and recognise the dappled-forest biome index.
 - Update recipe-book criteria to native recipe lists and keep each unlock behind the same conditions as its recipe.
