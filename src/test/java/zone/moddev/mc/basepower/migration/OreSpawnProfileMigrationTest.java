@@ -85,21 +85,26 @@ public class OreSpawnProfileMigrationTest {
                         && call.name.equals("registerServerHook")));
         var coordinator = NativeMigrationMixinContract.read("zone/moddev/mc/basepower/migration/OreSpawnProfileMigration");
         var register = NativeMigrationMixinContract.method(coordinator, "registerServerHook");
-        boolean highest = false, event = false, listener = false;
-        for (var instruction : register.instructions) {
-            if (instruction instanceof org.objectweb.asm.tree.IntInsnNode constant) {
-                highest |= constant.operand == net.minecraftforge.eventbus.api.listener.Priority.HIGHEST;
-            }
-            if (instruction instanceof org.objectweb.asm.tree.FieldInsnNode field) {
-                event |= field.owner.equals("net/minecraftforge/event/server/ServerAboutToStartEvent") && field.name.equals("BUS");
-            }
-            if (instruction instanceof org.objectweb.asm.tree.InvokeDynamicInsnNode dynamic) {
-                for (var argument : dynamic.bsmArgs) if (argument instanceof org.objectweb.asm.Handle handle) {
-                    listener |= handle.getOwner().equals(coordinator.name) && handle.getName().equals("prepareServerProfile");
-                }
-            }
-        }
-        assertTrue(highest && event && listener);
+        var analyzer = new org.objectweb.asm.tree.analysis.Analyzer<>(new org.objectweb.asm.tree.analysis.SourceInterpreter());
+        var frames = analyzer.analyze(coordinator.name, register);
+        var registrations = NativeMigrationMixinContract.calls(register).stream()
+                .filter(call -> call.name.equals("addListener")).toList();
+        assertEquals(1, registrations.size());
+        var registration = registrations.getFirst();
+        assertEquals("(BLjava/util/function/Consumer;)Lnet/minecraftforge/eventbus/api/listener/EventListener;", registration.desc);
+        var frame = frames[register.instructions.indexOf(registration)];
+        int base = frame.getStackSize() - 3;
+        assertTrue(frame.getStack(base).insns.stream().anyMatch(node ->
+                node instanceof org.objectweb.asm.tree.FieldInsnNode field
+                        && field.owner.equals("net/minecraftforge/event/server/ServerAboutToStartEvent") && field.name.equals("BUS")));
+        assertTrue(frame.getStack(base + 1).insns.stream().anyMatch(node ->
+                node instanceof org.objectweb.asm.tree.IntInsnNode constant
+                        && constant.operand == net.minecraftforge.eventbus.api.listener.Priority.HIGHEST));
+        assertTrue(frame.getStack(base + 2).insns.stream().anyMatch(node -> {
+            if (!(node instanceof org.objectweb.asm.tree.InvokeDynamicInsnNode dynamic)) return false;
+            return java.util.Arrays.stream(dynamic.bsmArgs).anyMatch(argument -> argument instanceof org.objectweb.asm.Handle handle
+                    && handle.getOwner().equals(coordinator.name) && handle.getName().equals("prepareServerProfile"));
+        }));
         var prepare = NativeMigrationMixinContract.method(coordinator, "prepareServerProfile");
         var calls = NativeMigrationMixinContract.calls(prepare);
         assertTrue(calls.stream().anyMatch(call -> call.owner.equals("net/minecraft/server/MinecraftServer") && call.name.equals("getWorldPath")));
