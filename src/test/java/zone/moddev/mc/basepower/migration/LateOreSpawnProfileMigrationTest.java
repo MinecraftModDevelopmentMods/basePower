@@ -7,13 +7,27 @@ import com.google.gson.JsonParser;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.tree.AbstractInsnNode;
+import org.objectweb.asm.tree.InvokeDynamicInsnNode;
 import org.objectweb.asm.tree.JumpInsnNode;
+import org.objectweb.asm.tree.MethodInsnNode;
+import org.objectweb.asm.tree.MethodNode;
+import org.objectweb.asm.tree.analysis.Analyzer;
+import org.objectweb.asm.tree.analysis.Frame;
+import org.objectweb.asm.tree.analysis.SourceInterpreter;
+import org.objectweb.asm.tree.analysis.SourceValue;
 
 public class LateOreSpawnProfileMigrationTest {
     @Rule public final TemporaryFolder temporary = new TemporaryFolder();
@@ -125,31 +139,76 @@ public class LateOreSpawnProfileMigrationTest {
     @Test public void loadCompleteEnqueuesRepairThenConditionallyRebakesAndRefreshes() throws Exception {
         var power = NativeMigrationMixinContract.read("zone/moddev/mc/basepower/PowerAdvantage");
         var listener = NativeMigrationMixinContract.method(power, "finishOreSpawnMigration");
-        assertTrue(NativeMigrationMixinContract.calls(listener).stream().anyMatch(call ->
+        var enqueues = NativeMigrationMixinContract.calls(listener).stream().filter(call ->
                 call.owner.equals("net/minecraftforge/fml/event/lifecycle/FMLLoadCompleteEvent")
-                        && call.name.equals("enqueueWork")));
-        var callbacks = power.methods.stream().filter(method -> method.name.startsWith("lambda$finishOreSpawnMigration$")).toList();
-        assertEquals(1, callbacks.size());
-        var callback = callbacks.getFirst();
+                        && call.name.equals("enqueueWork")
+                        && call.desc.equals("(Ljava/lang/Runnable;)Ljava/util/concurrent/CompletableFuture;")).toList();
+        assertEquals("One actual load-complete work submission", 1, enqueues.size());
+        var enqueueFrame = sources(power.name, listener)[listener.instructions.indexOf(enqueues.getFirst())];
+        var runnable = enqueueFrame.getStack(enqueueFrame.getStackSize() - 1);
+        assertEquals("The submitted Runnable has one producer", 1, runnable.insns.size());
+        assertTrue("The submitted Runnable is a lambda", runnable.insns.iterator().next() instanceof InvokeDynamicInsnNode);
+        var lambda = (InvokeDynamicInsnNode) runnable.insns.iterator().next();
+        assertEquals("java/lang/invoke/LambdaMetafactory", lambda.bsm.getOwner());
+        assertTrue(Set.of("metafactory", "altMetafactory").contains(lambda.bsm.getName()));
+        var implementations = Arrays.stream(lambda.bsmArgs).filter(Handle.class::isInstance).map(Handle.class::cast)
+                .filter(handle -> handle.getOwner().equals(power.name)).toList();
+        assertEquals("One exact Power callback implementation", 1, implementations.size());
+        var implementation = implementations.getFirst();
+        var callback = NativeMigrationMixinContract.method(power, implementation.getName() + implementation.getDesc());
         var calls = NativeMigrationMixinContract.calls(callback);
-        var repair = calls.stream().filter(call -> call.owner.equals("zone/moddev/mc/basepower/migration/OreSpawnProfileMigration")
-                && call.name.equals("migrateLateProfiles")).findFirst().orElseThrow();
+        var repairs = calls.stream().filter(call -> call.owner.equals("zone/moddev/mc/basepower/migration/OreSpawnProfileMigration")
+                && call.name.equals("migrateLateProfiles")).toList();
+        assertEquals("One repair in the submitted callback", 1, repairs.size());
+        var repair = repairs.getFirst();
         assertEquals("(Ljava/nio/file/Path;)Z", repair.desc);
-        String[] owners = {"GeomeConfig", "OreSpawnOreGeneration", "FluidDepositFeature"};
-        int previous = callback.instructions.indexOf(repair);
-        JumpInsnNode changedGate = null;
-        for (var next = repair.getNext(); next != null; next = next.getNext()) {
-            if (next instanceof JumpInsnNode jump && jump.getOpcode() == Opcodes.IFEQ) { changedGate = jump; break; }
+        var frames = sources(power.name, callback);
+        var gates = new ArrayList<JumpInsnNode>();
+        for (var insn : callback.instructions) {
+            if (!(insn instanceof JumpInsnNode jump) || (jump.getOpcode() != Opcodes.IFEQ && jump.getOpcode() != Opcodes.IFNE)) continue;
+            var frame = frames[callback.instructions.indexOf(jump)];
+            if (frame != null && frame.getStack(frame.getStackSize() - 1).insns.equals(Set.of(repair))) gates.add(jump);
         }
-        assertNotNull("Rebake only when files changed", changedGate);
-        for (String owner : owners) {
+        assertEquals("One gate consumes the actual repair result", 1, gates.size());
+        var gate = gates.getFirst();
+        var changedCalls = normalCalls(gate.getOpcode() == Opcodes.IFEQ ? gate.getNext() : gate.label);
+        var unchangedCalls = normalCalls(gate.getOpcode() == Opcodes.IFEQ ? gate.label : gate.getNext());
+        var expected = new ArrayList<MethodInsnNode>();
+        int previous = callback.instructions.indexOf(repair);
+        for (String owner : List.of("GeomeConfig", "OreSpawnOreGeneration", "FluidDepositFeature")) {
             String methodName = owner.equals("GeomeConfig") ? "bake" : "refreshWorldConfig";
-            var call = calls.stream().filter(value -> value.owner.equals("zone/moddev/mc/orespawn/worldgen/" + owner)
-                    && value.name.equals(methodName)).findFirst().orElseThrow();
+            var matches = calls.stream().filter(value -> value.owner.equals("zone/moddev/mc/orespawn/worldgen/" + owner)
+                    && value.name.equals(methodName)).toList();
+            assertEquals("One " + owner + " refresh", 1, matches.size());
+            var call = matches.getFirst();
             int index = callback.instructions.indexOf(call);
             assertTrue(owner + " follows repair in the required order", index > previous);
-            assertTrue(owner + " is skipped on unchanged files", callback.instructions.indexOf(changedGate.label) > index);
+            expected.add(call);
             previous = index;
         }
+        assertEquals("Changed files execute all three refresh calls in order", expected, changedCalls);
+        assertTrue("Unchanged files execute no refresh calls", unchangedCalls.isEmpty());
+    }
+
+    private static Frame<SourceValue>[] sources(String owner, MethodNode method) throws Exception {
+        return new Analyzer<>(new SourceInterpreter(Opcodes.ASM9) {
+            @Override public SourceValue copyOperation(AbstractInsnNode insn, SourceValue value) { return value; }
+        }).analyze(owner, method);
+    }
+
+    private static List<MethodInsnNode> normalCalls(AbstractInsnNode start) {
+        var calls = new ArrayList<MethodInsnNode>();
+        var visited = new HashSet<AbstractInsnNode>();
+        for (var insn = start; insn != null; insn = insn.getNext()) {
+            assertTrue("The callback's normal path terminates", visited.add(insn));
+            if (insn instanceof MethodInsnNode call) calls.add(call);
+            if (insn.getOpcode() == Opcodes.RETURN) return calls;
+            if (insn instanceof JumpInsnNode jump) {
+                assertEquals("No unreviewed conditional inside the refresh path", Opcodes.GOTO, jump.getOpcode());
+                insn = jump.label;
+            }
+            assertNotEquals("The normal path must not throw", Opcodes.ATHROW, insn.getOpcode());
+        }
+        throw new AssertionError("The callback's normal path has no return");
     }
 }
