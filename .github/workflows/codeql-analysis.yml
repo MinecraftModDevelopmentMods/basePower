@@ -34,7 +34,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           repository: MinecraftModDevelopmentMods/OreSpawn
-          ref: c64d189c899ca5f277078c4c1efe1b1fd1af1742
+          ref: dcaaa933299dd8b1ebc73e31c9e5acd36dd7957c
           path: .ci-dependencies/OreSpawn
       - name: Check out pinned Base Metals
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -69,7 +69,7 @@ jobs:
           chmod +x "$orespawn/gradlew" "$basemetals/gradlew"
           (cd "$orespawn" && ./gradlew $MMD_GRADLE_TOOLCHAINS jar --no-daemon --stacktrace)
           (cd "$basemetals" && ./gradlew $MMD_GRADLE_TOOLCHAINS jar -PorespawnVerificationRepository="$mirror" --no-daemon --stacktrace)
-          echo "orespawn=$orespawn/build/libs/OreSpawn-4.1.0.2602001.jar" >> "$GITHUB_OUTPUT"
+          echo "orespawn=$orespawn/build/libs/OreSpawn-4.1.1.2602001.jar" >> "$GITHUB_OUTPUT"
           echo "basemetals=$basemetals/build/libs/BaseMetals-3.1.2.2602001.jar" >> "$GITHUB_OUTPUT"
           echo "mavenizer=$mavenizer" >> "$GITHUB_OUTPUT"
       - name: Initialize CodeQL
