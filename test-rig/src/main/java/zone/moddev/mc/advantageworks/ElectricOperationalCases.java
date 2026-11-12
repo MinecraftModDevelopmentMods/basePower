@@ -422,11 +422,11 @@ public final class ElectricOperationalCases {
                 + "This exclusive case restores global time after measurement, including on assertion failure.", 160, c -> {
                     c.block(8, Y, Z, EA + "photovoltaic_generator");
                     c.require(c.world.canSeeSky(c.at(8, Y + 1, Z)), "Daylight panel top surface has actual sky access");
-                    previousTime[0] = c.world.getDayTime();
+                    previousTime[0] = c.world.getDefaultClockTime();
                     weatherFactor[0] = c.world.isThundering() ? 0.2f : c.world.isRaining() ? 0.35f : 1;
                     c.record("setup.previousDayTime", previousTime[0]);
                     c.record("setup.weatherFactor", weatherFactor[0]);
-                    c.world.setDayTime(6000);
+                    c.world.getServer().clockManager().setTotalTicks(c.world.dimensionType().defaultClock().orElseThrow(), 6000);
                     daylightCycle[0] = c.world.getGameRules().get(GameRules.ADVANCE_TIME);
                     c.record("setup.daylightCycle", daylightCycle[0]);
                     c.record("daylight.constructionGameTime", c.world.getGameTime());
@@ -441,9 +441,9 @@ public final class ElectricOperationalCases {
                         c.record("daylight.expectedGenerated", expected);
                         // Math.sin is independent of Minecraft's quantized sine table; allow only its rounding error.
                         close(c, "daylight.generated", c.energy(8, Y, Z, ELECTRICITY), expected, 0.01f);
-                        c.record("daylight.lastDayTime", c.world.getDayTime());
+                        c.record("daylight.lastDayTime", c.world.getDefaultClockTime());
                     } finally {
-                        c.world.setDayTime(previousTime[0]);
+                        c.world.getServer().clockManager().setTotalTicks(c.world.dimensionType().defaultClock().orElseThrow(), previousTime[0]);
                     }
                 }).exclusive());
     }

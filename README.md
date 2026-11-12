@@ -1,14 +1,16 @@
 # basePower
 
-**Minecraft 26.1.2 (Forge), version 2.4.16.2601021, in development.**
+**Minecraft 26.1.2 (Forge), version 2.4.16.2601021.**
 
-This branch is a local port, not a released or qualified build. The
-[26.1.2 port record](docs/26.1.2/PORT-STATUS.md) separates completed checks from
-work still to do. The accepted [1.21.11 qualification](docs/1.21.11/QUALIFICATION.md)
-is retained as historical evidence; it does not qualify this port.
+This branch has passed its
+[26.1.2 automated qualification](docs/26.1.2/QUALIFICATION.md) and manual
+playtesting. Publication is being prepared separately. The
+[port record](docs/26.1.2/PORT-STATUS.md) keeps the earlier findings separate.
+The [1.21.11 qualification](docs/1.21.11/QUALIFICATION.md) remains historical
+evidence, not proof of this port.
 
-The combined Eclipse launch will load matching baseSteam and baseElectric
-candidates once their exact jars and development profile have been prepared.
+Use the generated `runClientAllAdvantage.launch` in Eclipse to load the
+matching baseSteam and baseElectric candidates with basePower.
 
 basePower continues DrCyano's Power Advantage. It provides shared power,
 fluids and item transport for baseSteam and baseElectric.
@@ -25,7 +27,7 @@ fluids and item transport for baseSteam and baseElectric.
 
 **Back up the entire world before upgrading. Test only disposable copies.**
 The port keeps existing registry names and machine data. The upgrade checks
-will use disposable copies of original Advantage and released base* saves,
+used disposable copies of original Advantage and released base* saves,
 including connected machines, and check them after a full restart. Check that
 the other mods in your world support 26.1.2 before attempting an upgrade.
 The accepted [1.14 results](docs/1.14/BROADER-QUALIFICATION.md) are historical

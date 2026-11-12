@@ -24,7 +24,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class Native12111HelperContractTest {
-    private static final String SHA = "EBFF575F4777A43C12255250B704C06FF700D5160AFCAFE7252508353CD430C4";
+    private static final String SHA = "C2407DA9E3785032E26FCFB739133B2F4DEA8F1B537AD81F8AC562E2A61A59E8";
 
     @BeforeClass public static void bootstrap() { SharedConstants.tryDetectVersion(); Bootstrap.bootStrap(); }
 
@@ -32,10 +32,10 @@ public class Native12111HelperContractTest {
         byte[] bytes = Native117StoppedEntitiesSnapshotV2.contract();
         assertEquals(SHA, Native117StoppedEntitiesSnapshotV2.sha(bytes));
         JsonObject control = JsonParser.parseString(new String(bytes, StandardCharsets.UTF_8)).getAsJsonObject();
-        assertEquals("native12111-leash-knot-nosave-v1", control.get("policy").getAsString());
+        assertEquals("native2612-leash-knot-nosave-v1", control.get("policy").getAsString());
         assertEquals(SharedConstants.getCurrentVersion().name(), control.get("minecraftVersion").getAsString());
         assertEquals(SharedConstants.getCurrentVersion().dataVersion().version(), control.get("dataVersion").getAsInt());
-        assertEquals("61.1.0", control.get("forgeVersion").getAsString());
+        assertEquals("64.1.5", control.get("forgeVersion").getAsString());
         for (String key : List.of("noPower", "powerAccessTransformerAbsent", "noHarness", "noServer", "noTicks", "nativeMethodsUnmodified",
                 "observationalUuidPreserved", "observationalStateUnchanged", "refusedWritersLeaveNoPayload")) {
             assertTrue(key, control.get(key).getAsBoolean());

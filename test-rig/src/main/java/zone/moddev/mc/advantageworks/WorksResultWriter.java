@@ -57,7 +57,7 @@ final class WorksResultWriter {
 
     private static Map<String, String> loadedMods() {
         Map<String, String> result = new LinkedHashMap<>();
-        for (IModInfo mod : ModList.get().getMods()) {
+        for (IModInfo mod : ModList.getMods()) {
             result.put(mod.getModId(), mod.getVersion().toString());
         }
         return result;

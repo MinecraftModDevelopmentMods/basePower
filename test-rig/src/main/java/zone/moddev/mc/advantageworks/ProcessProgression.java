@@ -140,8 +140,7 @@ final class ProcessProgression {
                 selection.addProperty("id", selected.id().identifier().toString());
                 selection.addProperty("class", selected.value().getClass().getName());
                 selection.addProperty("resultNbt", stackNbt(world,
-                        selected.value().assemble(new net.minecraft.world.item.crafting.SingleRecipeInput(input.copy()),
-                                world.registryAccess())));
+                        selected.value().assemble(new net.minecraft.world.item.crafting.SingleRecipeInput(input.copy()))));
             }
         } catch (RuntimeException | LinkageError error) {
             selection.addProperty("status", "OBSERVER_ERROR");
@@ -163,7 +162,7 @@ final class ProcessProgression {
         sample.addProperty("sourceIntersectsArea", source.getBoundingBox().intersects(area));
         sample.addProperty("sourceNbt", stackNbt(world, source.getItem()));
         sample.addProperty("uuidLookupIsSource", world.getEntity(source.getUUID()) == source);
-        sample.addProperty("entitiesLoaded", world.areEntitiesLoaded(net.minecraft.world.level.ChunkPos.asLong(pos)));
+        sample.addProperty("entitiesLoaded", world.areEntitiesLoaded(net.minecraft.world.level.ChunkPos.pack(pos)));
         sample.addProperty("blockAndEntitiesTicking", Native118ChunkTicking.withEntitiesLoaded(world, pos));
         sample.addProperty("entityTicking", world.isPositionEntityTicking(pos));
         sample.addProperty("clientSide", world.isClientSide());

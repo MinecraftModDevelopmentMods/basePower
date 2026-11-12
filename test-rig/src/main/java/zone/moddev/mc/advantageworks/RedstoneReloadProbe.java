@@ -184,7 +184,7 @@ final class RedstoneReloadProbe {
         List<Map<String, Object>> rows = new ArrayList<>();
         for (Witness witness : witnesses) {
             BlockEntity tile = tile(witness);
-            boolean ticking = world.getChunkSource().isPositionTicking(new net.minecraft.world.level.ChunkPos(witness.pos).toLong());
+            boolean ticking = world.getChunkSource().isPositionTicking(net.minecraft.world.level.ChunkPos.pack(witness.pos));
             boolean listed = NativeBlockEntityTicks.contains(world, tile);
             boolean blockAndEntitiesLoaded = Native118ChunkTicking.withEntitiesLoaded(world, witness.pos);
             boolean entityTicking = world.isPositionEntityTicking(witness.pos);

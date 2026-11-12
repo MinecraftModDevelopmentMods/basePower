@@ -38,7 +38,7 @@ public class Native12111RecipeBookProbeTest {
     @Test public void nativeDisplayRetainsOutputCountAndIdentity() {
         ItemStack expected = new ItemStack(Items.CARROT, 3);
         assertTrue(ItemStack.matches(expected,
-                RecipeBookProbe.displayResult(display(new SlotDisplay.ItemStackSlotDisplay(expected)), CONTEXT)));
+                RecipeBookProbe.displayResult(display(new SlotDisplay.ItemStackSlotDisplay(net.minecraft.world.item.ItemStackTemplate.fromNonEmptyStack(expected))), CONTEXT)));
     }
 
     @Test public void emptyDisplayFailsClosed() {
@@ -52,7 +52,7 @@ public class Native12111RecipeBookProbeTest {
     }
 
     @Test public void nativeBookPacketRoundTripsDisplayIdsGroupsAndIngredients() {
-        RecipeDisplayEntry expected = display(new SlotDisplay.ItemStackSlotDisplay(new ItemStack(Items.CARROT, 3)));
+        RecipeDisplayEntry expected = display(new SlotDisplay.ItemStackSlotDisplay(new net.minecraft.world.item.ItemStackTemplate(Items.CARROT, 3)));
         var entries = List.of(new ClientboundRecipeBookAddPacket.Entry(expected, false, false));
         RegistryFriendlyByteBuf buffer = new RegistryFriendlyByteBuf(Unpooled.buffer(),
                 RegistryAccess.fromRegistryOfRegistries(BuiltInRegistries.REGISTRY));

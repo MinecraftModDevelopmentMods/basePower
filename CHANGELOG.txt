@@ -1,4 +1,4 @@
-basePower 2.4.16.2601021 (Minecraft 26.1.2, in development)
+basePower 2.4.16.2601021 (Minecraft 26.1.2)
 
 - Require OreSpawn 4.1.1 so old generation rules keep their saved settings without enabling duplicate modern ore rules.
 - Bring basePower to Forge 64 and Java 25 without renaming machines, items or saved data.
@@ -12,7 +12,7 @@ basePower 2.4.16.2601021 (Minecraft 26.1.2, in development)
 - Finish imported generation settings before opening the first world, including the old vanilla quartz name.
 - Move the existing farmer and toolsmith trades to Minecraft's native trade data and tags, keeping their prices and quantities.
 - Prepare selected, locked worlds before Minecraft relocates old world and player files. Keep world previews and fallback files read-only.
-- Keep the shared Base Metals migration hook and add new test evidence for this target. Qualification and manual testing are still in progress.
+- Keep the shared Base Metals migration hook and add new test evidence for this target. Machine, upgrade, restart, graphical and two-world endurance checks pass, and manual testing is accepted.
 
 basePower 2.4.15.121111 (Minecraft 1.21.11)
 

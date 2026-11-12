@@ -62,7 +62,7 @@ final class NativePlatformSupport {
                 var tags = TagLoader.loadTagsForExistingRegistries(resources, base.getLayer(RegistryLayer.STATIC));
                 var lookups = TagLoader.buildUpdatedLookups(base.getAccessForLoading(RegistryLayer.WORLDGEN), tags);
                 var loaded = RegistryDataLoader.load(resources, lookups,
-                        RegistryDataLoader.WORLDGEN_REGISTRIES);
+                        RegistryDataLoader.WORLDGEN_REGISTRIES, Runnable::run).join();
                 registries = base.replaceFrom(RegistryLayer.WORLDGEN, loaded).compositeAccess();
             }
         }

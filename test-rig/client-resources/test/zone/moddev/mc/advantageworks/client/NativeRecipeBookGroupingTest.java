@@ -146,7 +146,8 @@ public class NativeRecipeBookGroupingTest {
 
     private static ClientboundRecipeBookAddPacket.Entry entry(int id, int group, ItemStack output) {
         var display = new ShapedCraftingRecipeDisplay(1, 1, List.of(new SlotDisplay.ItemSlotDisplay(Items.STICK)),
-                new SlotDisplay.ItemStackSlotDisplay(output), new SlotDisplay.ItemSlotDisplay(Items.CRAFTING_TABLE));
+                new SlotDisplay.ItemStackSlotDisplay(net.minecraft.world.item.ItemStackTemplate.fromNonEmptyStack(output)),
+                new SlotDisplay.ItemSlotDisplay(Items.CRAFTING_TABLE));
         return new ClientboundRecipeBookAddPacket.Entry(new RecipeDisplayEntry(new RecipeDisplayId(id), display,
                 OptionalInt.of(group), RecipeBookCategories.CRAFTING_MISC, Optional.empty()), false, false);
     }

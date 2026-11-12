@@ -375,9 +375,9 @@ final class WorksController {
                         if (assertion.meta != null) {
                             return state.equals(legacyState(assertion.block, block(assertion.block), assertion.meta));
                         }
-                        return state.getValues().entrySet().stream().anyMatch(entry ->
-                                assertion.property.equals(entry.getKey().getName())
-                                        && assertion.expectedText.equals(String.valueOf(entry.getValue())));
+                        return state.getValues().anyMatch(entry ->
+                                assertion.property.equals(entry.property().getName())
+                                        && assertion.expectedText.equals(String.valueOf(entry.value())));
                     });
         }
         if ("registryBlock".equals(assertion.type)) {
@@ -387,7 +387,7 @@ final class WorksController {
             return assertion.item != null && item(assertion.item) != null;
         }
         if ("modLoaded".equals(assertion.type)) {
-            return ModList.get().isLoaded(assertion.item);
+            return ModList.isLoaded(assertion.item);
         }
         if ("fluidAmount".equals(assertion.type)) {
             long total = 0;
@@ -407,12 +407,8 @@ final class WorksController {
         if ("blockProperty".equals(assertion.type)) {
             BlockState state = world.getBlockState(pos);
             if (state.getBlock() != block(assertion.block)) return false;
-            for (Map.Entry<Property<?>, Comparable<?>> entry : state.getValues().entrySet()) {
-                if (entry.getKey().getName().equals(assertion.property)) {
-                    return assertion.expectedText.equals(String.valueOf(entry.getValue()));
-                }
-            }
-            return false;
+            return state.getValues().anyMatch(entry -> entry.property().getName().equals(assertion.property)
+                    && assertion.expectedText.equals(String.valueOf(entry.value())));
         }
         if ("comparatorOutput".equals(assertion.type)) {
             BlockState state = world.getBlockState(pos);
@@ -709,19 +705,19 @@ final class WorksController {
                     world.addFreshEntity(entity);
                     break;
                 case "time":
-                    world.setDayTime(action.value);
+                    world.getServer().clockManager().setTotalTicks(world.dimensionType().defaultClock().orElseThrow(), action.value);
                     break;
                 case "weatherClear":
-                    world.getLevelData().setRaining(false);
-                    ((net.minecraft.world.level.storage.ServerLevelData) world.getLevelData()).setThundering(false);
+                    world.getWeatherData().setRaining(false);
+                    world.getWeatherData().setThundering(false);
                     break;
                 case "weatherRain":
-                    world.getLevelData().setRaining(true);
-                    ((net.minecraft.world.level.storage.ServerLevelData) world.getLevelData()).setThundering(false);
+                    world.getWeatherData().setRaining(true);
+                    world.getWeatherData().setThundering(false);
                     break;
                 case "weatherThunder":
-                    world.getLevelData().setRaining(true);
-                    ((net.minecraft.world.level.storage.ServerLevelData) world.getLevelData()).setThundering(true);
+                    world.getWeatherData().setRaining(true);
+                    world.getWeatherData().setThundering(true);
                     break;
                 default:
                     throw new IllegalArgumentException("Unsupported action type " + type);
@@ -787,7 +783,7 @@ final class WorksController {
     }
 
     private static boolean requirementsPresent(List<String> requiredMods) {
-        for (String mod : requiredMods) if (!ModList.get().isLoaded(mod)) return false;
+        for (String mod : requiredMods) if (!ModList.isLoaded(mod)) return false;
         return true;
     }
 

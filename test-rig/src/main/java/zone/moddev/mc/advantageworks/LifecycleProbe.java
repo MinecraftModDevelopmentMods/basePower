@@ -76,7 +76,7 @@ final class LifecycleProbe {
     }
 
     static void validate(Fixture fixture) {
-        validate(fixture, () -> ModList.get().isLoaded("mineralogy"));
+        validate(fixture, () -> ModList.isLoaded("mineralogy"));
     }
 
     static void validate(Fixture fixture, BooleanSupplier mineralogyLoaded) {
@@ -213,13 +213,13 @@ final class LifecycleProbe {
             Set<Long> selected = new LinkedHashSet<>();
             for (Fixture fixture : fixtures.values()) {
                 if (fixture.groups == null || !fixture.groups.containsKey(group)) continue;
-                for (int[] pos : fixture.groups.get(group)) selected.add(ChunkPos.asLong(pos[0], pos[1]));
+                for (int[] pos : fixture.groups.get(group)) selected.add(ChunkPos.pack(pos[0], pos[1]));
             }
             if (selected.isEmpty()) throw new IllegalArgumentException("Unknown chunk group " + group);
             for (long key : selected) {
-                ChunkPos pos = new ChunkPos(key);
-                world.setChunkForced(pos.x, pos.z, acquire);
-                if (acquire) world.getChunk(pos.x, pos.z);
+                ChunkPos pos = ChunkPos.unpack(key);
+                world.setChunkForced(pos.x(), pos.z(), acquire);
+                if (acquire) world.getChunk(pos.x(), pos.z());
                 // Removing the forced ticket lets the native ticket manager unload naturally.
                 // The runner still requires actual ChunkEvent.Unload/Load witnesses.
             }
@@ -261,15 +261,15 @@ final class LifecycleProbe {
             case "trace-loads": tracingLoads = true; break;
             case "release":
                 for (long key : chunks()) {
-                    ChunkPos pos = new ChunkPos(key);
-                    world.setChunkForced(pos.x, pos.z, false);
+                    ChunkPos pos = ChunkPos.unpack(key);
+                    world.setChunkForced(pos.x(), pos.z(), false);
                 }
                 break;
             case "load":
                 for (long key : chunks()) {
-                    ChunkPos pos = new ChunkPos(key);
-                    world.setChunkForced(pos.x, pos.z, true);
-                    world.getChunk(pos.x, pos.z);
+                    ChunkPos pos = ChunkPos.unpack(key);
+                    world.setChunkForced(pos.x(), pos.z(), true);
+                    world.getChunk(pos.x(), pos.z());
                 }
                 break;
             case "offer":
@@ -323,9 +323,9 @@ final class LifecycleProbe {
         ServerLevel world = request.world;
         boolean allChunks = true;
         for (long key : chunks()) {
-            ChunkPos chunk = new ChunkPos(key);
+            ChunkPos chunk = ChunkPos.unpack(key);
             BlockPos pos = new BlockPos(chunk.getMinBlockX(), 80, chunk.getMinBlockZ());
-            allChunks &= world.getChunkSource().getChunkNow(chunk.x, chunk.z) != null
+            allChunks &= world.getChunkSource().getChunkNow(chunk.x(), chunk.z()) != null
                     && Native118ChunkTicking.withEntitiesLoaded(world, pos) && world.isPositionEntityTicking(pos);
         }
         request.bindings.clear(); request.prerequisites.clear();
@@ -494,29 +494,29 @@ final class LifecycleProbe {
         Set<Long> result = new LinkedHashSet<>();
         for (Fixture fixture : fixtures.values())
             for (int z = fixture.min[2] >> 4; z <= fixture.max[2] >> 4; z++)
-                for (int x = fixture.min[0] >> 4; x <= fixture.max[0] >> 4; x++) result.add(ChunkPos.asLong(x, z));
+                for (int x = fixture.min[0] >> 4; x <= fixture.max[0] >> 4; x++) result.add(ChunkPos.pack(x, z));
         return result;
     }
 
     private void unload(ChunkEvent.Unload event) {
         if (event.getLevel() instanceof ServerLevel) {
-            increment(unloads, event.getChunk().getPos().toLong());
+            increment(unloads, event.getChunk().getPos().pack());
             recordEvent(event, "unload");
         }
     }
 
     private void load(ChunkEvent.Load event) {
         if (event.getLevel() instanceof ServerLevel) {
-            increment(loads, event.getChunk().getPos().toLong());
+            increment(loads, event.getChunk().getPos().pack());
             recordEvent(event, "load");
         }
     }
 
     private void recordEvent(ChunkEvent event, String operation) {
-        if (!chunks().contains(event.getChunk().getPos().toLong())) return;
+        if (!chunks().contains(event.getChunk().getPos().pack())) return;
         Map<String, Object> record = new LinkedHashMap<>();
         record.put("operation", operation);
-        record.put("pos", Arrays.asList(event.getChunk().getPos().x, event.getChunk().getPos().z));
+        record.put("pos", Arrays.asList(event.getChunk().getPos().x(), event.getChunk().getPos().z()));
         record.put("worldTime", ((ServerLevel) event.getLevel()).getGameTime());
         if (tracingLoads && "load".equals(operation)) {
             List<String> stack = new ArrayList<>();
@@ -605,10 +605,10 @@ final class LifecycleProbe {
         }
         List<Map<String, Object>> chunkStates = new ArrayList<>();
         for (long key : chunks()) {
-            ChunkPos pos = new ChunkPos(key);
+            ChunkPos pos = ChunkPos.unpack(key);
             Map<String, Object> entry = new LinkedHashMap<>();
-            entry.put("pos", Arrays.asList(pos.x, pos.z));
-            entry.put("loaded", world.getChunkSource().getChunkNow(pos.x, pos.z) != null);
+            entry.put("pos", Arrays.asList(pos.x(), pos.z()));
+            entry.put("loaded", world.getChunkSource().getChunkNow(pos.x(), pos.z()) != null);
             entry.put("unloads", unloads.getOrDefault(key, 0));
             entry.put("loads", loads.getOrDefault(key, 0));
             chunkStates.add(entry);

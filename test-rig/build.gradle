@@ -5,8 +5,8 @@ plugins {
     id 'net.minecraftforge.gradle' version '7.0.34'
 }
 
-ext.forge61MavenizerDefault = '../../../../MinecraftMineralogy/OS12111/OreSpawn/ci-fixtures/tools/minecraft-mavenizer-0.5.21-orespawn-compat.jar'
-apply from: '../gradle/forge61-mavenizer.gradle'
+ext.forge64MavenizerDefault = '../../../../MinecraftMineralogy/OS2612/OreSpawn/ci-fixtures/tools/minecraft-mavenizer-0.5.21-orespawn-compat.jar'
+apply from: '../gradle/forge64-mavenizer.gradle'
 
 // Saves, pinned inputs and evidence are siblings, never Gradle cleanup targets.
 layout.buildDirectory = layout.projectDirectory.dir('build/gradle')
@@ -25,15 +25,15 @@ version = project.harness_version
 base.archivesName = 'AdvantageWorksTestHarness'
 
 java {
-    toolchain.languageVersion = JavaLanguageVersion.of(21)
+    toolchain.languageVersion = JavaLanguageVersion.of(25)
 }
 
 tasks.withType(JavaCompile).configureEach {
     javaCompiler = javaToolchains.compilerFor {
-        languageVersion = JavaLanguageVersion.of(21)
+        languageVersion = JavaLanguageVersion.of(25)
     }
-    sourceCompatibility = JavaVersion.VERSION_21
-    targetCompatibility = JavaVersion.VERSION_21
+    sourceCompatibility = JavaVersion.VERSION_25
+    targetCompatibility = JavaVersion.VERSION_25
     options.encoding = 'UTF-8'
     options.compilerArgs.addAll(['-Xmaxerrs', '1000'])
 }
@@ -70,7 +70,7 @@ repositories {
 }
 
 def powerCompileJar = file(project.findProperty('powerAdvantageReleaseJar')
-        ?: '../build/libs/basePower-2.4.15.121111.jar')
+        ?: '../build/libs/basePower-2.4.16.2601021.jar')
 def exploratoryPowerSha = providers.gradleProperty('worksExploratoryPowerSha256')
 def powerCompileSha = exploratoryPowerSha.orElse(providers.gradleProperty('works_power_sha256'))
 
@@ -107,7 +107,7 @@ tasks.register('verifyWorksCompileInputPin') {
     inputs.file(powerCompileJar)
     inputs.property('powerSha256', powerCompileSha.orElse(''))
     doLast {
-        if (!powerCompileJar.isFile()) throw new GradleException("Missing 1.21.11 Power compile input: ${powerCompileJar}")
+        if (!powerCompileJar.isFile()) throw new GradleException("Missing 26.1.2 Power compile input: ${powerCompileJar}")
         if (!(powerCompileSha.getOrElse('') ==~ /[A-Fa-f0-9]{64}/)) {
             throw new GradleException('Missing or invalid Power SHA-256 pin')
         }
@@ -257,6 +257,20 @@ tasks.register('verifyWorksNative12111Inputs', JavaExec) {
     }
 }
 
+tasks.register('verifyWorksNative2612Inputs', JavaExec) {
+    group = 'verification'
+    description = 'Checks actual 26.1.2 candidate/Java/seed identities without opening a world.'
+    dependsOn tasks.named('runnerClasses'), tasks.named('jar')
+    classpath = sourceSets.runner.runtimeClasspath
+    mainClass = 'zone.moddev.mc.advantageworks.runner.WorksRunner'
+    doFirst { JavaExec task ->
+        String pin = providers.gradleProperty('worksProfileFile').orNull
+        if (!pin) throw new GradleException('Set -PworksProfileFile to a generated Forge 64 profile')
+        args '--profile', file(pin).absolutePath, '--validate-only'
+        configurePreparedSeedArgs(task)
+    }
+}
+
 tasks.register('verifyHarnessIsolation') {
     group = 'verification'
     description = 'Confirms the PowerAdvantage release contains no test-harness content.'
@@ -293,7 +307,7 @@ tasks.register('verifyForge61UnitBootstrap', JavaExec) {
     dependsOn compileUnitSupport, unitBootstrapJar
     classpath = files(compileUnitSupport.flatMap { it.destinationDirectory }) + nativeControlClasspath
     mainClass = 'zone.moddev.mc.advantageworks.unit.Forge61UnitControl'
-    javaLauncher = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(21) }
+    javaLauncher = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(25) }
     doFirst { jvmArgs "-javaagent:${unitBootstrapJar.get().archiveFile.get().asFile}" }
 }
 def compilePlatformControls = tasks.register('compilePlatformControls', JavaCompile) {
@@ -308,7 +322,7 @@ tasks.register('verifyNativeWolfPlatform', JavaExec) {
     classpath = files(compilePlatformControls.flatMap { it.destinationDirectory },
             compileUnitSupport.flatMap { it.destinationDirectory }) + nativeControlClasspath
     mainClass = 'NativeWolfPlatformControl'
-    javaLauncher = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(21) }
+    javaLauncher = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(25) }
     doFirst {
         def output = providers.gradleProperty('nativeControlOutput').orNull
         if (!output || file(output).exists()) throw new GradleException('Supply a new -PnativeControlOutput directory')
@@ -323,7 +337,7 @@ tasks.register('verifyNativeLeashKnotPlatform', JavaExec) {
     classpath = files(compilePlatformControls.flatMap { it.destinationDirectory },
             compileUnitSupport.flatMap { it.destinationDirectory }) + nativeControlClasspath
     mainClass = 'NativeLeashKnotPlatformControl'
-    javaLauncher = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(21) }
+    javaLauncher = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(25) }
     doFirst {
         def output = providers.gradleProperty('nativeControlOutput').orNull
         if (!output || file(output).exists()) throw new GradleException('Supply a new -PnativeControlOutput directory')
