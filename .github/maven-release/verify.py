@@ -27,6 +27,19 @@ def digest(data):
     return hashlib.sha256(data).hexdigest()
 
 
+def release_target(branch):
+    require(branch.startswith("master-"), "Release requires a version master branch")
+    minecraft = branch.removeprefix("master-")
+    java_versions = {
+        "1.10.2": 8, "1.12.2": 8, "1.13.2": 8, "1.14.4": 8,
+        "1.15.2": 8, "1.16.5": 8, "1.17.1": 16, "1.18.2": 17,
+        "1.19.4": 17, "1.20.1": 17, "1.20.6": 21, "1.21.1": 21,
+        "1.21.11": 21, "26.1.2": 25,
+    }
+    require(minecraft in java_versions, f"Unsupported Minecraft version: {minecraft}")
+    return minecraft, f"Java {java_versions[minecraft]}"
+
+
 def read_url(url, allow_absent=False):
     if url.startswith(MAVEN + "/"):
         # The CDN can cache pre-upload 404s even with a no-cache request header.
@@ -161,7 +174,10 @@ def main():
     manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
     require(version in manifest["releases"], f"Version is not approved: {version}")
     release, work = manifest["releases"][version], Path(folder)
-    if mode in ("stage", "stage-candidate"):
+    if mode == "target":
+        minecraft, java = release_target(release["branch"])
+        print(f"minecraft={minecraft}\njava={java}")
+    elif mode in ("stage", "stage-candidate"):
         stage(manifest, version, release, work, candidate=mode == "stage-candidate")
     elif mode == "verify-curseforge":
         verify_curseforge(manifest, version, release, int(os.environ["CURSEFORGE_FILE_ID"]),
