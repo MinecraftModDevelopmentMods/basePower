@@ -230,12 +230,12 @@ public class LegacyEntityAttributeAliasesTest {
         CompoundTag red = (CompoundTag) DataFixers.getDataFixer().update(References.ENTITY,
                 new Dynamic<>(NbtOps.INSTANCE, source.copy()), 1343,
                 SharedConstants.getCurrentVersion().dataVersion().version()).getValue();
-        Wolf before = new Wolf(EntityType.WOLF, world); NativeWolfTestWorld.load(before, red);
+        Wolf before = new Wolf(net.minecraft.world.entity.EntityTypes.WOLF, world); NativeWolfTestWorld.load(before, red);
         var swimSpeed = ForgeMod.SWIM_SPEED.getHolder().orElseThrow();
         assertEquals(1D, before.getAttribute(swimSpeed).getBaseValue(), 0D);
         CompoundTag root = chunk(source);
         LegacyEntityDataFixes.prepare(root); LegacyEntityDataFixes.finish(root);
-        Wolf after = new Wolf(EntityType.WOLF, world);
+        Wolf after = new Wolf(net.minecraft.world.entity.EntityTypes.WOLF, world);
         NativeWolfTestWorld.load(after, root.getCompoundOrEmpty("Level").getListOrEmpty("Entities").getCompoundOrEmpty(0));
         assertEquals(2D, after.getAttribute(swimSpeed).getBaseValue(), 0D);
         var modifierId = net.minecraft.resources.Identifier.fromNamespaceAndPath("minecraft", MODIFIER.toString());

@@ -52,6 +52,7 @@ final class NativePlatformSupport {
         instance.setAccessible(true);
         ServerLevel world = (ServerLevel) unsafe.getMethod("allocateInstance", Class.class)
                 .invoke(instance.get(null), ServerLevel.class);
+        zone.moddev.mc.advantageworks.unit.NativeEmptyEntityTracker.install(world);
         field(world, "dimension", Level.NETHER);
         field(world, "random", RandomSource.create(0));
         RegistryAccess registries = RegistryAccess.fromRegistryOfRegistries(BuiltInRegistries.REGISTRY);
@@ -137,6 +138,8 @@ final class NativePlatformSupport {
         for (String source : List.of("NativePlatformSupport.java", "NativeLeashKnotPlatformControl.java")) {
             controls.put(source, sha(Files.readAllBytes(Path.of("platform-controls", source))));
         }
+        controls.put("NativeEmptyEntityTracker.java", sha(Files.readAllBytes(Path.of(
+                "unit-support/zone/moddev/mc/advantageworks/unit/NativeEmptyEntityTracker.java"))));
         proof.put("controlSourceSha256", controls);
     }
 }

@@ -20,6 +20,7 @@ final class NativeWolfTestWorld {
         unsafe.setAccessible(true);
         ServerLevel world = (ServerLevel) allocator.getMethod("allocateInstance", Class.class)
                 .invoke(unsafe.get(null), ServerLevel.class);
+        zone.moddev.mc.advantageworks.unit.NativeEmptyEntityTracker.install(world);
         set(world, "dimension", Level.NETHER);
         set(world, "registryAccess", RegistriesHolder.ACCESS);
         var server = (net.minecraft.server.dedicated.DedicatedServer) allocator.getMethod("allocateInstance", Class.class)
@@ -34,7 +35,7 @@ final class NativeWolfTestWorld {
     }
 
     private static synchronized void registerNativeAttributes() throws ReflectiveOperationException {
-        var wolf = net.minecraft.world.entity.EntityType.WOLF;
+        var wolf = net.minecraft.world.entity.EntityTypes.WOLF;
         if (!net.minecraftforge.common.ForgeMod.SWIM_SPEED.isPresent()
                 || net.minecraft.world.entity.ai.attributes.DefaultAttributes.getSupplier(wolf)
                         .hasAttribute(net.minecraftforge.common.ForgeMod.SWIM_SPEED.getHolder().orElseThrow())) return;

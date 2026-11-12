@@ -6,20 +6,20 @@ import org.gradle.jvm.toolchain.JvmVendorSpec
 def tool = 'ci-fixtures/tools/minecraft-mavenizer-0.5.21-orespawn-compat.jar'
 def defaultJar = project.extensions.extraProperties.has('forge64MavenizerDefault')
         ? project.forge64MavenizerDefault
-        : "../../../MinecraftMineralogy/OS2612/OreSpawn/${tool}"
+        : "../../../MinecraftMineralogy/OS262/OreSpawn/${tool}"
 def fixture = file(providers.gradleProperty('forge64MavenizerJar').getOrElse(defaultJar))
 def checksums = [
-        (fixture.name): 'BB0DACB3DEB2A711CA67DD402D5FDAB5A9847C37C7B9B596DEC7CF37378FA085',
-        'minecraft-source-compatibility.json': '21D1F5984E735BCEA1B1EFB9F965655796B39538FC91AAED1C3474004710423D',
-        'minecraft-mavenizer-0.5.21-orespawn-compat.patch': '7C8EC895E79DF31AFD2CA3B505B43573C7052718A24050832189AAA2D3CC6137',
+        (fixture.name): '5ABAB52A3F1BE115381C3CE80D5FD38DBE6C9F4C0B9ECF70A957700EC90FB88B',
+        'minecraft-source-compatibility.json': '9437E03FC5E1CB5D605D72F0538C4DF4417B64DB0A57D0AABDC5184781517AC1',
+        'minecraft-mavenizer-0.5.21-orespawn-compat.patch': '2DA8DD0FD5F112F5B7591113AED06D9A58C584A25F8705E26445A6D2E9D5C78E',
         'LICENSE-MAVENIZER.txt': '20C17D8B8C48A600800DFD14F95D5CB9FF47066A9641DDEAB48DC54AEC96E331',
-        'README.md': '7686880D2B0F6BD6ACAFA4F0AB7585189767813174BC36DB675FEC0142440A77'
+        'README.md': 'EAD1477F393897C491A10FB86178213A99C360571A8063D551DA0579DF65BA6F'
 ]
 checksums.each { name, expected ->
     File input = new File(fixture.parentFile, name)
     if (!input.isFile() || MessageDigest.getInstance('SHA-256').digest(input.bytes)
             .encodeHex().toString().toUpperCase(Locale.ROOT) != expected) {
-        throw new GradleException("Missing or altered Forge 64 Mavenizer fixture: ${input}")
+        throw new GradleException("Missing or altered Forge 65 Mavenizer fixture: ${input}")
     }
 }
 

@@ -1,11 +1,11 @@
 # basePower
 
-**Minecraft 26.1.2 (Forge), version 2.4.16.2601021.**
+**Minecraft 26.2 (Forge), version 2.4.17.2602001, in development.**
 
-This branch has passed its
-[26.1.2 automated qualification](docs/26.1.2/QUALIFICATION.md) and manual
-playtesting. Publication is being prepared separately. The
-[port record](docs/26.1.2/PORT-STATUS.md) keeps the earlier findings separate.
+This branch is a fresh port of the accepted 26.1.2 source. It has not yet passed
+the 26.2 qualification suite. See the [26.2 port record](docs/26.2/PORT-STATUS.md).
+The [26.1.2 qualification](docs/26.1.2/QUALIFICATION.md) and
+[port record](docs/26.1.2/PORT-STATUS.md) keep the earlier findings separate.
 The [1.21.11 qualification](docs/1.21.11/QUALIFICATION.md) remains historical
 evidence, not proof of this port.
 

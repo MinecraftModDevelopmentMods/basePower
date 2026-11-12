@@ -109,7 +109,7 @@ public class DataDrivenRegistryMigrationTest {
                 new com.mojang.serialization.Dynamic<>(net.minecraft.nbt.NbtOps.INSTANCE,
                         root.getListOrEmpty("Entities").getCompoundOrEmpty(0)), 3839,
                 net.minecraft.SharedConstants.getCurrentVersion().dataVersion().version()).getValue();
-        var entity = new net.minecraft.world.entity.decoration.painting.Painting(net.minecraft.world.entity.EntityType.PAINTING, world);
+        var entity = new net.minecraft.world.entity.decoration.painting.Painting(net.minecraft.world.entity.EntityTypes.PAINTING, world);
         NativeWolfTestWorld.load(entity, converted);
         var saved = NativeWolfTestWorld.save(entity);
         assertEquals(Identifier.parse("minecraft:alban"), entity.getVariant().unwrapKey().orElseThrow().identifier());

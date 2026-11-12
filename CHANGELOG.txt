@@ -1,3 +1,8 @@
+basePower 2.4.17.2602001 (Minecraft 26.2, in development)
+
+- Begin the Forge 65 port from the accepted 26.1.2 source, keeping existing machine identities and saved data.
+- Update the native data and client resource format checks for Minecraft 26.2.
+
 basePower 2.4.16.2601021 (Minecraft 26.1.2)
 
 - Require OreSpawn 4.1.1 so old generation rules keep their saved settings without enabling duplicate modern ore rules.

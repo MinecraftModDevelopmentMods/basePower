@@ -38,7 +38,7 @@ public final class NativeWolfPlatformControl {
     }
 
     private static Wolf wolf(ServerLevel world) {
-        Wolf wolf = new Wolf(EntityType.WOLF, world); wolf.setUUID(ID); return wolf;
+        Wolf wolf = new Wolf(net.minecraft.world.entity.EntityTypes.WOLF, world); wolf.setUUID(ID); return wolf;
     }
 
     private static void control(Path root, ServerLevel world, boolean tame, float health) throws Exception {

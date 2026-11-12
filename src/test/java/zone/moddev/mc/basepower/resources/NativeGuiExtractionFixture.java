@@ -28,15 +28,18 @@ public final class NativeGuiExtractionFixture {
         var manager = allocate(TextureManager.class);
         set(manager, "byPath", textures);
         set(minecraft, "textureManager", manager);
-        set(minecraft, "gui", allocate(Gui.class));
+        var gui = allocate(Gui.class);
+        set(gui, "hud", allocate(net.minecraft.client.gui.Hud.class));
+        set(minecraft, "gui", gui);
         graphics = allocate(GuiGraphicsExtractor.class);
         set(graphics, "minecraft", minecraft);
         set(graphics, "pose", pose);
         set(graphics, "guiRenderState", target);
         var constructor = Class.forName(GuiGraphicsExtractor.class.getName() + "$ScissorStack")
-                .getDeclaredConstructor();
+                .getDeclaredConstructor(net.minecraft.client.gui.navigation.ScreenRectangle.class);
         constructor.setAccessible(true);
-        set(graphics, "scissorStack", constructor.newInstance());
+        set(graphics, "scissorStack", constructor.newInstance(
+                new net.minecraft.client.gui.navigation.ScreenRectangle(0, 0, 854, 480)));
     }
 
     public GpuTextureView texture(Identifier id) throws Exception {

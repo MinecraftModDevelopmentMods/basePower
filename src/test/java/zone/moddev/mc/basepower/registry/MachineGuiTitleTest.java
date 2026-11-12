@@ -31,7 +31,7 @@ public class MachineGuiTitleTest {
     }
 
     @Test public void unnamedTilesWithoutInventoryNamesStillHaveATranslatableTitle() {
-        BlockEntity tile = new BlockEntity(BlockEntityType.CHEST, net.minecraft.core.BlockPos.ZERO, Blocks.CHEST.defaultBlockState()) {};
+        BlockEntity tile = new BlockEntity(net.minecraft.world.level.block.entity.BlockEntityTypes.CHEST, net.minecraft.core.BlockPos.ZERO, Blocks.CHEST.defaultBlockState()) {};
         assertEquals("block.minecraft.chest", key(MachineGUIRegistry.menuTitle(tile, Blocks.CHEST)));
     }
 

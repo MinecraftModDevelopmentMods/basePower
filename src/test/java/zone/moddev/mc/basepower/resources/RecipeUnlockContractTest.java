@@ -131,7 +131,7 @@ public class RecipeUnlockContractTest {
         JsonObject predicate = criterion.getAsJsonObject("conditions").getAsJsonArray("items").get(0).getAsJsonObject();
         var registries = net.minecraft.core.RegistryAccess.fromRegistryOfRegistries(net.minecraft.core.registries.BuiltInRegistries.REGISTRY);
         var ops = registries.createSerializationContext(com.mojang.serialization.JsonOps.INSTANCE);
-        var nativePredicate = net.minecraft.advancements.criterion.ItemPredicate.CODEC.parse(ops, predicate).getOrThrow();
+        var nativePredicate = net.minecraft.advancements.predicates.ItemPredicate.CODEC.parse(ops, predicate).getOrThrow();
         assertTrue(nativePredicate.test(new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.POTATO)));
         assertFalse("An unrelated dirt stack must not satisfy the real native predicate",
                 nativePredicate.test(new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.DIRT)));

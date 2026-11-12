@@ -42,7 +42,7 @@ public final class NativeLeashKnotPlatformControl {
         CompoundTag observed = NativePlatformSupport.observe(knot);
         boolean selected = knot.shouldBeSaved();
         boolean encodable = knot.getEncodeId() != null;
-        if (knot.getClass() != LeashFenceKnotEntity.class || knot.getType() != EntityType.LEASH_KNOT
+        if (knot.getClass() != LeashFenceKnotEntity.class || knot.getType() != net.minecraft.world.entity.EntityTypes.LEASH_KNOT
                 || knot.getType().canSerialize() || rootAccepted || passengerAccepted || !selected || encodable
                 || !rootOutput.buildResult().isEmpty() || !passengerOutput.buildResult().isEmpty()
                 || !ID.equals(before.read("UUID", UUIDUtil.CODEC).orElseThrow()) || !ID.equals(knot.getUUID())
@@ -65,7 +65,7 @@ public final class NativeLeashKnotPlatformControl {
                 || !"minecraft:item".equals(persistentOutput.buildResult().getString("id").orElseThrow())) {
             throw new AssertionError("Persistent native writer control failed");
         }
-        LightningBolt otherNoSave = new LightningBolt(EntityType.LIGHTNING_BOLT, world);
+        LightningBolt otherNoSave = new LightningBolt(net.minecraft.world.entity.EntityTypes.LIGHTNING_BOLT, world);
         if (otherNoSave.getType().canSerialize() || otherNoSave.save(NativePlatformSupport.output(otherNoSave))) {
             throw new AssertionError("Unexpected native lightning writer eligibility");
         }
@@ -79,7 +79,7 @@ public final class NativeLeashKnotPlatformControl {
 
         Map<String, Object> proof = new LinkedHashMap<>();
         proof.put("format", 1);
-        proof.put("policy", "native2612-leash-knot-nosave-v1");
+        proof.put("policy", "native262-leash-knot-nosave-v1");
         proof.put("minecraftVersion", SharedConstants.getCurrentVersion().name());
         proof.put("dataVersion", SharedConstants.getCurrentVersion().dataVersion().version());
         proof.put("forgeVersion", net.minecraftforge.versions.forge.ForgeVersion.getVersion());

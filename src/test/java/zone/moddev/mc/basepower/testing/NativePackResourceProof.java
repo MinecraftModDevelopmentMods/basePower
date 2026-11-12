@@ -91,13 +91,13 @@ public final class NativePackResourceProof {
         }
         SharedConstants.tryDetectVersion();
         if (Runtime.version().feature() != 25
-                || !"26.1.2".equals(SharedConstants.getCurrentVersion().name())
-                || !"64.1.5".equals(net.minecraftforge.versions.forge.ForgeVersion.getVersion())
-                || !net.minecraft.server.packs.metadata.pack.PackFormat.of(84, 0).equals(
+                || !"26.2".equals(SharedConstants.getCurrentVersion().name())
+                || !"65.1.0".equals(net.minecraftforge.versions.forge.ForgeVersion.getVersion())
+                || !net.minecraft.server.packs.metadata.pack.PackFormat.of(88, 0).equals(
                         SharedConstants.getCurrentVersion().packVersion(PackType.CLIENT_RESOURCES))
-                || !net.minecraft.server.packs.metadata.pack.PackFormat.of(101, 1).equals(
+                || !net.minecraft.server.packs.metadata.pack.PackFormat.of(107, 1).equals(
                         SharedConstants.getCurrentVersion().packVersion(PackType.SERVER_DATA))) {
-            throw new AssertionError("Resource proof requires actual Forge 64.1.5 / Minecraft 26.1.2 on Java 25");
+            throw new AssertionError("Resource proof requires actual Forge 65.1.0 / Minecraft 26.2 on Java 25");
         }
         Bootstrap.bootStrap();
         Path resources = Path.of(args[0]);
