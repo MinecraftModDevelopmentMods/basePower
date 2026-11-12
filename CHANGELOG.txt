@@ -8,6 +8,7 @@ basePower 2.4.16.2601021 (Minecraft 26.1.2, in development)
 - Keep the returned container when the fuel helper consumes the last item in a stack.
 - Keep the saved enchantments on old dropped items and chest-minecart contents when Base Metals upgrades the world first.
 - Update old OreSpawn output block names without replacing saved generation settings. Keep backups and reports, and stop for review rather than guess when saved rules conflict.
+- Finish imported generation settings before opening the first world, including the old vanilla quartz name.
 - Move the existing farmer and toolsmith trades to Minecraft's native trade data and tags, keeping their prices and quantities.
 - Prepare selected, locked worlds before Minecraft relocates old world and player files. Keep world previews and fallback files read-only.
 - Keep the shared Base Metals migration hook and add new test evidence for this target. Qualification and manual testing are still in progress.

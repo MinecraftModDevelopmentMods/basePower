@@ -50,7 +50,17 @@ public final class OreSpawnProfileMigration {
         for (JsonObject defaults : DEFAULTS.values()) migrate(profile, defaults);
     }
 
-    private static void migrate(Path path, JsonObject defaults) throws IOException {
+    /** OreSpawn can import old vanilla rules during common setup, after our constructors. */
+    public static synchronized boolean migrateLateProfiles(Path configDirectory) throws IOException {
+        boolean changed = false;
+        for (Map.Entry<String, JsonObject> entry : DEFAULTS.entrySet()) {
+            changed |= migrate(configDirectory.resolve("orespawn-worldgen.json"), entry.getValue());
+            changed |= migrate(configDirectory.resolve(entry.getKey() + "-orespawn.json"), entry.getValue());
+        }
+        return changed;
+    }
+
+    private static boolean migrate(Path path, JsonObject defaults) throws IOException {
         LegacyOreSpawnProfileMigration.Result result = LegacyOreSpawnProfileMigration.migrate(
                 path, defaults, OreSpawnProfileMigration::declaredTarget);
         if (result.status() == LegacyOreSpawnProfileMigration.Status.REFUSED) {
@@ -61,6 +71,7 @@ public final class OreSpawnProfileMigration {
             PowerAdvantage.LOGGER.info("Preserved OreSpawn placement settings while migrating {} profile entries in '{}'; report: {}",
                     result.plan().getChanges().size(), path, result.reportFile());
         }
+        return result.wasMigrated();
     }
 
     static boolean declaredTarget(String name) {
