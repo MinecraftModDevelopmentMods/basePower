@@ -240,19 +240,14 @@ public class LegacyMachineItemsTest {
         assertEquals(before.getCompoundOrEmpty("tag"), actual.getCompoundOrEmpty("components").getCompoundOrEmpty("minecraft:custom_data"));
     }
 
-    @Test public void registeredForeignToolKeepsWearInDirectAndNestedMachineSlots() {
+    @Test public void registeredForeignToolKeepsWearInDirectAndNestedMachineSlots() throws Exception {
         String id = "advantageworks_unit:legacy_foreign_tool";
         net.minecraftforge.registries.GameData.unfreezeData();
         var tool = new net.minecraft.world.item.Item(new net.minecraft.world.item.Item.Properties().durability(250)
                 .setId(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ITEM,
                         net.minecraft.resources.Identifier.parse(id))));
         net.minecraftforge.registries.ForgeRegistries.ITEMS.register(net.minecraft.resources.Identifier.parse(id), tool);
-        // This item is registered after the worldless bootstrap. Bake its real native
-        // default components before testing wear; an unbound holder is not a loaded item.
-        net.minecraft.core.registries.BuiltInRegistries.DATA_COMPONENT_INITIALIZERS.build(registries())
-                .forEach(pending -> pending.forEach((holder, components) -> {
-                    if (holder.key().identifier().toString().equals(id)) holder.bindComponents(components);
-                }));
+        bindNativeFixtureComponents(id);
         assertEquals(Integer.valueOf(250), tool.components().get(net.minecraft.core.component.DataComponents.MAX_DAMAGE));
         CompoundTag foreign = stack(id, 9, 1);
         CompoundTag payload = new CompoundTag();
@@ -279,6 +274,35 @@ public class LegacyMachineItemsTest {
     private static ItemStack parseStack(CompoundTag saved) {
         return ItemStack.OPTIONAL_CODEC.parse(registries().createSerializationContext(net.minecraft.nbt.NbtOps.INSTANCE),
                 saved).getOrThrow();
+    }
+
+    private static void bindNativeFixtureComponents(String id) throws Exception {
+        // Other unit tests may construct unregistered items. Bake only this item's
+        // real constructor initializer, without applying empty maps to other holders.
+        var nativeInitializers = net.minecraft.core.registries.BuiltInRegistries.DATA_COMPONENT_INITIALIZERS;
+        var field = nativeInitializers.getClass().getDeclaredField("initializers");
+        field.setAccessible(true);
+        var isolated = new net.minecraft.core.component.DataComponentInitializers();
+        int found = 0;
+        for (Object entry : (List<?>) field.get(nativeInitializers)) {
+            var keyAccessor = entry.getClass().getDeclaredMethod("key");
+            var initializerAccessor = entry.getClass().getDeclaredMethod("initializer");
+            keyAccessor.setAccessible(true);
+            initializerAccessor.setAccessible(true);
+            var key = (net.minecraft.resources.ResourceKey<?>) keyAccessor.invoke(entry);
+            if (!key.identifier().toString().equals(id)) continue;
+            @SuppressWarnings("unchecked")
+            var initializer = (net.minecraft.core.component.DataComponentInitializers.Initializer<Object>)
+                    initializerAccessor.invoke(entry);
+            @SuppressWarnings("unchecked")
+            var itemKey = (net.minecraft.resources.ResourceKey<Object>) key;
+            isolated.add(itemKey, initializer);
+            found++;
+        }
+        assertEquals("Exactly one native constructor initializer is required", 1, found);
+        isolated.build(registries()).forEach(pending -> pending.forEach((holder, components) -> {
+            if (holder.key().identifier().toString().equals(id)) holder.bindComponents(components);
+        }));
     }
 
     @Test public void positiveNativeContainerConversionsDoNotEmitErrors() {

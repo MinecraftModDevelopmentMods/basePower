@@ -9,8 +9,12 @@ Set-StrictMode -Version Latest
 $ProjectRoot = (Resolve-Path -LiteralPath $ProjectRoot).Path
 $Evidence = [IO.Path]::GetFullPath($Evidence)
 if (Test-Path -LiteralPath $Evidence) { throw 'Refusing to replace Eclipse evidence' }
-if ((Get-Content -LiteralPath (Join-Path $JavaHome 'release') -Raw) -notmatch '(?m)^JAVA_VERSION="25(?:\.|\+|")') {
-    throw 'The native Eclipse build requires Java 25'
+if ((Get-Content -LiteralPath (Join-Path $JavaHome 'release') -Raw) -notmatch '(?m)^IMPLEMENTOR_VERSION="Temurin-25\.0\.3\+9"') {
+    throw 'The native Eclipse build requires Temurin 25.0.3+9'
+}
+if ((Get-FileHash -LiteralPath $Compiler -Algorithm SHA256).Hash -cne
+        'D0D43F8E2D7003E5EFED612E2CBB5F01870043397D8F1BBE536FD9128F4FCBF7') {
+    throw 'The Eclipse compiler must match the pinned ECJ 3.46.0 binary'
 }
 $null = New-Item -ItemType Directory -Path $Evidence
 $java = Join-Path $JavaHome 'bin/java.exe'
@@ -78,6 +82,13 @@ try {
     $runtime = @($outputs.test, $outputs.main, (Join-Path $ProjectRoot 'build/resources/main'),
             (Join-Path $ProjectRoot 'build/resources/test')) + $libraries
     $runtimeClasspath = $runtime -join ';'
+    $inventoryFile = Join-Path $Evidence 'gradle-test-inventory.txt'
+    [IO.File]::WriteAllLines($inventoryFile, ($inventory | Sort-Object -Unique), [Text.UTF8Encoding]::new($false))
+    $inventoryValidator = Join-Path $PSScriptRoot 'EclipseTestInventory.java'
+    $inventoryLog = Join-Path $Evidence 'inventory-validation.log'
+    & $java -cp $runtimeClasspath $inventoryValidator $outputs.test $inventoryFile $expected *> $inventoryLog
+    if ($LASTEXITCODE -ne 0) { throw 'Gradle results are filtered, stale or incomplete; inspect inventory-validation.log' }
+    $report['inventoryValidatorSha256'] = (Get-FileHash -LiteralPath $inventoryValidator -Algorithm SHA256).Hash
     $bootstrap = Join-Path $ProjectRoot 'build/unit-bootstrap/forge-native-unit-bootstrap.jar'
     if (-not (Test-Path -LiteralPath $bootstrap -PathType Leaf)) { throw 'Missing native unit bootstrap' }
     $testArgs = @('-Xmx2G', ('"-javaagent:' + $bootstrap.Replace('\', '/') + '"'),

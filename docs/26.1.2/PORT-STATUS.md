@@ -11,16 +11,21 @@ This is a local work in progress, not a qualified release. Nothing from the
   `gradle.properties`. The Base Metals patch is not public yet.
 
 ## Checks So Far
-Production compilation and generated Eclipse metadata audits pass with the
-new Forge API and the exact local dependency pins. The first complete unit run
-executed 298 tests: 294 passed, while four failed. The two migration-test
-adapters have been corrected and their 22-test focused rerun passes. The other
-two checks remain held until the combined profile has the actual expansion jar
-hashes. Another 37 focused resource, trade and GUI extraction checks pass.
+The full build and release audits pass with the new Forge API and the exact
+local dependency pins. All 304 unit tests pass under both Gradle and Eclipse's
+compiler. The Eclipse check also rejects an incomplete test inventory: a
+filtered run cannot count as the full suite. Another 37 focused resource,
+trade and GUI extraction checks pass. Earlier failed runs are retained.
+
+The first combined machine run found an old obfuscated field lookup in
+container-lock handling. The fix uses the native lock API for single chests
+and checks both halves of double chests. Six new regression tests include
+locked, unlocked, wrapped and nested inventories; five failed before the fix.
+The rebuilt jar still needs the live machine and restart checks below.
 
 These are not rendered-client or gameplay results. Packaged machine operation,
-full world migration, endurance, actual Eclipse compilation and manual testing
-remain open. An early compile is not evidence that a saved machine works.
+full world migration, endurance and manual testing remain open. An early
+compile is not evidence that a saved machine works.
 
 The port keeps registry and NBT identities. It replaces the removed villager
 trade event with native trade data and uses the current GUI and fluid-model
@@ -28,8 +33,8 @@ APIs. Saved world and player paths change in Minecraft 26, so the migration
 suite must prove the converted files and machine state after a full restart.
 
 ## Remaining Gates
-- Full source and native-codec tests, with mutation and rejection controls.
-- Exact release archives, bytecode, reproducibility, fresh-cache and Eclipse checks.
+- Remaining native-codec mutation and rejection controls.
+- Independent reproducibility, fresh-cache and path-with-spaces builds.
 - Connected-machine operation, recipe progression, fluids, networks, moving drills,
   chunk unloading and restart checks against the same candidate jars.
 - Original Advantage and released base* world, player and entity upgrades,
