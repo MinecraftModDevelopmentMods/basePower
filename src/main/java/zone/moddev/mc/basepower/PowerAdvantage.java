@@ -78,6 +78,7 @@ public final class PowerAdvantage {
 
         AdvantageLegacyMigrations.registerPowerAdvantage();
         zone.moddev.mc.basepower.migration.VanillaRegistryRemaps.register();
+        zone.moddev.mc.basepower.migration.OreSpawnProfileMigration.registerServerHook();
         net.minecraftforge.event.level.ChunkEvent.Load.BUS.addListener(ConduitRegistry.getInstance()::onChunkLoad);
         net.minecraftforge.event.level.ChunkEvent.Unload.BUS.addListener(ConduitRegistry.getInstance()::onChunkUnload);
         net.minecraftforge.event.entity.player.PlayerEvent.PlayerLoggedInEvent.BUS.addListener(RecipeDiscovery::onPlayerLogin);

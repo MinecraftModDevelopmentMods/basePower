@@ -57,6 +57,57 @@ public class OreSpawnProfileMigrationTest {
         try (var files = Files.list(config)) { assertEquals(0, files.count()); }
     }
 
+    @Test public void newWorldWithPreplacedProfileDoesNotNeedLevelDat() throws Exception {
+        AdvantageLegacyMigrations.registerPowerAdvantage();
+        OreSpawnProfileMigration.registerPowerProvider(temporary.newFolder("new-world-config").toPath());
+        Path world = temporary.newFolder("new-world").toPath();
+        Path file = Files.createDirectories(world.resolve("serverconfig")).resolve("orespawn-worldgen.json");
+        JsonObject source = JsonParser.parseString("""
+                {"schema_version":7,"manage_vanilla_ores":false,"ores":{
+                  "minecraft:quartz_ore":{"enabled":true,"dimensions":{
+                    "minecraft:the_nether":{"enabled":true,"frequency":0.375}}}}}
+                """).getAsJsonObject();
+        Files.writeString(file, source.toString());
+        assertFalse(Files.exists(world.resolve("level.dat")));
+        OreSpawnProfileMigration.migrateWorld(world);
+        JsonObject expected = source.deepCopy();
+        expected.getAsJsonObject("ores").getAsJsonObject("minecraft:quartz_ore")
+                .addProperty("block", "minecraft:nether_quartz_ore");
+        assertEquals(expected, JsonParser.parseString(Files.readString(file)));
+        assertFalse("Profile preparation must not manufacture world data", Files.exists(world.resolve("level.dat")));
+    }
+
+    @Test public void serverHookRunsAtHighestPriorityBeforeOreSpawnNormalListener() throws Exception {
+        var power = NativeMigrationMixinContract.read("zone/moddev/mc/basepower/PowerAdvantage");
+        var constructor = NativeMigrationMixinContract.method(power, "<init>");
+        assertTrue("New worlds bypass the existing-level.dat datafix hook", NativeMigrationMixinContract.calls(constructor)
+                .stream().anyMatch(call -> call.owner.equals("zone/moddev/mc/basepower/migration/OreSpawnProfileMigration")
+                        && call.name.equals("registerServerHook")));
+        var coordinator = NativeMigrationMixinContract.read("zone/moddev/mc/basepower/migration/OreSpawnProfileMigration");
+        var register = NativeMigrationMixinContract.method(coordinator, "registerServerHook");
+        boolean highest = false, event = false, listener = false;
+        for (var instruction : register.instructions) {
+            if (instruction instanceof org.objectweb.asm.tree.IntInsnNode constant) {
+                highest |= constant.operand == net.minecraftforge.eventbus.api.listener.Priority.HIGHEST;
+            }
+            if (instruction instanceof org.objectweb.asm.tree.FieldInsnNode field) {
+                event |= field.owner.equals("net/minecraftforge/event/server/ServerAboutToStartEvent") && field.name.equals("BUS");
+            }
+            if (instruction instanceof org.objectweb.asm.tree.InvokeDynamicInsnNode dynamic) {
+                for (var argument : dynamic.bsmArgs) if (argument instanceof org.objectweb.asm.Handle handle) {
+                    listener |= handle.getOwner().equals(coordinator.name) && handle.getName().equals("prepareServerProfile");
+                }
+            }
+        }
+        assertTrue(highest && event && listener);
+        var prepare = NativeMigrationMixinContract.method(coordinator, "prepareServerProfile");
+        var calls = NativeMigrationMixinContract.calls(prepare);
+        assertTrue(calls.stream().anyMatch(call -> call.owner.equals("net/minecraft/server/MinecraftServer") && call.name.equals("getWorldPath")));
+        assertTrue(calls.stream().anyMatch(call -> call.owner.equals(coordinator.name) && call.name.equals("migrateWorld")));
+        assertTrue("No cache reload or server tick may precede profile repair", calls.stream().noneMatch(call ->
+                call.name.equals("reloadActiveProfile") || call.name.equals("tickServer")));
+    }
+
     @Test public void targetValidationUsesDeclaredCodecsWithoutConstructingModBlocks() {
         AdvantageLegacyMigrations.registerPowerAdvantage();
         assertTrue(OreSpawnProfileMigration.declaredTarget("basepower:crude_oil"));

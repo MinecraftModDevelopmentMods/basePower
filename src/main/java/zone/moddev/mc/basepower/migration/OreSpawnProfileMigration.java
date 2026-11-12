@@ -12,6 +12,9 @@ import java.nio.file.Path;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.level.storage.LevelResource;
+import net.minecraftforge.event.server.ServerAboutToStartEvent;
+import net.minecraftforge.eventbus.api.listener.Priority;
 import zone.moddev.mc.basepower.PowerAdvantage;
 
 /** Runs output migrations before OreSpawn reads global or selected-world profiles. */
@@ -19,6 +22,19 @@ public final class OreSpawnProfileMigration {
     private static final Map<String, JsonObject> DEFAULTS = new LinkedHashMap<>();
 
     private OreSpawnProfileMigration() {}
+
+    public static void registerServerHook() {
+        ServerAboutToStartEvent.BUS.addListener(Priority.HIGHEST, OreSpawnProfileMigration::prepareServerProfile);
+    }
+
+    private static void prepareServerProfile(ServerAboutToStartEvent event) {
+        try {
+            // New worlds can have a pack-supplied profile without any level.dat to datafix.
+            migrateWorld(event.getServer().getWorldPath(LevelResource.ROOT).normalize());
+        } catch (IOException exception) {
+            throw new IllegalStateException("Could not safely prepare the selected OreSpawn world profile", exception);
+        }
+    }
 
     public static void registerPowerProvider(Path configDirectory) throws IOException {
         String resource = "/data/basepower/orespawn/provider.json";
