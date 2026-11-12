@@ -2,15 +2,20 @@
 
 **Minecraft 1.21.11 (Forge), version 2.4.15.121111.**
 
-This version has passed automated qualification and manual testing. See the
-[1.21.11 port record](docs/1.21.11/PORT-STATUS.md) for the checks and remaining
-coverage limits. Release publication is handled separately; results from
-earlier versions do not qualify this build.
+This release has passed automated qualification and manual testing. It is
+available on [CurseForge](https://www.curseforge.com/minecraft/mc-mods/basepower/files/9566998),
+[MMD Maven](https://maven.moddev.zone/releases/zone/moddev/mc/basepower/basePower/2.4.15.121111/)
+and [GitHub](https://github.com/MinecraftModDevelopmentMods/basePower/releases/tag/2.4.15.121111).
+The [1.21.11 port record](docs/1.21.11/PORT-STATUS.md) records the checks and
+remaining coverage limits; earlier versions do not qualify this release.
 
 The current Base Metals-installed test set has passed its automated machine,
 upgrade, graphical and two-world 30-minute endurance checks. Manual testing has
 also been accepted. See the [qualification record](docs/1.21.11/QUALIFICATION.md)
 for the exact jars, results and remaining human checks.
+The [release-pin recheck](docs/1.21.11/QUALIFICATION.md#release-pin-recheck)
+also covers the final expansion manifests, a fresh old-world upgrade and
+another two-world endurance run with exact saved-state replay.
 
 For the combined Eclipse test, use `runClientAllAdvantage.launch` in this
 project. It loads the matching baseSteam and baseElectric candidates. The
@@ -23,10 +28,9 @@ fluids and item transport for baseSteam and baseElectric.
 ## Playing On 1.21.11
 
 - Install [MMD OreSpawn 4.1.0.121111](https://www.curseforge.com/minecraft/mc-mods/mmd-orespawn/files/9268464) on both client and server.
-- Base Metals is required on both client and server. Use the matching Forge
-  1.21.11 build `3.1.2.121111`. Older Base Metals builds do not have the shared
-  upgrade hook. The matching dependency must be published before the base*
-  releases; a local test result alone does not establish public availability.
+- Install [Base Metals 3.1.2.121111](https://www.curseforge.com/minecraft/mc-mods/base-metals/files/9566738)
+  on both client and server. Older Base Metals builds do not have the shared
+  upgrade hook required by this release.
 - baseSteam and baseElectric are separate mods. Use only their matching
   1.21.11 builds. Additional Loot Tables is not needed for the built-in loot.
 
