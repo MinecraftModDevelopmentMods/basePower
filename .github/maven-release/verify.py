@@ -34,7 +34,7 @@ def release_target(branch):
         "1.10.2": 8, "1.12.2": 8, "1.13.2": 8, "1.14.4": 8,
         "1.15.2": 8, "1.16.5": 8, "1.17.1": 16, "1.18.2": 17,
         "1.19.4": 17, "1.20.1": 17, "1.20.6": 21, "1.21.1": 21,
-        "1.21.11": 21, "26.1.2": 25,
+        "1.21.11": 21, "26.1.2": 25, "26.2": 25,
     }
     require(minecraft in java_versions, f"Unsupported Minecraft version: {minecraft}")
     return minecraft, f"Java {java_versions[minecraft]}"
