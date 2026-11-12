@@ -4,7 +4,9 @@
 
 This branch has passed its
 [26.1.2 automated qualification](docs/26.1.2/QUALIFICATION.md) and manual
-playtesting. Publication is being prepared separately. The
+playtesting. [basePower is available on CurseForge](https://www.curseforge.com/minecraft/mc-mods/basepower/files/9576332),
+MMD Maven and GitHub Releases. All three downloads have the same player-jar
+checksum. The
 [port record](docs/26.1.2/PORT-STATUS.md) keeps the earlier findings separate.
 The [1.21.11 qualification](docs/1.21.11/QUALIFICATION.md) remains historical
 evidence, not proof of this port.
@@ -19,9 +21,9 @@ fluids and item transport for baseSteam and baseElectric.
 
 - Use MMD OreSpawn `4.1.1.2601021` on both client and server. This includes
   the fix that keeps saved ore settings when providers rename their rules.
-- This candidate requires the local Base Metals `3.1.2.2601021` migration-hook
-  build on both client and server. It has not been published; the public
-  `3.1.1` jar is not a substitute for the upgrade tests.
+- Use released [Base Metals `3.1.2.2601021`](https://www.curseforge.com/minecraft/mc-mods/base-metals/files/9576007)
+  on both client and server. It includes the shared migration hook used by the
+  upgrade tests; the older `3.1.1` jar is not a substitute.
 - baseSteam and baseElectric are separate mods. Use only their matching
   26.1.2 builds. Additional Loot Tables is not needed for the built-in loot.
 
