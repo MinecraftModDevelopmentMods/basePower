@@ -781,7 +781,7 @@ def _run(args, owned):
     (runtime / "options.txt").write_text("onboardAccessibility:false\n", encoding="utf-8")
     program = list(code["program"])
     program[5] = str(runtime / "bootstrap-cache")
-    program += ["--quickPlaySingleplayer", CLIENT_WORLD, "--offlineDeveloperMode", "--username", validate_username(CLIENT_USERNAME)]
+    program += ["--offlineDeveloperMode", "--username", validate_username(CLIENT_USERNAME)]
     logging_jar = [Path(row["path"]) for row in code["archives"] if Path(row["path"]).name == "fmlloader-26.3-66.0.0.jar"]
     require(len(logging_jar) == 1, "Missing exact native logging configuration source")
     logging = native.logging_configuration(runtime, logging_jar[0])
@@ -790,6 +790,7 @@ def _run(args, owned):
     command = [str(inputs.java), *code["vm"], "-Xmx2G", "-Dadvantageworks.clientResources=true",
                "-Dadvantageworks.requireExtensions=true", "-Dadvantageworks.machineGuiLayouts=true",
                "-Dadvantageworks.childRendererGeometry=true", "-Dlog4j.configurationFile=" + str(logging),
+               "-Dadvantageworks.openWorldAfterGeometry=true",
                "-cp", os.pathsep.join(row["path"] for row in code["archives"]), "net.minecraftforge.launcher.Main", *program]
     report = dict(status="RUNNING", **inputs.receipt(), profileSha256=args.profile_sha256.upper(),
                   clientCodeSha256=args.client_code_sha256.upper(), command=command, runtimeJars=expected,

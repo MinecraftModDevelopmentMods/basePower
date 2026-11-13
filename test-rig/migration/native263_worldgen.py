@@ -56,6 +56,15 @@ def validate_restart(first, restart, spec):
 
 
 class WorldgenServer(native.Server):
+    def send(self, command):
+        if command != "gamerule minecraft:spawn_mobs false":
+            return super().send(command)
+        # The restart may already have this value. Query state instead of
+        # depending on the different changed/already-set acknowledgements.
+        native.NativeLaunch.send(self, command)
+        native.NativeLaunch.send(self, "gamerule minecraft:spawn_mobs")
+        self.wait("Game rule spawn_mobs is currently set to false", 15)
+
     @staticmethod
     def unexpected_line(line):
         return native.Server.unexpected_line(line) or any(marker in line for marker in (

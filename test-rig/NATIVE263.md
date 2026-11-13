@@ -12,9 +12,11 @@ A historical pass is not a result for this target. No push or publication is aut
   verified against the official post-cold metadata and actual installed index.
 - Power `2.4.18.2603001`; Steam/Electric `2.2.19.2603001`;
   harness `1.1.8.2603001`; Base Metals `3.1.2.2603001`; OreSpawn `4.1.1.2603001`.
-- `profiles/native263/dev-core.json` has the parent-verified Power pin
-  `F225B3EC1B9B272CCBA82716B6D105D3BF0A613E31437BBFA0F9CAB39E4FE9BB`;
-  both child hashes remain zero and the profile remains unqualified.
+- `profiles/native263/dev-core.json` pins the current Power player jar
+  `97525CE9C75509C55225E0061D43BAF9D29BDBDE6DF853E1552A64A54C14C3DE`
+  and the matching Steam/Electric jars. It remains a development profile,
+  not a qualification receipt. Exact test-kit identities and completed gates
+  are recorded in [the 26.3 test results](../docs/26.3/QUALIFICATION.md).
 - Harness cache: `D:/GradleCaches/advantageworks-263-port/harness`.
   Evidence: `D:/PowerAdvantage/_verification/base-263-port-20261112/harness`.
 

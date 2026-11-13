@@ -100,6 +100,49 @@ class ClientPlatformTests(unittest.TestCase):
         for kind in ("Exception", "Error"):
             self.assertTrue(diag.classify("java.lang." + kind + ": deliberate control")[0])
 
+    def test_actual_zero_mod_native_ui_fresh_and_same_world_reopen_logs(self):
+        root = Path("D:/PowerAdvantage/_verification/base-263-port-20261112/client-final-family04-01/client-platform-controls-02")
+        for phase in ("fresh-01", "reopen-01"):
+            for name in ("stdout.log", "stderr.log", "logs/debug.log", "logs/latest.log"):
+                with self.subTest(phase=phase, log=name):
+                    self.assertEqual([], diag.classify((root / phase / name).read_text(encoding="utf-8"))[0])
+
+    def test_exact_two_host_variants_preserve_every_field_stack_and_order(self):
+        variants = [row["blocks"] for row in self.fixture()["sequences"]
+                    if row["kind"] == "host" and row["expectedBlockCount"] == 2]
+        self.assertEqual(2, len(variants))
+        for original in variants:
+            self.assertEqual([], diag.classify(text_of(original))[0])
+            for index in range(2):
+                for field in ("thread", "level", "logger", "message"):
+                    altered = deepcopy(original)
+                    altered[index][field] += "_UNPROVEN"
+                    with self.subTest(index=index, field=field):
+                        self.assertTrue(diag.classify(text_of(altered))[0])
+                altered = deepcopy(original)
+                altered[index]["body"].append("    at basepower.UnprovenFault.run(UnprovenFault.java:42)")
+                self.assertTrue(diag.classify(text_of(altered))[0])
+            altered = deepcopy(original)
+            altered[0]["body"][0] += " UNPROVEN"
+            self.assertTrue(diag.classify(text_of(altered))[0])
+            for altered in (original[:1], list(reversed(original)), original + [original[0]]):
+                self.assertTrue(diag.classify(text_of(altered))[0])
+
+    def test_no_intermediate_host_count_or_extra_fault_is_accepted(self):
+        rows = self.sequence("host")
+        for count in (1, 3, 4):
+            with self.subTest(count=count):
+                self.assertTrue(diag.classify(text_of(rows[:count]))[0])
+        two = next(row["blocks"] for row in self.fixture()["sequences"]
+                   if row["kind"] == "host" and row["expectedBlockCount"] == 2)
+        self.assertTrue(diag.classify(text_of(two) + "\n[native66] [Server thread/ERROR] [basepower/]: new actual failure")[0])
+
+    def test_forged_per_sequence_count_cannot_expand_acceptance(self):
+        document = self.fixture()
+        document["sequences"][0]["expectedBlockCount"] += 1
+        with patch.object(diag, "client_fixture", return_value=document):
+            self.assertTrue(diag.classify(text_of(document["sequences"][0]["blocks"]))[0])
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

@@ -8,8 +8,8 @@ import re
 from native262_client_diagnostics import sdk_payload_sha
 from native263_platform_diagnostics import blocks, selected, strict as strict_platform, COMMON_JAR_SHA, OSHI_JAR_SHA
 
-CLIENT_FIXTURE = Path(__file__).with_name("fixtures") / "native263-client-platform-sequences.json"
-CLIENT_FIXTURE_SHA = "9BD43641EF72D53FDF08EE2153BDF593775C1C8DB16D35E3A62C3DC2571C8FA9"
+CLIENT_FIXTURE = Path(__file__).with_name("fixtures") / "native263-client-platform-sequences-02.json"
+CLIENT_FIXTURE_SHA = "F2C58A447743A5CE79EDB24F2512255889F7210E3F12F2A5B34C2B222583148E"
 CLIENT_COUNTS = {"host": 5, "netty": 3, "unsafe": 1}
 
 
@@ -28,9 +28,13 @@ def client_fixture():
         raise AssertionError("Reviewed native66 client fixture changed")
     document = json.loads(raw)
     if (document.get("engineProtocol"), document.get("minecraft"), document.get("forge"), document.get("java"),
-            document.get("sdkPayloadSha256"), document.get("counts"), document.get("familyArtifacts"), document.get("probeIncluded")) != (
+            document.get("sdkPayloadSha256"), document.get("legacyCounts"), document.get("familyArtifacts"), document.get("probeIncluded")) != (
             "NATIVE66", "26.3", "66.0.0", "25.0.3+9", SDK_PAYLOAD_SHA, CLIENT_COUNTS, [], False):
         raise AssertionError("Wrong native66 independent client control contract")
+    if document.get("format") != 2 or any(entry.get("kind") not in CLIENT_COUNTS
+            or type(entry.get("expectedBlockCount")) is not int or entry["expectedBlockCount"] <= 0
+            or entry["expectedBlockCount"] != len(entry.get("blocks", [])) for entry in document["sequences"]):
+        raise AssertionError("Native66 client fixture needs an explicit exact count for each captured complete sequence")
     return document
 
 
@@ -39,14 +43,15 @@ def classify(text, fallback=None):
     rows = blocks(text)
     fixture = client_fixture()
     accepted = {}
-    for kind, count in CLIENT_COUNTS.items():
+    for kind in CLIENT_COUNTS:
         found = selected(rows, kind)
         if not found:
             continue
         actual = [row for _, row in found]
         indices = [index for index, _ in found]
         matches = [entry for entry in fixture["sequences"] if entry["kind"] == kind and entry["blocks"] == actual]
-        if (len(actual) != count or not matches or kind == "netty" and indices != list(range(indices[0], indices[0] + count))):
+        if (not matches or not any(entry["expectedBlockCount"] == len(actual) for entry in matches)
+                or kind == "netty" and indices != list(range(indices[0], indices[0] + len(actual)))):
             failures, notes = strict_client(text)
             failures.append("Unproven native66 client " + kind + " sequence; exact complete captured blocks required")
             return failures, notes

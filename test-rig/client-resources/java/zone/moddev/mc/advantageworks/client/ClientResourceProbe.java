@@ -41,6 +41,7 @@ public final class ClientResourceProbe {
     private static JsonObject lastReadinessState;
     private static final NativeExperimentalFixtureGate FIXTURE_GATE = new NativeExperimentalFixtureGate();
     private static JsonObject preLoginGeometry;
+    private static boolean fixtureWorldOpenRequested;
     private static net.minecraft.client.gui.screens.Screen disconnectedScreen;
     private static int disconnectedTick;
     private static NativeWorldOilProbe worldOil;
@@ -83,8 +84,37 @@ public final class ClientResourceProbe {
                 context.addProperty("singleplayerServerPresent", minecraft.getSingleplayerServer() != null);
                 preLoginGeometry.add("child_geometry_context", context);
             }
+            if (Boolean.getBoolean("advantageworks.openWorldAfterGeometry") && !fixtureWorldOpenRequested
+                    && preLoginGeometry != null && minecraft.gui.screen() instanceof net.minecraft.client.gui.screens.TitleScreen) {
+                require(readyForNativeWorldOpen(preLoginGeometry, minecraft.level != null, minecraft.player != null,
+                        minecraft.getSingleplayerServer() != null, minecraft.hasSingleplayerServer(),
+                        minecraft.getConnection() != null, minecraft.gui.overlay() != null),
+                        "Native world open requires completed, genuinely worldless geometry");
+                Path runtime = Path.of("").toRealPath();
+                Path world = runtime.resolve("saves/AdvantageClientResources").toRealPath();
+                require(world.equals(runtime.resolve("saves/AdvantageClientResources"))
+                        && Files.isRegularFile(world.resolve("level.dat")), "Missing independent existing client world");
+                JsonObject rendezvous = new JsonObject();
+                rendezvous.addProperty("protocol", "NATIVE66_WORLDLESS_GEOMETRY_BEFORE_NATIVE_OPEN_V1");
+                rendezvous.addProperty("status", "RECORDED_BEFORE_NATIVE_OPEN");
+                rendezvous.addProperty("tick", ticks);
+                rendezvous.addProperty("world", world.toString());
+                rendezvous.addProperty("levelSha256", java.util.HexFormat.of().withUpperCase().formatHex(
+                        java.security.MessageDigest.getInstance("SHA-256").digest(Files.readAllBytes(world.resolve("level.dat")))));
+                rendezvous.add("geometry", preLoginGeometry.deepCopy());
+                rendezvous.add("readiness", lastReadinessState.deepCopy());
+                captureReadinessScreen(minecraft, rendezvous, Path.of("login-readiness/worldless-before-native-open.png"));
+                Files.writeString(Path.of("login-readiness/worldless-before-native-open.json"), rendezvous.toString(),
+                        java.nio.file.StandardOpenOption.CREATE_NEW);
+                fixtureWorldOpenRequested = true;
+                minecraft.createWorldOpenFlows().openWorld("AdvantageClientResources", () -> {
+                    throw new IllegalStateException("Native fixture world open was cancelled");
+                });
+            }
             FIXTURE_GATE.tick(minecraft, ticks, lastReadinessState);
-        } catch (RuntimeException | LinkageError | AssertionError failure) { readinessFailure = failure; }
+        } catch (IOException | java.security.NoSuchAlgorithmException | RuntimeException | LinkageError | AssertionError failure) {
+            readinessFailure = failure;
+        }
         if (readinessFailure == null && (ticks < 5 || ((!componentsBound || minecraft.gui.overlay() != null
                 || minecraft.getModelManager().getBlockStateModelSet() == null) && ticks < 2400))) return;
         if (readinessFailure == null && loggedIn && componentsBound && !worldOilComplete) {
@@ -241,6 +271,19 @@ public final class ClientResourceProbe {
             catch (IOException failure) { throw new IllegalStateException("Could not write client resource result", failure); }
             finally { minecraft.stop(); }
         }
+    }
+
+    static boolean readyForNativeWorldOpen(JsonObject geometry, boolean level, boolean player, boolean server,
+            boolean integratedServer, boolean connection, boolean overlay) {
+        if (level || player || server || integratedServer || connection || overlay || geometry == null
+                || !geometry.has("scope_results") || !geometry.has("child_geometry_context")) return false;
+        JsonObject scopes = geometry.getAsJsonObject("scope_results");
+        if (!scopes.has("child_geometry") || !"PASS".equals(scopes.getAsJsonObject("child_geometry").get("status").getAsString()))
+            return false;
+        JsonObject context = geometry.getAsJsonObject("child_geometry_context");
+        return "GENUINELY_WORLDLESS_BEFORE_LOGIN".equals(context.get("stage").getAsString())
+                && !context.get("levelPresent").getAsBoolean() && !context.get("playerPresent").getAsBoolean()
+                && !context.get("singleplayerServerPresent").getAsBoolean();
     }
 
     private static void failDisconnected(Minecraft minecraft) {

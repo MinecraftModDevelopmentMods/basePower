@@ -2,6 +2,7 @@ import copy
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import call, patch
 
 import nbtlib
 
@@ -11,6 +12,27 @@ from test_native263_resources import level_fixture
 
 
 class WorldgenAdapterTest(unittest.TestCase):
+    def test_fresh_and_already_set_rule_are_verified_by_the_actual_state_query(self):
+        server = object.__new__(worldgen.WorldgenServer)
+        with patch.object(worldgen.native.NativeLaunch, "send") as send, patch.object(server, "wait") as wait:
+            for _ in range(2):
+                server.send("gamerule minecraft:spawn_mobs false")
+            self.assertEqual([call(server, "gamerule minecraft:spawn_mobs false"),
+                              call(server, "gamerule minecraft:spawn_mobs")] * 2, send.call_args_list)
+            self.assertEqual([call("Game rule spawn_mobs is currently set to false", 15)] * 2,
+                             wait.call_args_list)
+
+    def test_other_commands_keep_the_core_transport_and_bad_state_queries_fail(self):
+        server = object.__new__(worldgen.WorldgenServer)
+        with patch.object(worldgen.native.Server, "send") as send:
+            server.send("save-all flush")
+            send.assert_called_once_with("save-all flush")
+        with patch.object(worldgen.native.NativeLaunch, "send"), patch.object(server, "wait", side_effect=TimeoutError):
+            with self.assertRaises(TimeoutError):
+                server.send("gamerule minecraft:spawn_mobs false")
+        with self.assertRaises(ValueError):
+            server.send("gamerule minecraft:spawn_mobs false\nstop")
+
     def test_existing_assertion_bodies_and_templates_are_not_rewritten(self):
         self.assertIs(worldgen.validate_profile, old.validate_profile)
         self.assertIs(worldgen.validate_sample.__code__, old.validate_sample.__code__)
