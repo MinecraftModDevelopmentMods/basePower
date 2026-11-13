@@ -8,6 +8,7 @@ basePower 2.4.18.2603001 (Minecraft 26.3)
 - Preserve an entity's other memories when upgrading a 26.2 save containing the removed vanilla temptation flag. Keep a compatibility copy of that old value.
 - Complete machine, recipe, old-world upgrade, graphical, full-restart and two-world 30-minute endurance checks, including an upgrade from the exact published 26.2 jars.
 - Keep the stricter tooltip, framebuffer and saved-world client tests. Automated and manual testing are complete; publication follows the dependency patches.
+- Keep the optional combined Eclipse launch on the final release-pinned expansion jars. Record the additional full-restart and endurance checks on that exact family.
 
 basePower 2.4.17.2602001 (Minecraft 26.2) - published 12 November 2026
 
