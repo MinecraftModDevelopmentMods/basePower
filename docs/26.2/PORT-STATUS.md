@@ -1,5 +1,10 @@
 # Minecraft 26.2 Port
 
+> Historical candidate record, 12 November 2026. Statements below about local
+> dependencies, pending acceptance and publication describe that checkpoint.
+> The [13 November 2026 release record](RELEASE.md) gives the published files;
+> the original evidence and hashes below have not been rewritten.
+
 This is a local port of the accepted Minecraft 26.1.2 source. The automated
 checks have passed; manual testing and publication are separate steps.
 See the [26.2 qualification record](QUALIFICATION.md) for the exact jars,
