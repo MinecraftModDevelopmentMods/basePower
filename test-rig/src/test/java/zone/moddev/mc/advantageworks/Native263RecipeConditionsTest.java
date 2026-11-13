@@ -26,11 +26,11 @@ public class Native263RecipeConditionsTest {
         assertTrue(Native263RecipeConditions.evaluate(bothTags(), context));
     }
 
-    @Test public void absentConditionalPairIsExplicitlyValidButAnyMismatchFails() {
+    @Test public void advancementAlwaysLoadsWhileRecipeMustMatchItsIndependentCondition() {
         for (boolean expected : new boolean[] {false, true})
             for (boolean recipe : new boolean[] {false, true})
                 for (boolean advancement : new boolean[] {false, true}) {
-                    if (recipe == expected && advancement == expected)
+                    if (recipe == expected && advancement)
                         Native263RecipeConditions.requirePair("basepower:converter", expected, recipe, advancement);
                     else assertThrows(IllegalStateException.class, () ->
                             Native263RecipeConditions.requirePair("basepower:converter", expected, recipe, advancement));

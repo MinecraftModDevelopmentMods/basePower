@@ -115,7 +115,7 @@ class Native263GuardsTest(unittest.TestCase):
             probe.assert_not_called()
 
     def test_good_settings_check_actual_selected_port(self):
-        self.settings("server-ip=127.0.0.1\nserver-port=26660\npause-when-empty-seconds=-1\n")
+        self.settings("server-ip=127.0.0.1\nserver-port=26660\npause-when-empty-seconds=-1\nlevel-name=AdvantageWorksMigration\n")
         with patch.object(native, "require_free_port") as probe:
             native.require_launch_settings(self.root)
             probe.assert_called_once_with(26660)
@@ -212,6 +212,7 @@ class Native263GuardsTest(unittest.TestCase):
                 native.require_complete_boot(text, stop_sent=True, returncode=0)
 
     def test_stopped_session_lock_observation_preserves_all_bytes(self):
+        self.settings("level-name=AdvantageWorksMigration\n")
         path = self.root / native.WORLD / "session.lock"
         path.parent.mkdir()
         path.write_bytes(b"native-lock-observation")
@@ -220,6 +221,56 @@ class Native263GuardsTest(unittest.TestCase):
         self.assertEqual(before, native.digest(path))
         path.unlink()
         with self.assertRaises(FileNotFoundError):
+            native.require_released_session_lock(self.root)
+
+    def test_worldgen_and_client_fixture_lock_use_exact_configured_world_not_migration_decoy(self):
+        decoy = self.root / native.WORLD / "session.lock"
+        decoy.parent.mkdir()
+        decoy.write_bytes(b"wrong-world-decoy")
+        for world in ("AdvantageWorksWorldgen", "AdvantageClientResources"):
+            self.settings("level-name=" + world + "\n")
+            selected = self.root / world / "session.lock"
+            selected.parent.mkdir()
+            selected.write_bytes(b"correct-world-native-lock")
+            before = native.digest(selected)
+            self.assertEqual(selected.resolve(), native.require_released_session_lock(self.root))
+            self.assertEqual(before, native.digest(selected))
+            self.assertEqual(b"wrong-world-decoy", decoy.read_bytes())
+
+    def test_missing_selected_world_lock_never_falls_back_to_existing_migration_lock(self):
+        self.settings("level-name=AdvantageWorksWorldgen\n")
+        decoy = self.root / native.WORLD / "session.lock"
+        decoy.parent.mkdir()
+        decoy.write_bytes(b"not-the-worldgen-lock")
+        with self.assertRaises(FileNotFoundError):
+            native.require_released_session_lock(self.root)
+
+    def test_missing_unknown_escaped_or_duplicate_world_names_fail_before_locking(self):
+        decoy = self.root / native.WORLD / "session.lock"
+        decoy.parent.mkdir()
+        decoy.write_bytes(b"do-not-lock")
+        for setting in ("", "level-name=Other\n", "level-name=../AdvantageWorksWorldgen\n",
+                        "level-name=D:/Other\n", "level-name=AdvantageWorksWorldgen/other\n",
+                        "level-name=AdvantageWorksWorldgen\nlevel-name=AdvantageWorksMigration\n"):
+            self.settings(setting)
+            with self.subTest(setting=setting), patch("msvcrt.locking") as lock, self.assertRaises(ValueError):
+                native.require_released_session_lock(self.root)
+            lock.assert_not_called()
+
+    def test_unknown_level_name_fails_before_port_probe(self):
+        self.settings("level-name=Other\nserver-ip=127.0.0.1\nserver-port=26660\npause-when-empty-seconds=-1\n")
+        with patch.object(native, "require_free_port") as probe, self.assertRaises(ValueError):
+            native.require_launch_settings(self.root)
+        probe.assert_not_called()
+
+    def test_hardlinked_selected_session_lock_is_not_independent_authority(self):
+        self.settings("level-name=AdvantageWorksWorldgen\n")
+        original = self.root / "outside.lock"
+        original.write_bytes(b"aliased-lock")
+        selected = self.root / "AdvantageWorksWorldgen" / "session.lock"
+        selected.parent.mkdir()
+        os.link(original, selected)
+        with self.assertRaises(ValueError):
             native.require_released_session_lock(self.root)
 
     def test_formatter_faults_and_debug_runtime_errors_stay_failures(self):

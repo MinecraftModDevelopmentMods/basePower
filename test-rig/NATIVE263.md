@@ -127,15 +127,17 @@ The independent block-state catalog requires `advantage-works.allow` and one exa
 disposable world name: `AdvantageWorksMigration`, `AdvantageWorksWorldgen`, or
 `AdvantageClientResources`. Arbitrary or unmarked worlds remain unauthorized.
 
-The resource-only conditional unlock fixture retains each frozen recipe's actual
-`forge:condition` and verifies exact parity with its advancement before launch.
-The probe independently interprets all required tags and mode/musket predicates
-against actual bound registry/configuration facts. Both loaded objects must exist
-if and only if that condition is true. False conditions report
-`SKIP_NO_INGREDIENT_PROVIDER`; active conditions must still exercise native criteria,
-rewards, player persistence and login restoration. Native Forge empty AND lists
-are true, including the four unconditional Electric cooking recipes. Unknown
-conditions, missing active objects, mismatched pairs and unjustified skips fail.
+The resource-only V2 unlock fixture retains each frozen recipe's actual
+`forge:condition` but requires its discovery advancement to remain loaded in every
+mode. The native recipe-unlocked criterion must use its exact named discovery tag;
+the packaged tag has only that recipe ID with `required:false`. The probe checks
+the actual native holder set: exactly that one ID if its independently evaluated
+condition is true, or empty otherwise. Missing active recipes, hidden advancements,
+wrong or extra tag members and unjustified skips fail. Ingredient discovery is
+tested even for disabled recipes so future-mode progress must persist and restore.
+Only absent ingredient providers justify `SKIP_NO_INGREDIENT_PROVIDER`. Native
+Forge empty AND lists remain true. The failed V1 conditioned-advancement receipts
+and held family03 endurance remain historical evidence, never current qualification.
 
 Retain all partial/failing logs. Never retrofit profile-03 hashes, retrospective
 seals or old native-control receipts to obtain a 263 pass. Graphical unit/resource

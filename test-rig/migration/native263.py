@@ -268,7 +268,10 @@ def configure_runtime(runtime, port, profile=None, recipe_profile=None):
     mark_runtime(runtime)
 
 
-def require_launch_settings(runtime):
+KNOWN_WORLD_NAMES = frozenset((WORLD, "AdvantageWorksWorldgen", "AdvantageClientResources"))
+
+
+def server_properties(runtime):
     settings = {}
     for line in (Path(runtime) / "server.properties").read_text(encoding="utf-8").splitlines():
         if not line or line.startswith(("#", "!")):
@@ -277,8 +280,21 @@ def require_launch_settings(runtime):
         if not separator or key in settings:
             raise ValueError("Ambiguous server launch property: " + key)
         settings[key] = value
+    return settings
+
+
+def configured_world_name(settings):
+    name = settings.get("level-name")
+    if name not in KNOWN_WORLD_NAMES:
+        raise ValueError("Native66 requires one exact approved disposable level-name")
+    return name
+
+
+def require_launch_settings(runtime):
+    settings = server_properties(runtime)
     if settings.get("pause-when-empty-seconds") != "-1" or settings.get("server-ip") != "127.0.0.1":
         raise ValueError("Native263 requires explicit loopback binding and disabled empty-server pausing")
+    configured_world_name(settings)
     require_free_port(int(settings["server-port"]))
 
 
@@ -352,7 +368,20 @@ def require_complete_boot(text, *, stop_sent, returncode):
 
 def require_released_session_lock(runtime):
     import msvcrt
-    path = Path(runtime) / WORLD / "session.lock"
+    root = Path(runtime).resolve(strict=True)
+    name = configured_world_name(server_properties(root))
+    world = root / name
+    if world.is_symlink() or getattr(world, "is_junction", lambda: False)():
+        raise ValueError("Aliased native66 world directory")
+    world = world.resolve(strict=True)
+    if world.parent != root or not world.is_dir():
+        raise ValueError("Native66 world directory escaped its runtime")
+    path = world / "session.lock"
+    if path.is_symlink() or getattr(path, "is_junction", lambda: False)():
+        raise ValueError("Aliased native66 session lock")
+    path = path.resolve(strict=True)
+    if path.parent != world or not path.is_file() or path.stat().st_nlink != 1:
+        raise ValueError("Native66 session lock is not an independent in-world file")
     before = digest(path)
     with path.open("r+b") as stream:
         stream.seek(0)
@@ -361,6 +390,7 @@ def require_released_session_lock(runtime):
         msvcrt.locking(stream.fileno(), msvcrt.LK_UNLCK, 1)
     if digest(path) != before:
         raise AssertionError("Native66 session-lock observation changed its bytes")
+    return path
 
 
 class Server(NativeLaunch):
@@ -445,13 +475,15 @@ class Server(NativeLaunch):
             super().close()
             text = (self.native_runtime / f"console-{self.native_label}.log").read_text(encoding="utf-8")
             require_complete_boot(text, stop_sent=self.stop_sent, returncode=self.process.returncode)
-            require_released_session_lock(self.native_runtime)
+            session_lock = require_released_session_lock(self.native_runtime)
             logging_jar = self.native_runtime / f"libraries/net/minecraftforge/fmlloader/{FORGE_VERSION}/fmlloader-{FORGE_VERSION}.jar"
             self.logging_configuration(logging_jar)
             proof = dict(status="OWNED_ZERO_EXIT_NATIVE66_COLDSTOP", engineProtocol=ENGINE_PROTOCOL,
                          minecraft=MINECRAFT, forge=FORGE, javaVersion=JAVA_VERSION, label=self.native_label,
                          pid=self.process.pid, stopSent=self.stop_sent, returncode=self.process.returncode,
                          sessionLockReleased=True, coreSha256=digest(Path(__file__)),
+                         configuredLevelName=session_lock.parent.name,
+                         sessionLockRelativePath=session_lock.relative_to(self.native_runtime).as_posix(),
                          blockStateCatalogSha256=digest(self.native_runtime / "native263-block-state-catalog.json"),
                          logs={kind: digest(self.native_runtime / f"{kind}-{self.native_label}.log")
                                for kind in ("console", "latest", "debug")})

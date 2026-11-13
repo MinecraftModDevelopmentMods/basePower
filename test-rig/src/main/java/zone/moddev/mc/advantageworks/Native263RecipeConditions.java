@@ -7,6 +7,7 @@ import java.util.TreeSet;
 
 /** Independent fixture interpreter; never calls production condition implementations. */
 final class Native263RecipeConditions {
+    static final String PROTOCOL = "NATIVE66_OPTIONAL_RECIPE_TAG_DISCOVERY_V2";
     private static final Set<String> MODES = Set.of("NORMAL", "TECH_PROGRESSION", "APOCALYPTIC");
 
     static Set<String> tags(JsonElement condition) {
@@ -76,8 +77,18 @@ final class Native263RecipeConditions {
     }
 
     static void requirePair(String id, boolean expected, boolean recipe, boolean advancement) {
-        require(recipe == advancement, "Mismatched loaded recipe/advancement pair: " + id);
-        require(recipe == expected, "Loaded recipe/advancement pair disagrees with independent condition: " + id);
+        require(advancement, "Missing always-loaded discovery advancement: " + id);
+        require(recipe == expected, "Loaded recipe disagrees with independent condition: " + id);
+    }
+
+    static void requireTriggerTag(String id, String tag, boolean active,
+            net.minecraft.advancements.triggers.RecipeUnlockedTrigger.TriggerInstance trigger) {
+        require(trigger.recipes().unwrapKey().orElseThrow().location().toString().equals(tag),
+                "Recipe criterion did not retain its exact named discovery tag: " + id);
+        java.util.List<String> members = trigger.recipes().stream()
+                .map(holder -> holder.unwrapKey().orElseThrow().identifier().toString()).sorted().toList();
+        require(members.equals(active ? java.util.List.of(id) : java.util.List.of()),
+                "Native discovery tag differs from exact conditional recipe presence: " + id);
     }
 
     private static void keys(JsonObject object, String... keys) {
