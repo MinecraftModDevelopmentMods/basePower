@@ -10,14 +10,17 @@ Publication is being prepared in dependency order. See the
 [26.3 test results](docs/26.3/QUALIFICATION.md) and
 [port record](docs/26.3/PORT-STATUS.md). The
 [26.2 qualification](docs/26.2/QUALIFICATION.md) and
-[port record](docs/26.2/PORT-STATUS.md) remain historical evidence.
+[port record](docs/26.2/PORT-STATUS.md) remain historical evidence. The
+[26.2 release record](docs/26.2/RELEASE.md) lists its verified public downloads.
 The [26.1.2 qualification](docs/26.1.2/QUALIFICATION.md) and
 [port record](docs/26.1.2/PORT-STATUS.md) keep the earlier findings separate.
 The [1.21.11 qualification](docs/1.21.11/QUALIFICATION.md) remains historical
 evidence, not proof of this port.
 
 Use the generated `runClientAllAdvantage.launch` in Eclipse to load the
-matching baseSteam and baseElectric candidates with basePower.
+matching sealed baseSteam and baseElectric test-kit inputs with basePower.
+That developer fixture retains its original profile hashes; it is not a
+moving selector for the latest public downloads.
 
 basePower continues DrCyano's Power Advantage. It provides shared power,
 fluids and item transport for baseSteam and baseElectric.
@@ -70,7 +73,8 @@ Then run from the repository root:
 gradlew.bat clean check build javadoc genEclipseRuns eclipse isolateEclipseProductionRuns verifyReleaseDependencies verifyReleaseArtifacts writeReleaseChecksums verifyEclipseProductionClasspath
 ```
 
-The default dependency jars are:
+The default developer input locations are below. Place the checksum-matching
+jars there, or select their paths with the flags below:
 
 ```text
 D:\BaseMetals\BaseMetals 263\BaseMetals\build\libs\BaseMetals-3.1.2.2603001.jar
@@ -105,6 +109,8 @@ run `gradlew.bat prepareCombinedEclipseLaunch`, refresh Eclipse, then launch
 `runClientAllAdvantage.launch`. Inputs must match
 `test-rig/profiles/native263/dev-core.json`; alternative layouts can pass
 `-PsteamAdvantageDeobfJar=<path>` and `-PelectricAdvantageDeobfJar=<path>`.
+The profile names the exact inputs; different release metadata needs a matching
+profile and qualification record before it can replace a frozen candidate.
 The ordinary `runClient.launch` remains Power-only. Both use the `run` directory;
 preparing a launch does not copy, open or qualify a save.
 
