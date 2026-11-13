@@ -5,8 +5,8 @@
 This branch is a fresh port of the accepted 26.2 source. Its machine, recipe,
 old-world upgrade, graphical, full-restart and two-world endurance checks have
 passed against the exact current jars, and manual testing is complete.
-basePower and its dependency patches are public; the matching expansions are
-being published in dependency order. See the
+All three mods and their dependency patches are now public on CurseForge,
+MMD Maven and GitHub. Both expansions pin this exact basePower release. See the
 [release status](docs/26.3/RELEASE.md),
 [26.3 test results](docs/26.3/QUALIFICATION.md) and
 [port record](docs/26.3/PORT-STATUS.md). The
@@ -35,9 +35,10 @@ fluids and item transport for baseSteam and baseElectric.
   on both sides. It includes the migration hook needed to preserve old machines.
   These exact tested jars are now public; source commits and hashes are in
   `gradle.properties`.
-- baseSteam and baseElectric are separate mods. Use only their matching
-  26.3 builds: version `2.2.19.2603001` for each. Additional Loot Tables is not
-  needed for the built-in loot.
+- [baseSteam](https://www.curseforge.com/minecraft/mc-mods/basesteam/files/9589874)
+  and [baseElectric](https://www.curseforge.com/minecraft/mc-mods/baseelectric/files/9590229)
+  are separate mods. Use their matching 26.3 builds: version `2.2.19.2603001`
+  for each. Additional Loot Tables is not needed for the built-in loot.
 
 **Back up the entire world before upgrading. Test only disposable copies.**
 The port keeps existing registry names and machine data. Its upgrade checks

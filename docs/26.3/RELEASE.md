@@ -1,9 +1,9 @@
 # Minecraft 26.3 Release
 
-The automated checks and manual testing are complete. Base Metals, OreSpawn
-and basePower are public. baseSteam is processing at CurseForge; baseElectric's
-matching release is being published in parallel. Both expansions pin the
-exact public basePower release and pass their own publication gates.
+Published on 13 November 2026. Base Metals and OreSpawn were published first,
+then basePower. Both expansions pin the verified public basePower release.
+Their independent uploads processed in parallel, and all five releases are now
+publicly verified. Automated checks and manual testing are complete.
 
 ## Final Release Versions
 
@@ -28,28 +28,44 @@ keeps that evidence separate from the original manually accepted test kit.
 ## Public Downloads
 
 - [basePower 2.4.18.2603001](https://www.curseforge.com/minecraft/mc-mods/basepower/files/9589309)
+- [baseSteam 2.2.19.2603001](https://www.curseforge.com/minecraft/mc-mods/basesteam/files/9589874)
+- [baseElectric 2.2.19.2603001](https://www.curseforge.com/minecraft/mc-mods/baseelectric/files/9590229)
 - [Base Metals 3.1.2.2603001](https://www.curseforge.com/minecraft/mc-mods/base-metals/files/9589195)
 - [MMD OreSpawn 4.1.1.2603001](https://www.curseforge.com/minecraft/mc-mods/mmd-orespawn/files/9589145)
 
-Steam's existing upload is file `9589874`; the authenticated author dashboard
-shows **Processing**, and it is not yet publicly verified.
-Electric's public downloads are not yet verified. The expansions do not depend
-on one another, so their uploads may process in parallel after Power is public.
-Pending files are never uploaded again just to retry the rest of publication.
+All three base* mods are also on [MMD Maven](https://maven.moddev.zone/releases/)
+and have GitHub releases:
+
+- [basePower release](https://github.com/MinecraftModDevelopmentMods/basePower/releases/tag/2.4.18.2603001)
+- [baseSteam release](https://github.com/MinecraftModDevelopmentMods/baseSteam/releases/tag/2.2.19.2603001)
+- [baseElectric release](https://github.com/MinecraftModDevelopmentMods/baseElectric/releases/tag/2.2.19.2603001)
+
+Maven coordinates:
+
+```text
+zone.moddev.mc.basepower:basePower:2.4.18.2603001
+zone.moddev.mc.basesteam:baseSteam:2.2.19.2603001
+zone.moddev.mc.baseelectric:baseElectric:2.2.19.2603001
+```
 
 ## Publication Checks
 
-Source changes go through the fork and a checked MMD pull request. The release
-workflow uses the exact merged source and audited CI artifacts. Public
-CurseForge, Maven and GitHub downloads are checked against those artifacts
-before the next mod is released. Existing tags and release files are not
-overwritten, and pending CurseForge uploads are resumed by their original
-file ID rather than uploaded again.
+Source changes went through the fork and checked MMD pull requests. The release
+workflow used the exact merged source and audited CI artifacts. Each base* player
+jar was downloaded anonymously from CurseForge, Maven and GitHub and matched
+the qualified checksum. Sources and Javadoc from Maven and GitHub matched CI;
+the POMs and Maven indexes were checked too.
 
-Power's release source is `4fae0a51feb3e49875f09c500b869266122a711a`.
-Its public CurseForge player jar, all three Maven and GitHub jars, POM and
-Maven index have been verified. The remaining links will be added after their
-downloads are public; an accepted upload is not public-download verification.
+| Mod | Exact Release Source |
+| --- | --- |
+| basePower | `4fae0a51feb3e49875f09c500b869266122a711a` |
+| baseSteam | `5e50614d4f5d7c162ca3394f3530c0b3201f5254` |
+| baseElectric | `22d0a9e962bb04382ff2cc75715fd85364be927c` |
+
+Each player jar was uploaded to CurseForge once. When processing delayed its
+public download, publication resumed with the existing file ID. No version,
+tag or release file was replaced. Later documentation commits do not change
+the source or artifacts pinned by these releases.
 
 The source ports are merged in MMD: [Power #46](https://github.com/MinecraftModDevelopmentMods/basePower/pull/46),
 [Steam #41](https://github.com/MinecraftModDevelopmentMods/baseSteam/pull/41) and

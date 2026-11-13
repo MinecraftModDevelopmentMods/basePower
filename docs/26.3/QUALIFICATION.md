@@ -2,7 +2,7 @@
 
 Publication note, 13 November 2026: manual testing is accepted. The original
 handoff below is historical; its candidate hashes and limitations are retained.
-See [release status](RELEASE.md) for public downloads and publication progress.
+See [release status](RELEASE.md) for the verified public downloads and source pins.
 
 ## Final Release-Pin Checks
 
@@ -27,6 +27,13 @@ its profile is
 `8FF9F5C217AAAF42AE0B10A009DB8117B06013FF0059E4990D5DF19FE0AF776D`.
 The original receipt and frozen profile below were not overwritten. This is
 additional automated evidence, not a claim of a second manual play test.
+
+Publication archives were checked separately. The Power and Steam Javadoc
+archives built on Linux differ from the accepted Windows copies only in line
+endings in four generated JDK SVG icons. All other documentation entries are
+identical, with no API or player-code change. The audited CI documentation
+archives are the public copies; this difference was not treated as an exact
+cross-platform checksum match.
 
 ## Original Accepted Test Kit
 

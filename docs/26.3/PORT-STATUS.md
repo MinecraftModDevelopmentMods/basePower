@@ -1,8 +1,8 @@
 # Minecraft 26.3 Port
 
 This branch starts from the accepted 26.2 sources. The exact test kit has
-passed its automated and manual checks. basePower and its dependency patches
-are public; expansion publication follows in dependency order. See the
+passed its automated and manual checks. All three mods and their dependency
+patches are published, with public downloads verified against the tested jars. See the
 [release status](RELEASE.md) and
 [test results](QUALIFICATION.md) for the exact versions, hashes and limits.
 
