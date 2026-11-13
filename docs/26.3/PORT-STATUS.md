@@ -40,6 +40,12 @@ The compile baseline is Forge 66.0.0, official 26.3 names, MCP
 - The current biome-index allowlist includes dappled forest. Saved biome data
   remains under the native data fixers rather than being replaced by a registry
   object.
+- The direct 26.2 upgrade exposed the removed `minecraft:is_tempted` memory
+  index. Unlike the older retired transient indexes, this flag was serialized.
+  Its exact payload is archived under entity
+  `ForgeData.basepower:retired_brain_memories` before the native brain codec
+  reads the remaining memories. Only that obsolete index is retired; unknown
+  memories, other mods' names and conflicting archives are not silently accepted.
 
 The shared Base Metals migration hook and OreSpawn's retained-settings repair
 passed their local dependency checks. They remain separate dependency

@@ -82,6 +82,22 @@ public class VanillaRegistryMappingEventTest {
                 Identifier.parse("minecraft:opened_doors")));
     }
 
+    @Test public void retiresOnlyTheRemovedSerializedTemptationIndex() {
+        IForgeRegistry<Entry> active = registry(null, false, "minecraft:memory_module_type");
+        var mapping = new MissingMappingsEvent.Mapping<>(active, active,
+                Identifier.parse("minecraft:is_tempted"), 43);
+        VanillaRegistryRemaps.remap(new MissingMappingsEvent(key("minecraft:memory_module_type"),
+                active, Collections.singletonList(mapping)), active);
+        assertEquals(MissingMappingsEvent.Action.IGNORE, property(mapping, "action"));
+        assertNull(property(mapping, "target"));
+        assertFalse(VanillaRegistryRemaps.retiredTemptationMemory(
+                Identifier.parse("minecraft:item"), Identifier.parse("minecraft:is_tempted")));
+        assertFalse(VanillaRegistryRemaps.retiredTemptationMemory(
+                Identifier.parse("minecraft:memory_module_type"), Identifier.parse("othermod:is_tempted")));
+        assertFalse(VanillaRegistryRemaps.retiredTemptationMemory(
+                Identifier.parse("minecraft:memory_module_type"), Identifier.parse("minecraft:temptation_cooldown_ticks")));
+    }
+
     @Test public void retiresOnlyTheTwoPointsOfInterestRemovedByVanilla() {
         IForgeRegistry<Entry> active = registry(null, false, "minecraft:point_of_interest_type");
         for (String id : new String[] {"minecraft:nitwit", "minecraft:unemployed", "minecraft:home", "othermod:nitwit"}) {

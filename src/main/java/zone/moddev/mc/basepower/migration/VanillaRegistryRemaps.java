@@ -143,6 +143,13 @@ public final class VanillaRegistryRemaps {
                 PowerAdvantage.LOGGER.info("Retired non-serialized vanilla AI registry index {}", mapping.getKey());
                 continue;
             }
+            if (retiredTemptationMemory(active.getRegistryName(), mapping.getKey())) {
+                // Native26.3 removed this serialized flag. Entity migration archives
+                // its payload before the native brain codec reads the remaining memories.
+                mapping.ignore();
+                PowerAdvantage.LOGGER.info("Retired vanilla temptation memory index {}; saved values are archived", mapping.getKey());
+                continue;
+            }
             if (retiredVanillaPoi(active.getRegistryName(), mapping.getKey())) {
                 // Vanilla's "Remove unpopulated villager PoI types" fixer handles
                 // saved POI sections. Forge still sees the obsolete numeric indexes.
@@ -189,6 +196,11 @@ public final class VanillaRegistryRemaps {
         return registry.equals(Identifier.parse("minecraft:memory_module_type"))
                 && old.getNamespace().equals("minecraft")
                 && (old.getPath().equals("golem_last_seen_time") || old.getPath().equals("opened_doors"));
+    }
+
+    static boolean retiredTemptationMemory(Identifier registry, Identifier old) {
+        return registry.equals(Identifier.parse("minecraft:memory_module_type"))
+                && old.equals(Identifier.parse("minecraft:is_tempted"));
     }
 
     static boolean retiredVanillaPoi(Identifier registry, Identifier old) {
