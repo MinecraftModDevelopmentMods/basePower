@@ -9,6 +9,8 @@ basePower 2.4.18.2603001 (Minecraft 26.3, in development)
 - Resolve recipe material tags from the native registry-loading context and recognise the dappled-forest biome index.
 - Update recipe-book criteria to native recipe lists and keep each unlock behind the same conditions as its recipe.
 - Use this reload's pending material tags before their named holders are bound, including player-edited empty tags.
+- Use native loot modifiers and conditions so portable tanks keep their fluid when broken, and chest parts keep their established quantities.
+- Check complete loot tables against the accepted 26.2 release, rather than only checking individual function syntax.
 - Qualification and manual testing are still pending; earlier results apply only to their original jars.
 
 basePower 2.4.17.2602001 (Minecraft 26.2, local test candidate)

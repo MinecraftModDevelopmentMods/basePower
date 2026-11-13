@@ -36,16 +36,15 @@ public class NativeLootResourceTest {
         } else if (value.isJsonObject()) {
             JsonObject object = value.getAsJsonObject();
             assertFalse(source + ": obsolete function field", object.has("function"));
-            assertFalse(source + ": obsolete condition field", object.has("condition"));
+            assertFalse(source + ": obsolete conditions field", object.has("conditions"));
+            assertFalse(source + ": obsolete functions field", object.has("functions"));
             for (var entry : object.entrySet()) {
-                if (entry.getKey().equals("functions") || entry.getKey().equals("conditions")) {
-                    for (var element : entry.getValue().getAsJsonArray()) {
-                        var result = entry.getKey().equals("functions")
-                                ? LootItemFunctions.DIRECT_CODEC.parse(JsonOps.INSTANCE, element)
-                                : LootItemCondition.DIRECT_CODEC.parse(JsonOps.INSTANCE, element);
-                        assertTrue(source + ": " + result, result.isSuccess());
-                        checked++;
-                    }
+                if (entry.getKey().equals("modifier") || entry.getKey().equals("condition")) {
+                    var result = entry.getKey().equals("modifier")
+                            ? LootItemFunctions.DIRECT_CODEC.parse(JsonOps.INSTANCE, entry.getValue())
+                            : LootItemCondition.DIRECT_CODEC.parse(JsonOps.INSTANCE, entry.getValue());
+                    assertTrue(source + ": " + result, result.isSuccess());
+                    checked++;
                 }
                 checked += check(entry.getValue(), source);
             }

@@ -1,0 +1,533 @@
+{
+  "sourceJarSha256": "7E456DE1A45140E86415A701D186FEDE08C4AB63D53C6B7848935DB70CBC68B1",
+  "sourceVersion": "2.4.17.2602001",
+  "scope": "Accepted 26.2 loot semantics; only native field and number-provider syntax translated",
+  "tables": {
+    "blocks/converter_rf_electricity.json": {
+      "type": "minecraft:block",
+      "pools": [
+        {
+          "rolls": 1,
+          "entries": [
+            {
+              "type": "minecraft:item",
+              "name": "basepower:converter_rf_electricity"
+            }
+          ],
+          "condition": {
+            "type": "minecraft:survives_explosion"
+          }
+        }
+      ]
+    },
+    "blocks/converter_rf_quantum.json": {
+      "type": "minecraft:block",
+      "pools": [
+        {
+          "rolls": 1,
+          "entries": [
+            {
+              "type": "minecraft:item",
+              "name": "basepower:converter_rf_quantum"
+            }
+          ],
+          "condition": {
+            "type": "minecraft:survives_explosion"
+          }
+        }
+      ]
+    },
+    "blocks/converter_rf_steam.json": {
+      "type": "minecraft:block",
+      "pools": [
+        {
+          "rolls": 1,
+          "entries": [
+            {
+              "type": "minecraft:item",
+              "name": "basepower:converter_rf_steam"
+            }
+          ],
+          "condition": {
+            "type": "minecraft:survives_explosion"
+          }
+        }
+      ]
+    },
+    "blocks/converter_tr_electricity.json": {
+      "type": "minecraft:block",
+      "pools": [
+        {
+          "rolls": 1,
+          "entries": [
+            {
+              "type": "minecraft:item",
+              "name": "basepower:converter_tr_electricity"
+            }
+          ],
+          "condition": {
+            "type": "minecraft:survives_explosion"
+          }
+        }
+      ]
+    },
+    "blocks/crude_oil.json": {
+      "type": "minecraft:block",
+      "pools": []
+    },
+    "blocks/fluid_discharge.json": {
+      "type": "minecraft:block",
+      "pools": [
+        {
+          "rolls": 1,
+          "entries": [
+            {
+              "type": "minecraft:item",
+              "name": "basepower:fluid_discharge"
+            }
+          ],
+          "condition": {
+            "type": "minecraft:survives_explosion"
+          }
+        }
+      ]
+    },
+    "blocks/fluid_drain.json": {
+      "type": "minecraft:block",
+      "pools": [
+        {
+          "rolls": 1,
+          "entries": [
+            {
+              "type": "minecraft:item",
+              "name": "basepower:fluid_drain"
+            }
+          ],
+          "condition": {
+            "type": "minecraft:survives_explosion"
+          }
+        }
+      ]
+    },
+    "blocks/fluid_metal_tank.json": {
+      "type": "minecraft:block",
+      "pools": [
+        {
+          "rolls": 1,
+          "entries": [
+            {
+              "type": "minecraft:item",
+              "name": "basepower:fluid_metal_tank"
+            }
+          ],
+          "condition": {
+            "type": "minecraft:survives_explosion"
+          }
+        }
+      ]
+    },
+    "blocks/fluid_pipe.json": {
+      "type": "minecraft:block",
+      "pools": [
+        {
+          "rolls": 1,
+          "entries": [
+            {
+              "type": "minecraft:item",
+              "name": "basepower:fluid_pipe"
+            }
+          ],
+          "condition": {
+            "type": "minecraft:survives_explosion"
+          }
+        }
+      ]
+    },
+    "blocks/fluid_pipe_terminal.json": {
+      "type": "minecraft:block",
+      "pools": [
+        {
+          "rolls": 1,
+          "entries": [
+            {
+              "type": "minecraft:item",
+              "name": "basepower:fluid_pipe"
+            }
+          ],
+          "condition": {
+            "type": "minecraft:survives_explosion"
+          }
+        }
+      ]
+    },
+    "blocks/fluid_storage_tank.json": {
+      "type": "minecraft:block",
+      "pools": [
+        {
+          "rolls": 1,
+          "entries": [
+            {
+              "type": "minecraft:item",
+              "name": "basepower:fluid_storage_tank",
+              "modifier": [
+                {
+                  "type": "minecraft:copy_custom_data",
+                  "source": "block_entity",
+                  "ops": [
+                    {
+                      "source": "Tank.FluidName",
+                      "target": "FluidID",
+                      "op": "replace"
+                    },
+                    {
+                      "source": "Tank.Amount",
+                      "target": "Volume",
+                      "op": "replace"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "condition": {
+            "type": "minecraft:survives_explosion"
+          }
+        }
+      ]
+    },
+    "blocks/fluid_switch.json": {
+      "type": "minecraft:block",
+      "pools": [
+        {
+          "rolls": 1,
+          "entries": [
+            {
+              "type": "minecraft:item",
+              "name": "basepower:fluid_switch"
+            }
+          ],
+          "condition": {
+            "type": "minecraft:survives_explosion"
+          }
+        }
+      ]
+    },
+    "blocks/infinite_electricity.json": {
+      "type": "minecraft:block",
+      "pools": [
+        {
+          "rolls": 1,
+          "entries": [
+            {
+              "type": "minecraft:item",
+              "name": "basepower:infinite_electricity"
+            }
+          ],
+          "condition": {
+            "type": "minecraft:survives_explosion"
+          }
+        }
+      ]
+    },
+    "blocks/infinite_quantum.json": {
+      "type": "minecraft:block",
+      "pools": [
+        {
+          "rolls": 1,
+          "entries": [
+            {
+              "type": "minecraft:item",
+              "name": "basepower:infinite_quantum"
+            }
+          ],
+          "condition": {
+            "type": "minecraft:survives_explosion"
+          }
+        }
+      ]
+    },
+    "blocks/infinite_steam.json": {
+      "type": "minecraft:block",
+      "pools": [
+        {
+          "rolls": 1,
+          "entries": [
+            {
+              "type": "minecraft:item",
+              "name": "basepower:infinite_steam"
+            }
+          ],
+          "condition": {
+            "type": "minecraft:survives_explosion"
+          }
+        }
+      ]
+    },
+    "blocks/item_conveyor.json": {
+      "type": "minecraft:block",
+      "pools": [
+        {
+          "rolls": 1,
+          "entries": [
+            {
+              "type": "minecraft:item",
+              "name": "basepower:item_conveyor"
+            }
+          ],
+          "condition": {
+            "type": "minecraft:survives_explosion"
+          }
+        }
+      ]
+    },
+    "blocks/item_filter_block.json": {
+      "type": "minecraft:block",
+      "pools": [
+        {
+          "rolls": 1,
+          "entries": [
+            {
+              "type": "minecraft:item",
+              "name": "basepower:item_filter_block"
+            }
+          ],
+          "condition": {
+            "type": "minecraft:survives_explosion"
+          }
+        }
+      ]
+    },
+    "blocks/item_filter_food.json": {
+      "type": "minecraft:block",
+      "pools": [
+        {
+          "rolls": 1,
+          "entries": [
+            {
+              "type": "minecraft:item",
+              "name": "basepower:item_filter_food"
+            }
+          ],
+          "condition": {
+            "type": "minecraft:survives_explosion"
+          }
+        }
+      ]
+    },
+    "blocks/item_filter_fuel.json": {
+      "type": "minecraft:block",
+      "pools": [
+        {
+          "rolls": 1,
+          "entries": [
+            {
+              "type": "minecraft:item",
+              "name": "basepower:item_filter_fuel"
+            }
+          ],
+          "condition": {
+            "type": "minecraft:survives_explosion"
+          }
+        }
+      ]
+    },
+    "blocks/item_filter_inventory.json": {
+      "type": "minecraft:block",
+      "pools": [
+        {
+          "rolls": 1,
+          "entries": [
+            {
+              "type": "minecraft:item",
+              "name": "basepower:item_filter_inventory"
+            }
+          ],
+          "condition": {
+            "type": "minecraft:survives_explosion"
+          }
+        }
+      ]
+    },
+    "blocks/item_filter_ore.json": {
+      "type": "minecraft:block",
+      "pools": [
+        {
+          "rolls": 1,
+          "entries": [
+            {
+              "type": "minecraft:item",
+              "name": "basepower:item_filter_ore"
+            }
+          ],
+          "condition": {
+            "type": "minecraft:survives_explosion"
+          }
+        }
+      ]
+    },
+    "blocks/item_filter_overflow.json": {
+      "type": "minecraft:block",
+      "pools": [
+        {
+          "rolls": 1,
+          "entries": [
+            {
+              "type": "minecraft:item",
+              "name": "basepower:item_filter_overflow"
+            }
+          ],
+          "condition": {
+            "type": "minecraft:survives_explosion"
+          }
+        }
+      ]
+    },
+    "blocks/item_filter_plant.json": {
+      "type": "minecraft:block",
+      "pools": [
+        {
+          "rolls": 1,
+          "entries": [
+            {
+              "type": "minecraft:item",
+              "name": "basepower:item_filter_plant"
+            }
+          ],
+          "condition": {
+            "type": "minecraft:survives_explosion"
+          }
+        }
+      ]
+    },
+    "blocks/item_filter_smelt.json": {
+      "type": "minecraft:block",
+      "pools": [
+        {
+          "rolls": 1,
+          "entries": [
+            {
+              "type": "minecraft:item",
+              "name": "basepower:item_filter_smelt"
+            }
+          ],
+          "condition": {
+            "type": "minecraft:survives_explosion"
+          }
+        }
+      ]
+    },
+    "blocks/refined_oil.json": {
+      "type": "minecraft:block",
+      "pools": []
+    },
+    "blocks/steel_frame.json": {
+      "type": "minecraft:block",
+      "pools": [
+        {
+          "rolls": 1,
+          "entries": [
+            {
+              "type": "minecraft:item",
+              "name": "basepower:steel_frame"
+            }
+          ],
+          "condition": {
+            "type": "minecraft:survives_explosion"
+          }
+        }
+      ]
+    },
+    "blocks/still.json": {
+      "type": "minecraft:block",
+      "pools": [
+        {
+          "rolls": 1,
+          "entries": [
+            {
+              "type": "minecraft:item",
+              "name": "basepower:still"
+            }
+          ],
+          "condition": {
+            "type": "minecraft:survives_explosion"
+          }
+        }
+      ]
+    },
+    "chests/advantage_parts.json": {
+      "pools": [
+        {
+          "__comment": "25% chance of a Power Advantage item",
+          "rolls": 1,
+          "entries": [
+            {
+              "type": "empty",
+              "weight": 60
+            },
+            {
+              "type": "item",
+              "name": "basepower:sprocket",
+              "weight": 5,
+              "modifier": [
+                {
+                  "type": "set_count",
+                  "count": {
+                    "type": "minecraft:uniform",
+                    "min": 2,
+                    "max": 6
+                  }
+                }
+              ]
+            },
+            {
+              "type": "item",
+              "name": "basepower:fluid_pipe",
+              "weight": 5,
+              "modifier": [
+                {
+                  "type": "set_count",
+                  "count": {
+                    "type": "minecraft:uniform",
+                    "min": 1,
+                    "max": 4
+                  }
+                }
+              ]
+            },
+            {
+              "type": "item",
+              "name": "basepower:fluid_storage_tank",
+              "weight": 3
+            },
+            {
+              "type": "item",
+              "name": "basepower:fluid_drain",
+              "weight": 2
+            },
+            {
+              "type": "item",
+              "name": "basepower:fluid_discharge",
+              "weight": 2
+            },
+            {
+              "type": "item",
+              "name": "basepower:item_conveyor",
+              "weight": 3,
+              "modifier": [
+                {
+                  "type": "set_count",
+                  "count": {
+                    "type": "minecraft:uniform",
+                    "min": 1,
+                    "max": 5
+                  }
+                }
+              ]
+            }
+          ],
+          "name": "basepower_legacy_parts_0"
+        }
+      ]
+    }
+  }
+}

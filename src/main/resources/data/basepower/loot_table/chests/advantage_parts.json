@@ -12,7 +12,7 @@
           "type": "item",
           "name": "basepower:sprocket",
           "weight": 5,
-          "functions": [
+          "modifier": [
             {
               "type": "set_count",
               "count": {
@@ -27,7 +27,7 @@
           "type": "item",
           "name": "basepower:fluid_pipe",
           "weight": 5,
-          "functions": [
+          "modifier": [
             {
               "type": "set_count",
               "count": {
@@ -57,7 +57,7 @@
           "type": "item",
           "name": "basepower:item_conveyor",
           "weight": 3,
-          "functions": [
+          "modifier": [
             {
               "type": "set_count",
               "count": {

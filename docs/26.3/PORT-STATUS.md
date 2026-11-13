@@ -22,6 +22,12 @@ The compile baseline is Forge 66.0.0, official 26.3 names, MCP
 - Villager trades use the singular item-modifier field. Loot functions and
   predicates use their current type discriminator and explicit count providers.
   Native codec tests retain the old exchange rates, chest counts and drops.
+- Loot tables, pools and entries also use singular `modifier` and `condition`
+  fields. A real break-and-replace run exposed that the old plural fields were
+  ignored. Whole-table codec checks now retain every modifier and predicate,
+  and compare with an independent fixture derived from the hash-checked 26.2
+  release. Codec-only units use a one-to-one mapping to vanilla item references;
+  actual mod identities, drop contents and replacement remain server gates.
 - Registry-loaded recipes and advancements resolve the actual pending tag
   contents, not the unbound or previous contents of their named holders. A
   required lookup hook carries that reload's native `PendingTags` without a
