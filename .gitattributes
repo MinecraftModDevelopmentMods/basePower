@@ -4,3 +4,5 @@
 *.ogg binary
 *.jar binary
 *.zip binary
+# This reviewed fixture is byte-sealed, including its original line endings.
+test-rig/migration/fixtures/native263-client-platform-sequences-02.json -text
