@@ -2,7 +2,7 @@ package zone.moddev.mc.advantageworks.client;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.ProjectionType;
-import com.mojang.blaze3d.buffers.GpuBufferSlice;
+import com.mojang.renderpearl.api.buffers.GpuBufferSlice;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.pipeline.TextureTarget;
 import com.mojang.blaze3d.platform.NativeImage;
@@ -50,7 +50,8 @@ final class NativeGuiProjection implements AutoCloseable {
         heightField = window.getClass().getDeclaredField("framebufferHeight");
         widthField.setAccessible(true);
         heightField.setAccessible(true);
-        target = new TextureTarget("Advantage native GUI witness", width, height, true, original.getColorTexture().getFormat());
+        target = new TextureTarget("Advantage native GUI witness", width, height,
+                original.getColorTexture().getFormat(), original.getDepthTexture().getFormat());
         targetField.set(minecraft.gameRenderer, target);
         widthField.setInt(window, width);
         heightField.setInt(window, height);
@@ -84,7 +85,7 @@ final class NativeGuiProjection implements AutoCloseable {
             cases.add(row);
         }
         com.google.gson.JsonObject result = new com.google.gson.JsonObject();
-        result.addProperty("protocol", "NATIVE65_GUI_PROJECTION_PIXEL_RULER_V1");
+        result.addProperty("protocol", "NATIVE66_GUI_PROJECTION_PIXEL_RULER_V1");
         result.addProperty("status", "PASS");
         result.add("cases", cases);
         return result;

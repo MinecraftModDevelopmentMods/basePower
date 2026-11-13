@@ -1,0 +1,1037 @@
+{
+  "countsPolicy": "No range or prefix allowance; exact complete block arrays and explicit count per observed sequence",
+  "engineProtocol": "NATIVE66",
+  "familyArtifacts": [],
+  "forge": "66.0.0",
+  "format": 2,
+  "frames": [
+    {
+      "height": 480,
+      "path": "D:\\PowerAdvantage\\_verification\\base-263-port-20261112\\client-preparation-01\\sdk-01\\forge-only-control\\screenshots\\2026-11-12_23.57.28.png",
+      "sha256": "469335B4F9A775E2E4EB19B2E37B203AA00431C23BE2D021BBAED6F89CFB7B4B",
+      "uniqueColors": 38545,
+      "width": 854
+    },
+    {
+      "height": 480,
+      "path": "D:\\PowerAdvantage\\_verification\\base-263-port-20261112\\client-preparation-01\\sdk-01\\forge-only-control\\screenshots\\2026-11-12_23.58.42.png",
+      "sha256": "D88818BD6B9144FC9F3A81C744C066260BE9A61DAD7F9DD5754624E3B48726D2",
+      "uniqueColors": 13155,
+      "width": 854
+    },
+    {
+      "height": 480,
+      "path": "D:\\PowerAdvantage\\_verification\\base-263-port-20261112\\client-preparation-01\\sdk-01\\forge-only-control\\screenshots\\2026-11-13_00.02.09.png",
+      "sha256": "A2037101E45D92309C9755C2B613157FB7B0D152AA1E85EEA4992558A1B64C15",
+      "uniqueColors": 13599,
+      "width": 854
+    },
+    {
+      "height": 480,
+      "path": "D:\\PowerAdvantage\\_verification\\base-263-port-20261112\\client-final-family04-01\\client-platform-controls-02\\fresh-01\\screenshots\\2026-11-13_03.15.05.png",
+      "phase": "fresh-01",
+      "sha256": "8D2CC38CA3416BA00E8A40295660C3307CAE2C6CC1706A505211308496D6FE0C",
+      "width": 854
+    },
+    {
+      "height": 480,
+      "path": "D:\\PowerAdvantage\\_verification\\base-263-port-20261112\\client-final-family04-01\\client-platform-controls-02\\reopen-01\\screenshots\\2026-11-13_03.16.43.png",
+      "phase": "reopen-01",
+      "sha256": "0979DB8FAD084A8AAB018D0DA05369222966AFA7A7ACEDFE0853B8B0DDB721EA",
+      "width": 854
+    }
+  ],
+  "inventorySha256": "BE94EC08A7A882BB01ACE59E117065D84A8FBA76D681D6C8E6AE0AB68C0AB65C",
+  "java": "25.0.3+9",
+  "legacyCounts": {
+    "host": 5,
+    "netty": 3,
+    "unsafe": 1
+  },
+  "lifecycleReceipts": [
+    {
+      "path": "D:\\PowerAdvantage\\_verification\\base-263-port-20261112\\client-preparation-01\\sdk-01\\forge-only-control\\fresh-02\\result.json",
+      "sha256": "940BC83621C2A815BEC37254EDEDAD54AFF27EC40EB0A5633BCD04DC4EB6E0D0"
+    },
+    {
+      "path": "D:\\PowerAdvantage\\_verification\\base-263-port-20261112\\client-preparation-01\\sdk-01\\forge-only-control\\restart-01\\result.json",
+      "sha256": "CACE42013311E1C6720BB9BC4C9DB81C5C390D6508EA4BF97868EB486FF3C14D"
+    },
+    {
+      "path": "D:\\PowerAdvantage\\_verification\\base-263-port-20261112\\client-final-family04-01\\client-platform-controls-02\\fresh-01\\result.json",
+      "sha256": "D18CE26DC7675009948A40C45C70ACEB85A4C6B5E37B2AE45A6C75C590EDE17C"
+    },
+    {
+      "path": "D:\\PowerAdvantage\\_verification\\base-263-port-20261112\\client-final-family04-01\\client-platform-controls-02\\reopen-01\\result.json",
+      "sha256": "C55B99BF6EBED4E2538BA7D6DA81433A89C9C50B30E9186B4118C234175E8B29"
+    }
+  ],
+  "mcp": "20260918.230105",
+  "minecraft": "26.3",
+  "previousFixture": {
+    "path": "D:\\PowerAdvantage\\PA263\\PowerAdvantage\\test-rig\\migration\\fixtures\\native263-client-platform-sequences.json",
+    "preserved": true,
+    "sha256": "9BD43641EF72D53FDF08EE2153BDF593775C1C8DB16D35E3A62C3DC2571C8FA9"
+  },
+  "probeIncluded": false,
+  "rawLogs": [
+    {
+      "path": "D:\\PowerAdvantage\\_verification\\base-263-port-20261112\\client-preparation-01\\sdk-01\\forge-only-control\\fresh-02\\debug.log",
+      "phase": "fresh-02",
+      "selectedBlocks": 9,
+      "sha256": "F092C4DC8E00F1F5733361406E5E5B6AC18EF7DABDD3EA1F0D71938A87A69F6C",
+      "unselectedFatalLines": 0
+    },
+    {
+      "path": "D:\\PowerAdvantage\\_verification\\base-263-port-20261112\\client-preparation-01\\sdk-01\\forge-only-control\\fresh-02\\latest.log",
+      "phase": "fresh-02",
+      "selectedBlocks": 5,
+      "sha256": "4B258DFD18E66C8B13F9C9DF476AC8CBB6D4173228BA3A1BA097D431A89AAF28",
+      "unselectedFatalLines": 0
+    },
+    {
+      "path": "D:\\PowerAdvantage\\_verification\\base-263-port-20261112\\client-preparation-01\\sdk-01\\forge-only-control\\fresh-02\\stderr.log",
+      "phase": "fresh-02",
+      "selectedBlocks": 0,
+      "sha256": "CEB2F7AB14391D1B15FCD43DFAF85725A708F646436287CED5A759A88E7EA8D5",
+      "unselectedFatalLines": 0
+    },
+    {
+      "path": "D:\\PowerAdvantage\\_verification\\base-263-port-20261112\\client-preparation-01\\sdk-01\\forge-only-control\\fresh-02\\stdout.log",
+      "phase": "fresh-02",
+      "selectedBlocks": 5,
+      "sha256": "9AD6DA054B9AC79FAC509C35ADB8A9CD5FAA885DCFA7E30100E36FB092D1EC7A",
+      "unselectedFatalLines": 0
+    },
+    {
+      "path": "D:\\PowerAdvantage\\_verification\\base-263-port-20261112\\client-preparation-01\\sdk-01\\forge-only-control\\restart-01\\debug.log",
+      "phase": "restart-01",
+      "selectedBlocks": 9,
+      "sha256": "9DF11BE8B929B290F31C7EE233AC03AB227A0D506C20BCB382C030FBDFBD70C4",
+      "unselectedFatalLines": 0
+    },
+    {
+      "path": "D:\\PowerAdvantage\\_verification\\base-263-port-20261112\\client-preparation-01\\sdk-01\\forge-only-control\\restart-01\\latest.log",
+      "phase": "restart-01",
+      "selectedBlocks": 0,
+      "sha256": "897EF1298BE8A9F010D3971F9955ADEB9130E89FFE4C9F9D25E4F553971E5143",
+      "unselectedFatalLines": 0
+    },
+    {
+      "path": "D:\\PowerAdvantage\\_verification\\base-263-port-20261112\\client-preparation-01\\sdk-01\\forge-only-control\\restart-01\\stderr.log",
+      "phase": "restart-01",
+      "selectedBlocks": 0,
+      "sha256": "AE8935674255578E348BD0C26D2D331194CFFA592F3BDE8A58D37CADA9970511",
+      "unselectedFatalLines": 0
+    },
+    {
+      "path": "D:\\PowerAdvantage\\_verification\\base-263-port-20261112\\client-preparation-01\\sdk-01\\forge-only-control\\restart-01\\stdout.log",
+      "phase": "restart-01",
+      "selectedBlocks": 5,
+      "sha256": "BAE4F94C825A6D2B29D5BFC12B13F789A9DDD49E86A045A750F1E08656BE2E9C",
+      "unselectedFatalLines": 0
+    },
+    {
+      "path": "D:\\PowerAdvantage\\_verification\\base-263-port-20261112\\client-final-family04-01\\client-platform-controls-02\\fresh-01\\stdout.log",
+      "phase": "native-ui-control02-fresh-01",
+      "selectedBlocks": 5,
+      "sha256": "A557088D1516692893CDFD1462725E9B09B9167549EE32E3102F6C7E0B5AE536",
+      "unselectedFatalLines": 0
+    },
+    {
+      "path": "D:\\PowerAdvantage\\_verification\\base-263-port-20261112\\client-final-family04-01\\client-platform-controls-02\\fresh-01\\stderr.log",
+      "phase": "native-ui-control02-fresh-01",
+      "selectedBlocks": 0,
+      "sha256": "1DAA0A2B90FD2439473A6492C600627FEF43513CEDC45209C40F4E695D40C0D0",
+      "unselectedFatalLines": 0
+    },
+    {
+      "path": "D:\\PowerAdvantage\\_verification\\base-263-port-20261112\\client-final-family04-01\\client-platform-controls-02\\fresh-01\\logs\\debug.log",
+      "phase": "native-ui-control02-fresh-01",
+      "selectedBlocks": 9,
+      "sha256": "AD69F11CD0CA616BF41CD81DBA0F038941DB789BBB3E77BD243CF4DCFE039411",
+      "unselectedFatalLines": 0
+    },
+    {
+      "path": "D:\\PowerAdvantage\\_verification\\base-263-port-20261112\\client-final-family04-01\\client-platform-controls-02\\fresh-01\\logs\\latest.log",
+      "phase": "native-ui-control02-fresh-01",
+      "selectedBlocks": 5,
+      "sha256": "76AAE08421AB647F6B11D9A8711ED9996689264B076546E2CC8A1456D7B19B60",
+      "unselectedFatalLines": 0
+    },
+    {
+      "path": "D:\\PowerAdvantage\\_verification\\base-263-port-20261112\\client-final-family04-01\\client-platform-controls-02\\reopen-01\\stdout.log",
+      "phase": "native-ui-control02-reopen-01",
+      "selectedBlocks": 2,
+      "sha256": "C5986B67DCD029022739C37D590AA73F6E10E97CB93A942543493F425A773AAC",
+      "unselectedFatalLines": 0
+    },
+    {
+      "path": "D:\\PowerAdvantage\\_verification\\base-263-port-20261112\\client-final-family04-01\\client-platform-controls-02\\reopen-01\\stderr.log",
+      "phase": "native-ui-control02-reopen-01",
+      "selectedBlocks": 0,
+      "sha256": "0379381F5C57A4CFCD41ACAB4368E4AE0658145E9918F5B10DDEE9A2CC62B31E",
+      "unselectedFatalLines": 0
+    },
+    {
+      "path": "D:\\PowerAdvantage\\_verification\\base-263-port-20261112\\client-final-family04-01\\client-platform-controls-02\\reopen-01\\logs\\debug.log",
+      "phase": "native-ui-control02-reopen-01",
+      "selectedBlocks": 6,
+      "sha256": "6B35BEEE299C9219BEC58264EC1412B868C39F4B978E499395BC42D65D0953D1",
+      "unselectedFatalLines": 0
+    },
+    {
+      "path": "D:\\PowerAdvantage\\_verification\\base-263-port-20261112\\client-final-family04-01\\client-platform-controls-02\\reopen-01\\logs\\latest.log",
+      "phase": "native-ui-control02-reopen-01",
+      "selectedBlocks": 2,
+      "sha256": "68579918FD9D9C5F019815D34A24975D5FB6D6BE3752EF7E1F731B49209DBF90",
+      "unselectedFatalLines": 0
+    }
+  ],
+  "recordedUtc": "2026-11-13T03:19:10.919530+00:00",
+  "scope": "Host and Java25 library platform diagnostics only; not gameplay or family qualification",
+  "sdkPayloadSha256": "F897BBC12BBB715702E7DF8A85BFAEDE5B65673D2C609A1BD856DE3BB046B6DC",
+  "sequences": [
+    {
+      "blocks": [
+        {
+          "body": [
+            "com.sun.jna.platform.win32.Win32Exception: The parameter is incorrect.",
+            "\tat SECURE-BOOTSTRAP/com.sun.jna.platform@5.17.0/com.sun.jna.platform.win32.Advapi32Util.registryGetStringArray(Advapi32Util.java:921) ~[jna-platform-5.17.0.jar!/:5.17.0 (b0)]",
+            "\tat SECURE-BOOTSTRAP/com.sun.jna.platform@5.17.0/com.sun.jna.platform.win32.Advapi32Util.registryGetStringArray(Advapi32Util.java:898) ~[jna-platform-5.17.0.jar!/:5.17.0 (b0)]",
+            "\tat SECURE-BOOTSTRAP/com.github.oshi@6.9.0/oshi.driver.windows.registry.HkeyPerformanceDataUtil.mapCounterIndicesFromRegistry(HkeyPerformanceDataUtil.java:274) ~[oshi-core-6.9.0.jar!/:6.9.0]",
+            "\tat SECURE-BOOTSTRAP/com.github.oshi@6.9.0/oshi.driver.windows.registry.HkeyPerformanceDataUtil.<clinit>(HkeyPerformanceDataUtil.java:51) ~[oshi-core-6.9.0.jar!/:6.9.0]",
+            "\tat SECURE-BOOTSTRAP/com.github.oshi@6.9.0/oshi.driver.windows.registry.ProcessPerformanceData.buildProcessMapFromRegistry(ProcessPerformanceData.java:45) ~[oshi-core-6.9.0.jar!/:6.9.0]",
+            "\tat SECURE-BOOTSTRAP/com.github.oshi@6.9.0/oshi.software.os.windows.WindowsOperatingSystem.queryProcessMapFromRegistry(WindowsOperatingSystem.java:328) ~[oshi-core-6.9.0.jar!/:6.9.0]",
+            "\tat SECURE-BOOTSTRAP/com.github.oshi@6.9.0/oshi.util.Memoizer$1.get(Memoizer.java:65) ~[oshi-core-6.9.0.jar!/:6.9.0]",
+            "\tat SECURE-BOOTSTRAP/com.github.oshi@6.9.0/oshi.software.os.windows.WindowsOperatingSystem.processMapToList(WindowsOperatingSystem.java:298) ~[oshi-core-6.9.0.jar!/:6.9.0]",
+            "\tat SECURE-BOOTSTRAP/com.github.oshi@6.9.0/oshi.software.os.windows.WindowsOperatingSystem.getProcess(WindowsOperatingSystem.java:292) ~[oshi-core-6.9.0.jar!/:6.9.0]",
+            "\tat SECURE-BOOTSTRAP/com.github.oshi@6.9.0/oshi.software.os.OperatingSystem.getCurrentProcess(OperatingSystem.java:246) ~[oshi-core-6.9.0.jar!/:6.9.0]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.SystemReport.lambda$putSoftware$0(SystemReport.java:115) ~[forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.SystemReport.ignoreErrors(SystemReport.java:120) ~[forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.SystemReport.putSoftware(SystemReport.java:115) ~[forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.SystemReport.lambda$new$7(SystemReport.java:68) ~[forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.SystemReport.ignoreErrors(SystemReport.java:120) ~[forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.SystemReport.<init>(SystemReport.java:68) ~[forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.CrashReport.<init>(CrashReport.java:32) ~[forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.CrashReport.preload(CrashReport.java:227) ~[forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.client.main.Main.main(Main.java:159) ~[forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104) ~[?:?]",
+            "\tat java.base/java.lang.reflect.Method.invoke(Method.java:565) ~[?:?]",
+            "\tat SECURE-BOOTSTRAP/net.minecraftforge.fmlloader@26.3-66.0.0/net.minecraftforge.fml.loading.targets.CommonLaunchHandler.runTarget(CommonLaunchHandler.java:96) ~[fmlloader-26.3-66.0.0.jar:?]",
+            "\tat SECURE-BOOTSTRAP/net.minecraftforge.fmlloader@26.3-66.0.0/net.minecraftforge.fml.loading.targets.CommonLaunchHandler.lambda$makeService$0(CommonLaunchHandler.java:79) ~[fmlloader-26.3-66.0.0.jar:?]",
+            "\tat SECURE-BOOTSTRAP/cpw.mods.modlauncher@10.2.6/cpw.mods.modlauncher.LaunchServiceHandler.launch(LaunchServiceHandler.java:84) ~[modlauncher-10.2.6.jar:?]",
+            "\tat SECURE-BOOTSTRAP/cpw.mods.modlauncher@10.2.6/cpw.mods.modlauncher.LaunchServiceHandler.launch(LaunchServiceHandler.java:104) ~[modlauncher-10.2.6.jar:?]",
+            "\tat SECURE-BOOTSTRAP/cpw.mods.modlauncher@10.2.6/cpw.mods.modlauncher.Launcher.run(Launcher.java:151) ~[modlauncher-10.2.6.jar:?]",
+            "\tat SECURE-BOOTSTRAP/cpw.mods.modlauncher@10.2.6/cpw.mods.modlauncher.Launcher.main(Launcher.java:110) ~[modlauncher-10.2.6.jar:?]",
+            "\tat SECURE-BOOTSTRAP/cpw.mods.modlauncher@10.2.6/cpw.mods.modlauncher.BootstrapEntry.main(BootstrapEntry.java:17) ~[modlauncher-10.2.6.jar:?]",
+            "\tat net.minecraftforge.bootstrap@2.1.7/net.minecraftforge.bootstrap.Bootstrap.moduleMain(Bootstrap.java:188) ~[bootstrap-2.1.8.jar:2.1.8]",
+            "\tat java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104) ~[?:?]",
+            "\tat java.base/java.lang.reflect.Method.invoke(Method.java:565) ~[?:?]",
+            "\tat net.minecraftforge.bootstrap.Bootstrap.bootstrapMain(Bootstrap.java:133) ~[bootstrap-2.1.8.jar:2.1.8]",
+            "\tat net.minecraftforge.bootstrap.Bootstrap.start(Bootstrap.java:53) ~[bootstrap-2.1.8.jar:2.1.8]",
+            "\tat net.minecraftforge.bootstrap.ForgeBootstrap.main(ForgeBootstrap.java:19) ~[bootstrap-2.1.8.jar:2.1.8]",
+            "\tat net.minecraftforge.launcher.Main$Launcher.run(Main.java:276) [slime-launcher-0.2.2.jar:0.2.2]",
+            "\tat net.minecraftforge.launcher.Main$Launcher.access$000(Main.java:262) [slime-launcher-0.2.2.jar:0.2.2]",
+            "\tat net.minecraftforge.launcher.Main.main(Main.java:57) [slime-launcher-0.2.2.jar:0.2.2]"
+          ],
+          "level": "ERROR",
+          "logger": "oshi.driver.windows.registry.HkeyPerformanceDataUtil/",
+          "message": "Unable to locate English counter names in registry Perflib 009. Counters may need to be rebuilt: ",
+          "thread": "main"
+        },
+        {
+          "body": [],
+          "level": "WARN",
+          "logger": "oshi.util.platform.windows.PerfCounterQuery/",
+          "message": "Unable to locate English counter names in registry Perflib 009. Assuming English counters. Error 0x80070057. See https://support.microsoft.com/en-us/help/300956/how-to-manually-rebuild-performance-counter-library-values",
+          "thread": "main"
+        },
+        {
+          "body": [
+            "java.lang.NullPointerException: Cannot invoke \"oshi.software.os.OSProcess.getUserTime()\" because \"process\" is null",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.SystemReport.lambda$putProcessDetails$0(SystemReport.java:191) ~[forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.SystemReport.setDetail(SystemReport.java:96) ~[forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.SystemReport.putProcessDetails(SystemReport.java:188) ~[forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.SystemReport.lambda$putSoftware$0(SystemReport.java:115) ~[forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.SystemReport.ignoreErrors(SystemReport.java:120) ~[forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.SystemReport.putSoftware(SystemReport.java:115) ~[forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.SystemReport.lambda$new$7(SystemReport.java:68) ~[forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.SystemReport.ignoreErrors(SystemReport.java:120) ~[forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.SystemReport.<init>(SystemReport.java:68) ~[forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.CrashReport.<init>(CrashReport.java:32) ~[forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.CrashReport.preload(CrashReport.java:227) ~[forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.client.main.Main.main(Main.java:159) ~[forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104) ~[?:?]",
+            "\tat java.base/java.lang.reflect.Method.invoke(Method.java:565) ~[?:?]",
+            "\tat SECURE-BOOTSTRAP/net.minecraftforge.fmlloader@26.3-66.0.0/net.minecraftforge.fml.loading.targets.CommonLaunchHandler.runTarget(CommonLaunchHandler.java:96) ~[fmlloader-26.3-66.0.0.jar:?]",
+            "\tat SECURE-BOOTSTRAP/net.minecraftforge.fmlloader@26.3-66.0.0/net.minecraftforge.fml.loading.targets.CommonLaunchHandler.lambda$makeService$0(CommonLaunchHandler.java:79) ~[fmlloader-26.3-66.0.0.jar:?]",
+            "\tat SECURE-BOOTSTRAP/cpw.mods.modlauncher@10.2.6/cpw.mods.modlauncher.LaunchServiceHandler.launch(LaunchServiceHandler.java:84) ~[modlauncher-10.2.6.jar:?]",
+            "\tat SECURE-BOOTSTRAP/cpw.mods.modlauncher@10.2.6/cpw.mods.modlauncher.LaunchServiceHandler.launch(LaunchServiceHandler.java:104) ~[modlauncher-10.2.6.jar:?]",
+            "\tat SECURE-BOOTSTRAP/cpw.mods.modlauncher@10.2.6/cpw.mods.modlauncher.Launcher.run(Launcher.java:151) ~[modlauncher-10.2.6.jar:?]",
+            "\tat SECURE-BOOTSTRAP/cpw.mods.modlauncher@10.2.6/cpw.mods.modlauncher.Launcher.main(Launcher.java:110) ~[modlauncher-10.2.6.jar:?]",
+            "\tat SECURE-BOOTSTRAP/cpw.mods.modlauncher@10.2.6/cpw.mods.modlauncher.BootstrapEntry.main(BootstrapEntry.java:17) ~[modlauncher-10.2.6.jar:?]",
+            "\tat net.minecraftforge.bootstrap@2.1.7/net.minecraftforge.bootstrap.Bootstrap.moduleMain(Bootstrap.java:188) ~[bootstrap-2.1.8.jar:2.1.8]",
+            "\tat java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104) ~[?:?]",
+            "\tat java.base/java.lang.reflect.Method.invoke(Method.java:565) ~[?:?]",
+            "\tat net.minecraftforge.bootstrap.Bootstrap.bootstrapMain(Bootstrap.java:133) ~[bootstrap-2.1.8.jar:2.1.8]",
+            "\tat net.minecraftforge.bootstrap.Bootstrap.start(Bootstrap.java:53) ~[bootstrap-2.1.8.jar:2.1.8]",
+            "\tat net.minecraftforge.bootstrap.ForgeBootstrap.main(ForgeBootstrap.java:19) ~[bootstrap-2.1.8.jar:2.1.8]",
+            "\tat net.minecraftforge.launcher.Main$Launcher.run(Main.java:276) [slime-launcher-0.2.2.jar:0.2.2]",
+            "\tat net.minecraftforge.launcher.Main$Launcher.access$000(Main.java:262) [slime-launcher-0.2.2.jar:0.2.2]",
+            "\tat net.minecraftforge.launcher.Main.main(Main.java:57) [slime-launcher-0.2.2.jar:0.2.2]"
+          ],
+          "level": "WARN",
+          "logger": "net.minecraft.SystemReport/",
+          "message": "Failed to get system info for Process Loads",
+          "thread": "main"
+        },
+        {
+          "body": [
+            "java.lang.NullPointerException: Cannot invoke \"oshi.software.os.OSProcess.getVirtualSize()\" because \"process\" is null",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.SystemReport.lambda$putProcessDetails$1(SystemReport.java:208) ~[forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.SystemReport.setDetail(SystemReport.java:96) ~[forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.SystemReport.putProcessDetails(SystemReport.java:208) ~[forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.SystemReport.lambda$putSoftware$0(SystemReport.java:115) ~[forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.SystemReport.ignoreErrors(SystemReport.java:120) ~[forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.SystemReport.putSoftware(SystemReport.java:115) ~[forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.SystemReport.lambda$new$7(SystemReport.java:68) ~[forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.SystemReport.ignoreErrors(SystemReport.java:120) ~[forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.SystemReport.<init>(SystemReport.java:68) ~[forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.CrashReport.<init>(CrashReport.java:32) ~[forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.CrashReport.preload(CrashReport.java:227) ~[forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.client.main.Main.main(Main.java:159) ~[forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104) ~[?:?]",
+            "\tat java.base/java.lang.reflect.Method.invoke(Method.java:565) ~[?:?]",
+            "\tat SECURE-BOOTSTRAP/net.minecraftforge.fmlloader@26.3-66.0.0/net.minecraftforge.fml.loading.targets.CommonLaunchHandler.runTarget(CommonLaunchHandler.java:96) ~[fmlloader-26.3-66.0.0.jar:?]",
+            "\tat SECURE-BOOTSTRAP/net.minecraftforge.fmlloader@26.3-66.0.0/net.minecraftforge.fml.loading.targets.CommonLaunchHandler.lambda$makeService$0(CommonLaunchHandler.java:79) ~[fmlloader-26.3-66.0.0.jar:?]",
+            "\tat SECURE-BOOTSTRAP/cpw.mods.modlauncher@10.2.6/cpw.mods.modlauncher.LaunchServiceHandler.launch(LaunchServiceHandler.java:84) ~[modlauncher-10.2.6.jar:?]",
+            "\tat SECURE-BOOTSTRAP/cpw.mods.modlauncher@10.2.6/cpw.mods.modlauncher.LaunchServiceHandler.launch(LaunchServiceHandler.java:104) ~[modlauncher-10.2.6.jar:?]",
+            "\tat SECURE-BOOTSTRAP/cpw.mods.modlauncher@10.2.6/cpw.mods.modlauncher.Launcher.run(Launcher.java:151) ~[modlauncher-10.2.6.jar:?]",
+            "\tat SECURE-BOOTSTRAP/cpw.mods.modlauncher@10.2.6/cpw.mods.modlauncher.Launcher.main(Launcher.java:110) ~[modlauncher-10.2.6.jar:?]",
+            "\tat SECURE-BOOTSTRAP/cpw.mods.modlauncher@10.2.6/cpw.mods.modlauncher.BootstrapEntry.main(BootstrapEntry.java:17) ~[modlauncher-10.2.6.jar:?]",
+            "\tat net.minecraftforge.bootstrap@2.1.7/net.minecraftforge.bootstrap.Bootstrap.moduleMain(Bootstrap.java:188) ~[bootstrap-2.1.8.jar:2.1.8]",
+            "\tat java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104) ~[?:?]",
+            "\tat java.base/java.lang.reflect.Method.invoke(Method.java:565) ~[?:?]",
+            "\tat net.minecraftforge.bootstrap.Bootstrap.bootstrapMain(Bootstrap.java:133) ~[bootstrap-2.1.8.jar:2.1.8]",
+            "\tat net.minecraftforge.bootstrap.Bootstrap.start(Bootstrap.java:53) ~[bootstrap-2.1.8.jar:2.1.8]",
+            "\tat net.minecraftforge.bootstrap.ForgeBootstrap.main(ForgeBootstrap.java:19) ~[bootstrap-2.1.8.jar:2.1.8]",
+            "\tat net.minecraftforge.launcher.Main$Launcher.run(Main.java:276) [slime-launcher-0.2.2.jar:0.2.2]",
+            "\tat net.minecraftforge.launcher.Main$Launcher.access$000(Main.java:262) [slime-launcher-0.2.2.jar:0.2.2]",
+            "\tat net.minecraftforge.launcher.Main.main(Main.java:57) [slime-launcher-0.2.2.jar:0.2.2]"
+          ],
+          "level": "WARN",
+          "logger": "net.minecraft.SystemReport/",
+          "message": "Failed to get system info for Process Virtual Size (MiB)",
+          "thread": "main"
+        },
+        {
+          "body": [
+            "java.lang.NullPointerException: Cannot invoke \"oshi.software.os.OSProcess.getResidentSetSize()\" because \"process\" is null",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.SystemReport.lambda$putProcessDetails$2(SystemReport.java:209) ~[forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.SystemReport.setDetail(SystemReport.java:96) ~[forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.SystemReport.putProcessDetails(SystemReport.java:209) ~[forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.SystemReport.lambda$putSoftware$0(SystemReport.java:115) ~[forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.SystemReport.ignoreErrors(SystemReport.java:120) ~[forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.SystemReport.putSoftware(SystemReport.java:115) ~[forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.SystemReport.lambda$new$7(SystemReport.java:68) ~[forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.SystemReport.ignoreErrors(SystemReport.java:120) ~[forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.SystemReport.<init>(SystemReport.java:68) ~[forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.CrashReport.<init>(CrashReport.java:32) ~[forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.CrashReport.preload(CrashReport.java:227) ~[forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.client.main.Main.main(Main.java:159) ~[forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104) ~[?:?]",
+            "\tat java.base/java.lang.reflect.Method.invoke(Method.java:565) ~[?:?]",
+            "\tat SECURE-BOOTSTRAP/net.minecraftforge.fmlloader@26.3-66.0.0/net.minecraftforge.fml.loading.targets.CommonLaunchHandler.runTarget(CommonLaunchHandler.java:96) ~[fmlloader-26.3-66.0.0.jar:?]",
+            "\tat SECURE-BOOTSTRAP/net.minecraftforge.fmlloader@26.3-66.0.0/net.minecraftforge.fml.loading.targets.CommonLaunchHandler.lambda$makeService$0(CommonLaunchHandler.java:79) ~[fmlloader-26.3-66.0.0.jar:?]",
+            "\tat SECURE-BOOTSTRAP/cpw.mods.modlauncher@10.2.6/cpw.mods.modlauncher.LaunchServiceHandler.launch(LaunchServiceHandler.java:84) ~[modlauncher-10.2.6.jar:?]",
+            "\tat SECURE-BOOTSTRAP/cpw.mods.modlauncher@10.2.6/cpw.mods.modlauncher.LaunchServiceHandler.launch(LaunchServiceHandler.java:104) ~[modlauncher-10.2.6.jar:?]",
+            "\tat SECURE-BOOTSTRAP/cpw.mods.modlauncher@10.2.6/cpw.mods.modlauncher.Launcher.run(Launcher.java:151) ~[modlauncher-10.2.6.jar:?]",
+            "\tat SECURE-BOOTSTRAP/cpw.mods.modlauncher@10.2.6/cpw.mods.modlauncher.Launcher.main(Launcher.java:110) ~[modlauncher-10.2.6.jar:?]",
+            "\tat SECURE-BOOTSTRAP/cpw.mods.modlauncher@10.2.6/cpw.mods.modlauncher.BootstrapEntry.main(BootstrapEntry.java:17) ~[modlauncher-10.2.6.jar:?]",
+            "\tat net.minecraftforge.bootstrap@2.1.7/net.minecraftforge.bootstrap.Bootstrap.moduleMain(Bootstrap.java:188) ~[bootstrap-2.1.8.jar:2.1.8]",
+            "\tat java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104) ~[?:?]",
+            "\tat java.base/java.lang.reflect.Method.invoke(Method.java:565) ~[?:?]",
+            "\tat net.minecraftforge.bootstrap.Bootstrap.bootstrapMain(Bootstrap.java:133) ~[bootstrap-2.1.8.jar:2.1.8]",
+            "\tat net.minecraftforge.bootstrap.Bootstrap.start(Bootstrap.java:53) ~[bootstrap-2.1.8.jar:2.1.8]",
+            "\tat net.minecraftforge.bootstrap.ForgeBootstrap.main(ForgeBootstrap.java:19) ~[bootstrap-2.1.8.jar:2.1.8]",
+            "\tat net.minecraftforge.launcher.Main$Launcher.run(Main.java:276) [slime-launcher-0.2.2.jar:0.2.2]",
+            "\tat net.minecraftforge.launcher.Main$Launcher.access$000(Main.java:262) [slime-launcher-0.2.2.jar:0.2.2]",
+            "\tat net.minecraftforge.launcher.Main.main(Main.java:57) [slime-launcher-0.2.2.jar:0.2.2]"
+          ],
+          "level": "WARN",
+          "logger": "net.minecraft.SystemReport/",
+          "message": "Failed to get system info for Process Resident Size (MiB)",
+          "thread": "main"
+        }
+      ],
+      "expectedBlockCount": 5,
+      "kind": "host",
+      "provenance": [
+        {
+          "indices": [
+            157,
+            159,
+            161,
+            162,
+            163
+          ],
+          "log": {
+            "path": "D:\\PowerAdvantage\\_verification\\base-263-port-20261112\\client-preparation-01\\sdk-01\\forge-only-control\\fresh-02\\debug.log",
+            "sha256": "F092C4DC8E00F1F5733361406E5E5B6AC18EF7DABDD3EA1F0D71938A87A69F6C"
+          },
+          "phase": "fresh-02"
+        },
+        {
+          "indices": [
+            9,
+            10,
+            11,
+            12,
+            13
+          ],
+          "log": {
+            "path": "D:\\PowerAdvantage\\_verification\\base-263-port-20261112\\client-preparation-01\\sdk-01\\forge-only-control\\fresh-02\\latest.log",
+            "sha256": "4B258DFD18E66C8B13F9C9DF476AC8CBB6D4173228BA3A1BA097D431A89AAF28"
+          },
+          "phase": "fresh-02"
+        },
+        {
+          "indices": [
+            157,
+            159,
+            161,
+            162,
+            163
+          ],
+          "log": {
+            "path": "D:\\PowerAdvantage\\_verification\\base-263-port-20261112\\client-preparation-01\\sdk-01\\forge-only-control\\restart-01\\debug.log",
+            "sha256": "9DF11BE8B929B290F31C7EE233AC03AB227A0D506C20BCB382C030FBDFBD70C4"
+          },
+          "phase": "restart-01"
+        },
+        {
+          "indices": [
+            162,
+            164,
+            166,
+            167,
+            168
+          ],
+          "log": {
+            "path": "D:\\PowerAdvantage\\_verification\\base-263-port-20261112\\client-final-family04-01\\client-platform-controls-02\\fresh-01\\logs\\debug.log",
+            "sha256": "AD69F11CD0CA616BF41CD81DBA0F038941DB789BBB3E77BD243CF4DCFE039411"
+          },
+          "phase": "native-ui-control02-fresh-01"
+        },
+        {
+          "indices": [
+            14,
+            15,
+            16,
+            17,
+            18
+          ],
+          "log": {
+            "path": "D:\\PowerAdvantage\\_verification\\base-263-port-20261112\\client-final-family04-01\\client-platform-controls-02\\fresh-01\\logs\\latest.log",
+            "sha256": "76AAE08421AB647F6B11D9A8711ED9996689264B076546E2CC8A1456D7B19B60"
+          },
+          "phase": "native-ui-control02-fresh-01"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "body": [
+            "java.lang.UnsupportedOperationException: sun.misc.Unsafe unavailable",
+            "\tat SECURE-BOOTSTRAP/io.netty.common@4.2.16.Final/io.netty.util.internal.CleanerJava9.<clinit>(CleanerJava9.java:70) ~[netty-common-4.2.16.Final.jar:4.2.16.Final]",
+            "\tat SECURE-BOOTSTRAP/io.netty.common@4.2.16.Final/io.netty.util.internal.PlatformDependent.<clinit>(PlatformDependent.java:210) ~[netty-common-4.2.16.Final.jar:4.2.16.Final]",
+            "\tat SECURE-BOOTSTRAP/io.netty.buffer@4.2.16.Final/io.netty.buffer.UnpooledByteBufAllocator.<clinit>(UnpooledByteBufAllocator.java:38) ~[netty-buffer-4.2.16.Final.jar:4.2.16.Final]",
+            "\tat SECURE-BOOTSTRAP/io.netty.buffer@4.2.16.Final/io.netty.buffer.Unpooled.<clinit>(Unpooled.java:75) ~[netty-buffer-4.2.16.Final.jar:4.2.16.Final]",
+            "\tat TRANSFORMER/net.minecraftforge.forge@66.0.0/net.minecraftforge.network.ServerStatusPing.toBuf(ServerStatusPing.java:156) ~[forge-26.3-66.0.0.jar:?]",
+            "\tat TRANSFORMER/net.minecraftforge.forge@66.0.0/net.minecraftforge.network.ServerStatusPing.lambda$static$1(ServerStatusPing.java:88) ~[forge-26.3-66.0.0.jar:?]",
+            "\tat SECURE-BOOTSTRAP/datafixerupper@10.0.21/com.mojang.serialization.codecs.RecordCodecBuilder$Instance.lambda$ap2$4(RecordCodecBuilder.java:217) ~[datafixerupper-10.0.21.jar!/:?]",
+            "\tat SECURE-BOOTSTRAP/datafixerupper@10.0.21/com.mojang.serialization.codecs.RecordCodecBuilder$Instance.lambda$ap3$6(RecordCodecBuilder.java:284) ~[datafixerupper-10.0.21.jar!/:?]",
+            "\tat SECURE-BOOTSTRAP/datafixerupper@10.0.21/com.mojang.serialization.codecs.RecordCodecBuilder$2.encode(RecordCodecBuilder.java:112) ~[datafixerupper-10.0.21.jar!/:?]",
+            "\tat SECURE-BOOTSTRAP/datafixerupper@10.0.21/com.mojang.serialization.MapCodec$MapCodecCodec.encode(MapCodec.java:164) ~[datafixerupper-10.0.21.jar!/:?]",
+            "\tat SECURE-BOOTSTRAP/datafixerupper@10.0.21/com.mojang.serialization.Encoder.encodeStart(Encoder.java:14) ~[datafixerupper-10.0.21.jar!/:?]",
+            "\tat SECURE-BOOTSTRAP/datafixerupper@10.0.21/com.mojang.serialization.codecs.OptionalFieldCodec.encode(OptionalFieldCodec.java:44) ~[datafixerupper-10.0.21.jar!/:?]",
+            "\tat SECURE-BOOTSTRAP/datafixerupper@10.0.21/com.mojang.serialization.codecs.OptionalFieldCodec.encode(OptionalFieldCodec.java:17) ~[datafixerupper-10.0.21.jar!/:?]",
+            "\tat SECURE-BOOTSTRAP/datafixerupper@10.0.21/com.mojang.serialization.codecs.RecordCodecBuilder$Instance$6.encode(RecordCodecBuilder.java:298) ~[datafixerupper-10.0.21.jar!/:?]",
+            "\tat SECURE-BOOTSTRAP/datafixerupper@10.0.21/com.mojang.serialization.codecs.RecordCodecBuilder$2.encode(RecordCodecBuilder.java:112) ~[datafixerupper-10.0.21.jar!/:?]",
+            "\tat SECURE-BOOTSTRAP/datafixerupper@10.0.21/com.mojang.serialization.MapCodec$MapCodecCodec.encode(MapCodec.java:164) ~[datafixerupper-10.0.21.jar!/:?]",
+            "\tat SECURE-BOOTSTRAP/datafixerupper@10.0.21/com.mojang.serialization.Encoder.encodeStart(Encoder.java:14) ~[datafixerupper-10.0.21.jar!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.server.MinecraftServer.resetStatusCache(MinecraftServer.java:2222) [forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.server.MinecraftServer.runServer(MinecraftServer.java:720) [forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.server.MinecraftServer.lambda$spin$0(MinecraftServer.java:294) [forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat java.base/java.lang.Thread.run(Thread.java:1474) [?:?]"
+          ],
+          "level": "DEBUG",
+          "logger": "io.netty.util.internal.CleanerJava9/",
+          "message": "java.nio.ByteBuffer.cleaner(): unavailable",
+          "thread": "Server thread"
+        },
+        {
+          "body": [
+            "java.lang.UnsupportedOperationException: Native access (restricted methods) is not enabled for the io.netty.common module.",
+            "\tat SECURE-BOOTSTRAP/io.netty.common@4.2.16.Final/io.netty.util.internal.CleanerJava24Linker.<clinit>(CleanerJava24Linker.java:78) ~[netty-common-4.2.16.Final.jar:4.2.16.Final]",
+            "\tat SECURE-BOOTSTRAP/io.netty.common@4.2.16.Final/io.netty.util.internal.PlatformDependent.<clinit>(PlatformDependent.java:212) ~[netty-common-4.2.16.Final.jar:4.2.16.Final]",
+            "\tat SECURE-BOOTSTRAP/io.netty.buffer@4.2.16.Final/io.netty.buffer.UnpooledByteBufAllocator.<clinit>(UnpooledByteBufAllocator.java:38) ~[netty-buffer-4.2.16.Final.jar:4.2.16.Final]",
+            "\tat SECURE-BOOTSTRAP/io.netty.buffer@4.2.16.Final/io.netty.buffer.Unpooled.<clinit>(Unpooled.java:75) ~[netty-buffer-4.2.16.Final.jar:4.2.16.Final]",
+            "\tat TRANSFORMER/net.minecraftforge.forge@66.0.0/net.minecraftforge.network.ServerStatusPing.toBuf(ServerStatusPing.java:156) ~[forge-26.3-66.0.0.jar:?]",
+            "\tat TRANSFORMER/net.minecraftforge.forge@66.0.0/net.minecraftforge.network.ServerStatusPing.lambda$static$1(ServerStatusPing.java:88) ~[forge-26.3-66.0.0.jar:?]",
+            "\tat SECURE-BOOTSTRAP/datafixerupper@10.0.21/com.mojang.serialization.codecs.RecordCodecBuilder$Instance.lambda$ap2$4(RecordCodecBuilder.java:217) ~[datafixerupper-10.0.21.jar!/:?]",
+            "\tat SECURE-BOOTSTRAP/datafixerupper@10.0.21/com.mojang.serialization.codecs.RecordCodecBuilder$Instance.lambda$ap3$6(RecordCodecBuilder.java:284) ~[datafixerupper-10.0.21.jar!/:?]",
+            "\tat SECURE-BOOTSTRAP/datafixerupper@10.0.21/com.mojang.serialization.codecs.RecordCodecBuilder$2.encode(RecordCodecBuilder.java:112) ~[datafixerupper-10.0.21.jar!/:?]",
+            "\tat SECURE-BOOTSTRAP/datafixerupper@10.0.21/com.mojang.serialization.MapCodec$MapCodecCodec.encode(MapCodec.java:164) ~[datafixerupper-10.0.21.jar!/:?]",
+            "\tat SECURE-BOOTSTRAP/datafixerupper@10.0.21/com.mojang.serialization.Encoder.encodeStart(Encoder.java:14) ~[datafixerupper-10.0.21.jar!/:?]",
+            "\tat SECURE-BOOTSTRAP/datafixerupper@10.0.21/com.mojang.serialization.codecs.OptionalFieldCodec.encode(OptionalFieldCodec.java:44) ~[datafixerupper-10.0.21.jar!/:?]",
+            "\tat SECURE-BOOTSTRAP/datafixerupper@10.0.21/com.mojang.serialization.codecs.OptionalFieldCodec.encode(OptionalFieldCodec.java:17) ~[datafixerupper-10.0.21.jar!/:?]",
+            "\tat SECURE-BOOTSTRAP/datafixerupper@10.0.21/com.mojang.serialization.codecs.RecordCodecBuilder$Instance$6.encode(RecordCodecBuilder.java:298) ~[datafixerupper-10.0.21.jar!/:?]",
+            "\tat SECURE-BOOTSTRAP/datafixerupper@10.0.21/com.mojang.serialization.codecs.RecordCodecBuilder$2.encode(RecordCodecBuilder.java:112) ~[datafixerupper-10.0.21.jar!/:?]",
+            "\tat SECURE-BOOTSTRAP/datafixerupper@10.0.21/com.mojang.serialization.MapCodec$MapCodecCodec.encode(MapCodec.java:164) ~[datafixerupper-10.0.21.jar!/:?]",
+            "\tat SECURE-BOOTSTRAP/datafixerupper@10.0.21/com.mojang.serialization.Encoder.encodeStart(Encoder.java:14) ~[datafixerupper-10.0.21.jar!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.server.MinecraftServer.resetStatusCache(MinecraftServer.java:2222) [forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.server.MinecraftServer.runServer(MinecraftServer.java:720) [forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.server.MinecraftServer.lambda$spin$0(MinecraftServer.java:294) [forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat java.base/java.lang.Thread.run(Thread.java:1474) [?:?]"
+          ],
+          "level": "DEBUG",
+          "logger": "io.netty.util.internal.CleanerJava24Linker/",
+          "message": "java.nio.ByteBuffer.cleaner(): unavailable",
+          "thread": "Server thread"
+        },
+        {
+          "body": [],
+          "level": "DEBUG",
+          "logger": "io.netty.util.internal.CleanerJava25/",
+          "message": "java.nio.ByteBuffer.cleaner(): available",
+          "thread": "Server thread"
+        }
+      ],
+      "expectedBlockCount": 3,
+      "kind": "netty",
+      "provenance": [
+        {
+          "indices": [
+            707,
+            708,
+            709
+          ],
+          "log": {
+            "path": "D:\\PowerAdvantage\\_verification\\base-263-port-20261112\\client-preparation-01\\sdk-01\\forge-only-control\\fresh-02\\debug.log",
+            "sha256": "F092C4DC8E00F1F5733361406E5E5B6AC18EF7DABDD3EA1F0D71938A87A69F6C"
+          },
+          "phase": "fresh-02"
+        },
+        {
+          "indices": [
+            710,
+            711,
+            712
+          ],
+          "log": {
+            "path": "D:\\PowerAdvantage\\_verification\\base-263-port-20261112\\client-preparation-01\\sdk-01\\forge-only-control\\restart-01\\debug.log",
+            "sha256": "9DF11BE8B929B290F31C7EE233AC03AB227A0D506C20BCB382C030FBDFBD70C4"
+          },
+          "phase": "restart-01"
+        },
+        {
+          "indices": [
+            729,
+            730,
+            731
+          ],
+          "log": {
+            "path": "D:\\PowerAdvantage\\_verification\\base-263-port-20261112\\client-final-family04-01\\client-platform-controls-02\\fresh-01\\logs\\debug.log",
+            "sha256": "AD69F11CD0CA616BF41CD81DBA0F038941DB789BBB3E77BD243CF4DCFE039411"
+          },
+          "phase": "native-ui-control02-fresh-01"
+        },
+        {
+          "indices": [
+            729,
+            730,
+            731
+          ],
+          "log": {
+            "path": "D:\\PowerAdvantage\\_verification\\base-263-port-20261112\\client-final-family04-01\\client-platform-controls-02\\reopen-01\\logs\\debug.log",
+            "sha256": "6B35BEEE299C9219BEC58264EC1412B868C39F4B978E499395BC42D65D0953D1"
+          },
+          "phase": "native-ui-control02-reopen-01"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "body": [],
+          "level": "DEBUG",
+          "logger": "io.netty.util.internal.PlatformDependent0/",
+          "message": "sun.misc.Unsafe: unavailable (io.netty.noUnsafe=true by default on Java 25+)",
+          "thread": "Server thread"
+        }
+      ],
+      "expectedBlockCount": 1,
+      "kind": "unsafe",
+      "provenance": [
+        {
+          "indices": [
+            700
+          ],
+          "log": {
+            "path": "D:\\PowerAdvantage\\_verification\\base-263-port-20261112\\client-preparation-01\\sdk-01\\forge-only-control\\fresh-02\\debug.log",
+            "sha256": "F092C4DC8E00F1F5733361406E5E5B6AC18EF7DABDD3EA1F0D71938A87A69F6C"
+          },
+          "phase": "fresh-02"
+        },
+        {
+          "indices": [
+            703
+          ],
+          "log": {
+            "path": "D:\\PowerAdvantage\\_verification\\base-263-port-20261112\\client-preparation-01\\sdk-01\\forge-only-control\\restart-01\\debug.log",
+            "sha256": "9DF11BE8B929B290F31C7EE233AC03AB227A0D506C20BCB382C030FBDFBD70C4"
+          },
+          "phase": "restart-01"
+        },
+        {
+          "indices": [
+            722
+          ],
+          "log": {
+            "path": "D:\\PowerAdvantage\\_verification\\base-263-port-20261112\\client-final-family04-01\\client-platform-controls-02\\fresh-01\\logs\\debug.log",
+            "sha256": "AD69F11CD0CA616BF41CD81DBA0F038941DB789BBB3E77BD243CF4DCFE039411"
+          },
+          "phase": "native-ui-control02-fresh-01"
+        },
+        {
+          "indices": [
+            722
+          ],
+          "log": {
+            "path": "D:\\PowerAdvantage\\_verification\\base-263-port-20261112\\client-final-family04-01\\client-platform-controls-02\\reopen-01\\logs\\debug.log",
+            "sha256": "6B35BEEE299C9219BEC58264EC1412B868C39F4B978E499395BC42D65D0953D1"
+          },
+          "phase": "native-ui-control02-reopen-01"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "body": [
+            "com.sun.jna.platform.win32.Win32Exception: The parameter is incorrect.",
+            "\tat SECURE-BOOTSTRAP/com.sun.jna.platform@5.17.0/com.sun.jna.platform.win32.Advapi32Util.registryGetStringArray(Advapi32Util.java:921) ~[jna-platform-5.17.0.jar!/:5.17.0 (b0)]",
+            "\tat SECURE-BOOTSTRAP/com.sun.jna.platform@5.17.0/com.sun.jna.platform.win32.Advapi32Util.registryGetStringArray(Advapi32Util.java:898) ~[jna-platform-5.17.0.jar!/:5.17.0 (b0)]",
+            "\tat SECURE-BOOTSTRAP/com.github.oshi@6.9.0/oshi.driver.windows.registry.HkeyPerformanceDataUtil.mapCounterIndicesFromRegistry(HkeyPerformanceDataUtil.java:274) [oshi-core-6.9.0.jar!/:6.9.0]",
+            "\tat SECURE-BOOTSTRAP/com.github.oshi@6.9.0/oshi.driver.windows.registry.HkeyPerformanceDataUtil.<clinit>(HkeyPerformanceDataUtil.java:51) [oshi-core-6.9.0.jar!/:6.9.0]",
+            "\tat SECURE-BOOTSTRAP/com.github.oshi@6.9.0/oshi.driver.windows.registry.ProcessPerformanceData.buildProcessMapFromRegistry(ProcessPerformanceData.java:45) [oshi-core-6.9.0.jar!/:6.9.0]",
+            "\tat SECURE-BOOTSTRAP/com.github.oshi@6.9.0/oshi.software.os.windows.WindowsOperatingSystem.queryProcessMapFromRegistry(WindowsOperatingSystem.java:328) [oshi-core-6.9.0.jar!/:6.9.0]",
+            "\tat SECURE-BOOTSTRAP/com.github.oshi@6.9.0/oshi.util.Memoizer$1.get(Memoizer.java:65) [oshi-core-6.9.0.jar!/:6.9.0]",
+            "\tat SECURE-BOOTSTRAP/com.github.oshi@6.9.0/oshi.software.os.windows.WindowsOperatingSystem.processMapToList(WindowsOperatingSystem.java:298) [oshi-core-6.9.0.jar!/:6.9.0]",
+            "\tat SECURE-BOOTSTRAP/com.github.oshi@6.9.0/oshi.software.os.windows.WindowsOperatingSystem.getProcess(WindowsOperatingSystem.java:292) [oshi-core-6.9.0.jar!/:6.9.0]",
+            "\tat SECURE-BOOTSTRAP/com.github.oshi@6.9.0/oshi.software.os.OperatingSystem.getCurrentProcess(OperatingSystem.java:246) [oshi-core-6.9.0.jar!/:6.9.0]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.SystemReport.lambda$putSoftware$0(SystemReport.java:115) [forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.SystemReport.ignoreErrors(SystemReport.java:120) [forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.SystemReport.putSoftware(SystemReport.java:115) [forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.SystemReport.lambda$new$7(SystemReport.java:68) [forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.SystemReport.ignoreErrors(SystemReport.java:120) [forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.SystemReport.<init>(SystemReport.java:68) [forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.CrashReport.<init>(CrashReport.java:32) [forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.CrashReport.preload(CrashReport.java:227) [forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.client.main.Main.main(Main.java:159) [forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104) ~[?:?]",
+            "\tat java.base/java.lang.reflect.Method.invoke(Method.java:565) ~[?:?]",
+            "\tat SECURE-BOOTSTRAP/net.minecraftforge.fmlloader@26.3-66.0.0/net.minecraftforge.fml.loading.targets.CommonLaunchHandler.runTarget(CommonLaunchHandler.java:96) [fmlloader-26.3-66.0.0.jar!/:?]",
+            "\tat SECURE-BOOTSTRAP/net.minecraftforge.fmlloader@26.3-66.0.0/net.minecraftforge.fml.loading.targets.CommonLaunchHandler.lambda$makeService$0(CommonLaunchHandler.java:79) [fmlloader-26.3-66.0.0.jar!/:?]",
+            "\tat SECURE-BOOTSTRAP/cpw.mods.modlauncher@10.2.6/cpw.mods.modlauncher.LaunchServiceHandler.launch(LaunchServiceHandler.java:84) [modlauncher-10.2.6.jar!/:?]",
+            "\tat SECURE-BOOTSTRAP/cpw.mods.modlauncher@10.2.6/cpw.mods.modlauncher.LaunchServiceHandler.launch(LaunchServiceHandler.java:104) [modlauncher-10.2.6.jar!/:?]",
+            "\tat SECURE-BOOTSTRAP/cpw.mods.modlauncher@10.2.6/cpw.mods.modlauncher.Launcher.run(Launcher.java:151) [modlauncher-10.2.6.jar!/:?]",
+            "\tat SECURE-BOOTSTRAP/cpw.mods.modlauncher@10.2.6/cpw.mods.modlauncher.Launcher.main(Launcher.java:110) [modlauncher-10.2.6.jar!/:?]",
+            "\tat SECURE-BOOTSTRAP/cpw.mods.modlauncher@10.2.6/cpw.mods.modlauncher.BootstrapEntry.main(BootstrapEntry.java:17) [modlauncher-10.2.6.jar!/:?]",
+            "\tat net.minecraftforge.bootstrap@2.1.7/net.minecraftforge.bootstrap.Bootstrap.moduleMain(Bootstrap.java:188) [bootstrap-2.1.8.jar!/:?]",
+            "\tat java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104) ~[?:?]",
+            "\tat java.base/java.lang.reflect.Method.invoke(Method.java:565) ~[?:?]",
+            "\tat net.minecraftforge.bootstrap.Bootstrap.bootstrapMain(Bootstrap.java:133) [bootstrap-2.1.8.jar:2.1.8]",
+            "\tat net.minecraftforge.bootstrap.Bootstrap.start(Bootstrap.java:53) [bootstrap-2.1.8.jar:2.1.8]",
+            "\tat net.minecraftforge.bootstrap.ForgeBootstrap.main(ForgeBootstrap.java:19) [bootstrap-2.1.8.jar:2.1.8]",
+            "\tat net.minecraftforge.launcher.Main$Launcher.run(Main.java:276) [slime-launcher-0.2.2.jar:0.2.2]",
+            "\tat net.minecraftforge.launcher.Main$Launcher.access$000(Main.java:262) [slime-launcher-0.2.2.jar:0.2.2]",
+            "\tat net.minecraftforge.launcher.Main.main(Main.java:57) [slime-launcher-0.2.2.jar:0.2.2]",
+            "Transformer Audit:",
+            "  net.minecraft.CrashReport",
+            "    REASON: classloading",
+            "  net.minecraft.SystemReport",
+            "    REASON: classloading",
+            "  net.minecraft.client.main.Main",
+            "    REASON: classloading"
+          ],
+          "level": "ERROR",
+          "logger": "os.dr.wi.re.HkeyPerformanceDataUtil/",
+          "message": "Unable to locate English counter names in registry Perflib 009. Counters may need to be rebuilt: ",
+          "thread": "main"
+        },
+        {
+          "body": [],
+          "level": "WARN",
+          "logger": "os.ut.pl.wi.PerfCounterQuery/",
+          "message": "Unable to locate English counter names in registry Perflib 009. Assuming English counters. Error 0x80070057. See https://support.microsoft.com/en-us/help/300956/how-to-manually-rebuild-performance-counter-library-values",
+          "thread": "main"
+        },
+        {
+          "body": [
+            "java.lang.NullPointerException: Cannot invoke \"oshi.software.os.OSProcess.getUserTime()\" because \"process\" is null",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.SystemReport.lambda$putProcessDetails$0(SystemReport.java:191) ~[forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.SystemReport.setDetail(SystemReport.java:96) [forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.SystemReport.putProcessDetails(SystemReport.java:188) [forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.SystemReport.lambda$putSoftware$0(SystemReport.java:115) [forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.SystemReport.ignoreErrors(SystemReport.java:120) [forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.SystemReport.putSoftware(SystemReport.java:115) [forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.SystemReport.lambda$new$7(SystemReport.java:68) [forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.SystemReport.ignoreErrors(SystemReport.java:120) [forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.SystemReport.<init>(SystemReport.java:68) [forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.CrashReport.<init>(CrashReport.java:32) [forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.CrashReport.preload(CrashReport.java:227) [forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.client.main.Main.main(Main.java:159) [forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104) ~[?:?]",
+            "\tat java.base/java.lang.reflect.Method.invoke(Method.java:565) ~[?:?]",
+            "\tat SECURE-BOOTSTRAP/net.minecraftforge.fmlloader@26.3-66.0.0/net.minecraftforge.fml.loading.targets.CommonLaunchHandler.runTarget(CommonLaunchHandler.java:96) [fmlloader-26.3-66.0.0.jar!/:?]",
+            "\tat SECURE-BOOTSTRAP/net.minecraftforge.fmlloader@26.3-66.0.0/net.minecraftforge.fml.loading.targets.CommonLaunchHandler.lambda$makeService$0(CommonLaunchHandler.java:79) [fmlloader-26.3-66.0.0.jar!/:?]",
+            "\tat SECURE-BOOTSTRAP/cpw.mods.modlauncher@10.2.6/cpw.mods.modlauncher.LaunchServiceHandler.launch(LaunchServiceHandler.java:84) [modlauncher-10.2.6.jar!/:?]",
+            "\tat SECURE-BOOTSTRAP/cpw.mods.modlauncher@10.2.6/cpw.mods.modlauncher.LaunchServiceHandler.launch(LaunchServiceHandler.java:104) [modlauncher-10.2.6.jar!/:?]",
+            "\tat SECURE-BOOTSTRAP/cpw.mods.modlauncher@10.2.6/cpw.mods.modlauncher.Launcher.run(Launcher.java:151) [modlauncher-10.2.6.jar!/:?]",
+            "\tat SECURE-BOOTSTRAP/cpw.mods.modlauncher@10.2.6/cpw.mods.modlauncher.Launcher.main(Launcher.java:110) [modlauncher-10.2.6.jar!/:?]",
+            "\tat SECURE-BOOTSTRAP/cpw.mods.modlauncher@10.2.6/cpw.mods.modlauncher.BootstrapEntry.main(BootstrapEntry.java:17) [modlauncher-10.2.6.jar!/:?]",
+            "\tat net.minecraftforge.bootstrap@2.1.7/net.minecraftforge.bootstrap.Bootstrap.moduleMain(Bootstrap.java:188) [bootstrap-2.1.8.jar!/:?]",
+            "\tat java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104) ~[?:?]",
+            "\tat java.base/java.lang.reflect.Method.invoke(Method.java:565) ~[?:?]",
+            "\tat net.minecraftforge.bootstrap.Bootstrap.bootstrapMain(Bootstrap.java:133) [bootstrap-2.1.8.jar:2.1.8]",
+            "\tat net.minecraftforge.bootstrap.Bootstrap.start(Bootstrap.java:53) [bootstrap-2.1.8.jar:2.1.8]",
+            "\tat net.minecraftforge.bootstrap.ForgeBootstrap.main(ForgeBootstrap.java:19) [bootstrap-2.1.8.jar:2.1.8]",
+            "\tat net.minecraftforge.launcher.Main$Launcher.run(Main.java:276) [slime-launcher-0.2.2.jar:0.2.2]",
+            "\tat net.minecraftforge.launcher.Main$Launcher.access$000(Main.java:262) [slime-launcher-0.2.2.jar:0.2.2]",
+            "\tat net.minecraftforge.launcher.Main.main(Main.java:57) [slime-launcher-0.2.2.jar:0.2.2]",
+            "Transformer Audit:",
+            "  net.minecraft.CrashReport",
+            "    REASON: classloading",
+            "  net.minecraft.SystemReport",
+            "    REASON: classloading",
+            "  net.minecraft.client.main.Main",
+            "    REASON: classloading"
+          ],
+          "level": "WARN",
+          "logger": "minecraft/SystemReport",
+          "message": "Failed to get system info for Process Loads",
+          "thread": "main"
+        },
+        {
+          "body": [
+            "java.lang.NullPointerException: Cannot invoke \"oshi.software.os.OSProcess.getVirtualSize()\" because \"process\" is null",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.SystemReport.lambda$putProcessDetails$1(SystemReport.java:208) ~[forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.SystemReport.setDetail(SystemReport.java:96) [forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.SystemReport.putProcessDetails(SystemReport.java:208) [forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.SystemReport.lambda$putSoftware$0(SystemReport.java:115) [forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.SystemReport.ignoreErrors(SystemReport.java:120) [forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.SystemReport.putSoftware(SystemReport.java:115) [forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.SystemReport.lambda$new$7(SystemReport.java:68) [forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.SystemReport.ignoreErrors(SystemReport.java:120) [forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.SystemReport.<init>(SystemReport.java:68) [forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.CrashReport.<init>(CrashReport.java:32) [forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.CrashReport.preload(CrashReport.java:227) [forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.client.main.Main.main(Main.java:159) [forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104) ~[?:?]",
+            "\tat java.base/java.lang.reflect.Method.invoke(Method.java:565) ~[?:?]",
+            "\tat SECURE-BOOTSTRAP/net.minecraftforge.fmlloader@26.3-66.0.0/net.minecraftforge.fml.loading.targets.CommonLaunchHandler.runTarget(CommonLaunchHandler.java:96) [fmlloader-26.3-66.0.0.jar!/:?]",
+            "\tat SECURE-BOOTSTRAP/net.minecraftforge.fmlloader@26.3-66.0.0/net.minecraftforge.fml.loading.targets.CommonLaunchHandler.lambda$makeService$0(CommonLaunchHandler.java:79) [fmlloader-26.3-66.0.0.jar!/:?]",
+            "\tat SECURE-BOOTSTRAP/cpw.mods.modlauncher@10.2.6/cpw.mods.modlauncher.LaunchServiceHandler.launch(LaunchServiceHandler.java:84) [modlauncher-10.2.6.jar!/:?]",
+            "\tat SECURE-BOOTSTRAP/cpw.mods.modlauncher@10.2.6/cpw.mods.modlauncher.LaunchServiceHandler.launch(LaunchServiceHandler.java:104) [modlauncher-10.2.6.jar!/:?]",
+            "\tat SECURE-BOOTSTRAP/cpw.mods.modlauncher@10.2.6/cpw.mods.modlauncher.Launcher.run(Launcher.java:151) [modlauncher-10.2.6.jar!/:?]",
+            "\tat SECURE-BOOTSTRAP/cpw.mods.modlauncher@10.2.6/cpw.mods.modlauncher.Launcher.main(Launcher.java:110) [modlauncher-10.2.6.jar!/:?]",
+            "\tat SECURE-BOOTSTRAP/cpw.mods.modlauncher@10.2.6/cpw.mods.modlauncher.BootstrapEntry.main(BootstrapEntry.java:17) [modlauncher-10.2.6.jar!/:?]",
+            "\tat net.minecraftforge.bootstrap@2.1.7/net.minecraftforge.bootstrap.Bootstrap.moduleMain(Bootstrap.java:188) [bootstrap-2.1.8.jar!/:?]",
+            "\tat java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104) ~[?:?]",
+            "\tat java.base/java.lang.reflect.Method.invoke(Method.java:565) ~[?:?]",
+            "\tat net.minecraftforge.bootstrap.Bootstrap.bootstrapMain(Bootstrap.java:133) [bootstrap-2.1.8.jar:2.1.8]",
+            "\tat net.minecraftforge.bootstrap.Bootstrap.start(Bootstrap.java:53) [bootstrap-2.1.8.jar:2.1.8]",
+            "\tat net.minecraftforge.bootstrap.ForgeBootstrap.main(ForgeBootstrap.java:19) [bootstrap-2.1.8.jar:2.1.8]",
+            "\tat net.minecraftforge.launcher.Main$Launcher.run(Main.java:276) [slime-launcher-0.2.2.jar:0.2.2]",
+            "\tat net.minecraftforge.launcher.Main$Launcher.access$000(Main.java:262) [slime-launcher-0.2.2.jar:0.2.2]",
+            "\tat net.minecraftforge.launcher.Main.main(Main.java:57) [slime-launcher-0.2.2.jar:0.2.2]",
+            "Transformer Audit:",
+            "  net.minecraft.CrashReport",
+            "    REASON: classloading",
+            "  net.minecraft.SystemReport",
+            "    REASON: classloading",
+            "  net.minecraft.client.main.Main",
+            "    REASON: classloading"
+          ],
+          "level": "WARN",
+          "logger": "minecraft/SystemReport",
+          "message": "Failed to get system info for Process Virtual Size (MiB)",
+          "thread": "main"
+        },
+        {
+          "body": [
+            "java.lang.NullPointerException: Cannot invoke \"oshi.software.os.OSProcess.getResidentSetSize()\" because \"process\" is null",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.SystemReport.lambda$putProcessDetails$2(SystemReport.java:209) ~[forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.SystemReport.setDetail(SystemReport.java:96) [forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.SystemReport.putProcessDetails(SystemReport.java:209) [forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.SystemReport.lambda$putSoftware$0(SystemReport.java:115) [forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.SystemReport.ignoreErrors(SystemReport.java:120) [forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.SystemReport.putSoftware(SystemReport.java:115) [forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.SystemReport.lambda$new$7(SystemReport.java:68) [forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.SystemReport.ignoreErrors(SystemReport.java:120) [forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.SystemReport.<init>(SystemReport.java:68) [forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.CrashReport.<init>(CrashReport.java:32) [forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.CrashReport.preload(CrashReport.java:227) [forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.client.main.Main.main(Main.java:159) [forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104) ~[?:?]",
+            "\tat java.base/java.lang.reflect.Method.invoke(Method.java:565) ~[?:?]",
+            "\tat SECURE-BOOTSTRAP/net.minecraftforge.fmlloader@26.3-66.0.0/net.minecraftforge.fml.loading.targets.CommonLaunchHandler.runTarget(CommonLaunchHandler.java:96) [fmlloader-26.3-66.0.0.jar!/:?]",
+            "\tat SECURE-BOOTSTRAP/net.minecraftforge.fmlloader@26.3-66.0.0/net.minecraftforge.fml.loading.targets.CommonLaunchHandler.lambda$makeService$0(CommonLaunchHandler.java:79) [fmlloader-26.3-66.0.0.jar!/:?]",
+            "\tat SECURE-BOOTSTRAP/cpw.mods.modlauncher@10.2.6/cpw.mods.modlauncher.LaunchServiceHandler.launch(LaunchServiceHandler.java:84) [modlauncher-10.2.6.jar!/:?]",
+            "\tat SECURE-BOOTSTRAP/cpw.mods.modlauncher@10.2.6/cpw.mods.modlauncher.LaunchServiceHandler.launch(LaunchServiceHandler.java:104) [modlauncher-10.2.6.jar!/:?]",
+            "\tat SECURE-BOOTSTRAP/cpw.mods.modlauncher@10.2.6/cpw.mods.modlauncher.Launcher.run(Launcher.java:151) [modlauncher-10.2.6.jar!/:?]",
+            "\tat SECURE-BOOTSTRAP/cpw.mods.modlauncher@10.2.6/cpw.mods.modlauncher.Launcher.main(Launcher.java:110) [modlauncher-10.2.6.jar!/:?]",
+            "\tat SECURE-BOOTSTRAP/cpw.mods.modlauncher@10.2.6/cpw.mods.modlauncher.BootstrapEntry.main(BootstrapEntry.java:17) [modlauncher-10.2.6.jar!/:?]",
+            "\tat net.minecraftforge.bootstrap@2.1.7/net.minecraftforge.bootstrap.Bootstrap.moduleMain(Bootstrap.java:188) [bootstrap-2.1.8.jar!/:?]",
+            "\tat java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104) ~[?:?]",
+            "\tat java.base/java.lang.reflect.Method.invoke(Method.java:565) ~[?:?]",
+            "\tat net.minecraftforge.bootstrap.Bootstrap.bootstrapMain(Bootstrap.java:133) [bootstrap-2.1.8.jar:2.1.8]",
+            "\tat net.minecraftforge.bootstrap.Bootstrap.start(Bootstrap.java:53) [bootstrap-2.1.8.jar:2.1.8]",
+            "\tat net.minecraftforge.bootstrap.ForgeBootstrap.main(ForgeBootstrap.java:19) [bootstrap-2.1.8.jar:2.1.8]",
+            "\tat net.minecraftforge.launcher.Main$Launcher.run(Main.java:276) [slime-launcher-0.2.2.jar:0.2.2]",
+            "\tat net.minecraftforge.launcher.Main$Launcher.access$000(Main.java:262) [slime-launcher-0.2.2.jar:0.2.2]",
+            "\tat net.minecraftforge.launcher.Main.main(Main.java:57) [slime-launcher-0.2.2.jar:0.2.2]",
+            "Transformer Audit:",
+            "  net.minecraft.CrashReport",
+            "    REASON: classloading",
+            "  net.minecraft.SystemReport",
+            "    REASON: classloading",
+            "  net.minecraft.client.main.Main",
+            "    REASON: classloading"
+          ],
+          "level": "WARN",
+          "logger": "minecraft/SystemReport",
+          "message": "Failed to get system info for Process Resident Size (MiB)",
+          "thread": "main"
+        }
+      ],
+      "expectedBlockCount": 5,
+      "kind": "host",
+      "provenance": [
+        {
+          "indices": [
+            21,
+            22,
+            23,
+            24,
+            25
+          ],
+          "log": {
+            "path": "D:\\PowerAdvantage\\_verification\\base-263-port-20261112\\client-preparation-01\\sdk-01\\forge-only-control\\fresh-02\\stdout.log",
+            "sha256": "9AD6DA054B9AC79FAC509C35ADB8A9CD5FAA885DCFA7E30100E36FB092D1EC7A"
+          },
+          "phase": "fresh-02"
+        },
+        {
+          "indices": [
+            21,
+            22,
+            23,
+            24,
+            25
+          ],
+          "log": {
+            "path": "D:\\PowerAdvantage\\_verification\\base-263-port-20261112\\client-preparation-01\\sdk-01\\forge-only-control\\restart-01\\stdout.log",
+            "sha256": "BAE4F94C825A6D2B29D5BFC12B13F789A9DDD49E86A045A750F1E08656BE2E9C"
+          },
+          "phase": "restart-01"
+        },
+        {
+          "indices": [
+            26,
+            27,
+            28,
+            29,
+            30
+          ],
+          "log": {
+            "path": "D:\\PowerAdvantage\\_verification\\base-263-port-20261112\\client-final-family04-01\\client-platform-controls-02\\fresh-01\\stdout.log",
+            "sha256": "A557088D1516692893CDFD1462725E9B09B9167549EE32E3102F6C7E0B5AE536"
+          },
+          "phase": "native-ui-control02-fresh-01"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "body": [
+            "com.sun.jna.platform.win32.Win32Exception: The parameter is incorrect.",
+            "\tat SECURE-BOOTSTRAP/com.sun.jna.platform@5.17.0/com.sun.jna.platform.win32.Advapi32Util.registryGetStringArray(Advapi32Util.java:921) ~[jna-platform-5.17.0.jar!/:5.17.0 (b0)]",
+            "\tat SECURE-BOOTSTRAP/com.sun.jna.platform@5.17.0/com.sun.jna.platform.win32.Advapi32Util.registryGetStringArray(Advapi32Util.java:898) ~[jna-platform-5.17.0.jar!/:5.17.0 (b0)]",
+            "\tat SECURE-BOOTSTRAP/com.github.oshi@6.9.0/oshi.driver.windows.registry.HkeyPerformanceDataUtil.mapCounterIndicesFromRegistry(HkeyPerformanceDataUtil.java:274) [oshi-core-6.9.0.jar!/:6.9.0]",
+            "\tat SECURE-BOOTSTRAP/com.github.oshi@6.9.0/oshi.driver.windows.registry.HkeyPerformanceDataUtil.<clinit>(HkeyPerformanceDataUtil.java:51) [oshi-core-6.9.0.jar!/:6.9.0]",
+            "\tat SECURE-BOOTSTRAP/com.github.oshi@6.9.0/oshi.driver.windows.registry.ProcessPerformanceData.buildProcessMapFromRegistry(ProcessPerformanceData.java:45) [oshi-core-6.9.0.jar!/:6.9.0]",
+            "\tat SECURE-BOOTSTRAP/com.github.oshi@6.9.0/oshi.software.os.windows.WindowsOperatingSystem.queryProcessMapFromRegistry(WindowsOperatingSystem.java:328) [oshi-core-6.9.0.jar!/:6.9.0]",
+            "\tat SECURE-BOOTSTRAP/com.github.oshi@6.9.0/oshi.util.Memoizer$1.get(Memoizer.java:65) [oshi-core-6.9.0.jar!/:6.9.0]",
+            "\tat SECURE-BOOTSTRAP/com.github.oshi@6.9.0/oshi.software.os.windows.WindowsOperatingSystem.processMapToList(WindowsOperatingSystem.java:298) [oshi-core-6.9.0.jar!/:6.9.0]",
+            "\tat SECURE-BOOTSTRAP/com.github.oshi@6.9.0/oshi.software.os.windows.WindowsOperatingSystem.getProcess(WindowsOperatingSystem.java:292) [oshi-core-6.9.0.jar!/:6.9.0]",
+            "\tat SECURE-BOOTSTRAP/com.github.oshi@6.9.0/oshi.software.os.OperatingSystem.getCurrentProcess(OperatingSystem.java:246) [oshi-core-6.9.0.jar!/:6.9.0]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.SystemReport.lambda$putSoftware$0(SystemReport.java:115) [forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.SystemReport.ignoreErrors(SystemReport.java:120) [forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.SystemReport.putSoftware(SystemReport.java:115) [forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.SystemReport.lambda$new$7(SystemReport.java:68) [forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.SystemReport.ignoreErrors(SystemReport.java:120) [forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.SystemReport.<init>(SystemReport.java:68) [forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.CrashReport.<init>(CrashReport.java:32) [forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.CrashReport.preload(CrashReport.java:227) [forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.client.main.Main.main(Main.java:159) [forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104) ~[?:?]",
+            "\tat java.base/java.lang.reflect.Method.invoke(Method.java:565) ~[?:?]",
+            "\tat SECURE-BOOTSTRAP/net.minecraftforge.fmlloader@26.3-66.0.0/net.minecraftforge.fml.loading.targets.CommonLaunchHandler.runTarget(CommonLaunchHandler.java:96) [fmlloader-26.3-66.0.0.jar!/:?]",
+            "\tat SECURE-BOOTSTRAP/net.minecraftforge.fmlloader@26.3-66.0.0/net.minecraftforge.fml.loading.targets.CommonLaunchHandler.lambda$makeService$0(CommonLaunchHandler.java:79) [fmlloader-26.3-66.0.0.jar!/:?]",
+            "\tat SECURE-BOOTSTRAP/cpw.mods.modlauncher@10.2.6/cpw.mods.modlauncher.LaunchServiceHandler.launch(LaunchServiceHandler.java:84) [modlauncher-10.2.6.jar!/:?]",
+            "\tat SECURE-BOOTSTRAP/cpw.mods.modlauncher@10.2.6/cpw.mods.modlauncher.LaunchServiceHandler.launch(LaunchServiceHandler.java:104) [modlauncher-10.2.6.jar!/:?]",
+            "\tat SECURE-BOOTSTRAP/cpw.mods.modlauncher@10.2.6/cpw.mods.modlauncher.Launcher.run(Launcher.java:151) [modlauncher-10.2.6.jar!/:?]",
+            "\tat SECURE-BOOTSTRAP/cpw.mods.modlauncher@10.2.6/cpw.mods.modlauncher.Launcher.main(Launcher.java:110) [modlauncher-10.2.6.jar!/:?]",
+            "\tat SECURE-BOOTSTRAP/cpw.mods.modlauncher@10.2.6/cpw.mods.modlauncher.BootstrapEntry.main(BootstrapEntry.java:17) [modlauncher-10.2.6.jar!/:?]",
+            "\tat net.minecraftforge.bootstrap@2.1.7/net.minecraftforge.bootstrap.Bootstrap.moduleMain(Bootstrap.java:188) [bootstrap-2.1.8.jar!/:?]",
+            "\tat java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104) ~[?:?]",
+            "\tat java.base/java.lang.reflect.Method.invoke(Method.java:565) ~[?:?]",
+            "\tat net.minecraftforge.bootstrap.Bootstrap.bootstrapMain(Bootstrap.java:133) [bootstrap-2.1.8.jar:2.1.8]",
+            "\tat net.minecraftforge.bootstrap.Bootstrap.start(Bootstrap.java:53) [bootstrap-2.1.8.jar:2.1.8]",
+            "\tat net.minecraftforge.bootstrap.ForgeBootstrap.main(ForgeBootstrap.java:19) [bootstrap-2.1.8.jar:2.1.8]",
+            "\tat net.minecraftforge.launcher.Main$Launcher.run(Main.java:276) [slime-launcher-0.2.2.jar:0.2.2]",
+            "\tat net.minecraftforge.launcher.Main$Launcher.access$000(Main.java:262) [slime-launcher-0.2.2.jar:0.2.2]",
+            "\tat net.minecraftforge.launcher.Main.main(Main.java:57) [slime-launcher-0.2.2.jar:0.2.2]",
+            "Transformer Audit:",
+            "  net.minecraft.CrashReport",
+            "    REASON: classloading",
+            "  net.minecraft.SystemReport",
+            "    REASON: classloading",
+            "  net.minecraft.client.main.Main",
+            "    REASON: classloading"
+          ],
+          "level": "ERROR",
+          "logger": "os.dr.wi.re.HkeyPerformanceDataUtil/",
+          "message": "Unable to locate English counter names in registry Perflib 009. Counters may need to be rebuilt: ",
+          "thread": "main"
+        },
+        {
+          "body": [],
+          "level": "WARN",
+          "logger": "os.ut.pl.wi.PerfCounterQuery/",
+          "message": "Unable to locate English counter names in registry Perflib 009. Assuming English counters. Error 0x80070057. See https://support.microsoft.com/en-us/help/300956/how-to-manually-rebuild-performance-counter-library-values",
+          "thread": "main"
+        }
+      ],
+      "expectedBlockCount": 2,
+      "kind": "host",
+      "provenance": [
+        {
+          "indices": [
+            26,
+            27
+          ],
+          "log": {
+            "path": "D:\\PowerAdvantage\\_verification\\base-263-port-20261112\\client-final-family04-01\\client-platform-controls-02\\reopen-01\\stdout.log",
+            "sha256": "C5986B67DCD029022739C37D590AA73F6E10E97CB93A942543493F425A773AAC"
+          },
+          "phase": "native-ui-control02-reopen-01"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "body": [
+            "com.sun.jna.platform.win32.Win32Exception: The parameter is incorrect.",
+            "\tat SECURE-BOOTSTRAP/com.sun.jna.platform@5.17.0/com.sun.jna.platform.win32.Advapi32Util.registryGetStringArray(Advapi32Util.java:921) ~[jna-platform-5.17.0.jar!/:5.17.0 (b0)]",
+            "\tat SECURE-BOOTSTRAP/com.sun.jna.platform@5.17.0/com.sun.jna.platform.win32.Advapi32Util.registryGetStringArray(Advapi32Util.java:898) ~[jna-platform-5.17.0.jar!/:5.17.0 (b0)]",
+            "\tat SECURE-BOOTSTRAP/com.github.oshi@6.9.0/oshi.driver.windows.registry.HkeyPerformanceDataUtil.mapCounterIndicesFromRegistry(HkeyPerformanceDataUtil.java:274) ~[oshi-core-6.9.0.jar!/:6.9.0]",
+            "\tat SECURE-BOOTSTRAP/com.github.oshi@6.9.0/oshi.driver.windows.registry.HkeyPerformanceDataUtil.<clinit>(HkeyPerformanceDataUtil.java:51) ~[oshi-core-6.9.0.jar!/:6.9.0]",
+            "\tat SECURE-BOOTSTRAP/com.github.oshi@6.9.0/oshi.driver.windows.registry.ProcessPerformanceData.buildProcessMapFromRegistry(ProcessPerformanceData.java:45) ~[oshi-core-6.9.0.jar!/:6.9.0]",
+            "\tat SECURE-BOOTSTRAP/com.github.oshi@6.9.0/oshi.software.os.windows.WindowsOperatingSystem.queryProcessMapFromRegistry(WindowsOperatingSystem.java:328) ~[oshi-core-6.9.0.jar!/:6.9.0]",
+            "\tat SECURE-BOOTSTRAP/com.github.oshi@6.9.0/oshi.util.Memoizer$1.get(Memoizer.java:65) ~[oshi-core-6.9.0.jar!/:6.9.0]",
+            "\tat SECURE-BOOTSTRAP/com.github.oshi@6.9.0/oshi.software.os.windows.WindowsOperatingSystem.processMapToList(WindowsOperatingSystem.java:298) ~[oshi-core-6.9.0.jar!/:6.9.0]",
+            "\tat SECURE-BOOTSTRAP/com.github.oshi@6.9.0/oshi.software.os.windows.WindowsOperatingSystem.getProcess(WindowsOperatingSystem.java:292) ~[oshi-core-6.9.0.jar!/:6.9.0]",
+            "\tat SECURE-BOOTSTRAP/com.github.oshi@6.9.0/oshi.software.os.OperatingSystem.getCurrentProcess(OperatingSystem.java:246) ~[oshi-core-6.9.0.jar!/:6.9.0]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.SystemReport.lambda$putSoftware$0(SystemReport.java:115) ~[forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.SystemReport.ignoreErrors(SystemReport.java:120) ~[forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.SystemReport.putSoftware(SystemReport.java:115) ~[forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.SystemReport.lambda$new$7(SystemReport.java:68) ~[forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.SystemReport.ignoreErrors(SystemReport.java:120) ~[forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.SystemReport.<init>(SystemReport.java:68) ~[forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.CrashReport.<init>(CrashReport.java:32) ~[forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.CrashReport.preload(CrashReport.java:227) ~[forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat TRANSFORMER/minecraft@26.3/net.minecraft.client.main.Main.main(Main.java:159) ~[forge-26.3-66.0.0.jar%230!/:?]",
+            "\tat java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104) ~[?:?]",
+            "\tat java.base/java.lang.reflect.Method.invoke(Method.java:565) ~[?:?]",
+            "\tat SECURE-BOOTSTRAP/net.minecraftforge.fmlloader@26.3-66.0.0/net.minecraftforge.fml.loading.targets.CommonLaunchHandler.runTarget(CommonLaunchHandler.java:96) ~[fmlloader-26.3-66.0.0.jar:?]",
+            "\tat SECURE-BOOTSTRAP/net.minecraftforge.fmlloader@26.3-66.0.0/net.minecraftforge.fml.loading.targets.CommonLaunchHandler.lambda$makeService$0(CommonLaunchHandler.java:79) ~[fmlloader-26.3-66.0.0.jar:?]",
+            "\tat SECURE-BOOTSTRAP/cpw.mods.modlauncher@10.2.6/cpw.mods.modlauncher.LaunchServiceHandler.launch(LaunchServiceHandler.java:84) ~[modlauncher-10.2.6.jar:?]",
+            "\tat SECURE-BOOTSTRAP/cpw.mods.modlauncher@10.2.6/cpw.mods.modlauncher.LaunchServiceHandler.launch(LaunchServiceHandler.java:104) ~[modlauncher-10.2.6.jar:?]",
+            "\tat SECURE-BOOTSTRAP/cpw.mods.modlauncher@10.2.6/cpw.mods.modlauncher.Launcher.run(Launcher.java:151) ~[modlauncher-10.2.6.jar:?]",
+            "\tat SECURE-BOOTSTRAP/cpw.mods.modlauncher@10.2.6/cpw.mods.modlauncher.Launcher.main(Launcher.java:110) ~[modlauncher-10.2.6.jar:?]",
+            "\tat SECURE-BOOTSTRAP/cpw.mods.modlauncher@10.2.6/cpw.mods.modlauncher.BootstrapEntry.main(BootstrapEntry.java:17) ~[modlauncher-10.2.6.jar:?]",
+            "\tat net.minecraftforge.bootstrap@2.1.7/net.minecraftforge.bootstrap.Bootstrap.moduleMain(Bootstrap.java:188) ~[bootstrap-2.1.8.jar:2.1.8]",
+            "\tat java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104) ~[?:?]",
+            "\tat java.base/java.lang.reflect.Method.invoke(Method.java:565) ~[?:?]",
+            "\tat net.minecraftforge.bootstrap.Bootstrap.bootstrapMain(Bootstrap.java:133) ~[bootstrap-2.1.8.jar:2.1.8]",
+            "\tat net.minecraftforge.bootstrap.Bootstrap.start(Bootstrap.java:53) ~[bootstrap-2.1.8.jar:2.1.8]",
+            "\tat net.minecraftforge.bootstrap.ForgeBootstrap.main(ForgeBootstrap.java:19) ~[bootstrap-2.1.8.jar:2.1.8]",
+            "\tat net.minecraftforge.launcher.Main$Launcher.run(Main.java:276) [slime-launcher-0.2.2.jar:0.2.2]",
+            "\tat net.minecraftforge.launcher.Main$Launcher.access$000(Main.java:262) [slime-launcher-0.2.2.jar:0.2.2]",
+            "\tat net.minecraftforge.launcher.Main.main(Main.java:57) [slime-launcher-0.2.2.jar:0.2.2]"
+          ],
+          "level": "ERROR",
+          "logger": "oshi.driver.windows.registry.HkeyPerformanceDataUtil/",
+          "message": "Unable to locate English counter names in registry Perflib 009. Counters may need to be rebuilt: ",
+          "thread": "main"
+        },
+        {
+          "body": [],
+          "level": "WARN",
+          "logger": "oshi.util.platform.windows.PerfCounterQuery/",
+          "message": "Unable to locate English counter names in registry Perflib 009. Assuming English counters. Error 0x80070057. See https://support.microsoft.com/en-us/help/300956/how-to-manually-rebuild-performance-counter-library-values",
+          "thread": "main"
+        }
+      ],
+      "expectedBlockCount": 2,
+      "kind": "host",
+      "provenance": [
+        {
+          "indices": [
+            162,
+            164
+          ],
+          "log": {
+            "path": "D:\\PowerAdvantage\\_verification\\base-263-port-20261112\\client-final-family04-01\\client-platform-controls-02\\reopen-01\\logs\\debug.log",
+            "sha256": "6B35BEEE299C9219BEC58264EC1412B868C39F4B978E499395BC42D65D0953D1"
+          },
+          "phase": "native-ui-control02-reopen-01"
+        },
+        {
+          "indices": [
+            14,
+            15
+          ],
+          "log": {
+            "path": "D:\\PowerAdvantage\\_verification\\base-263-port-20261112\\client-final-family04-01\\client-platform-controls-02\\reopen-01\\logs\\latest.log",
+            "sha256": "68579918FD9D9C5F019815D34A24975D5FB6D6BE3752EF7E1F731B49209DBF90"
+          },
+          "phase": "native-ui-control02-reopen-01"
+        }
+      ]
+    }
+  ],
+  "source": "ACTUAL_INDEPENDENT_ZERO_MOD_NATIVE_TITLE_TO_WORLD_OPEN_FRESH_AND_SAME_WORLD_REOPEN",
+  "stoppedWorldMods": {
+    "forge": "66.0.0",
+    "minecraft": "26.3"
+  }
+}

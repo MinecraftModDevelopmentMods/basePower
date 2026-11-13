@@ -103,7 +103,7 @@ public class LegacyTransformerOrderTest {
                     .toList().containsAll(List.of("BlockStateDataMixin", "LevelStorageSourceMixin",
                             "SimpleRegionStorageMixin", "WorldGenRegionMixin")));
             if (mod.equals("basepower")) assertEquals(Set.of("BlockStateDataMixin", "LevelStorageSourceMixin", "SelectedWorldStorageMixin",
-                    "PlayerDataStorageMixin", "SimpleRegionStorageMixin", "WorldGenRegionMixin"),
+                    "PlayerDataStorageMixin", "SimpleRegionStorageMixin", "WorldGenRegionMixin", "PendingItemTagsMixin"),
                     config.getAsJsonArray("mixins").asList().stream().map(value -> value.getAsString())
                             .collect(java.util.stream.Collectors.toSet()));
         }
@@ -129,6 +129,18 @@ public class LegacyTransformerOrderTest {
                 .anyMatch(insn -> insn instanceof LdcInsnNode constant && Integer.valueOf(65536).equals(constant.cst)));
         assertTrue(Arrays.stream(expansion.handler().instructions.toArray())
                 .anyMatch(insn -> insn instanceof org.objectweb.asm.tree.IntInsnNode constant && constant.operand == 4096));
+    }
+
+    @Test public void requiredMutableMixinReplacesTheRedundantAccessTransformer() throws Exception {
+        assertFalse(java.nio.file.Files.exists(java.nio.file.Path.of("src/main/resources/META-INF/accesstransformer.cfg")));
+        assertFalse(java.nio.file.Files.readString(java.nio.file.Path.of("build.gradle"))
+                .contains("accessTransformer ="));
+        var field = read("net/minecraft/util/datafix/fixes/BlockStateData").fields.stream()
+                .filter(value -> value.name.equals("MAP")).findFirst().orElseThrow();
+        assertTrue("The unmodified native table is still final before the Mixin runs", (field.access & Opcodes.ACC_FINAL) != 0);
+        Binding expansion = binding("basepower", "BlockStateDataMixin", "expandLegacyIds");
+        var shadow = expansion.mixin().fields.stream().filter(value -> value.name.equals("MAP")).findFirst().orElseThrow();
+        annotation(shadow.visibleAnnotations, "Lorg/spongepowered/asm/mixin/Mutable;");
     }
 
     private static void check(List<String> mods) throws Exception {

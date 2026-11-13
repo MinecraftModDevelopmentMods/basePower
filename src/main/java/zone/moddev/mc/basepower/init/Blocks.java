@@ -124,7 +124,7 @@ public final class Blocks {
 
     private static Block.Properties oilProperties() {
         return Block.Properties.of().mapColor(MapColor.WATER).replaceable().liquid().noCollision()
-                .strength(100.0F).dynamicShape().pushReaction(PushReaction.DESTROY).noLootTable().sound(SoundType.EMPTY).noOcclusion();
+                .strength(100.0F).dynamicShape().pushReaction(PushReaction.POPPED).noLootTable().sound(SoundType.EMPTY).noOcclusion();
     }
 
     public static Block.Properties properties(String id, Block.Properties properties) {

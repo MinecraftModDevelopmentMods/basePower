@@ -60,17 +60,17 @@ final class RecipeBookGroupingProbe {
         try (Stream<Path> files = Files.list(root)) {
             Map<Identifier, ForgeRegistry.Snapshot> registry = RegistryManager.ACTIVE.takeSnapshot(false);
             CompoundTag level = NbtIo.readCompressed(root.resolve("server-registries.dat"), NbtAccounter.unlimitedHeap());
-            require("26.2".equals(compound(compound(level, "Data"), "Version").getString("Name").orElseThrow())
-                    && compound(level, "Data").getInt("DataVersion").orElseThrow() == 4903,
-                    "Recipe fixture is not a native 26.2 server export");
+            require("26.3".equals(compound(compound(level, "Data"), "Version").getString("Name").orElseThrow())
+                    && compound(level, "Data").getInt("DataVersion").orElseThrow() == 5023,
+                    "Recipe fixture is not a native 26.3 server export");
             boolean nativeForge = false;
             for (var entry : compound(level, "fml").getList("LoadingModList").orElseThrow()) {
                 require(entry instanceof CompoundTag, "Malformed native loading-mod entry");
                 CompoundTag mod = (CompoundTag) entry;
                 if ("forge".equals(mod.getString("ModId").orElseThrow()))
-                    nativeForge = "65.1.0".equals(mod.getString("ModVersion").orElseThrow());
+                    nativeForge = "66.0.0".equals(mod.getString("ModVersion").orElseThrow());
             }
-            require(nativeForge, "Recipe fixture was not saved by Forge 65.1.0");
+            require(nativeForge, "Recipe fixture was not saved by Forge 66.1.0");
             CompoundTag saved = compound(compound(level, "fml"), "Registries");
             for (String key : List.of(ForgeRegistries.ITEMS.getRegistryName().toString(),
                     ForgeRegistries.BLOCKS.getRegistryName().toString())) {
@@ -128,16 +128,19 @@ final class RecipeBookGroupingProbe {
             packet = ClientboundUpdateTagsPacket.STREAM_CODEC.decode(buffer);
             require(!buffer.isReadable(), "Trailing native tag packet bytes");
         } finally { buffer.release(); }
-        var payload = packet.getTags().get(net.minecraft.core.registries.Registries.ITEM);
+        var payload = packet.tags().get(net.minecraft.core.registries.Registries.ITEM);
         require(payload != null && !payload.isEmpty(), "Native packet has no item tags");
         var items = registries.lookupOrThrow(net.minecraft.core.registries.Registries.ITEM);
         var resolved = payload.resolve(items);
         require(resolved.tags().size() == payload.size(), "Native item-tag resolution lost tags");
         FriendlyByteBuf members = new FriendlyByteBuf(Unpooled.buffer());
         try {
-            payload.write(members);
-            Map<Identifier, it.unimi.dsi.fastutil.ints.IntList> expected = members.readMap(
-                    FriendlyByteBuf::readIdentifier, FriendlyByteBuf::readIntIdList);
+            net.minecraft.tags.TagNetworkSerialization.NetworkPayload.STREAM_CODEC.encode(members, payload);
+            net.minecraft.network.codec.StreamCodec<io.netty.buffer.ByteBuf, it.unimi.dsi.fastutil.ints.IntList> ids =
+                    net.minecraft.network.codec.ByteBufCodecs.VAR_INT.apply(
+                            net.minecraft.network.codec.ByteBufCodecs.collection(it.unimi.dsi.fastutil.ints.IntArrayList::new));
+            Map<Identifier, it.unimi.dsi.fastutil.ints.IntList> expected = net.minecraft.network.codec.ByteBufCodecs
+                    .map(HashMap::new, Identifier.STREAM_CODEC, ids).decode(members);
             require(!members.isReadable(), "Native item-tag member payload has trailing bytes");
             resolved.tags().forEach((key, holders) -> require(holders.stream().map(holder -> items.getId(holder.value())).toList()
                     .equals(expected.get(key.location())), "Native item-tag resolution dropped/changed a member: " + key.location()));
@@ -226,10 +229,8 @@ final class RecipeBookGroupingProbe {
     }
 
     static ContextMap context(RegistryAccess registries) {
-        return new ContextMap.Builder().withParameter(SlotDisplayContext.REGISTRIES, registries)
-                .withParameter(SlotDisplayContext.FUEL_VALUES, net.minecraft.world.level.block.entity.FuelValues
-                        .vanillaBurnTimes(registries, net.minecraft.world.flag.FeatureFlags.DEFAULT_FLAGS))
-                .create(SlotDisplayContext.CONTEXT);
+        return ContextMap.builder().set(SlotDisplayContext.REGISTRIES, registries)
+                .buildAndValidate(SlotDisplayContext.CONTEXT);
     }
 
     private static CompoundTag compound(CompoundTag tag, String key) {

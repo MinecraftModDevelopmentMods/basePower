@@ -51,7 +51,9 @@ public class WorldFluidPickupTest {
 
     private static LevelAccessor world(AtomicReference<BlockState> state) {
         return (LevelAccessor)Proxy.newProxyInstance(LevelAccessor.class.getClassLoader(), new Class<?>[]{LevelAccessor.class}, (proxy, method, args) -> {
-            if (method.getName().equals("setBlock")) { state.set((BlockState)args[1]); return true; }
+            if (method.getName().equals("setBlock") || method.getName().equals("setBlockAndUpdate")) {
+                state.set((BlockState)args[1]); return true;
+            }
             if (method.getName().equals("getBlockState")) return state.get();
             throw new AssertionError("Unexpected world operation " + method.getName());
         });

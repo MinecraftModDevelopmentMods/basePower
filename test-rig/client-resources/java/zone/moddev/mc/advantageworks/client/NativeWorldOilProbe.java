@@ -52,7 +52,7 @@ final class NativeWorldOilProbe {
             require(minecraft.getSingleplayerServer().getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT).toRealPath()
                     .equals(Path.of("saves/AdvantageClientResources").toRealPath()), "Oil scene cannot write outside the disposable copy");
             if (phase.equals("NEW")) {
-                report.addProperty("protocol", "NATIVE65_LEVEL_RENDERER_OIL_RELOAD_V1");
+                report.addProperty("protocol", "NATIVE66_LEVEL_RENDERER_OIL_RELOAD_V1");
                 report.addProperty("status", "RUNNING"); report.add("frames", frames);
                 report.addProperty("scope", "ACTUAL_LEVEL_RENDERER_NOT_GUI_OR_SYNTHETIC_WORLD");
                 originalHideGui = minecraft.gui.hud.isHidden(); setHudHidden(minecraft, true);
@@ -129,13 +129,18 @@ final class NativeWorldOilProbe {
         return result;
     }
 
+    private static boolean compiledAndVisible(Minecraft minecraft, BlockPos pos) {
+        long fadeDuration = net.minecraft.util.Util.toMillis(minecraft.options.chunkSectionFadeInTime().get());
+        return minecraft.levelRenderer.isSectionCompiledAndVisible(pos, fadeDuration);
+    }
+
     private boolean ready(Minecraft minecraft, String mode) {
         if (minecraft.gui.overlay() != null || minecraft.gui.screen() != null || !minecraft.level.dimension().equals(Level.OVERWORLD)) return false;
         if (minecraft.player.position().distanceToSqr(512.5, 14, 527) > 0.0001) return false;
         for (int pool = 0; pool < 3; pool++) for (int x = 0; x < 4; x++) for (int z = 0; z < 4; z++) {
             BlockPos pos = new BlockPos(X[pool] + x, Y, Z + z);
             Fluid expected = pool == 2 || mode.equals("water") ? Fluids.WATER : mode.equals("empty") ? Fluids.EMPTY : OILS[pool];
-            if (minecraft.level.getFluidState(pos).getType() != expected || !minecraft.levelRenderer.isSectionCompiledAndVisible(pos)) return false;
+            if (minecraft.level.getFluidState(pos).getType() != expected || !compiledAndVisible(minecraft, pos)) return false;
         }
         return !minecraft.levelRenderer.visibleSections().isEmpty();
     }
@@ -194,7 +199,7 @@ final class NativeWorldOilProbe {
             JsonObject row = new JsonObject(); row.addProperty("pool", NAMES[pool]); JsonArray samples = new JsonArray();
             row.addProperty("fluid", net.minecraftforge.registries.ForgeRegistries.FLUIDS.getKey(
                     minecraft.level.getFluidState(new BlockPos(X[pool] + 1, Y, Z + 1)).getType()).toString());
-            row.addProperty("compiledAndVisible", minecraft.levelRenderer.isSectionCompiledAndVisible(new BlockPos(X[pool] + 1, Y, Z + 1)));
+            row.addProperty("compiledAndVisible", compiledAndVisible(minecraft, new BlockPos(X[pool] + 1, Y, Z + 1)));
             for (int x = 0; x < 4; x++) for (int z = 0; z < 4; z++) {
                 Vec3 point = new Vec3(X[pool] + .75 + x * .75, Y + 8D / 9D, Z + .75 + z * .75);
                 Vec3 projected = minecraft.gameRenderer.projectPointToScreen(point);

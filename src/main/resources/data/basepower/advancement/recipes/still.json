@@ -38,7 +38,7 @@
     "has_recipe": {
       "trigger": "minecraft:recipe_unlocked",
       "conditions": {
-        "recipe": "basepower:still"
+        "recipes": "#basepower:discovery/still"
       }
     }
   },

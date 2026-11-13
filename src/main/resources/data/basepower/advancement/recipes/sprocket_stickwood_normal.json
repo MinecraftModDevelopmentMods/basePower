@@ -14,7 +14,7 @@
     "has_recipe": {
       "trigger": "minecraft:recipe_unlocked",
       "conditions": {
-        "recipe": "basepower:sprocket_stickwood_normal"
+        "recipes": "#basepower:discovery/sprocket_stickwood_normal"
       }
     }
   },

@@ -1,0 +1,54 @@
+{
+  "engine": {
+    "actualVersion": {
+      "build_time": "2026-06-16T13:01:27+01:00",
+      "id": "26.2",
+      "java_component": "java-runtime-epsilon",
+      "java_version": 25,
+      "name": "26.2",
+      "pack_version": {
+        "data_major": 107,
+        "data_minor": 1,
+        "resource_major": 88,
+        "resource_minor": 0
+      },
+      "protocol_version": 776,
+      "series_id": "main",
+      "stable": true,
+      "use_editor": false,
+      "world_version": 4903
+    },
+    "dataVersion": 4903,
+    "engineProtocol": "NATIVE65",
+    "forge": "65.1.0",
+    "minecraft": "26.2",
+    "serverJarSha256": "2DDA94C321F928934AE7E3B8DB45AAE0FD994A9FA7BBDCDDC0AF1F9170A581DA",
+    "versionJsonSha256": "8E6C534E0B430508190BC6AC397BE6CB5C93D696300F20E225EDA9F59D6FA021"
+  },
+  "files": [
+    {
+      "path": "AdvantageWorksMigration/level.dat",
+      "sha256": "C3D686EE7500BF4754E1333C5501742B8D7B48EAA91154E56653E0FCA88A343A"
+    },
+    {
+      "path": "AdvantageWorksMigration/players/data/e036830e-303d-3ac3-bd23-062b72eed895.dat",
+      "sha256": "FAE1BFEBE93464142EC163FFCC38147816039585414AC38629E46768283BF113"
+    },
+    {
+      "path": "dimension-fixture.json",
+      "sha256": "E14930252676AA6ED658CC11258E3DD887A256B767E3A10B59FC73BB98372EB0"
+    },
+    {
+      "path": "dimensions-runtime-restart.json",
+      "sha256": "32ACE2367345236D370133D3EBD333483D0B4123512D81FF485EEAFDC55C8EE4"
+    },
+    {
+      "path": "dimension-semantic-runtime-restart.json",
+      "sha256": "A103CE230E4AC88CAEE1F564037B396147BFBF628EBCA1273D39A53E22609A1F"
+    }
+  ],
+  "receiptSha256": "214E2591EEC2A44F3447F8E54320BA818A6AD99AEC637406BCFAEA7A21E3EA84",
+  "sourceStatus": "PASS_WITH_NATIVE_DIFFERENCE",
+  "originalSource": "D:\\PowerAdvantage\\PA262\\PowerAdvantage\\test-rig\\build\\native262-actors-orders-profile03-16\\routes\\original110-nether-01\\server",
+  "scope": "ACTUAL_NATIVE262_PROFILE03_SERIALIZED_PLAYER_ACTOR_DIMENSION_TEST_FIXTURE_NOT_WORLD_QUALIFICATION"
+}

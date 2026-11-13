@@ -88,6 +88,8 @@ final class RecipeUnlockProbe {
                 || !label.matches("[a-zA-Z0-9_-]+")) throw new IllegalStateException("Unmarked world or unsafe label");
         JsonObject fixture = JSON.fromJson(new String(Files.readAllBytes(new File("recipe-fixture.json").toPath()),
                 StandardCharsets.UTF_8), JsonObject.class);
+        require(fixture.has("conditionProtocol") && fixture.get("conditionProtocol").getAsString()
+                .equals(Native263RecipeConditions.PROTOCOL), "Missing native condition fixture protocol");
         if (player == null) {
             player = new ServerPlayer(server, world, new GameProfile(
                     UUID.fromString("b9bcb1ba-e8e3-44ec-a729-ef70587dc453"), "RecipeProbe"), net.minecraft.server.level.ClientInformation.createDefault());
@@ -102,10 +104,16 @@ final class RecipeUnlockProbe {
         JsonArray rows = new JsonArray();
         result.add("cases", rows);
         RecipeBookProbe.verify(server, world, label, result);
+        JsonObject conditionContext = conditionContext(cases);
+        result.addProperty("conditionProtocol", Native263RecipeConditions.PROTOCOL);
+        result.addProperty("label", label);
+        result.addProperty("operation", operation);
+        result.add("conditionContext", conditionContext);
         for (JsonElement element : cases) {
-            String id = element.getAsJsonObject().get("id").getAsString();
+            JsonObject definition = element.getAsJsonObject();
+            String id = definition.get("id").getAsString();
             require(id.matches("base(power|steam|electric):[a-z0-9_]+"), "Unsafe recipe ID: " + id);
-            require(advancement(server, id) != null, "Missing loaded advancement: " + id);
+            presence(server, definition, conditionContext);
         }
         if (operation.equals("sweep")) {
             for (JsonElement element : cases) {
@@ -113,9 +121,7 @@ final class RecipeUnlockProbe {
                 String id = definition.get("id").getAsString();
                 AdvancementHolder advancement = advancement(server, id);
                 RecipeHolder<?> recipe = server.getRecipeManager().byKey(recipeKey(id)).orElse(null);
-                JsonObject row = new JsonObject();
-                row.addProperty("id", id);
-                row.addProperty("recipeActive", recipe != null);
+                JsonObject row = presence(server, definition, conditionContext);
                 int positives = 0, members = 0, emptyTags = 0;
                 reset(advancement, recipe);
                 player.getInventory().setItem(0, new ItemStack(item("minecraft:barrier")));
@@ -151,12 +157,17 @@ final class RecipeUnlockProbe {
                 row.addProperty("positiveCriteria", positives);
                 row.addProperty("tagMembers", members);
                 row.addProperty("emptyTagCriteria", emptyTags);
-                row.addProperty("status", positives == 0 ? "SKIP_NO_INGREDIENT_PROVIDER" : "PASS");
+                require((positives > 0) == row.get("ingredientProviderAvailable").getAsBoolean(),
+                        "Native inventory criteria disagree with ingredient-provider facts: " + id);
+                row.addProperty("discovered", player.getAdvancements().getOrStartProgress(advancement).isDone());
+                row.addProperty("status", positives > 0 ? (recipe != null ? "PASS" : "ADVANCEMENT_ONLY")
+                        : "SKIP_NO_INGREDIENT_PROVIDER");
                 rows.add(row);
             }
         } else if (operation.equals("persist")) {
             for (JsonElement element : cases) {
-                String id = element.getAsJsonObject().get("id").getAsString();
+                JsonObject definition = element.getAsJsonObject();
+                String id = definition.get("id").getAsString();
                 reset(advancement(server, id), server.getRecipeManager().byKey(recipeKey(id)).orElse(null));
             }
             JsonArray kit = new JsonArray();
@@ -187,7 +198,7 @@ final class RecipeUnlockProbe {
             Native117PlayerIo.save(server.getPlayerList(), player);
             result.add("materials", kit);
             result.add("additionalMaterials", additions);
-            verifyDiscovered(server, cases, rows);
+            verifyDiscovered(server, cases, rows, conditionContext);
         } else if (operation.equals("restore")) {
             Native117PlayerIo.load(server.getPlayerList(), player);
             require(transport.channel().isActive(), "Native recipe-login channel is not active");
@@ -198,30 +209,89 @@ final class RecipeUnlockProbe {
             PlayerEvent.PlayerLoggedInEvent.BUS.post(new PlayerEvent.PlayerLoggedInEvent(player));
             result.addProperty("nativeForgeLoginEvent", true);
             require(player.getInventory().isEmpty(), "Persistence test must not reacquire ingredients");
-            verifyDiscovered(server, cases, rows);
+            verifyDiscovered(server, cases, rows, conditionContext);
         } else throw new IllegalArgumentException("Unknown operation " + operation);
         result.addProperty("status", "PASS");
         Files.write(new File("recipes-" + label + ".json").toPath(), JSON.toJson(result).getBytes(StandardCharsets.UTF_8));
     }
 
-    private void verifyDiscovered(MinecraftServer server, JsonArray definitions, JsonArray rows) {
+    private void verifyDiscovered(MinecraftServer server, JsonArray definitions, JsonArray rows, JsonObject context) {
         for (JsonElement element : definitions) {
             JsonObject definition = element.getAsJsonObject();
             String id = definition.get("id").getAsString();
+            JsonObject row = presence(server, definition, context);
             boolean available = false;
             for (Map.Entry<String, JsonElement> criterion : definition.getAsJsonObject("ingredients").entrySet())
                 available |= !choices(criterion.getValue().getAsJsonObject()).isEmpty();
             boolean done = player.getAdvancements().getOrStartProgress(advancement(server, id)).isDone();
-            require(!available || done, "Lost discovery: " + id);
+            require(!available || done, "Lost earned discovery: " + id);
             RecipeHolder<?> recipe = server.getRecipeManager().byKey(recipeKey(id)).orElse(null);
             require(recipe == null || !available || player.getRecipeBook().contains(recipe.id()), "Lost recipe reward: " + id);
-            JsonObject row = new JsonObject();
-            row.addProperty("id", id);
-            row.addProperty("recipeActive", recipe != null);
             row.addProperty("discovered", done);
-            row.addProperty("status", available ? "PASS" : "SKIP_NO_INGREDIENT_PROVIDER");
+            row.addProperty("status", available ? (recipe != null ? "PASS" : "ADVANCEMENT_ONLY")
+                    : "SKIP_NO_INGREDIENT_PROVIDER");
             rows.add(row);
         }
+    }
+
+    private static JsonObject conditionContext(JsonArray definitions) throws Exception {
+        JsonObject context = new JsonObject();
+        context.addProperty("mode", zone.moddev.mc.basepower.PowerAdvantage.recipeMode.name());
+        context.addProperty("musketEnabled", Class.forName("zone.moddev.mc.basesteam.SteamAdvantage")
+                .getField("MUSKET_ENABLE").getBoolean(null));
+        java.util.Set<String> tags = new java.util.TreeSet<>();
+        for (JsonElement element : definitions) {
+            JsonObject definition = element.getAsJsonObject();
+            require(definition.has("condition"), "Native recipe fixture omitted its condition");
+            tags.addAll(Native263RecipeConditions.tags(definition.get("condition")));
+            for (var ingredient : definition.getAsJsonObject("ingredients").entrySet()) {
+                JsonObject predicate = ingredient.getValue().getAsJsonObject();
+                if (predicate.has("tag")) tags.add(predicate.get("tag").getAsString());
+            }
+        }
+        JsonObject facts = new JsonObject();
+        for (String tag : tags) {
+            JsonArray members = new JsonArray();
+            JsonObject predicate = new JsonObject();
+            predicate.addProperty("tag", tag);
+            for (Item item : choices(predicate)) members.add(ForgeRegistries.ITEMS.getKey(item).toString());
+            facts.add(tag, members);
+        }
+        context.add("tags", facts);
+        return context;
+    }
+
+    private static JsonObject presence(MinecraftServer server, JsonObject definition, JsonObject context) {
+        String id = definition.get("id").getAsString();
+        boolean expected = Native263RecipeConditions.evaluate(definition.get("condition"), context);
+        boolean recipe = server.getRecipeManager().byKey(recipeKey(id)).isPresent();
+        boolean advancement = advancement(server, id) != null;
+        Native263RecipeConditions.requirePair(id, expected, recipe, advancement);
+        var criterion = advancement(server, id).value().criteria().get("has_recipe");
+        require(criterion != null && criterion.triggerInstance() instanceof
+                net.minecraft.advancements.triggers.RecipeUnlockedTrigger.TriggerInstance,
+                "Missing actual native recipe-unlocked criterion: " + id);
+        var trigger = (net.minecraft.advancements.triggers.RecipeUnlockedTrigger.TriggerInstance) criterion.triggerInstance();
+        String tag = definition.get("recipeTriggerTag").getAsString();
+        Native263RecipeConditions.requireTriggerTag(id, tag, recipe, trigger);
+        if (recipe) require(trigger.matches(server.getRecipeManager().byKey(recipeKey(id)).orElseThrow()),
+                "Native recipe trigger rejected its exact active recipe: " + id);
+        boolean available = false;
+        for (var ingredient : definition.getAsJsonObject("ingredients").entrySet())
+            available |= !choices(ingredient.getValue().getAsJsonObject()).isEmpty();
+        JsonObject row = new JsonObject();
+        row.addProperty("id", id);
+        row.addProperty("conditionExpected", expected);
+        row.addProperty("recipeConditionStatus", expected ? "CONDITION_ENABLED" : "CONDITION_DISABLED");
+        row.addProperty("recipeActive", recipe);
+        row.addProperty("advancementActive", advancement);
+        row.addProperty("ingredientProviderAvailable", available);
+        row.addProperty("recipeTriggerTag", tag);
+        JsonArray members = new JsonArray();
+        trigger.recipes().stream().map(holder -> holder.unwrapKey().orElseThrow().identifier().toString())
+                .sorted().forEach(members::add);
+        row.add("recipeTriggerTagMembers", members);
+        return row;
     }
 
     private void discover(Item item) {

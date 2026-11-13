@@ -46,7 +46,9 @@ public class Native12111BiomeRegistryMappingTest {
 
     @Test public void everyNativeBiomeKeyRetiresOnlyItsObsoleteForgeIndex() throws Exception {
         Set<Identifier> current = nativeBiomeKeys();
-        assertEquals("Review the allowlist when changing the native target", 66, current.size());
+        assertEquals("Review the allowlist when changing the native target", 67, current.size());
+        assertTrue(current.contains(Biomes.SULFUR_CAVES.identifier()));
+        assertTrue(current.contains(Biomes.DAPPLED_FOREST.identifier()));
         var before = Set.copyOf(ForgeRegistries.BIOMES.getKeys());
         for (Identifier key : current) assertFalse(key.toString(), ForgeRegistries.BIOMES.containsKey(key));
         var mappings = mappings(ForgeRegistries.BIOMES, new ArrayList<>(current));

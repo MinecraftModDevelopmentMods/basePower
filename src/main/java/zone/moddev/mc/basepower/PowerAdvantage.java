@@ -43,7 +43,7 @@ import zone.moddev.mc.basepower.migration.BaseMetalsLegacyMigration;
 public final class PowerAdvantage {
     public static final String MODID = "basepower";
     public static final String NAME = "basePower";
-    public static final String VERSION = "2.4.17.2602001";
+    public static final String VERSION = "2.4.18.2603001";
     public static final Logger LOGGER = LogManager.getLogger(MODID);
 
     private static PowerAdvantage instance;

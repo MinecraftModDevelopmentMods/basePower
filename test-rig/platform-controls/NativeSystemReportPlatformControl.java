@@ -44,6 +44,7 @@ public final class NativeSystemReportPlatformControl {
         proof.put("inheritedJvmEnvironmentAbsent", true);
         proof.put("jvmArguments", ManagementFactory.getRuntimeMXBean().getInputArguments());
         proof.put("nativeClassSha256", NativePlatformSupport.classHashes(SystemReport.class, oshi.SystemInfo.class));
+        NativePlatformSupport.sourceEvidence(proof, SystemReport.class);
         proof.put("controlSourceSha256", NativePlatformSupport.sha(Files.readAllBytes(
                 Path.of("platform-controls/NativeSystemReportPlatformControl.java"))));
         List<Map<String, String>> archives = new ArrayList<>();

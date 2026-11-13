@@ -91,13 +91,13 @@ public final class NativePackResourceProof {
         }
         SharedConstants.tryDetectVersion();
         if (Runtime.version().feature() != 25
-                || !"26.2".equals(SharedConstants.getCurrentVersion().name())
-                || !"65.1.0".equals(net.minecraftforge.versions.forge.ForgeVersion.getVersion())
-                || !net.minecraft.server.packs.metadata.pack.PackFormat.of(88, 0).equals(
+                || !"26.3".equals(SharedConstants.getCurrentVersion().name())
+                || !"66.0.0".equals(net.minecraftforge.versions.forge.ForgeVersion.getVersion())
+                || !net.minecraft.server.packs.metadata.pack.PackFormat.of(97, 1).equals(
                         SharedConstants.getCurrentVersion().packVersion(PackType.CLIENT_RESOURCES))
-                || !net.minecraft.server.packs.metadata.pack.PackFormat.of(107, 1).equals(
+                || !net.minecraft.server.packs.metadata.pack.PackFormat.of(121, 0).equals(
                         SharedConstants.getCurrentVersion().packVersion(PackType.SERVER_DATA))) {
-            throw new AssertionError("Resource proof requires actual Forge 65.1.0 / Minecraft 26.2 on Java 25");
+            throw new AssertionError("Resource proof requires actual Forge 66.0.0 / Minecraft 26.3 on Java 25");
         }
         Bootstrap.bootStrap();
         Path resources = Path.of(args[0]);
@@ -158,7 +158,7 @@ public final class NativePackResourceProof {
                 JsonObject side = new JsonObject();
                 side.addProperty("id", id);
                 side.addProperty("loaderCompatibility", pack.getCompatibility().name());
-                try (var opened = pack.open()) {
+                try (var opened = pack.openMetadata()) {
                     PackMetadataSection metadata = opened.getMetadataSection(PackMetadataSection.forPackType(type));
                     if (metadata == null) throw new AssertionError("Missing native " + type + " metadata");
                     var formats = metadata.supportedFormats();
@@ -179,8 +179,10 @@ public final class NativePackResourceProof {
                     side.addProperty("acceptsPreviousServer", formats.isValueInRange(net.minecraft.server.packs.metadata.pack.PackFormat.of(94, 1)));
                     side.add("nativeMetadata", encoded);
                     if (type == PackType.CLIENT_RESOURCES) {
-                        if (opened.getChildren() == null || opened.getChildren().size() != 1) {
+                        try (var delegates = pack.open()) {
+                            if (delegates.count() != 1) {
                             throw new AssertionError("Expected the actual Forge client delegate");
+                            }
                         }
                         side.addProperty("currentCompatibility", pack.getCompatibility().name());
                     } else {

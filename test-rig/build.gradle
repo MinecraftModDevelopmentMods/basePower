@@ -5,7 +5,7 @@ plugins {
     id 'net.minecraftforge.gradle' version '7.0.34'
 }
 
-ext.forge64MavenizerDefault = '../../../../MinecraftMineralogy/OS262/OreSpawn/ci-fixtures/tools/minecraft-mavenizer-0.5.21-orespawn-compat.jar'
+ext.forge64MavenizerDefault = '../../../../MinecraftMineralogy/OS263/OreSpawn/ci-fixtures/tools/minecraft-mavenizer-0.5.21-orespawn-compat.jar'
 apply from: '../gradle/forge64-mavenizer.gradle'
 
 // Saves, pinned inputs and evidence are siblings, never Gradle cleanup targets.
@@ -52,7 +52,19 @@ sourceSets {
         java.srcDir 'src/runner/java'
         resources.srcDir 'src/runner/resources'
     }
+    clientProbe {
+        java.srcDir 'client-resources/java'
+        resources.srcDir 'client-resources/resources'
+        compileClasspath += sourceSets.main.compileClasspath
+    }
+    clientProbeTest {
+        java.srcDir 'client-resources/test'
+        compileClasspath += sourceSets.clientProbe.output + sourceSets.main.compileClasspath
+        runtimeClasspath += sourceSets.clientProbe.output + sourceSets.main.compileClasspath
+    }
 }
+
+configurations.clientProbeTestImplementation.extendsFrom(configurations.testImplementation)
 
 minecraft {
     mappings channel: project.mapping_channel, version: project.mapping_version
@@ -70,7 +82,7 @@ repositories {
 }
 
 def powerCompileJar = file(project.findProperty('powerAdvantageReleaseJar')
-        ?: '../build/libs/basePower-2.4.17.2602001.jar')
+        ?: '../build/libs/basePower-2.4.18.2603001.jar')
 def exploratoryPowerSha = providers.gradleProperty('worksExploratoryPowerSha256')
 def powerCompileSha = exploratoryPowerSha.orElse(providers.gradleProperty('works_power_sha256'))
 
@@ -108,7 +120,7 @@ tasks.register('verifyWorksCompileInputPin') {
     inputs.file(powerCompileJar)
     inputs.property('powerSha256', powerCompileSha.orElse(''))
     doLast {
-        if (!powerCompileJar.isFile()) throw new GradleException("Missing 26.2 Power compile input: ${powerCompileJar}")
+        if (!powerCompileJar.isFile()) throw new GradleException("Missing 26.3 Power compile input: ${powerCompileJar}")
         if (!(powerCompileSha.getOrElse('') ==~ /[A-Fa-f0-9]{64}/)) {
             throw new GradleException('Missing or invalid Power SHA-256 pin')
         }
@@ -123,6 +135,7 @@ tasks.register('verifyWorksCompileInputPin') {
 }
 
 tasks.named('compileJava') { dependsOn tasks.named('verifyWorksCompileInputPin') }
+tasks.named('compileClientProbeJava') { dependsOn tasks.named('verifyWorksCompileInputPin') }
 
 tasks.named('test', Test) {
     def temp = layout.buildDirectory.dir('test-temp')
@@ -302,6 +315,43 @@ def compileUnitSupport = tasks.register('compileUnitSupport', JavaCompile) {
     source fileTree('unit-support') { exclude '**/EclipseUnitLauncher.java' }
     classpath = nativeControlClasspath
     destinationDirectory = layout.buildDirectory.dir('unit-support/classes')
+}
+
+tasks.register('clientProbeTest', Test) {
+    group = 'verification'
+    description = 'Native66 worldless resource/recipe/GUI contracts, not graphical acceptance.'
+    dependsOn tasks.named('clientProbeTestClasses'), compileUnitSupport, unitBootstrapJar
+    testClassesDirs = sourceSets.clientProbeTest.output.classesDirs
+    classpath = sourceSets.clientProbeTest.runtimeClasspath + files(compileUnitSupport.flatMap { it.destinationDirectory })
+    workingDir = projectDir.parentFile
+}
+
+tasks.register('clientProbeJar', Jar) {
+    dependsOn tasks.named('clientProbeClasses')
+    archiveFileName = 'AdvantageClientResourceProbe-native263.jar'
+    from sourceSets.clientProbe.output
+    manifest.attributes('Built-On': "${project.minecraft_version}-${project.forge_version}",
+            'Engine-Protocol': 'NATIVE66', 'Power-Input-SHA256': powerCompileSha.getOrElse('').toUpperCase(Locale.ROOT))
+}
+
+tasks.register('writeNative263CompileContract') {
+    group = 'verification'
+    dependsOn tasks.named('verifyWorksCompileInputPin'), unitBootstrapJar
+    doLast {
+        def sets = [sourceSets.main, sourceSets.runner, sourceSets.test, sourceSets.clientProbe, sourceSets.clientProbeTest]
+        def sha = { File input -> java.security.MessageDigest.getInstance('SHA-256')
+                .digest(input.bytes).encodeHex().toString().toUpperCase(Locale.ROOT) }
+        def sources = sets.collectMany { it.allJava.files }.unique().sort { it.absolutePath }
+        def jars = sets.collectMany { it.compileClasspath.files }.findAll { it.isFile() && it.name.endsWith('.jar') }
+                .unique().sort { it.absolutePath }
+        def result = [engineProtocol: 'NATIVE66', qualificationAllowed: false,
+                powerSha256: powerCompileSha.get(),
+                sourceFiles: sources.collect { [path: it.absolutePath, sha256: sha(it)] },
+                classpath: jars.collect { [path: it.absolutePath, sha256: sha(it)] }]
+        File output = layout.buildDirectory.file('native263-compile-contract.json').get().asFile
+        output.parentFile.mkdirs()
+        output.text = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(result)) + '\n'
+    }
 }
 tasks.register('verifyForge61UnitBootstrap', JavaExec) {
     group = 'verification'

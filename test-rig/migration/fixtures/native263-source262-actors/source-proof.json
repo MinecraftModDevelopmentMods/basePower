@@ -1,0 +1,54 @@
+{
+  "engine": {
+    "actualVersion": {
+      "build_time": "2026-06-16T13:01:27+01:00",
+      "id": "26.2",
+      "java_component": "java-runtime-epsilon",
+      "java_version": 25,
+      "name": "26.2",
+      "pack_version": {
+        "data_major": 107,
+        "data_minor": 1,
+        "resource_major": 88,
+        "resource_minor": 0
+      },
+      "protocol_version": 776,
+      "series_id": "main",
+      "stable": true,
+      "use_editor": false,
+      "world_version": 4903
+    },
+    "dataVersion": 4903,
+    "engineProtocol": "NATIVE65",
+    "forge": "65.1.0",
+    "minecraft": "26.2",
+    "serverJarSha256": "2DDA94C321F928934AE7E3B8DB45AAE0FD994A9FA7BBDCDDC0AF1F9170A581DA",
+    "versionJsonSha256": "8E6C534E0B430508190BC6AC397BE6CB5C93D696300F20E225EDA9F59D6FA021"
+  },
+  "files": [
+    {
+      "path": "AdvantageWorksMigration/level.dat",
+      "sha256": "2041FDE7010BEEF9ACA7FF3EDFA72444F062A243F568B5D7B707525B47936CFF"
+    },
+    {
+      "path": "AdvantageWorksMigration/players/data/a614e658-6270-33c3-9297-7ce80908964f.dat",
+      "sha256": "2758E6B60BAD3E28AA3589B1B3B773A1895783EB213ADD95947C65597AB81DA2"
+    },
+    {
+      "path": "actor-fixture.json",
+      "sha256": "B140230D92F74C0EB4F7486E8F6FE601CBEB90726FC3106E383413890366910B"
+    },
+    {
+      "path": "actors-runtime-restart.json",
+      "sha256": "92579A0C2A5706B6D2BB4B084F9B9815B21F4E5656E25AE48EE00204B4392CA0"
+    },
+    {
+      "path": "semantic-runtime-restart.json",
+      "sha256": "6AC2B4EE1AE114097AC92C6278AA0D3F6C3C751953E423759882842822426C5D"
+    }
+  ],
+  "receiptSha256": "03FB16AFE4838BD25644FA140E0D8CD7CB039ABA702B3B58E763B28ECFFF8588",
+  "sourceStatus": "PASS",
+  "originalSource": "D:\\PowerAdvantage\\PA262\\PowerAdvantage\\test-rig\\build\\native262-actors-orders-profile03-16\\routes\\original110-01\\server",
+  "scope": "ACTUAL_NATIVE262_PROFILE03_SERIALIZED_PLAYER_ACTOR_DIMENSION_TEST_FIXTURE_NOT_WORLD_QUALIFICATION"
+}

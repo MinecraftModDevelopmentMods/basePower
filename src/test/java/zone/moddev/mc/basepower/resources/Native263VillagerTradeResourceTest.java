@@ -8,6 +8,7 @@ import java.nio.file.Path;
 import java.util.Set;
 import net.minecraft.SharedConstants;
 import net.minecraft.core.RegistryAccess;
+import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.Bootstrap;
 import net.minecraft.tags.TagFile;
@@ -15,21 +16,24 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.trading.TradeCost;
 import net.minecraft.world.level.storage.loot.functions.LootItemFunctions;
 import net.minecraft.world.level.storage.loot.functions.SetItemCountFunction;
-import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
-import net.minecraft.world.level.storage.loot.providers.number.NumberProviders;
-import net.minecraft.world.level.storage.loot.providers.number.UniformGenerator;
+import net.minecraft.world.level.storage.loot.providers.number.ints.ConstantValue;
+import net.minecraft.world.level.storage.loot.providers.number.ints.ContextIntProvider;
+import net.minecraft.world.level.storage.loot.providers.number.ints.ContextIntProviders;
+import net.minecraft.world.level.storage.loot.providers.number.ints.UniformGenerator;
+import net.minecraft.world.level.storage.loot.providers.number.floats.ContextFloatProviders;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
 /** Native resource/field codecs only. Full Power-item trade decoding and offers need the packaged server. */
-public class Native262VillagerTradeResourceTest {
+public class Native263VillagerTradeResourceTest {
     private static final Path DATA = Path.of("src/main/resources/data");
 
-    @BeforeClass public static void bootstrap() {
+    @BeforeClass public static void bootstrap() throws Exception {
         SharedConstants.tryDetectVersion();
         Bootstrap.bootStrap();
-        assertEquals("26.2", SharedConstants.getCurrentVersion().name());
+        zone.moddev.mc.advantageworks.unit.ForgeUnitRegistries.registerHolderSetTypes();
+        assertEquals("26.3", SharedConstants.getCurrentVersion().name());
     }
 
     @Test public void nativeTradeFieldsRetainBothHistoricalExchangeRates() throws Exception {
@@ -56,11 +60,11 @@ public class Native262VillagerTradeResourceTest {
         wrongCost.getAsJsonObject("wants").addProperty("count", 2);
         rejected(wrongCost);
         var wrongRange = original.deepCopy();
-        wrongRange.getAsJsonArray("given_item_modifiers").get(0).getAsJsonObject()
+        wrongRange.getAsJsonArray("given_item_modifier").get(0).getAsJsonObject()
                 .getAsJsonObject("count").addProperty("max", 5);
         rejected(wrongRange);
         var additive = original.deepCopy();
-        additive.getAsJsonArray("given_item_modifiers").get(0).getAsJsonObject().addProperty("add", true);
+        additive.getAsJsonArray("given_item_modifier").get(0).getAsJsonObject().addProperty("add", true);
         rejected(additive);
         var unknown = original.deepCopy();
         unknown.addProperty("unreviewed_field", true);
@@ -76,17 +80,16 @@ public class Native262VillagerTradeResourceTest {
 
     @Test public void strictProviderIdentityRejectsNativeFallbackForUnknownTypes() throws Exception {
         var trade = readTrade("emerald_sprockets");
-        var modifier = trade.getAsJsonArray("given_item_modifiers").get(0);
+        var modifier = trade.getAsJsonArray("given_item_modifier").get(0);
         modifier.getAsJsonObject().getAsJsonObject("count").addProperty("type", "basepower:missing_count_provider");
-        // NumberProviders.CODEC explicitly falls back to an untyped UniformGenerator.
-        assertTrue(LootItemFunctions.ROOT_CODEC.parse(JsonOps.INSTANCE, modifier).isSuccess());
+        assertTrue(LootItemFunctions.DIRECT_CODEC.parse(JsonOps.INSTANCE, modifier).isError());
         rejected(trade);
-        modifier.getAsJsonObject().addProperty("function", "basepower:missing_item_function");
-        assertTrue(LootItemFunctions.ROOT_CODEC.parse(JsonOps.INSTANCE, modifier).isError());
+        modifier.getAsJsonObject().addProperty("type", "basepower:missing_item_function");
+        assertTrue(LootItemFunctions.DIRECT_CODEC.parse(JsonOps.INSTANCE, modifier).isError());
     }
 
     private static void verify(JsonObject trade, String item, int min, int max) {
-        assertEquals(Set.of("wants", "gives", "max_uses", "xp", "reputation_discount", "given_item_modifiers"), trade.keySet());
+        assertEquals(Set.of("wants", "gives", "max_uses", "xp", "reputation_discount", "given_item_modifier"), trade.keySet());
         assertEquals(Set.of("id", "count"), trade.getAsJsonObject("wants").keySet());
         assertEquals(Set.of("id"), trade.getAsJsonObject("gives").keySet());
         assertEquals(item, trade.getAsJsonObject("gives").get("id").getAsString());
@@ -94,33 +97,33 @@ public class Native262VillagerTradeResourceTest {
         var cost = TradeCost.CODEC.parse(ops, trade.get("wants")).getOrThrow();
         assertSame(Items.EMERALD, cost.item().value());
         assertEquals(1, constant(cost.count()));
-        assertEquals(7, constant(NumberProviders.CODEC.parse(ops, trade.get("max_uses")).getOrThrow()));
-        assertEquals(1, constant(NumberProviders.CODEC.parse(ops, trade.get("xp")).getOrThrow()));
-        assertEquals(0, constant(NumberProviders.CODEC.parse(ops, trade.get("reputation_discount")).getOrThrow()));
-        var modifiers = trade.getAsJsonArray("given_item_modifiers");
+        assertEquals(7, constant(ContextIntProviders.CODEC.parse(ops, trade.get("max_uses")).getOrThrow()));
+        assertEquals(1, constant(ContextIntProviders.CODEC.parse(ops, trade.get("xp")).getOrThrow()));
+        var discount = ContextFloatProviders.CODEC.parse(ops, trade.get("reputation_discount")).getOrThrow().value();
+        assertTrue(discount instanceof net.minecraft.world.level.storage.loot.providers.number.floats.ConstantValue);
+        assertEquals(0F, ((net.minecraft.world.level.storage.loot.providers.number.floats.ConstantValue)discount).value(), 0F);
+        var modifiers = trade.getAsJsonArray("given_item_modifier");
         assertEquals(1, modifiers.size());
         var modifier = modifiers.get(0).getAsJsonObject();
-        assertEquals(Set.of("function", "count"), modifier.keySet());
-        assertEquals("minecraft:set_count", modifier.get("function").getAsString());
+        assertEquals(Set.of("type", "count"), modifier.keySet());
+        assertEquals("minecraft:set_count", modifier.get("type").getAsString());
         var sourceCount = modifier.getAsJsonObject("count");
         assertEquals(Set.of("type", "min", "max"), sourceCount.keySet());
         assertEquals("minecraft:uniform", sourceCount.get("type").getAsString());
-        var function = LootItemFunctions.ROOT_CODEC.parse(ops, modifier).getOrThrow();
+        var function = LootItemFunctions.DIRECT_CODEC.parse(ops, modifier).getOrThrow();
         assertTrue(function instanceof SetItemCountFunction);
-        var encoded = LootItemFunctions.ROOT_CODEC.encodeStart(ops, function).getOrThrow().getAsJsonObject();
+        var encoded = LootItemFunctions.DIRECT_CODEC.encodeStart(ops, function).getOrThrow().getAsJsonObject();
         assertFalse(encoded.has("add") && encoded.get("add").getAsBoolean());
-        var count = NumberProviders.CODEC.parse(ops, encoded.get("count")).getOrThrow();
+        var count = ContextIntProviders.CODEC.parse(ops, encoded.get("count")).getOrThrow().value();
         assertTrue(count instanceof UniformGenerator);
         var uniform = (UniformGenerator) count;
         assertEquals(min, constant(uniform.min()));
         assertEquals(max, constant(uniform.max()));
     }
 
-    private static int constant(net.minecraft.world.level.storage.loot.providers.number.NumberProvider value) {
-        assertTrue(value instanceof ConstantValue);
-        float number = ((ConstantValue) value).value();
-        assertEquals((int) number, number, 0F);
-        return (int) number;
+    private static int constant(Holder<ContextIntProvider> value) {
+        assertTrue(value.value() instanceof ConstantValue);
+        return ((ConstantValue)value.value()).value();
     }
 
     private static void verifyTag(JsonObject source, String id) {

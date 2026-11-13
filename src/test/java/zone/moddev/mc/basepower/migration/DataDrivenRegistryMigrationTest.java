@@ -56,7 +56,7 @@ public class DataDrivenRegistryMigrationTest {
 
     @Test public void recognizedPaintingIndexesStillResolveInTheNativeDataRegistry() {
         net.minecraft.SharedConstants.tryDetectVersion(); net.minecraft.server.Bootstrap.bootStrap();
-        var lookup = net.minecraft.data.registries.VanillaRegistries.createLookup()
+        var lookup = net.minecraft.data.registries.VanillaRegistries.createReloadableLookup(net.minecraft.data.registries.VanillaRegistries.createWorldLookup())
                 .lookupOrThrow(net.minecraft.core.registries.Registries.PAINTING_VARIANT);
         var registry = Identifier.parse("minecraft:painting_variant");
         int found = 0;
@@ -87,7 +87,7 @@ public class DataDrivenRegistryMigrationTest {
         zone.moddev.mc.advantageworks.unit.ForgeUnitRegistries.registerVanillaFluidTypes();
         var paintings = new net.minecraft.core.MappedRegistry<>(
                 net.minecraft.core.registries.Registries.PAINTING_VARIANT, com.mojang.serialization.Lifecycle.stable());
-        net.minecraft.data.registries.VanillaRegistries.createLookup()
+        net.minecraft.data.registries.VanillaRegistries.createReloadableLookup(net.minecraft.data.registries.VanillaRegistries.createWorldLookup())
                 .lookupOrThrow(net.minecraft.core.registries.Registries.PAINTING_VARIANT).listElements().forEach(holder ->
                         net.minecraft.core.Registry.register(paintings, holder.key(), holder.value()));
         paintings.freeze();

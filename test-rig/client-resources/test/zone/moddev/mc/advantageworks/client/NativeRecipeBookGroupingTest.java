@@ -133,7 +133,7 @@ public class NativeRecipeBookGroupingTest {
             buffer.writeResourceKey(Registries.ITEM);
             buffer.writeVarInt(1);
             buffer.writeIdentifier(Identifier.parse("advantageclientresources:native_fixture"));
-            buffer.writeIntIdList(new it.unimi.dsi.fastutil.ints.IntArrayList(new int[]{itemId}));
+            buffer.writeVarIntArray(new int[]{itemId});
             return io.netty.buffer.ByteBufUtil.getBytes(buffer);
         } finally { buffer.release(); }
     }

@@ -165,8 +165,40 @@ final class MachineGuiLayoutProbe {
                     row.add("garbled_background_control", verifyGarbledBackgroundControl(minecraft, screen, texture));
                     inventory.setItem(0, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.DIAMOND, 2));
                     screen.init(320, 240);
+                    if (!result.has("native_tooltip_dispatch_control")) {
+                        screen.legacyTooltipHookControl = true;
+                        try {
+                            BufferedImage legacyTooltip = render(minecraft, screen, VIEWPORTS[0], false, true);
+                            require(screen.tooltipCalls > 0 && screen.itemTooltipCalls == 0
+                                    && screen.nativeSevenArgumentCalls == 1 && screen.legacySixArgumentCalls == 0,
+                                    "Old six-argument hook unexpectedly observed the native tooltip call");
+                            require(screen.hovered() == menu.slots.get(menu.slots.size() - 9),
+                                    "Legacy-hook negative control did not hover the actual inventory item");
+                            JsonObject frame = NativeGuiEvidence.frame(legacyTooltip);
+                            JsonObject extraction = JsonParser.parseString(java.nio.file.Files.readString(
+                                    java.nio.file.Path.of(frame.getAsJsonObject("native").get("file").getAsString()))).getAsJsonObject();
+                            String expectedTooltip = inventory.getItem(0).getHoverName().getString();
+                            boolean nativeText = false;
+                            for (var text : extraction.getAsJsonArray("texts"))
+                                nativeText |= expectedTooltip.equals(text.getAsJsonObject().get("text").getAsString());
+                            require(nativeText, "Legacy-hook negative control lacks the real native item tooltip text");
+                            JsonObject control = new JsonObject();
+                            control.addProperty("status", "PASS");
+                            control.addProperty("old_six_argument_calls", screen.legacySixArgumentCalls);
+                            control.addProperty("native_seven_argument_calls", screen.nativeSevenArgumentCalls);
+                            control.addProperty("legacy_mode_seven_argument_counter", screen.itemTooltipCalls);
+                            control.addProperty("native_tooltip_text", expectedTooltip);
+                            control.addProperty("native_tooltip_rendered", true);
+                            control.add("frame", frame);
+                            result.add("native_tooltip_dispatch_control", control);
+                        } finally {
+                            screen.legacyTooltipHookControl = false;
+                        }
+                    }
                     BufferedImage tooltip = render(minecraft, screen, VIEWPORTS[0], false, true);
                     require(screen.itemTooltipCalls == 1, "Hovered inventory item has no native tooltip");
+                    require(screen.itemTooltipExtraSpaceAfterFirstLine,
+                            "Native inventory tooltip did not preserve extraSpaceAfterFirstLine=true");
                     require(screen.hovered() == menu.slots.get(menu.slots.size() - 9), "Inventory hitbox is misaligned");
                     ImageIO.write(tooltip, "png", new File("machine-gui-layouts/" + id.replace(':', '-') + "-tooltip.png"));
                     inventory.setItem(0, net.minecraft.world.item.ItemStack.EMPTY);
@@ -495,6 +527,10 @@ final class MachineGuiLayoutProbe {
         private Runnable helperCheck;
         private int tooltipCalls;
         private int itemTooltipCalls;
+        private boolean itemTooltipExtraSpaceAfterFirstLine;
+        private int legacySixArgumentCalls;
+        private int nativeSevenArgumentCalls;
+        private boolean legacyTooltipHookControl;
         private LabelMode labels = LabelMode.PRODUCTION;
         private final String expectedTitle, expectedInventory;
         private final List<int[]> expectedMachineSlots = new ArrayList<>();
@@ -534,6 +570,9 @@ final class MachineGuiLayoutProbe {
         }
         void beginFrame() {
             draws.clear(); tooltipCalls = 0; itemTooltipCalls = 0; titleTooltip = null;
+            itemTooltipExtraSpaceAfterFirstLine = false;
+            legacySixArgumentCalls = 0;
+            nativeSevenArgumentCalls = 0;
             backgroundCalls = 0;
         }
         @Override public void extractBackground(GuiGraphicsExtractor graphics, int x, int y, float ticks) {
@@ -546,11 +585,21 @@ final class MachineGuiLayoutProbe {
         }
         GuiGraphicsExtractor recordingGraphics(Minecraft minecraft, net.minecraft.client.renderer.state.gui.GuiRenderState state) {
             return new GuiGraphicsExtractor(minecraft, state, -100, -100) {
+                // This old instrumentation remains a counterfactual: the native screen must bypass it.
                 @Override public void setTooltipForNextFrame(Font font, List<net.minecraft.network.chat.Component> lines,
                         java.util.Optional<TooltipComponent> component, net.minecraft.world.item.ItemStack item,
                         int x, int y) {
-                    itemTooltipCalls++;
+                    if (legacyTooltipHookControl) legacySixArgumentCalls++;
                     super.setTooltipForNextFrame(font, lines, component, item, x, y);
+                }
+
+                @Override public void setTooltipForNextFrame(Font font, List<net.minecraft.network.chat.Component> lines,
+                        java.util.Optional<TooltipComponent> component, net.minecraft.world.item.ItemStack item,
+                        int x, int y, boolean extraSpaceAfterFirstLine) {
+                    nativeSevenArgumentCalls++;
+                    if (!legacyTooltipHookControl) itemTooltipCalls++;
+                    itemTooltipExtraSpaceAfterFirstLine = extraSpaceAfterFirstLine;
+                    super.setTooltipForNextFrame(font, lines, component, item, x, y, extraSpaceAfterFirstLine);
                 }
 
                 @Override public void setTooltipForNextFrame(Font font, net.minecraft.network.chat.Component text, int x, int y) {

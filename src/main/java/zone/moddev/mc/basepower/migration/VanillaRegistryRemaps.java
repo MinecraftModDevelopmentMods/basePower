@@ -32,7 +32,7 @@ public final class VanillaRegistryRemaps {
     private static final Set<ResourceKey<Biome>> NATIVE_BIOMES = Set.of(
             Biomes.THE_VOID, Biomes.PLAINS, Biomes.SUNFLOWER_PLAINS, Biomes.SNOWY_PLAINS,
             Biomes.ICE_SPIKES, Biomes.DESERT, Biomes.SWAMP, Biomes.MANGROVE_SWAMP,
-            Biomes.FOREST, Biomes.FLOWER_FOREST, Biomes.BIRCH_FOREST, Biomes.DARK_FOREST,
+            Biomes.FOREST, Biomes.FLOWER_FOREST, Biomes.BIRCH_FOREST, Biomes.DARK_FOREST, Biomes.DAPPLED_FOREST,
             Biomes.PALE_GARDEN, Biomes.OLD_GROWTH_BIRCH_FOREST, Biomes.OLD_GROWTH_PINE_TAIGA,
             Biomes.OLD_GROWTH_SPRUCE_TAIGA, Biomes.TAIGA, Biomes.SNOWY_TAIGA, Biomes.SAVANNA,
             Biomes.SAVANNA_PLATEAU, Biomes.WINDSWEPT_HILLS, Biomes.WINDSWEPT_GRAVELLY_HILLS,
@@ -143,6 +143,13 @@ public final class VanillaRegistryRemaps {
                 PowerAdvantage.LOGGER.info("Retired non-serialized vanilla AI registry index {}", mapping.getKey());
                 continue;
             }
+            if (retiredTemptationMemory(active.getRegistryName(), mapping.getKey())) {
+                // Native26.3 removed this serialized flag. Entity migration archives
+                // its payload before the native brain codec reads the remaining memories.
+                mapping.ignore();
+                PowerAdvantage.LOGGER.info("Retired vanilla temptation memory index {}; saved values are archived", mapping.getKey());
+                continue;
+            }
             if (retiredVanillaPoi(active.getRegistryName(), mapping.getKey())) {
                 // Vanilla's "Remove unpopulated villager PoI types" fixer handles
                 // saved POI sections. Forge still sees the obsolete numeric indexes.
@@ -189,6 +196,11 @@ public final class VanillaRegistryRemaps {
         return registry.equals(Identifier.parse("minecraft:memory_module_type"))
                 && old.getNamespace().equals("minecraft")
                 && (old.getPath().equals("golem_last_seen_time") || old.getPath().equals("opened_doors"));
+    }
+
+    static boolean retiredTemptationMemory(Identifier registry, Identifier old) {
+        return registry.equals(Identifier.parse("minecraft:memory_module_type"))
+                && old.equals(Identifier.parse("minecraft:is_tempted"));
     }
 
     static boolean retiredVanillaPoi(Identifier registry, Identifier old) {

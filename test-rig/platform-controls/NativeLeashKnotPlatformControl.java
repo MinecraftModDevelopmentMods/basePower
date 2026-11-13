@@ -79,7 +79,7 @@ public final class NativeLeashKnotPlatformControl {
 
         Map<String, Object> proof = new LinkedHashMap<>();
         proof.put("format", 1);
-        proof.put("policy", "native262-leash-knot-nosave-v1");
+        proof.put("policy", "native263-leash-knot-nosave-v1");
         proof.put("minecraftVersion", SharedConstants.getCurrentVersion().name());
         proof.put("dataVersion", SharedConstants.getCurrentVersion().dataVersion().version());
         proof.put("forgeVersion", net.minecraftforge.versions.forge.ForgeVersion.getVersion());

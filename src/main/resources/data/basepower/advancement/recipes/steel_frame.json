@@ -14,7 +14,7 @@
     "has_recipe": {
       "trigger": "minecraft:recipe_unlocked",
       "conditions": {
-        "recipe": "basepower:steel_frame"
+        "recipes": "#basepower:discovery/steel_frame"
       }
     }
   },

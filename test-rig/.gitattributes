@@ -1,0 +1,5 @@
+# Captured native fixture bytes are checksum-bound evidence, including line endings.
+migration/fixtures/native263-server-platform-sequences.json -text whitespace=cr-at-eol
+migration/fixtures/native263-client-platform-sequences.json -text whitespace=cr-at-eol
+migration/fixtures/native263-block-state-catalog-vanilla.json -text whitespace=cr-at-eol
+migration/fixtures/native263-source262-*/** -text whitespace=cr-at-eol

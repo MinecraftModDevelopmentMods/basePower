@@ -108,7 +108,7 @@ final class ProgressionProbe {
         LootParams chest = chestParams(world);
         for (int seed = 0; seed < 8; seed++) {
             List<ItemStack> raw = new ArrayList<>();
-            overriddenTable.getRandomItemsRaw(new LootContext.Builder(chest).withOptionalRandomSeed(seed + 1L).create(null), raw::add);
+            overriddenTable.getRandomItemsRaw(new LootContext.Builder(chest).withOptionalRandomSeed(seed + 1L).create(java.util.Optional.empty()), raw::add);
             require(raw.size() == 1 && id(raw.get(0)).equals("minecraft:dirt")
                     && raw.get(0).getCount() == 1, "Player loot data-pack override was changed");
             // Base Metals has its own Forge global modifier. It may add loot after the table runs.
@@ -225,6 +225,7 @@ final class ProgressionProbe {
         report.add("executedRecipes", JSON.toJsonTree(executed));
         report.add("blockedRecipes", missingRecipes);
         report.add("lootSeeds", loot);
+        report.add("merchantOffersNative66", Native263MerchantProbe.verify(world));
         report.addProperty("lootDataPackOverrideVerified", true);
         report.addProperty("lootOverrideWithModifiersVerified", true);
         report.add("processWitnesses", ProcessProgression.witnesses());

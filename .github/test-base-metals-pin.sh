@@ -24,7 +24,7 @@ chmod +x "$scratch/bin/gh"
 export PATH="$scratch/bin:$PATH"
 commit=1111111111111111111111111111111111111111
 cd "$scratch/project"
-for minecraft in 1.20.6 1.21.1 1.21.11 26.1.2 26.2; do
+for minecraft in 1.20.6 1.21.1 1.21.11 26.1.2 26.3; do
   printf 'minecraft_version=%s\nbasemetals_source_commit=%s\n' "$minecraft" "$commit" > gradle.properties
   export EXPECTED_COMPARE="repos/MinecraftModDevelopmentMods/BaseMetals/compare/$commit...master-$minecraft"
   export GITHUB_OUTPUT="$scratch/output"
@@ -44,7 +44,7 @@ for minecraft in 1.20.6 1.21.1 1.21.11 26.1.2 26.2; do
     test ! -s "$GITHUB_OUTPUT"
   done
 done
-for minecraft in invalid 1.21 26.2/evil master-26.2 0.1.2; do
+for minecraft in invalid 1.21 26.3/evil master-26.3 0.1.2; do
   printf 'minecraft_version=%s\nbasemetals_source_commit=%s\n' "$minecraft" "$commit" > gradle.properties
   if bash "$verify" > "$scratch/invalid.log" 2>&1; then
     echo "Incorrectly accepted an invalid target: $minecraft" >&2

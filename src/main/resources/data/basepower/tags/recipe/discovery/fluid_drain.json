@@ -1,0 +1,8 @@
+{
+  "values": [
+    {
+      "id": "basepower:fluid_drain",
+      "required": false
+    }
+  ]
+}

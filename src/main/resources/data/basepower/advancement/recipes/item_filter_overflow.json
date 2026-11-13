@@ -28,7 +28,7 @@
     "has_recipe": {
       "trigger": "minecraft:recipe_unlocked",
       "conditions": {
-        "recipe": "basepower:item_filter_overflow"
+        "recipes": "#basepower:discovery/item_filter_overflow"
       }
     }
   },

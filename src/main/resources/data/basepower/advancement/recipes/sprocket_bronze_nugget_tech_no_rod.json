@@ -24,7 +24,7 @@
     "has_recipe": {
       "trigger": "minecraft:recipe_unlocked",
       "conditions": {
-        "recipe": "basepower:sprocket_bronze_nugget_tech_no_rod"
+        "recipes": "#basepower:discovery/sprocket_bronze_nugget_tech_no_rod"
       }
     }
   },

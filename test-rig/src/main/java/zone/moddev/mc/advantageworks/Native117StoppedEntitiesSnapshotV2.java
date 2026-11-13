@@ -37,8 +37,8 @@ import org.apache.logging.log4j.LogManager;
 
 /** Versioned stop-boundary observation. Native no-save helpers are never saved-state witnesses. */
 final class Native117StoppedEntitiesSnapshotV2 {
-    static final String CONTRACT = "native262-helper-contract.json";
-    static final String POLICY = "native262-leash-knot-nosave-v1";
+    static final String CONTRACT = "native263-helper-contract.json";
+    static final String POLICY = "native263-leash-knot-nosave-v1";
     private static final Map<MinecraftServer, String> BOOTS = Collections.synchronizedMap(new WeakHashMap<>());
 
     private Native117StoppedEntitiesSnapshotV2() {}
@@ -64,7 +64,7 @@ final class Native117StoppedEntitiesSnapshotV2 {
             if (control.get("format").getAsInt() != 1 || !POLICY.equals(control.get("policy").getAsString())
                     || !SharedConstants.getCurrentVersion().name().equals(control.get("minecraftVersion").getAsString())
                     || SharedConstants.getCurrentVersion().dataVersion().version() != control.get("dataVersion").getAsInt()
-                    || !"65.1.0".equals(control.get("forgeVersion").getAsString())) {
+                    || !"66.0.0".equals(control.get("forgeVersion").getAsString())) {
                 throw new IOException("Native helper control does not describe this pinned engine");
             }
         } catch (RuntimeException error) {

@@ -44,7 +44,7 @@
     "has_recipe": {
       "trigger": "minecraft:recipe_unlocked",
       "conditions": {
-        "recipe": "basepower:fluid_discharge"
+        "recipes": "#basepower:discovery/fluid_discharge"
       }
     }
   },

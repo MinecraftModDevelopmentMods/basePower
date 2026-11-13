@@ -2,6 +2,7 @@ package zone.moddev.mc.basepower.recipe;
 
 import net.minecraft.server.packs.PackLocationInfo;
 import net.minecraft.server.packs.PackResources;
+import net.minecraft.server.packs.PackMetadataResources;
 import net.minecraft.server.packs.PackSelectionConfig;
 import net.minecraft.server.packs.PackType;
 import net.minecraft.server.packs.repository.Pack;
@@ -15,11 +16,11 @@ public final class MaterialTags {
         if (event.getPackType() != PackType.SERVER_DATA) return;
         event.addRepositorySource(consumer -> {
             Pack pack = Pack.readMetaAndCreate(MaterialPolicyPack.LOCATION, new Pack.ResourcesSupplier() {
-                @Override public PackResources openPrimary(PackLocationInfo location) {
+                @Override public PackMetadataResources openMetadata(PackLocationInfo location) {
                     return new MaterialPolicyPack();
                 }
-                @Override public PackResources openFull(PackLocationInfo location, Pack.Metadata metadata) {
-                    return new MaterialPolicyPack();
+                @Override public java.util.stream.Stream<PackResources> openResources(PackLocationInfo location, Pack.Metadata metadata) {
+                    return java.util.stream.Stream.of(new MaterialPolicyPack());
                 }
             }, event.getPackType(), new PackSelectionConfig(true, Pack.Position.BOTTOM, false));
             if (pack != null) consumer.accept(pack);

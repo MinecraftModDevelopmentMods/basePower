@@ -24,7 +24,7 @@
     "has_recipe": {
       "trigger": "minecraft:recipe_unlocked",
       "conditions": {
-        "recipe": "basepower:fluid_storage_tank"
+        "recipes": "#basepower:discovery/fluid_storage_tank"
       }
     }
   },

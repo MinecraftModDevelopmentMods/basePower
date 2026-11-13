@@ -62,7 +62,7 @@ final class NativeWolfTestWorld {
     }
 
     private static RegistryAccess createRegistries() {
-        var vanilla = net.minecraft.data.registries.VanillaRegistries.createLookup();
+        var vanilla = net.minecraft.data.registries.VanillaRegistries.createReloadableLookup(net.minecraft.data.registries.VanillaRegistries.createWorldLookup());
         return new RegistryAccess.ImmutableRegistryAccess(List.of(
                 copy(vanilla, Registries.WOLF_VARIANT), copy(vanilla, Registries.WOLF_SOUND_VARIANT),
                 copy(vanilla, Registries.PAINTING_VARIANT))).freeze();

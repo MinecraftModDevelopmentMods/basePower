@@ -62,6 +62,8 @@ public final class NativeWolfPlatformControl {
         }
         proof.put("classpath", paths);
         proof.put("nativeClassSha256", NativePlatformSupport.classHashes(Wolf.class, net.minecraft.world.entity.Entity.class));
+        NativePlatformSupport.sourceEvidence(proof, Wolf.class, net.minecraft.world.entity.Entity.class,
+                net.minecraft.world.entity.LivingEntity.class, net.minecraft.util.datafix.DataFixers.class);
         Map<String, String> source = new LinkedHashMap<>();
         for (String name : List.of("platform-controls/NativeWolfPlatformControl.java",
                 "platform-controls/NativePlatformSupport.java",

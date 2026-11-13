@@ -24,7 +24,7 @@
     "has_recipe": {
       "trigger": "minecraft:recipe_unlocked",
       "conditions": {
-        "recipe": "basepower:sprocket_rod_tech"
+        "recipes": "#basepower:discovery/sprocket_rod_tech"
       }
     }
   },

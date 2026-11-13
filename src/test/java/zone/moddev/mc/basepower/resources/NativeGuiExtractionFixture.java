@@ -1,6 +1,6 @@
 package zone.moddev.mc.basepower.resources;
 
-import com.mojang.blaze3d.textures.GpuTextureView;
+import com.mojang.renderpearl.api.textures.GpuTextureView;
 import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
@@ -44,9 +44,14 @@ public final class NativeGuiExtractionFixture {
 
     public GpuTextureView texture(Identifier id) throws Exception {
         var texture = allocate(SimpleTexture.class);
-        var view = new GpuTextureView(null, 0, 1) {
+        var view = new GpuTextureView() {
             @Override public void close() { throw new UnsupportedOperationException("CPU fixture"); }
             @Override public boolean isClosed() { return false; }
+            @Override public com.mojang.renderpearl.api.textures.GpuTexture texture() { return null; }
+            @Override public int baseMipLevel() { return 0; }
+            @Override public int mipLevels() { return 1; }
+            @Override public int getWidth(int mipLevel) { return 64; }
+            @Override public int getHeight(int mipLevel) { return 64; }
         };
         set(texture, "textureView", view);
         textures.put(id, texture);

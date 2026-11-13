@@ -1,0 +1,8 @@
+{
+  "values": [
+    {
+      "id": "basepower:steel_frame",
+      "required": false
+    }
+  ]
+}

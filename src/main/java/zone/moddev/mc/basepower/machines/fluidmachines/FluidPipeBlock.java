@@ -22,7 +22,7 @@ public class FluidPipeBlock extends BlockSimpleFluidConduit {
 	}
 
     protected FluidPipeBlock(String id) {
-        super(Blocks.properties(id, Properties.of().mapColor(MapColor.STONE).pushReaction(PushReaction.BLOCK)
+        super(Blocks.properties(id, Properties.of().mapColor(MapColor.STONE).pushReaction(PushReaction.IMMOVEABLE)
                 .forceSolidOn().strength(0.75F)), 4F / 16F);
     }
 

@@ -41,6 +41,7 @@ public final class ClientResourceProbe {
     private static JsonObject lastReadinessState;
     private static final NativeExperimentalFixtureGate FIXTURE_GATE = new NativeExperimentalFixtureGate();
     private static JsonObject preLoginGeometry;
+    private static boolean fixtureWorldOpenRequested;
     private static net.minecraft.client.gui.screens.Screen disconnectedScreen;
     private static int disconnectedTick;
     private static NativeWorldOilProbe worldOil;
@@ -83,8 +84,37 @@ public final class ClientResourceProbe {
                 context.addProperty("singleplayerServerPresent", minecraft.getSingleplayerServer() != null);
                 preLoginGeometry.add("child_geometry_context", context);
             }
+            if (Boolean.getBoolean("advantageworks.openWorldAfterGeometry") && !fixtureWorldOpenRequested
+                    && preLoginGeometry != null && minecraft.gui.screen() instanceof net.minecraft.client.gui.screens.TitleScreen) {
+                require(readyForNativeWorldOpen(preLoginGeometry, minecraft.level != null, minecraft.player != null,
+                        minecraft.getSingleplayerServer() != null, minecraft.hasSingleplayerServer(),
+                        minecraft.getConnection() != null, minecraft.gui.overlay() != null),
+                        "Native world open requires completed, genuinely worldless geometry");
+                Path runtime = Path.of("").toRealPath();
+                Path world = runtime.resolve("saves/AdvantageClientResources").toRealPath();
+                require(world.equals(runtime.resolve("saves/AdvantageClientResources"))
+                        && Files.isRegularFile(world.resolve("level.dat")), "Missing independent existing client world");
+                JsonObject rendezvous = new JsonObject();
+                rendezvous.addProperty("protocol", "NATIVE66_WORLDLESS_GEOMETRY_BEFORE_NATIVE_OPEN_V1");
+                rendezvous.addProperty("status", "RECORDED_BEFORE_NATIVE_OPEN");
+                rendezvous.addProperty("tick", ticks);
+                rendezvous.addProperty("world", world.toString());
+                rendezvous.addProperty("levelSha256", java.util.HexFormat.of().withUpperCase().formatHex(
+                        java.security.MessageDigest.getInstance("SHA-256").digest(Files.readAllBytes(world.resolve("level.dat")))));
+                rendezvous.add("geometry", preLoginGeometry.deepCopy());
+                rendezvous.add("readiness", lastReadinessState.deepCopy());
+                captureReadinessScreen(minecraft, rendezvous, Path.of("login-readiness/worldless-before-native-open.png"));
+                Files.writeString(Path.of("login-readiness/worldless-before-native-open.json"), rendezvous.toString(),
+                        java.nio.file.StandardOpenOption.CREATE_NEW);
+                fixtureWorldOpenRequested = true;
+                minecraft.createWorldOpenFlows().openWorld("AdvantageClientResources", () -> {
+                    throw new IllegalStateException("Native fixture world open was cancelled");
+                });
+            }
             FIXTURE_GATE.tick(minecraft, ticks, lastReadinessState);
-        } catch (RuntimeException | LinkageError | AssertionError failure) { readinessFailure = failure; }
+        } catch (IOException | java.security.NoSuchAlgorithmException | RuntimeException | LinkageError | AssertionError failure) {
+            readinessFailure = failure;
+        }
         if (readinessFailure == null && (ticks < 5 || ((!componentsBound || minecraft.gui.overlay() != null
                 || minecraft.getModelManager().getBlockStateModelSet() == null) && ticks < 2400))) return;
         if (readinessFailure == null && loggedIn && componentsBound && !worldOilComplete) {
@@ -108,8 +138,8 @@ public final class ClientResourceProbe {
             if (preLoginGeometry != null) for (var row : preLoginGeometry.entrySet()) result.add(row.getKey(), row.getValue().deepCopy());
             if (worldOilReport != null) result.add("world_oil_visual", worldOilReport.deepCopy());
             if (readinessFailure != null) throw new IllegalStateException("Native login/fixture gate failed", readinessFailure);
-            require("26.2".equals(result.get("minecraft").getAsString())
-                    && "65.1.0".equals(result.get("forge").getAsString())
+            require("26.3".equals(result.get("minecraft").getAsString())
+                    && "66.0.0".equals(result.get("forge").getAsString())
                     && Runtime.version().feature() == 25, "Wrong native client target");
             require(loggedIn && componentsBound, "Native real-world login/component binding did not complete");
             var expectedWorld = Path.of("saves/AdvantageClientResources").toRealPath();
@@ -148,9 +178,9 @@ public final class ClientResourceProbe {
             result.add("mod_versions", versions);
             require(versions.has("basepower") && zone.moddev.mc.basepower.PowerAdvantage.VERSION
                     .equals(versions.get("basepower").getAsString()), "Power metadata does not match the compiled version");
-            require("2.4.17.2602001".equals(versions.get("basepower").getAsString()), "Wrong native Power candidate");
+            require("2.4.18.2603001".equals(versions.get("basepower").getAsString()), "Wrong native Power candidate");
             for (String id : new String[]{"basesteam", "baseelectric"}) {
-                if (versions.has(id)) require("2.2.18.2602001".equals(versions.get(id).getAsString()), "Wrong native expansion candidate: " + id);
+                if (versions.has(id)) require("2.2.19.2603001".equals(versions.get(id).getAsString()), "Wrong native expansion candidate: " + id);
             }
             require(minecraft.getModelManager().getBlockStateModelSet() != null, "Timed out before model baking");
             require(minecraft.gui.overlay() == null, "Timed out before native resource loading completed");
@@ -241,6 +271,19 @@ public final class ClientResourceProbe {
             catch (IOException failure) { throw new IllegalStateException("Could not write client resource result", failure); }
             finally { minecraft.stop(); }
         }
+    }
+
+    static boolean readyForNativeWorldOpen(JsonObject geometry, boolean level, boolean player, boolean server,
+            boolean integratedServer, boolean connection, boolean overlay) {
+        if (level || player || server || integratedServer || connection || overlay || geometry == null
+                || !geometry.has("scope_results") || !geometry.has("child_geometry_context")) return false;
+        JsonObject scopes = geometry.getAsJsonObject("scope_results");
+        if (!scopes.has("child_geometry") || !"PASS".equals(scopes.getAsJsonObject("child_geometry").get("status").getAsString()))
+            return false;
+        JsonObject context = geometry.getAsJsonObject("child_geometry_context");
+        return "GENUINELY_WORLDLESS_BEFORE_LOGIN".equals(context.get("stage").getAsString())
+                && !context.get("levelPresent").getAsBoolean() && !context.get("playerPresent").getAsBoolean()
+                && !context.get("singleplayerServerPresent").getAsBoolean();
     }
 
     private static void failDisconnected(Minecraft minecraft) {
@@ -364,10 +407,13 @@ public final class ClientResourceProbe {
             var layersField = ItemStackRenderState.class.getDeclaredField("layers");
             countField.setAccessible(true);
             layersField.setAccessible(true);
+            var quadsField = ItemStackRenderState.LayerRenderState.class.getDeclaredField("quads");
+            quadsField.setAccessible(true);
             var layers = (ItemStackRenderState.LayerRenderState[]) layersField.get(state);
             int quads = 0;
             for (int i = 0; i < countField.getInt(state); i++) {
-                for (BakedQuad quad : layers[i].prepareQuadList()) {
+                var itemQuads = (net.minecraft.client.resources.model.geometry.ItemQuads) quadsField.get(layers[i]);
+                for (BakedQuad quad : itemQuads.all()) {
                     require(!"missingno".equals(quad.materialInfo().sprite().contents().name().getPath()), "Missing face texture: " + id);
                     quads++;
                 }

@@ -14,7 +14,7 @@
     "has_recipe": {
       "trigger": "minecraft:recipe_unlocked",
       "conditions": {
-        "recipe": "basepower:fluid_pipe_iron_apocalyptic"
+        "recipes": "#basepower:discovery/fluid_pipe_iron_apocalyptic"
       }
     }
   },

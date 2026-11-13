@@ -36,8 +36,8 @@ public class Native12111RegistryMigrationTest {
         block.put("Properties", properties);
         var fixed = DataFixers.getDataFixer().update(References.BLOCK_STATE,
                 new Dynamic<>(NbtOps.INSTANCE, block), 3839, currentVersion());
-        assertEquals("minecraft:iron_chain", fixed.get("Name").asString().result().orElseThrow());
-        assertEquals(new Dynamic<>(NbtOps.INSTANCE, properties), fixed.get("Properties").result().orElseThrow());
+        assertEquals("minecraft:iron_chain", fixed.get("id").asString().result().orElseThrow());
+        assertEquals(new Dynamic<>(NbtOps.INSTANCE, properties), fixed.get("properties").result().orElseThrow());
         var stack = DataFixers.getDataFixer().update(References.ITEM_STACK,
                 new Dynamic<>(NbtOps.INSTANCE, item("chain", 7)), 3839, currentVersion());
         assertEquals("minecraft:iron_chain", stack.get("id").asString().result().orElseThrow());

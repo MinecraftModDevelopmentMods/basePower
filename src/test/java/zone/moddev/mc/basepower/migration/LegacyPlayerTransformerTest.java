@@ -147,7 +147,7 @@ public class LegacyPlayerTransformerTest {
             assertEquals(List.of("before-components"), calls);
             assertPlayerContents(migrated);
             int current = SharedConstants.getCurrentVersion().dataVersion().version();
-            assertEquals(4903, current);
+            assertEquals(5023, current);
             assertEquals(current, migrated.getIntOr("DataVersion", 0));
             assertEquals(original, NbtIo.readCompressed(file, NbtAccounter.unlimitedHeap()));
             calls.clear();

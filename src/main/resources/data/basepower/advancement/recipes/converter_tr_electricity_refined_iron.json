@@ -24,7 +24,7 @@
     "has_recipe": {
       "trigger": "minecraft:recipe_unlocked",
       "conditions": {
-        "recipe": "basepower:converter_tr_electricity_refined_iron"
+        "recipes": "#basepower:discovery/converter_tr_electricity_refined_iron"
       }
     }
   },

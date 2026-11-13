@@ -387,11 +387,20 @@ public final class LegacyWorldDataHook {
             for (int metadata = 0; metadata < 16; metadata++) {
                 BlockState state = LegacyMigrationApi.decodeBlockState(entry.getKey(), block, metadata);
                 table[(entry.getValue().intValue() << 4) | metadata] =
-                        new Dynamic<>(net.minecraft.nbt.NbtOps.INSTANCE, NbtUtils.writeBlockState(state));
+                        new Dynamic<>(net.minecraft.nbt.NbtOps.INSTANCE, legacyFlatteningState(state));
                 mapped++;
             }
         }
         return mapped;
+    }
+
+    static CompoundTag legacyFlatteningState(BlockState state) {
+        // BlockStateData is the pre-flattening codec, not the current save codec.
+        CompoundTag current = NbtUtils.writeBlockState(state);
+        CompoundTag historical = new CompoundTag();
+        historical.putString("Name", current.getString("id").orElseThrow());
+        current.getCompound("properties").ifPresent(properties -> historical.put("Properties", properties.copy()));
+        return historical;
     }
 
     static synchronized void prepareLegacyEnchantmentContext(CompoundTag levelSnapshot) {

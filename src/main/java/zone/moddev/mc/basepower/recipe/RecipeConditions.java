@@ -53,7 +53,20 @@ public final class RecipeConditions {
 
         @Override public MapCodec<Material> codec() { return empty ? EMPTY : NOT_EMPTY; }
         @Override public boolean test(IContext context, DynamicOps<?> ops) {
-            return context.getTag(ItemTags.create(tag)).isEmpty() == empty;
+            return materialTagEmpty(tag, context, ops) == empty;
         }
+    }
+
+    static boolean materialTagEmpty(Identifier tag, ICondition.IContext context, DynamicOps<?> ops) {
+        // Named holders can still contain the previous reload's values here.
+        if (context == ICondition.IContext.EMPTY && ops instanceof net.minecraft.resources.RegistryOps<?> registries) {
+            var items = registries.getter(net.minecraft.core.registries.Registries.ITEM);
+            if (items.orElse(null) instanceof PendingItemTags pending) {
+                return pending.pending().getPending(ItemTags.create(tag)).isEmpty();
+            }
+            return items.flatMap(lookup -> lookup.get(ItemTags.create(tag)))
+                    .map(named -> named.size() == 0).orElse(true);
+        }
+        return context.getTag(ItemTags.create(tag)).isEmpty();
     }
 }

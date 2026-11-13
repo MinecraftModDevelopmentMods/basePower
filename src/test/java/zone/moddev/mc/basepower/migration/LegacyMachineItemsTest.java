@@ -34,7 +34,7 @@ public class LegacyMachineItemsTest {
     @BeforeClass public static void bootstrap() {
         net.minecraft.SharedConstants.tryDetectVersion(); net.minecraft.server.Bootstrap.bootStrap();
         net.minecraftforge.registries.GameData.unfreezeData();
-        registryLookup = net.minecraft.data.registries.VanillaRegistries.createLookup();
+        registryLookup = net.minecraft.data.registries.VanillaRegistries.createReloadableLookup(net.minecraft.data.registries.VanillaRegistries.createWorldLookup());
         AdvantageLegacyMigrations.registerPowerAdvantage();
     }
 

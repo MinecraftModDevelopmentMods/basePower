@@ -818,8 +818,8 @@ final class WorksController {
         SignBlockEntity sign = (SignBlockEntity) tile;
         net.minecraft.network.chat.MutableComponent clickable = Component.literal(label);
         clickable.setStyle(Style.EMPTY.withClickEvent(new ClickEvent.RunCommand(command)));
-        sign.setText(sign.getFrontText().setMessage(0, clickable)
-                .setMessage(1, Component.literal("right-click")), true);
+        sign.setText(sign.getText(net.minecraft.world.level.block.entity.SignTextSlot.FRONT).asMutable().setLine(0, clickable)
+                .setLine(1, Component.literal("right-click")).asImmutable(), net.minecraft.world.level.block.entity.SignTextSlot.FRONT);
         sign.setWaxed(true);
         sign.setChanged();
     }
@@ -829,9 +829,9 @@ final class WorksController {
         BlockEntity tile = world.getBlockEntity(pos);
         if (!(tile instanceof SignBlockEntity)) return;
         SignBlockEntity sign = (SignBlockEntity) tile;
-        var text = sign.getFrontText();
-        for (int i = 0; i < 4; i++) text = text.setMessage(i, Component.literal(i < lines.length ? trimSign(lines[i]) : ""));
-        sign.setText(text, true);
+        var text = sign.getText(net.minecraft.world.level.block.entity.SignTextSlot.FRONT).asMutable();
+        for (int i = 0; i < 4; i++) text.setLine(i, Component.literal(i < lines.length ? trimSign(lines[i]) : ""));
+        sign.setText(text.asImmutable(), net.minecraft.world.level.block.entity.SignTextSlot.FRONT);
         sign.setChanged();
     }
 

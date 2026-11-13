@@ -19,6 +19,8 @@ import net.minecraft.util.datafix.fixes.EntityUUIDFix;
 /** Isolates vanilla entity choices from mod choices during the chunk datafix. */
 final class LegacyEntityDataFixes {
     private static final String STAGED = "AdvantageLegacyEntityDataFix";
+    static final String RETIRED_MEMORIES = "basepower:retired_brain_memories";
+    private static final String RETIRED_TEMPTATION = "minecraft:is_tempted";
     // Forge moved these saved identities into its attribute registry in 1.16.
     private static final String[][] FORGE_ATTRIBUTES = {
         {"forge.swimSpeed", "forge:swim_speed"},
@@ -61,6 +63,7 @@ final class LegacyEntityDataFixes {
             DataFixer fixer, Set<?> vanillaIds) {
         CompoundTag entity = source.copy();
         renameForgeAttributes(entity);
+        archiveRetiredMemories(entity);
         boolean hasPassengers = source.contains("Passengers");
         ListTag passengers = source.getListOrEmpty("Passengers");
         entity.remove("Passengers");
@@ -121,12 +124,32 @@ final class LegacyEntityDataFixes {
 
     private static void prepareAttributeTree(CompoundTag entity) {
         renameForgeAttributes(entity);
+        archiveRetiredMemories(entity);
         if (!entity.contains("Passengers")) return;
         requireCompoundList(entity, "Passengers");
         ListTag passengers = entity.getListOrEmpty("Passengers");
         for (int index = 0; index < passengers.size(); index++) {
             prepareAttributeTree(passengers.getCompoundOrEmpty(index));
         }
+    }
+
+    static void archiveRetiredMemories(CompoundTag entity) {
+        CompoundTag brain = entity.getCompoundOrEmpty("Brain");
+        CompoundTag memories = brain.getCompoundOrEmpty("memories");
+        Tag retired = memories.get(RETIRED_TEMPTATION);
+        if (retired == null) return;
+        if (entity.contains("ForgeData") && !(entity.get("ForgeData") instanceof CompoundTag))
+            throw new IllegalStateException("Malformed entity ForgeData while archiving retired memory");
+        CompoundTag persistent = entity.getCompoundOrEmpty("ForgeData").copy();
+        if (persistent.contains(RETIRED_MEMORIES) && !(persistent.get(RETIRED_MEMORIES) instanceof CompoundTag))
+            throw new IllegalStateException("Malformed retired brain memory archive");
+        CompoundTag archive = persistent.getCompoundOrEmpty(RETIRED_MEMORIES);
+        if (archive.contains(RETIRED_TEMPTATION) && !retired.equals(archive.get(RETIRED_TEMPTATION)))
+            throw new IllegalStateException("Conflicting retired temptation memory archive");
+        archive.put(RETIRED_TEMPTATION, retired.copy());
+        persistent.put(RETIRED_MEMORIES, archive);
+        entity.put("ForgeData", persistent);
+        memories.remove(RETIRED_TEMPTATION);
     }
 
     private static void renameForgeAttributes(CompoundTag entity) {

@@ -34,6 +34,14 @@ public final class ForgeUnitRegistries {
                 ForgeRegistries.INGREDIENT_SERIALIZERS.get());
     }
 
+    public static synchronized void registerHolderSetTypes() throws ReflectiveOperationException {
+        if (ForgeRegistries.HOLDER_SET_TYPES.get() == null) {
+            initializeRegistry(ForgeRegistries.Keys.HOLDER_SET_TYPES);
+        }
+        registerForgeEntries("HOLDER_SET_TYPES", ForgeRegistries.Keys.HOLDER_SET_TYPES,
+                ForgeRegistries.HOLDER_SET_TYPES.get());
+    }
+
     private static void initializeRegistry(ResourceKey<?> key) throws ReflectiveOperationException {
             Field registries = ForgeRegistries.class.getDeclaredField("registries");
             registries.setAccessible(true);

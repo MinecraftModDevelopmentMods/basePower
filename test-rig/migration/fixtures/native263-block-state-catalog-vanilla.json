@@ -1,0 +1,107 @@
+{
+  "scope": "ACTUAL_NATIVE_VANILLA_CODEC_ENTRIES_NOT_LIVE_FAMILY_CATALOG",
+  "dataVersion": 5023,
+  "blocks": {
+    "minecraft:air": {
+      "defaults": {},
+      "legalValues": {},
+      "stateCount": 1,
+      "defaultEncoded": "minecraft:air",
+      "defaultDecoded": {
+        "id": "minecraft:air",
+        "properties": {}
+      }
+    },
+    "minecraft:stone": {
+      "defaults": {},
+      "legalValues": {},
+      "stateCount": 1,
+      "defaultEncoded": "minecraft:stone",
+      "defaultDecoded": {
+        "id": "minecraft:stone",
+        "properties": {}
+      }
+    },
+    "minecraft:oak_log": {
+      "defaults": {
+        "axis": "y"
+      },
+      "legalValues": {
+        "axis": [
+          "x",
+          "y",
+          "z"
+        ]
+      },
+      "stateCount": 3,
+      "defaultEncoded": "minecraft:oak_log",
+      "defaultDecoded": {
+        "id": "minecraft:oak_log",
+        "properties": {
+          "axis": "y"
+        }
+      }
+    },
+    "minecraft:chest": {
+      "defaults": {
+        "facing": "north",
+        "type": "single",
+        "waterlogged": "false"
+      },
+      "legalValues": {
+        "facing": [
+          "east",
+          "north",
+          "south",
+          "west"
+        ],
+        "type": [
+          "left",
+          "right",
+          "single"
+        ],
+        "waterlogged": [
+          "false",
+          "true"
+        ]
+      },
+      "stateCount": 24,
+      "defaultEncoded": "minecraft:chest",
+      "defaultDecoded": {
+        "id": "minecraft:chest",
+        "properties": {
+          "facing": "north",
+          "type": "single",
+          "waterlogged": "false"
+        }
+      }
+    },
+    "minecraft:furnace": {
+      "defaults": {
+        "facing": "north",
+        "lit": "false"
+      },
+      "legalValues": {
+        "facing": [
+          "east",
+          "north",
+          "south",
+          "west"
+        ],
+        "lit": [
+          "false",
+          "true"
+        ]
+      },
+      "stateCount": 8,
+      "defaultEncoded": "minecraft:furnace",
+      "defaultDecoded": {
+        "id": "minecraft:furnace",
+        "properties": {
+          "facing": "north",
+          "lit": "false"
+        }
+      }
+    }
+  }
+}

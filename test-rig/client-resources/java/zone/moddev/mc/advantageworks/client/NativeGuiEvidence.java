@@ -142,7 +142,7 @@ final class NativeGuiEvidence {
                     output.write(color & 255); output.write(color >>> 24 & 255);
                 }
             }
-            extraction.addProperty("protocol", "NATIVE65_GUI_FRAMEBUFFER_FENCED_V1");
+            extraction.addProperty("protocol", "NATIVE66_GUI_FRAMEBUFFER_FENCED_V1");
             extraction.addProperty("width", image.getWidth());
             extraction.addProperty("height", image.getHeight());
             Files.writeString(nativeState, extraction.toString(), StandardOpenOption.CREATE_NEW);

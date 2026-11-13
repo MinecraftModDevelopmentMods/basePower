@@ -16,6 +16,12 @@ import net.minecraft.commands.Commands;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.Container;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.world.item.crafting.RecipeType;
+import net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity;
+import net.minecraft.world.level.block.entity.FurnaceBlockEntity;
+import net.minecraft.world.level.storage.loot.providers.number.ints.ResolvableInt;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.core.Direction;
@@ -35,12 +41,14 @@ import zone.moddev.mc.basepower.machines.conveyors.BlockConveyor;
 import zone.moddev.mc.basepower.machines.conveyors.TileEntityConveyor;
 import zone.moddev.mc.basepower.machines.fluidmachines.StorageTankTileEntity;
 import zone.moddev.mc.basepower.util.InventoryLocks;
+import zone.moddev.mc.basepower.registry.FuelRegistry;
 
 /** Capability and native loot witnesses, restricted to a marked disposable world. */
 final class NativeInteropProbe {
     private static final File MARKER = new File("advantage-native-interop.allow");
     private static final BlockPos TANK = new BlockPos(1024, 8, 1024);
     private static final BlockPos BELT = new BlockPos(1040, 8, 1024);
+    private static final BlockPos COAL_FURNACE = new BlockPos(1096, 8, 1028);
 
     static void register() {
         if (MARKER.isFile()) RegisterCommandsEvent.BUS.addListener(new NativeInteropProbe()::starting);
@@ -309,10 +317,60 @@ final class NativeInteropProbe {
         });
     }
 
+    private static JsonObject normalCoalFuel(ServerLevel world, JsonArray checks) {
+        JsonObject evidence = new JsonObject();
+        check(checks, "fuel/normal-coal-public-overloads", () -> {
+            place(world, COAL_FURNACE, net.minecraft.world.level.block.Blocks.FURNACE.defaultBlockState());
+            BlockEntity machine = world.getBlockEntity(COAL_FURNACE);
+            require(machine instanceof FurnaceBlockEntity && machine.getLevel() == world,
+                    "Coal oracle is not a placed native normal furnace");
+            ItemStack oracleFuel = new ItemStack(Items.COAL);
+            ItemStack legacyFuel = new ItemStack(Items.COAL);
+            ItemStack machineFuel = new ItemStack(Items.COAL);
+            ItemStack before = new ItemStack(Items.COAL);
+            var component = oracleFuel.get(DataComponents.COOKING_FUEL);
+            int customAlgorithms = FuelRegistry.getInstance().getFuelAlgorithmsForItem(Items.COAL).size();
+            int itemOverride = oracleFuel.getBurnTime(RecipeType.SMELTING);
+            evidence.addProperty("item", "minecraft:coal");
+            evidence.addProperty("inputCount", before.getCount());
+            evidence.addProperty("machine", "minecraft:furnace");
+            evidence.addProperty("customAlgorithms", customAlgorithms);
+            evidence.addProperty("itemOverride", itemOverride);
+            evidence.addProperty("referenceProvider", component != null && component.burnTime() instanceof ResolvableInt.Reference);
+            require(customAlgorithms == 0 && itemOverride == -1, "Coal has a custom fuel override");
+            require(component != null && component.burnTime() instanceof ResolvableInt.Reference,
+                    "Coal no longer exercises the native live cooking-provider reference");
+            int oracle;
+            try {
+                // Invoke the actual protected furnace implementation, not a copied provider algorithm.
+                var duration = AbstractFurnaceBlockEntity.class.getDeclaredMethod("getBurnDuration", ServerLevel.class, ItemStack.class);
+                duration.setAccessible(true);
+                oracle = (Integer) duration.invoke(machine, world, oracleFuel);
+            } catch (ReflectiveOperationException error) {
+                throw new IllegalStateException("Could not invoke the native normal-furnace oracle", error);
+            }
+            int legacy = FuelRegistry.getActualBurntimeForItem(legacyFuel);
+            int contextual = FuelRegistry.getActualBurntimeForItem(machineFuel, machine);
+            evidence.addProperty("oracleBurnTime", oracle);
+            evidence.addProperty("legacyBurnTime", legacy);
+            evidence.addProperty("machineBurnTime", contextual);
+            evidence.addProperty("oracleStackUnchanged", ItemStack.matches(before, oracleFuel));
+            evidence.addProperty("legacyStackUnchanged", ItemStack.matches(before, legacyFuel));
+            evidence.addProperty("machineStackUnchanged", ItemStack.matches(before, machineFuel));
+            require(oracle == 1600, "Native normal coal burn time is not 1600: " + oracle);
+            require(legacy == oracle && contextual == oracle,
+                    "Public fuel overloads differ from native coal: legacy=" + legacy + ", machine=" + contextual + ", oracle=" + oracle);
+            require(ItemStack.matches(before, oracleFuel) && ItemStack.matches(before, legacyFuel)
+                    && ItemStack.matches(before, machineFuel), "Fuel lookup mutated a coal stack or its components");
+        });
+        return evidence;
+    }
+
     private static void run(ServerLevel world, String phase) throws Exception {
         require(MARKER.isFile() && world.getServer().getWorldData().getLevelName().equals("AdvantageWorksMigration"), "Unmarked world");
         require(phase.equals("exercise") || phase.equals("restored"), "Unknown interop phase");
         JsonArray checks = new JsonArray();
+        JsonObject coalFuel = normalCoalFuel(world, checks);
         if (phase.equals("exercise")) {
             energy(world, checks);
             tank(world, checks);
@@ -336,6 +394,7 @@ final class NativeInteropProbe {
         report.addProperty("status", java.util.stream.StreamSupport.stream(checks.spliterator(), false)
                 .allMatch(row -> row.getAsJsonObject().get("status").getAsString().equals("PASS")) ? "PASS" : "FAIL");
         report.add("checks", checks);
+        report.add("normalCoalFuel", coalFuel);
         if (net.minecraftforge.fml.ModList.isLoaded("basemetals")) {
             JsonArray shared = new JsonArray();
             check(shared, "basemetals/native-power-crushing", () -> sharedCrushing(world));

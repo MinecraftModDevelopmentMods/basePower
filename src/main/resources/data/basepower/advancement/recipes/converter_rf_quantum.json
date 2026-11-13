@@ -38,7 +38,7 @@
     "has_recipe": {
       "trigger": "minecraft:recipe_unlocked",
       "conditions": {
-        "recipe": "basepower:converter_rf_quantum"
+        "recipes": "#basepower:discovery/converter_rf_quantum"
       }
     }
   },

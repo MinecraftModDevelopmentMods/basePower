@@ -1,0 +1,8 @@
+{
+  "values": [
+    {
+      "id": "basepower:item_conveyor",
+      "required": false
+    }
+  ]
+}

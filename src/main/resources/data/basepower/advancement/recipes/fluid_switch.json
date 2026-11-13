@@ -36,7 +36,7 @@
     "has_recipe": {
       "trigger": "minecraft:recipe_unlocked",
       "conditions": {
-        "recipe": "basepower:fluid_switch"
+        "recipes": "#basepower:discovery/fluid_switch"
       }
     }
   },
