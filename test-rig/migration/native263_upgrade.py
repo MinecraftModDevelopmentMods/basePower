@@ -17,7 +17,7 @@ from native117 import output_path, require_disjoint
 from native117_actor_io import bind
 from native117_entity_storage import _decompress, _entity_chunk, _nbt, _payloads
 from native117_format import uuid_longs
-from native263_block_states import decode_palette
+from native263_block_states import CATALOG_FILE, decode_palette, load_catalog
 import native12111_upgrade as previous
 import native263_layout as layout
 
@@ -140,8 +140,10 @@ def player_authority(world):
 
 def capture(runtime, label, rows):
     world = Path(runtime) / WORLD
+    catalog = load_catalog(runtime)
     output = Path(runtime) / "native263-save" / label
     output.mkdir(parents=True, exist_ok=False)
+    shutil.copyfile(catalog.path, output / CATALOG_FILE)
     level, settings = layout.read_level(world), layout.read_worldgen(world)
     shutil.copy2(world / "level.dat", output / "level.dat")
     shutil.copy2(layout.shared_file(world, "minecraft:world_gen_settings"), output / "world_gen_settings.dat")
@@ -177,7 +179,7 @@ def capture(runtime, label, rows):
                 if section_y in sections or any(name in section for name in ("Blocks", "Palette", "BlockStates")):
                     raise AssertionError("Duplicate section or historical target palette")
                 states = section.get("block_states")
-                sections[section_y] = decode_palette(states["palette"], states.get("data", [])) if states else None
+                sections[section_y] = decode_palette(states["palette"], states.get("data", []), catalog=catalog) if states else None
             for tile in chunk["block_entities"]:
                 location = tuple(tile[axis] for axis in ("x", "y", "z"))
                 if location in tiles:
@@ -197,6 +199,7 @@ def capture(runtime, label, rows):
     if not identities:
         raise AssertionError("Empty migration witnesses cannot qualify")
     result = dict(status="PASS", scope=SCOPE, witnesses=len(rows), nativeDataVersion=DATA_VERSION,
+                  blockStateCatalogSha256=catalog.sha256,
                   worldGenSettings=plain(settings.unpack()), playerAuthority=player_authority(world),
                   files={path.name: digest(path) for path in output.iterdir()})
     write_json(output / "receipt.json", result)

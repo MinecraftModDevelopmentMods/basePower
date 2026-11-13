@@ -15,7 +15,7 @@ import native117_machine_saved as saved
 import native12111_operations as previous
 import native263 as native
 from native263_layout import DATA_VERSION, region_file
-from native263_block_states import palette_state
+from native263_block_states import load_catalog, palette_state
 from transformer_order import read_region
 
 
@@ -26,7 +26,7 @@ def validate_operation(catalog, document, group):
     return result
 
 
-def modern_chunk(payload):
+def modern_chunk(payload, *, catalog):
     if len(payload) < 6 or int.from_bytes(payload[:4], "big") != len(payload) - 4:
         raise ValueError("Invalid native terrain payload length")
     root = _nbt(_decompress(payload[5:], payload[4]))
@@ -45,7 +45,7 @@ def modern_chunk(payload):
                 nbtlib.Compound({"Name": nbtlib.String(value["Name"]),
                                  "Properties": nbtlib.Compound({key: nbtlib.String(item)
                                      for key, item in value["Properties"].items()})})
-                for value in (palette_state(entry.unpack()) for entry in states["palette"]))
+                for value in (palette_state(entry.unpack(), catalog=catalog) for entry in states["palette"]))
             if "data" in states:
                 view["BlockStates"] = states["data"]
         sections.append(view)
@@ -56,10 +56,14 @@ def modern_chunk(payload):
 def audit_saved(runtime, fixture, evidence):
     """Same typed state/NBT comparator, new explicit dimension storage; retain raw payloads."""
     runtime, evidence = Path(runtime).resolve(), Path(evidence).resolve()
+    catalog = load_catalog(runtime)
     world = runtime / WORLD
     require_disjoint(evidence, world)
     evidence.mkdir(parents=True, exist_ok=False)
+    import shutil
+    shutil.copyfile(catalog.path, evidence / catalog.path.name)
     report = dict(status="FAIL", cases=len(fixture["cases"]), files={}, failures=[],
+                  blockStateCatalogSha256=catalog.sha256,
                   scope="Stopped Forge66 terrain state and complete typed machine NBT; no source writes")
     write_json(evidence / "snapshot.json", fixture)
     regions, chunks = {}, {}
@@ -79,7 +83,7 @@ def audit_saved(runtime, fixture, evidence):
                     payload = regions[path][(cx & 31) + (cz & 31) * 32]
                     with (evidence / f"chunk-{len(chunks):05}.bin").open("xb") as output:
                         output.write(payload)
-                    chunks[key] = modern_chunk(payload)
+                    chunks[key] = modern_chunk(payload, catalog=catalog)
                     if (int(chunks[key]["xPos"]), int(chunks[key]["zPos"])) != (cx, cz):
                         raise AssertionError("Saved chunk coordinate differs from its region slot")
                 differences = saved.compare_chunk(rows, chunks[key])

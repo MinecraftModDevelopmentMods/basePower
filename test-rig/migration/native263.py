@@ -439,6 +439,16 @@ class Server(NativeLaunch):
             require_released_session_lock(self.native_runtime)
             logging_jar = self.native_runtime / f"libraries/net/minecraftforge/fmlloader/{FORGE_VERSION}/fmlloader-{FORGE_VERSION}.jar"
             self.logging_configuration(logging_jar)
+            proof = dict(status="OWNED_ZERO_EXIT_NATIVE66_COLDSTOP", engineProtocol=ENGINE_PROTOCOL,
+                         minecraft=MINECRAFT, forge=FORGE, javaVersion=JAVA_VERSION, label=self.native_label,
+                         pid=self.process.pid, stopSent=self.stop_sent, returncode=self.process.returncode,
+                         sessionLockReleased=True, coreSha256=digest(Path(__file__)),
+                         blockStateCatalogSha256=digest(self.native_runtime / "native263-block-state-catalog.json"),
+                         logs={kind: digest(self.native_runtime / f"{kind}-{self.native_label}.log")
+                               for kind in ("console", "latest", "debug")})
+            with (self.native_runtime / f"native66-stop-{self.native_label}.json").open("x", encoding="utf-8") as output:
+                json.dump(proof, output, indent=2, sort_keys=True, allow_nan=False)
+                output.write("\n")
         finally:
             audit_staged(self.native_runtime)
             self.closed = self.process.poll() is not None

@@ -17,6 +17,7 @@ import nbtlib as n
 from matrix import WORLD, digest, fingerprint, write_json
 from native117_actor_io import bind
 import native263_upgrade as upgrade
+from test_native263_block_states import write_contract_catalog
 
 
 def encoded(tag):
@@ -59,6 +60,7 @@ class Native263UpgradeTest(unittest.TestCase):
         self.runtime = self.root / "runtime"
         self.world = self.runtime / WORLD
         self.world.mkdir(parents=True)
+        write_contract_catalog(self.runtime)
         self.identity = uuid.UUID("12345678-1234-5678-9abc-def012345678")
 
     def save(self, path, tag):
@@ -84,7 +86,8 @@ class Native263UpgradeTest(unittest.TestCase):
         path = upgrade.layout.region_file(self.world, "minecraft:overworld", -1, -2)
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_bytes(region(chunk))
-        row = dict(name="chest", x=-1, y=64, z=-17, actualName="minecraft:chest", properties={},
+        row = dict(name="chest", x=-1, y=64, z=-17, actualName="minecraft:chest",
+                   properties=dict(facing="north", type="single", waterlogged="false"),
                    nbtBase64=base64.b64encode(gzip.compress(encoded(tile))).decode())
         return path, chunk, row
 
@@ -100,6 +103,21 @@ class Native263UpgradeTest(unittest.TestCase):
         self.assertEqual("NO_SINGLEPLAYER_OWNER", receipt["playerAuthority"]["status"])
         self.assertEqual(original, fingerprint(self.world))
         self.assertEqual(path.read_bytes(), (self.runtime / "native263-save/converted" / path.name).read_bytes())
+
+    def test_partial_native_palette_uses_catalog_but_wrong_explicit_facing_stays_red(self):
+        path, chunk, row = self.storage()
+        chunk["sections"][0]["block_states"]["palette"] = n.List[n.Compound]([
+            n.Compound(id=n.String("minecraft:chest"), properties=n.Compound(facing=n.String("north")))])
+        path.write_bytes(region(chunk))
+        self.assertEqual("PASS", upgrade.capture(self.runtime, "partial-default", [row])["status"])
+        chunk["sections"][0]["block_states"]["palette"][0]["properties"]["facing"] = n.String("east")
+        path.write_bytes(region(chunk))
+        with self.assertRaisesRegex(AssertionError, "Stopped block differs"):
+            upgrade.capture(self.runtime, "wrong-explicit-facing", [row])
+        from native263_block_states import CATALOG_FILE
+        (self.runtime / CATALOG_FILE).unlink()
+        with self.assertRaises(FileNotFoundError):
+            upgrade.capture(self.runtime, "missing-independent-catalog", [row])
 
     def test_raw_chunk_mutations_cannot_be_hidden_by_live_projection(self):
         path, baseline, row = self.storage()

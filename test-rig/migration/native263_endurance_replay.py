@@ -1,10 +1,11 @@
 """Genuine preseal, exact stopped freeze and independent Forge66 endurance replay."""
 
 import argparse
-from contextlib import ExitStack
+from contextlib import ExitStack, contextmanager
 from datetime import datetime, timezone
 import json
 from pathlib import Path
+import os
 import sys
 
 import nbtlib
@@ -20,22 +21,63 @@ import native263 as native
 import native263_platform_diagnostics as platform_diagnostics
 from native263_endurance import MODES, RECEIPT, interval_metrics, measure_batch, verify_fresh_fixture_proof, require_retained_receipt
 from native263_layout import DATA_VERSION, region_file, read_worldgen
-from native263_block_states import decode_palette
+from native263_block_states import decode_palette, load_catalog
 
 
 Budget = previous.Budget
 require, pin, regular = previous.require, previous.pin, previous.regular
 write_new, disjoint, tree = previous.write_new, previous.disjoint, previous.tree
-stopped = previous.stopped
 MAX_JSON = previous.MAX_JSON
 row_nbt, typed_nbt_or_none = previous.row_nbt, previous.typed_nbt_or_none
 snapshot = bind(previous.snapshot, native=native)
-terrain = bind(previous.terrain, DATA_VERSION=DATA_VERSION, decode_palette=decode_palette)
+def terrain(payload, coordinates, *, catalog):
+    return bind(previous.terrain, DATA_VERSION=DATA_VERSION,
+                decode_palette=lambda *args: decode_palette(*args, catalog=catalog))(payload, coordinates)
 complete = bind(previous.complete, native=native, MODES=MODES)
 feed_audit = bind(previous.feed_audit, native=native)
 PRE_RUN = "NATIVE66_ENDURANCE_PRE_RUN_SEAL"
 RETROSPECTIVE = "NATIVE66_ENDURANCE_RETROSPECTIVE_SEAL"
 FREEZE = "NATIVE66_STOPPED_ENDURANCE_FREEZE"
+
+
+@contextmanager
+def stopped(runtime, budget):
+    runtime = Path(runtime)
+    proof = budget.json(runtime / "native66-stop-endurance-restart.json")
+    require(proof.get("status") == "OWNED_ZERO_EXIT_NATIVE66_COLDSTOP"
+            and proof.get("engineProtocol") == "NATIVE66" and proof.get("minecraft") == native.MINECRAFT
+            and proof.get("forge") == native.FORGE and proof.get("javaVersion") == native.JAVA_VERSION
+            and proof.get("label") == "endurance-restart" and proof.get("stopSent") is True
+            and type(proof.get("returncode")) is int and proof["returncode"] == 0
+            and type(proof.get("pid")) is int and proof["pid"] > 0
+            and proof.get("sessionLockReleased") is True
+            and proof.get("coreSha256") == budget.digest(Path(native.__file__)),
+            "Missing actual Native66 owned zero-exit cold-stop receipt")
+    for kind in ("console", "latest", "debug"):
+        path = runtime / f"{kind}-endurance-restart.log"
+        pin(budget.read(path), proof["logs"][kind])
+        native.require_clean_log(path)
+    native.require_complete_boot(budget.read(runtime / "console-endurance-restart.log").decode("utf-8"),
+                                 stop_sent=proof["stopSent"], returncode=proof["returncode"])
+    catalog = load_catalog(runtime, read_bytes=budget.read)
+    require(catalog.sha256 == proof.get("blockStateCatalogSha256"), "Stopped native catalog changed after exit")
+    path = regular(runtime / WORLD / "session.lock")
+    with path.open("r+b") as stream:
+        if os.name == "nt":
+            import msvcrt
+            msvcrt.locking(stream.fileno(), msvcrt.LK_NBLCK, 1)
+            unlock = lambda: msvcrt.locking(stream.fileno(), msvcrt.LK_UNLCK, 1)
+        else:
+            import fcntl
+            fcntl.flock(stream, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            unlock = lambda: fcntl.flock(stream, fcntl.LOCK_UN)
+        budget.locked[path.resolve()] = stream
+        try:
+            yield
+        finally:
+            budget.locked.pop(path.resolve())
+            stream.seek(0)
+            unlock()
 
 
 def oracle_paths():
@@ -199,6 +241,7 @@ def freeze(run, seal_path, seal_sha256, receipt_sha256, output, budget):
 
 
 def raw_final(runtime, budget):
+    catalog = load_catalog(runtime, read_bytes=budget.read)
     world = runtime / WORLD
     root = _nbt(_decompress(budget.read(world / "level.dat", MAX_JSON), 1))
     version = root["Data"].get("DataVersion")
@@ -221,7 +264,7 @@ def raw_final(runtime, budget):
         if path not in regions:
             regions[path] = dict(_payloads(budget.read(path), cx // 32, cz // 32))
         require((cx, cz) in regions[path], "Missing stopped terrain chunk")
-        sections, tiles = terrain(regions[path][cx, cz], (cx, cz))
+        sections, tiles = terrain(regions[path][cx, cz], (cx, cz), catalog=catalog)
         for row in rows:
             x, y, z = pos = tuple(row["pos"])
             palette = sections.get(y // 16)
@@ -231,7 +274,8 @@ def raw_final(runtime, budget):
                 differences.append(dict(pos=list(pos), dimension=dimension, checkpoint=row,
                                         savedState=actual, savedNbt=typed_nbt_or_none(tiles.get(pos))))
     require(not differences, "Stopped raw state/component mismatch: " + json.dumps(differences[:3]))
-    return dict(status="PASS", dataVersion=DATA_VERSION, comparedRows=count, comparedChunks=len(grouped))
+    return dict(status="PASS", dataVersion=DATA_VERSION, comparedRows=count, comparedChunks=len(grouped),
+                blockStateCatalogSha256=catalog.sha256)
 
 
 def interval_audit(runtime, report, budget):

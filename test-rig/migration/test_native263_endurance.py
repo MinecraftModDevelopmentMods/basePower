@@ -14,6 +14,7 @@ import native263 as native
 import native263_endurance as producer
 import native263_endurance_replay as replay
 from native263_layout import shared_file, region_file
+from test_native263_block_states import contract_catalog, write_contract_catalog
 import test_native12111_endurance_replay as retained_controls
 
 VERIFICATION = Path("D:/PowerAdvantage/_verification/base-263-port-20261112")
@@ -41,6 +42,7 @@ def put_nbt(path, value):
 
 
 def stopped_fixture(root, dimension="minecraft:overworld"):
+    write_contract_catalog(root)
     world = root / replay.WORLD
     put_nbt(world / "level.dat", n.Compound(Data=n.Compound(DataVersion=n.Int(5023))))
     put_nbt(shared_file(world, "minecraft:world_gen_settings"), n.Compound(
@@ -67,6 +69,46 @@ def complete_report():
 
 
 class Native263EnduranceContracts(unittest.TestCase):
+    def test_native66_stopped_guard_requires_owned_exit_all_logs_and_unchanged_catalog(self):
+        from test_native263 import Native263GuardsTest
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            world = stopped_fixture(root)
+            (world / "session.lock").write_bytes(b"native-lock")
+            text = Native263GuardsTest.complete_log()
+            for kind in ("console", "latest", "debug"):
+                (root / f"{kind}-endurance-restart.log").write_text(text)
+            from native263_block_states import CATALOG_FILE
+            proof = dict(status="OWNED_ZERO_EXIT_NATIVE66_COLDSTOP", engineProtocol="NATIVE66", minecraft="26.3",
+                         forge="66.0.0", javaVersion=native.JAVA_VERSION, label="endurance-restart", pid=123,
+                         stopSent=True, returncode=0, sessionLockReleased=True,
+                         coreSha256=native.digest(Path(native.__file__)), blockStateCatalogSha256=native.digest(root / CATALOG_FILE),
+                         logs={kind: native.digest(root / f"{kind}-endurance-restart.log") for kind in ("console", "latest", "debug")})
+            path = root / "native66-stop-endurance-restart.json"
+            path.write_text(json.dumps(proof))
+            before = native.digest(world / "session.lock")
+            with replay.stopped(root, replay.Budget()):
+                pass
+            self.assertEqual(before, native.digest(world / "session.lock"))
+            for field, value in (("stopSent", False), ("returncode", 1), ("returncode", 0.0), ("pid", True),
+                                 ("sessionLockReleased", False), ("coreSha256", "0" * 64), ("forge", "65.1.0"),
+                                 ("blockStateCatalogSha256", "0" * 64)):
+                changed = dict(proof, **{field: value})
+                path.write_text(json.dumps(changed))
+                with self.subTest(field=field), self.assertRaises(AssertionError):
+                    with replay.stopped(root, replay.Budget()):
+                        pass
+            path.write_text(json.dumps(proof))
+            (root / "debug-endurance-restart.log").write_text(text + "\njava.lang.IllegalStateException: real defect")
+            with self.assertRaises(AssertionError):
+                with replay.stopped(root, replay.Budget()):
+                    pass
+            path.unlink()
+            (root / "console-endurance-restart.log").write_text("Stopping server\nAll dimensions are saved")
+            with self.assertRaisesRegex(ValueError, "Expected regular file"):
+                with replay.stopped(root, replay.Budget()):
+                    pass
+
     def test_complete_two_world_gate_rejects_held_smoke_missing_resume_and_low_ticks(self):
         replay.complete(complete_report())
         for key, value in (("status", "HELD"), ("status", "SMOKE_PASS_NOT_ENDURANCE"),
@@ -111,21 +153,43 @@ class Native263EnduranceContracts(unittest.TestCase):
             with self.assertRaises(FileNotFoundError):
                 replay.raw_final(root, replay.Budget())
 
+    def test_raw_endurance_chest_defaults_and_wrong_explicit_facing_are_independent(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            world = stopped_fixture(root)
+            for station in replay.endurance.CHECKED:
+                path = root / "advantage-works-results" / f"{station}-checkpoint-restart-resumed.json"
+                document = json.loads(path.read_text())
+                document["snapshot"][0].update(block="minecraft:chest",
+                    state="Block{minecraft:chest}[facing=north,type=single,waterlogged=false]")
+                path.write_text(json.dumps(document))
+            chunk = retained_controls.chunk()
+            chunk["DataVersion"] = n.Int(5023)
+            chunk["sections"][0]["block_states"]["palette"] = n.List[n.String]([n.String("minecraft:chest")])
+            path = region_file(world, "minecraft:overworld", 0, 0)
+            path.write_bytes(retained_controls.region(retained_controls.payload(chunk)))
+            self.assertEqual("PASS", replay.raw_final(root, replay.Budget())["status"])
+            chunk["sections"][0]["block_states"]["palette"] = n.List[n.Compound]([
+                n.Compound(id=n.String("minecraft:chest"), properties=n.Compound(facing=n.String("east")))])
+            path.write_bytes(retained_controls.region(retained_controls.payload(chunk)))
+            with self.assertRaisesRegex(AssertionError, "raw state/component mismatch"):
+                replay.raw_final(root, replay.Budget())
+
     def test_native_terrain_rejects_old_version_wrong_count_and_packed_tile(self):
         native_chunk = retained_controls.chunk()
         with self.assertRaises(AssertionError):
-            replay.terrain(retained_controls.payload(native_chunk), (0, 0))
+            replay.terrain(retained_controls.payload(native_chunk), (0, 0), catalog=contract_catalog())
         native_chunk["DataVersion"] = n.Int(5023)
         native_chunk["sections"][0]["block_states"]["palette"] = n.List[n.String]([n.String("basepower:test")])
         for compression in (1, 2, 3):
-            replay.terrain(retained_controls.payload(native_chunk, compression), (0, 0))
+            replay.terrain(retained_controls.payload(native_chunk, compression), (0, 0), catalog=contract_catalog())
         for callback in (lambda value: value.__setitem__("DataVersion", n.Short(5023)),
                          lambda value: value["block_entities"][0]["Items"][0].__setitem__("count", n.Byte(1)),
                          lambda value: value["block_entities"][0].__setitem__("keepPacked", n.Byte(1))):
             changed = copy.deepcopy(native_chunk)
             callback(changed)
             with self.assertRaises(AssertionError):
-                replay.terrain(retained_controls.payload(changed), (0, 0))
+                replay.terrain(retained_controls.payload(changed), (0, 0), catalog=contract_catalog())
 
     def test_preseal_time_precedes_both_setups_retrospective_never_becomes_genuine(self):
         with tempfile.TemporaryDirectory() as folder:

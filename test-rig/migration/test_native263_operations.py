@@ -11,6 +11,7 @@ from matrix import WORLD
 import native263_operations as native
 import test_native12111_operations_actor_load as retained_controls
 from native263_layout import region_file
+from test_native263_block_states import contract_catalog, write_contract_catalog
 
 
 class Native263ExpectedActorLoadTest(retained_controls.NativeExpectedActorLoadTest):
@@ -49,16 +50,17 @@ class Native263StoppedMachineTest(unittest.TestCase):
 
     def test_old_data_version_and_wrong_type_are_not_coerced(self):
         with self.assertRaises(ValueError):
-            native.modern_chunk(self.payload(4671)[0])
+            native.modern_chunk(self.payload(4671)[0], catalog=contract_catalog())
         payload, _ = self.payload()
-        native.modern_chunk(payload)
+        native.modern_chunk(payload, catalog=contract_catalog())
         with self.assertRaises(ValueError):
-            native.modern_chunk(payload[:-1])
+            native.modern_chunk(payload[:-1], catalog=contract_catalog())
 
     def test_all_dimensions_and_custom_negative_coordinates_use_explicit_paths(self):
         for dimension in ("minecraft:overworld", "minecraft:the_nether", "minecraft:the_end", "example:deep/cave"):
             with self.subTest(dimension=dimension), tempfile.TemporaryDirectory() as folder:
                 runtime = Path(folder) / "runtime"
+                write_contract_catalog(runtime)
                 evidence = Path(folder) / "evidence"
                 region = region_file(runtime / WORLD, dimension, -1, -1)
                 region.parent.mkdir(parents=True)

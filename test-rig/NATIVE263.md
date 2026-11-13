@@ -12,7 +12,7 @@ A historical pass is not a result for this target. No push or publication is aut
 - Power `2.4.18.2603001`; Steam/Electric `2.2.19.2603001`;
   harness `1.1.8.2603001`; Base Metals `3.1.2.2603001`; OreSpawn `4.1.1.2603001`.
 - `profiles/native263/dev-core.json` has the parent-verified Power pin
-  `5241EA6024AAB3D898ADEA164527CA10EF6BDE2DE155F89B1F7DFD18363676AB`;
+  `F225B3EC1B9B272CCBA82716B6D105D3BF0A613E31437BBFA0F9CAB39E4FE9BB`;
   both child hashes remain zero and the profile remains unqualified.
 - Harness cache: `D:/GradleCaches/advantageworks-263-port/harness`.
   Evidence: `D:/PowerAdvantage/_verification/base-263-port-20261112/harness`.
@@ -29,8 +29,17 @@ orders, client and endurance/replay paths. Run each with `--help`.
 `native263_source_inventory.py` binds the complete target-driver set, current
 Java/resources and imported historical semantic-oracle source bytes to `NATIVE66`.
 
-The target palette adapter accepts compact namespaced strings and new compounds
-with `id`/`properties`. Its `Name`/`Properties` projection is comparison-only;
+The target palette adapter requires the independent `native263-block-state-catalog.json`
+sidecar, written from the complete live registry at ServerStarted. It records every
+block's actual default, legal property domains, native CODEC encode/decode identity,
+all native/mod versions and actual staged jar hashes. Restarts must reproduce it
+byte-for-byte; an existing different catalog is never overwritten.
+Compact strings and partial `id`/`properties` compounds resolve omitted properties
+only from that registry catalog, never live/expected witness rows. Unknown block
+IDs, properties, illegal values and malformed catalogs fail closed. Explicit legal
+properties override defaults and still face exact comparison. This applies equally
+to migration capture, operations terrain and stopped endurance replay.
+Its `Name`/`Properties` projection is comparison-only;
 it never rewrites a source save, expectation, attribute, item or historical palette.
 Native heterogeneous-list empty-key storage wrappers are unwrapped exactly once.
 The native-written `migration/fixtures/native263-mixed-palette.dat` comes directly
@@ -86,6 +95,10 @@ have new binary/source-bound controls and complete, mutation-tested stack fixtur
 `native263_server_proof.py` seals the actual lifecycle, VM/classpath/raw logs,
 primary sources, current core/classifier and oracle closure for server preseal.
 Client classification remains closed. This is not machine-operation qualification.
+Endurance stopped-file custody additionally requires the current owned zero-exit
+`native66-stop-endurance-restart.json`, all three exact log hashes and the unchanged
+catalog hash, followed by a real native session-lock acquisition. Historical final
+save text alone is not a current cold-stop proof.
 
 The `26.2` migration route is explicitly Native65 / Forge65.1.0 / DataVersion4903,
 verified from the sealed engine's actual `version.json`. Its player/dimension source
