@@ -13,8 +13,8 @@ If CurseForge has accepted the file but it isn't public yet, wait for approval.
 Start a new run with the recorded CurseForge file ID so it verifies that upload
 without submitting the jar again. The release workflow sets Java 8 through
 Minecraft 1.16.5, Java 16 for Minecraft 1.17.1, Java 17 through Minecraft 1.20.1,
-Java 21 for Minecraft 1.20.6 through 1.21.11, and Java 25 for Minecraft 26.1.2
-and 26.2. The 26.3 port is not an approved publication target.
+Java 21 for Minecraft 1.20.6 through 1.21.11, and Java 25 for Minecraft 26.1.2,
+26.2 and 26.3. The 26.3 line has passed automated and manual testing.
 Unknown version branches are rejected until their release target is reviewed.
 
 ## Existing CurseForge releases
