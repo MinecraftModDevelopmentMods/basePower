@@ -179,7 +179,12 @@ def validate_progression(result, mode, rubber, *, verify_global_loot=False):
                 "Native merchant item/count modifiers did not execute")
 
 
-unlock_campaign = bind(recipes.unlock_campaign, verify_level=verify_saved_level)
+def validate_unlock(result, definition, operation):
+    from native263_recipe_conditions import validate_unlock as validate
+    return validate(result, definition, operation)
+
+
+unlock_campaign = bind(recipes.unlock_campaign, verify_level=verify_saved_level, validate_unlock=validate_unlock)
 progression_campaign = bind(recipes.progression_campaign, verify_level=verify_saved_level, validate_progression=validate_progression)
 
 
@@ -205,14 +210,14 @@ def verify_packet_exports(runtime):
 
 
 def run(args):
+    import native263_recipe_conditions as conditions
     require(args.campaign in ("all", "unlock", "progression"), "Unknown native recipe campaign")
-    inputs = preflight(args, [Path(recipes.__file__)])
+    inputs = preflight(args, [Path(recipes.__file__), Path(conditions.__file__)])
     native.require_free_port(args.port)
     root = output_path(args.output)
     if args.preflight_only:
         return dict(status="READY_NOT_RUN", qualificationAllowed=False, **inputs.receipt())
-    definition, sources = recipes.recipe_fixture([value[1] for value in inputs.mods.values()],
-                                                 component_predicates=True, singular_directories=True)
+    definition, sources = conditions.recipe_fixture([value[1] for value in inputs.mods.values()])
     root.mkdir(parents=True, exist_ok=False)
     shutil.copy2(Path(__file__), root / "native263-resources-source.py")
     report = dict(status="RUNNING", scope="PACKAGED_RECIPE_SERVER_NOT_GRAPHICAL_ACCEPTANCE",

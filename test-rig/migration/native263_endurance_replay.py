@@ -34,7 +34,23 @@ def terrain(payload, coordinates, *, catalog):
     return bind(previous.terrain, DATA_VERSION=DATA_VERSION,
                 decode_palette=lambda *args: decode_palette(*args, catalog=catalog))(payload, coordinates)
 complete = bind(previous.complete, native=native, MODES=MODES)
-feed_audit = bind(previous.feed_audit, native=native)
+def feed_audit(runtime, budget):
+    counts = {}
+    for boot, expected in zip(("endurance", "endurance-restart"), previous.expected_inventory_acknowledgements(30)):
+        text = budget.read(runtime / f"console-{boot}.log", MAX_JSON).decode("utf-8")
+        native.require_clean_log(runtime / f"console-{boot}.log")
+        require(text.count("Replaced 1 slot(s) at ") == expected, "Missing/extra native inventory acknowledgements")
+        require(not any(marker in text for marker in (
+            "Unknown slot", "Could not replace", "Unknown or incomplete command", "Incorrect argument",
+            "Unknown item", "There is no container", "Modified block data")), "Failed or NBT-fed input commands")
+        if boot.endswith("restart"):
+            require("Advantage Works built" not in text and "Reset 1 station" not in text
+                    and not any("Started " + station + " " in text for station in
+                                ("S-04", "E-03", "E-02", "S-02", "E-01")), "Loaded networks were rebuilt/restarted")
+        counts[boot] = expected
+    return dict(status="PASS", inventoryAcknowledgements=counts,
+                scope="Native feed acknowledgements; exact products/conservation replayed at every batch. "
+                      "Console acknowledgements are not raw pre-processing input snapshots.")
 PRE_RUN = "NATIVE66_ENDURANCE_PRE_RUN_SEAL"
 RETROSPECTIVE = "NATIVE66_ENDURANCE_RETROSPECTIVE_SEAL"
 FREEZE = "NATIVE66_STOPPED_ENDURANCE_FREEZE"

@@ -398,6 +398,12 @@ class Server(NativeLaunch):
     def logging_configuration(self, logging_jar):
         return logging_configuration(self.native_runtime, logging_jar)
 
+    def wait(self, token, timeout=60):
+        # Historical campaigns request one replaced slot; native66 reports its count.
+        if token == "Replaced a slot":
+            token = "Replaced 1 slot(s) at "
+        return super().wait(token, timeout)
+
     def send(self, command):
         if not isinstance(command, str) or not command or "\n" in command or "\r" in command:
             raise ValueError("Expected one bounded server command")
@@ -416,8 +422,11 @@ class Server(NativeLaunch):
                 rule = "minecraft:" + rule
             super().send(" ".join(["gamerule", rule, *words[2:]]))
             shown = rule.removeprefix("minecraft:")
-            self.wait(f"Gamerule {shown} is now set to: {words[2]}" if len(words) == 3
-                      else f"Gamerule {shown} is currently set to: ", 15)
+            self.wait(f"Game rule {shown} is now set to {words[2]}" if len(words) == 3
+                      else f"Game rule {shown} is currently set to ", 15)
+            if len(words) == 3:
+                super().send("gamerule " + rule)
+                self.wait(f"Game rule {shown} is currently set to {words[2]}", 15)
             return
         super().send(command)
         if command == "stop":

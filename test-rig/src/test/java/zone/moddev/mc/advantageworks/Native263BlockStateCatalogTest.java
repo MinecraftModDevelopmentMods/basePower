@@ -10,6 +10,15 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class Native263BlockStateCatalogTest {
+    @Test public void catalogAuthorizationRequiresExactDisposableWorldAndMarker() {
+        for (String world : java.util.List.of("AdvantageWorksMigration", "AdvantageWorksWorldgen", "AdvantageClientResources")) {
+            assertTrue(Native263BlockStateCatalog.authorized(world, true));
+            assertFalse(Native263BlockStateCatalog.authorized(world, false));
+        }
+        for (String world : java.util.List.of("My World", "AdvantageWorksWorldgen-copy", "AdvantageWorksMigration/../Other", ""))
+            assertFalse(Native263BlockStateCatalog.authorized(world, true));
+    }
+
     @BeforeClass public static void bootstrap() { net.minecraft.SharedConstants.tryDetectVersion(); Bootstrap.bootStrap(); }
 
     @Test public void nativeChestCompactDefaultHasAllThreeActualProperties() {

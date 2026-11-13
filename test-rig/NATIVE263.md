@@ -8,7 +8,8 @@ A historical pass is not a result for this target. No push or publication is aut
 
 - Official mappings 26.3, MCP `20260918.230105`, Java `25.0.3+9`.
 - Actual data version 5023; root server pack 121.0; client pack 97.1.
-- Asset index 34, SHA-1 `917FF6D74B9F635C46BAC0D28857206BBCC1FFE4`.
+- Asset index 34, SHA-1 `E99F9973047785B5A9D52EAF72020B97545053C9`,
+  verified against the official post-cold metadata and actual installed index.
 - Power `2.4.18.2603001`; Steam/Electric `2.2.19.2603001`;
   harness `1.1.8.2603001`; Base Metals `3.1.2.2603001`; OreSpawn `4.1.1.2603001`.
 - `profiles/native263/dev-core.json` has the parent-verified Power pin
@@ -94,7 +95,11 @@ OSHI, cleaner selection, default-disabled Unsafe, and Windows KQueue/Epoll fallb
 have new binary/source-bound controls and complete, mutation-tested stack fixtures.
 `native263_server_proof.py` seals the actual lifecycle, VM/classpath/raw logs,
 primary sources, current core/classifier and oracle closure for server preseal.
-Client classification remains closed. This is not machine-operation qualification.
+Independent current-client fresh and same-world full-process restart controls
+authorize only their exact client-specific diagnostic sequences. The client fixture
+does not inherit server or historical exceptions; unsupported transports and bare
+Unsafe without a complete executing-client sequence remain errors. This does not
+qualify family rendering, machine operation or manual gameplay.
 Endurance stopped-file custody additionally requires the current owned zero-exit
 `native66-stop-endurance-restart.json`, all three exact log hashes and the unchanged
 catalog hash, followed by a real native session-lock acquisition. Historical final
@@ -112,6 +117,25 @@ Both interop phases now require an actual placed normal-furnace coal oracle and
 both public FuelRegistry overloads to return exactly 1600 with no custom/item
 override. All three input stacks must retain their full components and count.
 The compiled probe and strict report verifier do not claim that gameplay has run.
+
+Native66 command acknowledgements use `Game rule ... is now set to ...` and
+`Replaced 1 slot(s) at ...`. Assignments additionally require the exact native
+gamerule read-back; single-slot feeds retain exact acknowledgement counts and all
+raw inventory/conservation assertions. Historical drivers remain unchanged.
+
+The independent block-state catalog requires `advantage-works.allow` and one exact
+disposable world name: `AdvantageWorksMigration`, `AdvantageWorksWorldgen`, or
+`AdvantageClientResources`. Arbitrary or unmarked worlds remain unauthorized.
+
+The resource-only conditional unlock fixture retains each frozen recipe's actual
+`forge:condition` and verifies exact parity with its advancement before launch.
+The probe independently interprets all required tags and mode/musket predicates
+against actual bound registry/configuration facts. Both loaded objects must exist
+if and only if that condition is true. False conditions report
+`SKIP_NO_INGREDIENT_PROVIDER`; active conditions must still exercise native criteria,
+rewards, player persistence and login restoration. Native Forge empty AND lists
+are true, including the four unconditional Electric cooking recipes. Unknown
+conditions, missing active objects, mismatched pairs and unjustified skips fail.
 
 Retain all partial/failing logs. Never retrofit profile-03 hashes, retrospective
 seals or old native-control receipts to obtain a 263 pass. Graphical unit/resource

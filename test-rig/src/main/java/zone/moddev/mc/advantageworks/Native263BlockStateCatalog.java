@@ -31,7 +31,9 @@ final class Native263BlockStateCatalog {
     }
 
     private static void started(ServerStartedEvent event) {
-        if (!event.getServer().getWorldData().getLevelName().equals("AdvantageWorksMigration"))
+        if (!authorized(event.getServer().getWorldData().getLevelName(),
+                Files.isRegularFile(Path.of("advantage-works.allow"))
+                        && !Files.isSymbolicLink(Path.of("advantage-works.allow"))))
             throw new IllegalStateException("Refusing a block catalog outside the marked disposable world");
         try {
             JsonObject result = new JsonObject();
@@ -76,6 +78,11 @@ final class Native263BlockStateCatalog {
         } catch (Exception error) {
             throw new IllegalStateException("Independent native block-state catalog failed", error);
         }
+    }
+
+    static boolean authorized(String worldName, boolean marked) {
+        return marked && java.util.Set.of("AdvantageWorksMigration", "AdvantageWorksWorldgen",
+                "AdvantageClientResources").contains(worldName);
     }
 
     static void retain(Path output, JsonObject catalog) throws Exception {

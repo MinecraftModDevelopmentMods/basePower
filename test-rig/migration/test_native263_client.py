@@ -1,11 +1,13 @@
 """Adapter and actual-SDK preflight tests. No Minecraft client is launched."""
 
 import copy
+import os
 import json
 import nbtlib
 from pathlib import Path
 import shutil
 import struct
+import subprocess
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -15,6 +17,16 @@ from zipfile import ZipFile
 
 from matrix import digest
 import native263_client as client
+
+
+def selected_launch():
+    path, checksum = (os.environ.get(key) for key in ("NATIVE263_TEST_CLIENT_LAUNCH", "NATIVE263_TEST_CLIENT_LAUNCH_SHA256"))
+    if path or checksum:
+        if not path or not checksum:
+            raise ValueError("Select the complete explicitly pinned actual client launch")
+        client.native.validate_hash(Path(path), checksum)
+        return Path(path)
+    return client.native.RIG.parent / "runClient.launch"
 
 
 def report_fixture():
@@ -198,7 +210,7 @@ class ClientAdapterTest(unittest.TestCase):
             self.assertEqual(before, (root / client.RESULT).read_bytes())
 
     def test_actual_native_sdk_launch_is_read_only_and_excludes_mutable_child_outputs(self):
-        source = client.native.RIG.parent / "runClient.launch"
+        source = selected_launch()
         before = source.read_bytes()
         plan = client.inspect_launch(source)
         self.assertEqual(("26.3", "66.0.0", "20260918.230105"), (plan["minecraft"], plan["forge"], plan["mcp"]))
@@ -206,10 +218,29 @@ class ClientAdapterTest(unittest.TestCase):
         self.assertEqual(before, source.read_bytes())
         self.assertGreater(len(plan["archives"]), 50)
         self.assertTrue(all(not client.mod_ids(row["path"]) & client.FAMILY for row in plan["archives"]))
-        self.assertEqual(client.ASSET_INDEX_SHA1, "917FF6D74B9F635C46BAC0D28857206BBCC1FFE4")
+        self.assertEqual(client.ASSET_INDEX_SHA1, "E99F9973047785B5A9D52EAF72020B97545053C9")
+        self.assertEqual(["--launcher-side", "client"], plan["program"][:2])
+        self.assertEqual(21, len(plan["program"]))
+
+    def test_exact_slime_template_adds_client_side_without_changing_any_other_word(self):
+        plan = client.inspect_launch(selected_launch())
+        legacy = plan["program"][2:]
+        before = list(legacy)
+        self.assertEqual(plan["program"], client.client_program(legacy))
+        self.assertEqual(before, legacy)
+        self.assertEqual(plan["program"], client.client_program(plan["program"]))
+        for bad in (["--launcher-side", "server", *legacy], [*legacy, "--server", "localhost"],
+                    ["--unknown", *legacy[1:]]):
+            with self.assertRaises(AssertionError):
+                client.client_program(bad)
+
+    def test_old_asset_pin_is_rejected_against_actual_official_metadata(self):
+        with patch.object(client, "ASSET_INDEX_SHA1", "917FF6D74B9F635C46BAC0D28857206BBCC1FFE4"):
+            with self.assertRaisesRegex(AssertionError, "actual native SDK manifest"):
+                client.inspect_launch(selected_launch())
 
     def test_missing_native_client_extra_cannot_pass_sdk_preflight(self):
-        tree = ET.parse(client.native.RIG.parent / "runClient.launch")
+        tree = ET.parse(selected_launch())
         entries = next(row for row in tree.getroot().findall("listAttribute")
                        if row.attrib["key"] == "org.eclipse.jdt.launching.CLASSPATH")
         for row in list(entries):
@@ -222,9 +253,11 @@ class ClientAdapterTest(unittest.TestCase):
                 client.inspect_launch(path)
 
     def mutate_launch(self, key, transform):
-        tree = ET.parse(client.native.RIG.parent / "runClient.launch")
+        tree = ET.parse(selected_launch())
         node = next(row for row in tree.findall("stringAttribute") if row.attrib["key"] == key)
-        node.attrib["value"] = transform(node.attrib["value"])
+        original = node.attrib["value"]
+        node.attrib["value"] = transform(original)
+        self.assertNotEqual(original, node.attrib["value"], "Negative control did not mutate the actual launch")
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "launch.xml"
             tree.write(path, encoding="utf-8")
@@ -236,10 +269,11 @@ class ClientAdapterTest(unittest.TestCase):
         program = "org.eclipse.jdt.launching.PROGRAM_ARGUMENTS"
         for option in (" -javaagent:wrong.jar", " -cp unpinned", " -Dmixin.debug.export=true"):
             self.mutate_launch(vm, lambda value, option=option: value + option)
-        for change in (lambda value: value + " --server localhost", lambda value: value.replace("--gameDir .", "--gameDir protected"),
-                       lambda value: value.replace("--assetIndex 34", "--assetIndex 29"),
-                       lambda value: value.replace("forge_userdev_client", "forge_userdev_server")):
-            self.mutate_launch(program, change)
+        for change in (lambda value: value + ["--server", "localhost"],
+                       lambda value: ["protected" if word == "." else word for word in value],
+                       lambda value: ["29" if word == "34" else word for word in value],
+                       lambda value: ["forge_userdev_server" if word == "forge_userdev_client" else word for word in value]):
+            self.mutate_launch(program, lambda value, change=change: subprocess.list2cmdline(change(client.words(value))))
 
     def test_whole_result_requires_all39_gui_and_all26_gauges_without_promoting_manual_gaps(self):
         report, labels = report_fixture()

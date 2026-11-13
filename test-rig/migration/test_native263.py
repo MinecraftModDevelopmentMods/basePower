@@ -18,6 +18,25 @@ LOGGING = SDK / f"libraries/net/minecraftforge/fmlloader/{native.FORGE_VERSION}/
 
 
 class Native263GuardsTest(unittest.TestCase):
+    def test_native_single_slot_ack_is_exact_not_any_count(self):
+        server = object.__new__(native.Server)
+        with patch.object(native.NativeLaunch, "wait") as wait:
+            server.wait("Replaced a slot", 30)
+            wait.assert_called_once_with("Replaced 1 slot(s) at ", 30)
+            wait.reset_mock()
+            server.wait("Replaced 2 slot(s) at ", 30)
+            wait.assert_called_once_with("Replaced 2 slot(s) at ", 30)
+
+    def test_native_gamerule_assignment_requires_exact_ack_and_state_query(self):
+        server = object.__new__(native.Server)
+        with patch.object(native.NativeLaunch, "send") as send, patch.object(native.NativeLaunch, "wait") as wait:
+            server.send("gamerule doMobSpawning false")
+            self.assertEqual([("gamerule minecraft:spawn_mobs false",), ("gamerule minecraft:spawn_mobs",)],
+                             [call.args for call in send.call_args_list])
+            self.assertEqual([("Game rule spawn_mobs is now set to false", 15),
+                              ("Game rule spawn_mobs is currently set to false", 15)],
+                             [call.args for call in wait.call_args_list])
+
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)

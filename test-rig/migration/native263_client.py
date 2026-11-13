@@ -27,7 +27,7 @@ from native263_resources import FAMILY, arguments, artifact, preflight, require
 
 
 ASSET_INDEX = "34"
-ASSET_INDEX_SHA1 = "917FF6D74B9F635C46BAC0D28857206BBCC1FFE4"
+ASSET_INDEX_SHA1 = "E99F9973047785B5A9D52EAF72020B97545053C9"
 VIEWPORTS = ((320, 240, 1), (426, 240, 2), (640, 360, 1))
 VM_ARGS = ("-Djava.net.preferIPv6Addresses=system", "-XX:+UseCompactObjectHeaders", "-XX:StackShadowPages=32", "--add-opens",
            "java.base/java.lang.invoke=ALL-UNNAMED", "-Dforge.enableGameTest=true",
@@ -89,6 +89,18 @@ def record(path):
     return dict(path=str(path), sha256=digest(path))
 
 
+def client_program(raw):
+    program = list(raw)
+    # Slime 0.2.2 supports an explicit side; its generated template omits that option.
+    if len(program) == 19 and program[:3] == ["--main", "net.minecraftforge.bootstrap.ForgeBootstrap", "--cache"]:
+        program = ["--launcher-side", "client", *program]
+    require(len(program) == 21 and program[:5] == ["--launcher-side", "client", "--main", "net.minecraftforge.bootstrap.ForgeBootstrap", "--cache"]
+            and program[6] == "--metadata" and program[8:18] == ["--", "--gameDir", ".", "--launchTarget",
+                "forge_userdev_client", "--version", "MOD_DEV", "--assetIndex", ASSET_INDEX, "--assetsDir"]
+            and program[19:] == ["--mixin", "basepower.mixins.json"], "Unreviewed native client program arguments")
+    return program
+
+
 def inspect_launch(path):
     launch = record(path)
     tree = ET.parse(path).getroot()
@@ -100,11 +112,8 @@ def inspect_launch(path):
             "Unexpected client entrypoint")
     vm = words(attrs["org.eclipse.jdt.launching.VM_ARGUMENTS"])
     require(tuple(vm) == VM_ARGS, "Unreviewed JVM options, agent, or altered client classpath")
-    program = words(attrs["org.eclipse.jdt.launching.PROGRAM_ARGUMENTS"])
-    require(len(program) == 21 and program[:5] == ["--launcher-side", "client", "--main", "net.minecraftforge.bootstrap.ForgeBootstrap", "--cache"]
-            and program[6] == "--metadata" and program[8:18] == ["--", "--gameDir", ".", "--launchTarget",
-                "forge_userdev_client", "--version", "MOD_DEV", "--assetIndex", ASSET_INDEX, "--assetsDir"]
-            and program[19:] == ["--mixin", "basepower.mixins.json"], "Unreviewed native client program arguments")
+    template = words(attrs["org.eclipse.jdt.launching.PROGRAM_ARGUMENTS"])
+    program = client_program(template)
     environment = {}
     maps = [row for row in tree.findall("mapAttribute") if row.attrib["key"] == "org.eclipse.debug.core.environmentVariables"]
     require(len(maps) == 1, "Expected one explicit Eclipse environment")
@@ -155,7 +164,7 @@ def inspect_launch(path):
     require(hashlib.sha1(index.read_bytes()).hexdigest().upper() == ASSET_INDEX_SHA1, "Wrong native client asset index")
     return dict(format=1, minecraft=native.MINECRAFT, forge=native.FORGE, mcp=native.MCP,
                 javaSha256=native.JAVA_SHA, launch=launch, archives=archives, metadata=metadata,
-                assetIndex=record(index), program=program, vm=vm, environment=environment,
+                assetIndex=record(index), program=program, programTemplate=template, vm=vm, environment=environment,
                 excludedMutableCandidatePaths=skipped)
 
 
@@ -725,7 +734,7 @@ def _run(args, owned):
     native.validate_hash(args.probe, args.probe_sha256)
     with ZipFile(args.probe) as jar:
         metadata = tomllib.loads(jar.read("META-INF/mods.toml").decode("utf-8"))
-    require(metadata["loaderVersion"] == "[65,66)" and metadata["mods"][0]["modId"] == "advantageclientresources",
+    require(metadata["loaderVersion"] == "[66,67)" and metadata["mods"][0]["modId"] == "advantageclientresources",
             "Wrong native client probe")
     deps = {row["modId"]: row["versionRange"] for row in metadata["dependencies"]["advantageclientresources"]}
     require(deps == {"basepower": "[2.4.18.2603001]", "forge": "[66.0.0]", "minecraft": "[26.3]"}, "Stale client probe dependencies")
