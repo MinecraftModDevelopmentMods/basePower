@@ -82,20 +82,24 @@ public class RecipeUnlockContractTest {
             assertEquals(id, recipes.get(0).getAsString());
             JsonObject criterion = unlock.getAsJsonObject("criteria").getAsJsonObject("has_recipe");
             assertEquals("minecraft:recipe_unlocked", criterion.get("trigger").getAsString());
-            var recipesInCriterion = criterion.getAsJsonObject("conditions").getAsJsonArray("recipes");
-            assertEquals(1, recipesInCriterion.size());
-            assertEquals(id, recipesInCriterion.get(0).getAsString());
+            assertEquals("#" + MOD + ":discovery/" + file.getFileName().toString().replace(".json", ""),
+                    criterion.getAsJsonObject("conditions").get("recipes").getAsString());
             assertFalse(criterion.getAsJsonObject("conditions").has("recipe"));
             assertFalse("Forge recipe conditions are not valid advancement conditions", unlock.has("conditions"));
         }
     }
 
-    @Test public void conditionalRecipesAndTheirUnlocksHaveExactlyTheSameGate() throws IOException {
+    @Test public void inactiveRecipesKeepTheirDiscoveriesThroughExactOptionalRecipeTags() throws IOException {
         for (Path file : files(DATA.resolve("advancement/recipes"))) {
             JsonObject unlock = read(file);
-            JsonObject recipe = read(DATA.resolve("recipe").resolve(file.getFileName()));
-            assertEquals(file.toString(), recipe.get("forge:condition"), unlock.get("forge:condition"));
+            assertFalse("Inactive discoveries must not disappear when the mode changes", unlock.has("forge:condition"));
+            JsonObject tag = read(DATA.resolve("tags/recipe/discovery").resolve(file.getFileName()));
+            assertEquals(1, tag.getAsJsonArray("values").size());
+            JsonObject entry = tag.getAsJsonArray("values").get(0).getAsJsonObject();
+            assertEquals(MOD + ":" + file.getFileName().toString().replace(".json", ""), entry.get("id").getAsString());
+            assertFalse("Inactive recipes must not be required tag members", entry.get("required").getAsBoolean());
         }
+        assertEquals(files(DATA.resolve("advancement/recipes")).size(), files(DATA.resolve("tags/recipe/discovery")).size());
     }
 
     @Test public void recipeBookGroupsIdentifyTheOutputNotABroadMachineCategory() throws IOException {

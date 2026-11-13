@@ -24,9 +24,7 @@
     "has_recipe": {
       "trigger": "minecraft:recipe_unlocked",
       "conditions": {
-        "recipes": [
-          "basepower:sprocket_rod_normal"
-        ]
+        "recipes": "#basepower:discovery/sprocket_rod_normal"
       }
     }
   },
@@ -40,23 +38,6 @@
   "rewards": {
     "recipes": [
       "basepower:sprocket_rod_normal"
-    ]
-  },
-  "forge:condition": {
-    "type": "forge:and",
-    "values": [
-      {
-        "type": "basepower:recipe_mode",
-        "mode": "NORMAL"
-      },
-      {
-        "type": "basepower:tag_not_empty",
-        "tag": "forge:ingots/steel"
-      },
-      {
-        "type": "basepower:tag_not_empty",
-        "tag": "forge:rods"
-      }
     ]
   }
 }

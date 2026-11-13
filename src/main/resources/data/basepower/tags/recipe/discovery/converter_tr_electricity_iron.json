@@ -1,0 +1,8 @@
+{
+  "values": [
+    {
+      "id": "basepower:converter_tr_electricity_iron",
+      "required": false
+    }
+  ]
+}

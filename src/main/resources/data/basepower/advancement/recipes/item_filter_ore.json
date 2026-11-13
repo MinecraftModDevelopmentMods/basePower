@@ -38,9 +38,7 @@
     "has_recipe": {
       "trigger": "minecraft:recipe_unlocked",
       "conditions": {
-        "recipes": [
-          "basepower:item_filter_ore"
-        ]
+        "recipes": "#basepower:discovery/item_filter_ore"
       }
     }
   },
@@ -56,9 +54,5 @@
     "recipes": [
       "basepower:item_filter_ore"
     ]
-  },
-  "forge:condition": {
-    "type": "basepower:tag_not_empty",
-    "tag": "forge:ingots/gold"
   }
 }

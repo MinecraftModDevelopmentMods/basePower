@@ -1,0 +1,8 @@
+{
+  "values": [
+    {
+      "id": "basepower:converter_rf_electricity",
+      "required": false
+    }
+  ]
+}

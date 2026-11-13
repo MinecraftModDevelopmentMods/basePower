@@ -1,0 +1,8 @@
+{
+  "values": [
+    {
+      "id": "basepower:item_filter_plant",
+      "required": false
+    }
+  ]
+}

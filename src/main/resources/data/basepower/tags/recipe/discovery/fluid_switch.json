@@ -1,0 +1,8 @@
+{
+  "values": [
+    {
+      "id": "basepower:fluid_switch",
+      "required": false
+    }
+  ]
+}

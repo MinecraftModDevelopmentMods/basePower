@@ -24,9 +24,7 @@
     "has_recipe": {
       "trigger": "minecraft:recipe_unlocked",
       "conditions": {
-        "recipes": [
-          "basepower:fluid_storage_tank"
-        ]
+        "recipes": "#basepower:discovery/fluid_storage_tank"
       }
     }
   },
@@ -40,19 +38,6 @@
   "rewards": {
     "recipes": [
       "basepower:fluid_storage_tank"
-    ]
-  },
-  "forge:condition": {
-    "type": "forge:and",
-    "values": [
-      {
-        "type": "basepower:tag_not_empty",
-        "tag": "forge:ingots/plastic"
-      },
-      {
-        "type": "basepower:tag_not_empty",
-        "tag": "forge:pipes"
-      }
     ]
   }
 }

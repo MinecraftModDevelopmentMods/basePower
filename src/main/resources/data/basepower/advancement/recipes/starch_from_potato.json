@@ -28,9 +28,7 @@
     "has_recipe": {
       "trigger": "minecraft:recipe_unlocked",
       "conditions": {
-        "recipes": [
-          "basepower:starch_from_potato"
-        ]
+        "recipes": "#basepower:discovery/starch_from_potato"
       }
     }
   },

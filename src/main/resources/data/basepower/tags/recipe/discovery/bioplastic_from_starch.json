@@ -1,0 +1,8 @@
+{
+  "values": [
+    {
+      "id": "basepower:bioplastic_from_starch",
+      "required": false
+    }
+  ]
+}

@@ -38,9 +38,7 @@
     "has_recipe": {
       "trigger": "minecraft:recipe_unlocked",
       "conditions": {
-        "recipes": [
-          "basepower:converter_rf_quantum"
-        ]
+        "recipes": "#basepower:discovery/converter_rf_quantum"
       }
     }
   },
@@ -56,9 +54,5 @@
     "recipes": [
       "basepower:converter_rf_quantum"
     ]
-  },
-  "forge:condition": {
-    "type": "basepower:tag_not_empty",
-    "tag": "forge:frames/steel"
   }
 }

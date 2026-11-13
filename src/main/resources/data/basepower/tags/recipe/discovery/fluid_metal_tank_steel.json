@@ -1,0 +1,8 @@
+{
+  "values": [
+    {
+      "id": "basepower:fluid_metal_tank_steel",
+      "required": false
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "values": [
+    {
+      "id": "basepower:rotator_tool",
+      "required": false
+    }
+  ]
+}

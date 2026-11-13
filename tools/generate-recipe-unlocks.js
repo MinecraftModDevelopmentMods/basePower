@@ -8,6 +8,7 @@ const mod = /^mod_id=(.+)$/m.exec(properties)[1].trim();
 const data = path.join(root, 'src/main/resources/data', mod);
 const recipes = path.join(data, 'recipe');
 const output = path.join(data, 'advancement/recipes');
+const recipeTags = path.join(data, 'tags/recipe/discovery');
 const check = process.argv.includes('--check');
 const ignored = new Set(['item:minecraft:stick', 'item:minecraft:string',
   'item:minecraft:feather', 'tag:forge:rods/wooden']);
@@ -36,13 +37,23 @@ for (const file of fs.readdirSync(recipes).filter(name => name.endsWith('.json')
       conditions: {items: [{items: ingredient.item ? [ingredient.item] : '#' + ingredient.tag}]}
     };
   });
-  criteria.has_recipe = {trigger: 'minecraft:recipe_unlocked', conditions: {recipes: [id]}};
+  const discoveryTag = `${mod}:discovery/${file.slice(0, -5)}`;
+  criteria.has_recipe = {trigger: 'minecraft:recipe_unlocked', conditions: {recipes: '#' + discoveryTag}};
   const advancement = {
     parent: 'minecraft:recipes/root', criteria,
     requirements: [Object.keys(criteria)], rewards: {recipes: [id]}
   };
-  // Recipe criteria now resolve registry entries; inactive recipes need inactive unlocks too.
-  if (recipe['forge:condition']) advancement['forge:condition'] = recipe['forge:condition'];
+  // Empty optional recipe tags keep inactive discoveries loaded without dangling holders.
+  const tagText = JSON.stringify({values: [{id, required: false}]}, null, 2) + '\n';
+  const tagTarget = path.join(recipeTags, file);
+  if (check) {
+    if (!fs.existsSync(tagTarget) || fs.readFileSync(tagTarget, 'utf8').replace(/\r\n/g, '\n') !== tagText) {
+      throw new Error('Missing/stale recipe discovery tag: ' + tagTarget);
+    }
+  } else {
+    fs.mkdirSync(recipeTags, {recursive: true});
+    fs.writeFileSync(tagTarget, tagText);
+  }
   const text = JSON.stringify(advancement, null, 2) + '\n';
   const target = path.join(output, file);
   expected.add(file);
@@ -57,5 +68,8 @@ for (const file of fs.readdirSync(recipes).filter(name => name.endsWith('.json')
 }
 for (const file of fs.existsSync(output) ? fs.readdirSync(output) : []) {
   if (file.endsWith('.json') && !expected.has(file)) throw new Error('Unexpected recipe unlock: ' + file);
+}
+for (const file of fs.existsSync(recipeTags) ? fs.readdirSync(recipeTags) : []) {
+  if (file.endsWith('.json') && !expected.has(file)) throw new Error('Unexpected recipe discovery tag: ' + file);
 }
 console.log(`${mod}: ${expected.size} recipe unlocks ${check ? 'verified' : 'generated'}`);

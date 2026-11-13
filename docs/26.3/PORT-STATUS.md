@@ -33,10 +33,11 @@ The compile baseline is Forge 66.0.0, official 26.3 names, MCP
   required lookup hook carries that reload's native `PendingTags` without a
   global cache. Explicit condition contexts remain authoritative. Tests cover
   initially unbound tags, player-edited empty tags and independent reloads.
-- Recipe-book criteria use native recipe lists. Each generated unlock retains
-  its recipe's conditions, so inactive mode or missing-material variants do not
-  leave dangling registry references. A real startup failure and native codec
-  regression tests cover the old format.
+- Recipe-book criteria use native recipe tags, each with exactly one optional
+  recipe reference. An inactive variant has an empty tag rather than a dangling
+  holder. Its ingredient advancement remains loaded, retaining discoveries
+  through mode changes as before. Startup and mode-switch tests exposed why
+  conditioning the advancement itself was not sufficient.
 - The current biome-index allowlist includes dappled forest. Saved biome data
   remains under the native data fixers rather than being replaced by a registry
   object.

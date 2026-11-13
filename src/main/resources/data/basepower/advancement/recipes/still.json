@@ -38,9 +38,7 @@
     "has_recipe": {
       "trigger": "minecraft:recipe_unlocked",
       "conditions": {
-        "recipes": [
-          "basepower:still"
-        ]
+        "recipes": "#basepower:discovery/still"
       }
     }
   },
@@ -56,9 +54,5 @@
     "recipes": [
       "basepower:still"
     ]
-  },
-  "forge:condition": {
-    "type": "basepower:tag_not_empty",
-    "tag": "forge:pipes"
   }
 }
