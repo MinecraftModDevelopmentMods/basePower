@@ -1,10 +1,14 @@
 # basePower
 
-**Minecraft 26.3 (Forge), version 2.4.18.2603001. In development.**
+**Minecraft 26.3 (Forge), version 2.4.18.2603001. Accepted for release.**
 
-This branch is a fresh port of the accepted 26.2 source. Its own qualification
-is in progress; the earlier tests do not qualify the new version. See the
-[26.3 port record](docs/26.3/PORT-STATUS.md). The
+This branch is a fresh port of the accepted 26.2 source. Its machine, recipe,
+old-world upgrade, graphical, full-restart and two-world endurance checks have
+passed against the exact current jars, and manual testing is complete.
+Publication is being prepared in dependency order. See the
+[release status](docs/26.3/RELEASE.md),
+[26.3 test results](docs/26.3/QUALIFICATION.md) and
+[port record](docs/26.3/PORT-STATUS.md). The
 [26.2 qualification](docs/26.2/QUALIFICATION.md) and
 [port record](docs/26.2/PORT-STATUS.md) remain historical evidence.
 The [26.1.2 qualification](docs/26.1.2/QUALIFICATION.md) and
@@ -31,9 +35,8 @@ fluids and item transport for baseSteam and baseElectric.
 
 **Back up the entire world before upgrading. Test only disposable copies.**
 The port keeps existing registry names and machine data. Its upgrade checks
-must pass on disposable copies of original Advantage and released base* saves,
-including connected machines, after a full restart. Those checks are still in
-progress for 26.3. Check that
+passed on disposable copies of original Advantage and released base* saves,
+including connected machines operated again after a full restart. Check that
 the other mods in your world support 26.3 before attempting an upgrade.
 The accepted [1.14 results](docs/1.14/BROADER-QUALIFICATION.md) are historical
 evidence, not qualification of this port or a whole modpack.

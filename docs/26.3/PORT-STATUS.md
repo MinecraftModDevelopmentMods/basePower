@@ -1,11 +1,14 @@
 # Minecraft 26.3 Port
 
-This branch starts from the accepted 26.2 sources. It is local and unqualified;
-no 26.3 implementation or dependency fix has been pushed or published.
+This branch starts from the accepted 26.2 sources. The exact test kit has
+passed its automated and manual checks. Publication is being prepared in
+dependency order. See the [release status](RELEASE.md) and
+[test results](QUALIFICATION.md) for the exact versions, hashes and limits.
 
 The compile baseline is Forge 66.0.0, official 26.3 names, MCP
-20260918.230105 and Temurin 25.0.3+9. The current recommended Forge build,
-66.1.5, is a separate compatibility target, not an assumed pass.
+20260918.230105 and Temurin 25.0.3+9. Forge 66.1.5 has separate bounded
+dedicated-server compatibility evidence; it does
+not replace the complete 66.0.0 baseline.
 
 ## Native Changes Under Review
 
@@ -53,8 +56,9 @@ passed their local dependency checks. They remain separate dependency
 changes and must not be published implicitly with this port.
 
 The earlier [26.2 qualification](../26.2/QUALIFICATION.md) is evidence for its
-named jars only. New machine, progression, migration, restart, graphical,
-network-unloading, moving-drill and measured endurance evidence is required.
+named jars only. The new 26.3 machine, progression, migration, restart,
+graphical, network-unloading, moving-drill and measured endurance results
+are recorded separately in the current test report.
 
 References:
 - [Official Forge downloads](https://files.minecraftforge.net/net/minecraftforge/forge/index_26.3.html)

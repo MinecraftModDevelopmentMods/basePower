@@ -1,4 +1,4 @@
-basePower 2.4.18.2603001 (Minecraft 26.3, in development)
+basePower 2.4.18.2603001 (Minecraft 26.3)
 
 - Begin the Forge 66 port from the accepted 26.2 source, preserving machine identities and saved state.
 - Keep historical block-state flattening separate from Minecraft's new native state format.
@@ -12,7 +12,8 @@ basePower 2.4.18.2603001 (Minecraft 26.3, in development)
 - Use native loot modifiers and conditions so portable tanks keep their fluid when broken, and chest parts keep their established quantities.
 - Check complete loot tables against the accepted 26.2 release, rather than only checking individual function syntax.
 - Retire the removed vanilla temptation-memory index during upgrades and keep its saved value in the entity's persistent compatibility data, without resetting its other memories.
-- Qualification and manual testing are still pending; earlier results apply only to their original jars.
+- Complete the current machine, recipe, old-world upgrade, graphical, full-restart and two-world 30-minute endurance checks, including a direct upgrade from the exact published 26.2 jars.
+- Keep the stricter tooltip, framebuffer and saved-world client checks. Automated and manual testing are complete; publication follows the dependency patches.
 
 basePower 2.4.17.2602001 (Minecraft 26.2, local test candidate)
 
