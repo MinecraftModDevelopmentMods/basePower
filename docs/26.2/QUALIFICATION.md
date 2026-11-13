@@ -1,5 +1,11 @@
 # Minecraft 26.2 Test Results
 
+> Historical candidate record, 12 November 2026. The original profile03 table,
+> hashes and gate wording below are preserved as recorded. Publication was
+> completed later; see the [13 November 2026 release record](RELEASE.md).
+> In particular, Electric's published 2928E1C6... jar does not replace the
+> original A7D12A66... input in this table. This note is not new gameplay proof.
+
 The three candidates have passed the automated checks below, and manual
 testing was accepted on 12 November 2026. Source delivery and publication are
 being prepared in dependency order. The original local evidence and its

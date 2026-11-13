@@ -1,11 +1,15 @@
-basePower 2.4.17.2602001 (Minecraft 26.2)
+basePower 2.4.17.2602001 (Minecraft 26.2) - published 12 November 2026
 
 - Bring the accepted 26.1.2 source to Forge 65 and Java 25, keeping existing machine identities and saved data.
 - Update the native data and client resource format checks for Minecraft 26.2.
 - Use the current native GUI and rendering APIs without changing machine balance.
 - Recognise Minecraft's new sulfur-caves biome when checking saved registry snapshots.
-- Keep the shared Base Metals migration hook and qualify OreSpawn's retained-settings repair locally.
-- Complete machine, recipe progression, old-world migration, full-restart, graphical and two-world 30-minute endurance checks, followed by manual testing.
+- Use the published Base Metals migration hook and OreSpawn retained-settings repair.
+- Machine, recipe progression, old-world migration, full-restart, graphical and two-world 30-minute endurance checks passed. Manual testing completed.
+- Downloads: https://www.curseforge.com/minecraft/mc-mods/basepower/files/9583433
+- MMD Maven: https://maven.moddev.zone/releases/zone/moddev/mc/basepower/basePower/2.4.17.2602001/basePower-2.4.17.2602001.jar
+- GitHub: https://github.com/MinecraftModDevelopmentMods/basePower/releases/tag/2.4.17.2602001
+- Published source and download hash: docs/26.2/RELEASE.md. Original candidate evidence stays dated and unchanged.
 
 basePower 2.4.16.2601021 (Minecraft 26.1.2)
 

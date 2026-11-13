@@ -1,32 +1,39 @@
 # basePower
 
-**Minecraft 26.2 (Forge), version 2.4.17.2602001. Accepted for release.**
+**Minecraft 26.2 (Forge), version 2.4.17.2602001. Published.**
 
-This branch is a fresh port of the accepted 26.1.2 source. Its automated
-machine, migration, graphical and endurance checks have passed, and manual
-testing is complete. Publication is being prepared separately. See the
-[26.2 qualification](docs/26.2/QUALIFICATION.md) and
-[port record](docs/26.2/PORT-STATUS.md).
+The 26.2 release is available from
+[CurseForge](https://www.curseforge.com/minecraft/mc-mods/basepower/files/9583433),
+[MMD Maven](https://maven.moddev.zone/releases/zone/moddev/mc/basepower/basePower/2.4.17.2602001/basePower-2.4.17.2602001.jar)
+and [GitHub Releases](https://github.com/MinecraftModDevelopmentMods/basePower/releases/tag/2.4.17.2602001).
+See the [published release record](docs/26.2/RELEASE.md) for the source commit
+and verified download hash. Automated machine, migration, graphical and
+endurance checks passed, and manual testing was accepted on 12 November 2026.
+The dated [candidate qualification](docs/26.2/QUALIFICATION.md) and
+[port record](docs/26.2/PORT-STATUS.md) keep their original test-kit inputs.
 The [26.1.2 qualification](docs/26.1.2/QUALIFICATION.md) and
 [port record](docs/26.1.2/PORT-STATUS.md) keep the earlier findings separate.
 The [1.21.11 qualification](docs/1.21.11/QUALIFICATION.md) remains historical
 evidence, not proof of this port.
 
 Use the generated `runClientAllAdvantage.launch` in Eclipse to load the
-matching baseSteam and baseElectric candidates with basePower.
+matching sealed baseSteam and baseElectric test-kit inputs with basePower.
+That developer fixture retains its original profile hashes; it is not a
+moving selector for the latest public downloads.
 
 basePower continues DrCyano's Power Advantage. It provides shared power,
 fluids and item transport for baseSteam and baseElectric.
 
-## Testing On 26.2
+## Installing On 26.2
 
-- Use the local MMD OreSpawn `4.1.1.2602001` on both client and server. This
-  includes the retained-provider-settings fix used by the upgrade tests.
-- Use the local Base Metals `3.1.2.2602001` migration-hook build on both sides.
-  Neither dependency fix is published. Older public jars are not substitutes
-  for this test kit; exact source commits and hashes are in `gradle.properties`.
+- Use published [OreSpawn `4.1.1.2602001`](https://www.curseforge.com/minecraft/mc-mods/mmd-orespawn/files/9582731)
+  on both client and server. It includes the retained-provider-settings fix.
+- Use published [Base Metals `3.1.2.2602001`](https://www.curseforge.com/minecraft/mc-mods/base-metals/files/9583122)
+  on both sides. It includes the shared migration hook. Older jars do not
+  include these repairs; exact source commits and hashes are in `gradle.properties`.
 - baseSteam and baseElectric are separate mods. Use only their matching
-  26.2 builds: version `2.2.18.2602001` for each. Additional Loot Tables is not
+  published 26.2 releases: [baseSteam `2.2.18.2602001`](https://www.curseforge.com/minecraft/mc-mods/basesteam/files/9584145)
+  and [baseElectric `2.2.18.2602001`](https://www.curseforge.com/minecraft/mc-mods/baseelectric/files/9584544). Additional Loot Tables is not
   needed for the built-in loot.
 
 **Back up the entire world before upgrading. Test only disposable copies.**
@@ -66,7 +73,8 @@ Then run from the repository root:
 gradlew.bat clean check build javadoc genEclipseRuns eclipse isolateEclipseProductionRuns verifyReleaseDependencies verifyReleaseArtifacts writeReleaseChecksums verifyEclipseProductionClasspath
 ```
 
-The default dependency jars are:
+The default developer input locations are below. Place the checksum-matching
+published jars there, or select their paths with the flags below:
 
 ```text
 D:\BaseMetals\BaseMetals 262\BaseMetals\build\libs\BaseMetals-3.1.2.2602001.jar
@@ -80,8 +88,8 @@ Dependency checksums and source commits are recorded in `gradle.properties`.
 Unknown artifacts fail the dependency audit. The release audit also rejects a
 player jar that differs from the frozen test kit. Hosted CI requires the Base
 Metals pin to be on its upstream `master-26.2` branch; a locally tested pin
-does not qualify a hosted build. The current local dependency fixes still
-need their own review and publication before that gate can pass.
+does not qualify a hosted build. These dependency releases are now public;
+the guards still reject other bytes and do not weaken the sealed test kit.
 
 Release jars are written to `build/libs`. Forge 65 uses the same mod jar for play
 and development; `deobfJar` is kept as a task alias for older build scripts.
@@ -96,11 +104,14 @@ Refresh the project in Eclipse, allow its Java build to finish, and launch the g
 
 Eclipse copies production resources from `build/resources/main`, not directly from `src/main/resources`. This prevents its builder from overwriting the expanded `mods.toml` with raw `${version}` placeholders. After updating this setup, use **Gradle > Refresh Gradle Project**, then **Project > Clean** before relaunching. After editing resources or version properties, run `processResources` or refresh the Gradle project before the Eclipse build. See the [metadata regression notes](docs/1.13/ECLIPSE-METADATA.md).
 
-To prepare a combined client, build the baseSteam and baseElectric `2.2.18.2602001` jars,
+To prepare the historical combined test client, use the exact baseSteam and
+baseElectric `2.2.18.2602001` inputs named by its frozen profile,
 run `gradlew.bat prepareCombinedEclipseLaunch`, refresh Eclipse, then launch
 `runClientAllAdvantage.launch`. Inputs must match
 `test-rig/profiles/native262/dev-core.json`; alternative layouts can pass
 `-PsteamAdvantageDeobfJar=<path>` and `-PelectricAdvantageDeobfJar=<path>`.
+The published Electric jar has a separate promotion record and hash; do not
+substitute it for the older profile03 input without a matching profile.
 The ordinary `runClient.launch` remains Power-only. Both use the `run` directory;
 preparing a launch does not copy, open or qualify a save.
 
