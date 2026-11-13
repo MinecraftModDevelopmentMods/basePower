@@ -1,14 +1,38 @@
 # Minecraft 26.3 Test Results
 
-Publication note, 13 November 2026: manual testing is now accepted. This
-document retains the original automated handoff and its exact candidate
-hashes. See [release status](RELEASE.md) for later publication steps.
+Publication note, 13 November 2026: manual testing is accepted. The original
+handoff below is historical; its candidate hashes and limitations are retained.
+See [release status](RELEASE.md) for public downloads and publication progress.
 
-The three current candidates have passed the automated checks below and are
-ready for manual testing, not release. Everything for 26.3 remains local; no
-implementation or dependency patch has been pushed or published.
+## Final Release-Pin Checks
 
-## Exact Test Kit
+The released basePower and dependency player jars match the accepted test kit
+byte for byte. Pinning baseSteam to public basePower also leaves all its jar
+entries unchanged. Electric's final player jar is
+`7DD8DD0D2348360C41C64BDE9ADC88E95284842DE1FCEA73CEBC9A4938AD7819`.
+Only its two manifest fields recording the public API pin changed; every class
+and other resource remains identical to the manually accepted build.
+
+That final family was tested again, not merely declared equivalent:
+
+- Original 1.10 conversion, saved native state, full restart and connected conveyor, steam-crusher and electric-furnace operation passed.
+- A fresh world and a retained-upgrade world each completed 1,800 real seconds, 30 processing batches, a complete cold restart and resumed processing.
+- Independent replay checked 33 checkpoints per world, exact products and conservation, native saved blocks and machine data. Every timed interval exceeded 18 TPS; the lowest was 19.54 TPS.
+- All 479 sealed inputs and 633 protected source/reference files remained unchanged. No test oracle or source fixture was repaired to obtain a pass.
+- The combined Eclipse profile was then updated to the final jars. Production classpath checks, the full release suite and Power's 385 tests passed; Power's player jar still matches its public download.
+
+The new qualification receipt is sealed as
+`BE84B7A113D510D1DB44E916E561196D63DFA3D617F61819419CF229B53277C3`;
+its profile is
+`8FF9F5C217AAAF42AE0B10A009DB8117B06013FF0059E4990D5DF19FE0AF776D`.
+The original receipt and frozen profile below were not overwritten. This is
+additional automated evidence, not a claim of a second manual play test.
+
+## Original Accepted Test Kit
+
+At the original automated handoff these were local candidates awaiting manual
+testing, and nothing had been published. That stage is complete. The table
+retains those original bytes rather than substituting the later release pin.
 
 | Mod | Version | Player Jar SHA-256 |
 | --- | --- | --- |
@@ -19,9 +43,10 @@ implementation or dependency patch has been pushed or published.
 | OreSpawn | 4.1.1.2603001 | `7FBAFEFF97683DA0E7ABD0035B85C3A19276B3AD9CB50DBC071F9993B33E490D` |
 | Advantage Works test harness | 1.1.8.2603001 | `6DCCB4EB2EF8245DA84D731EDD1DEB0550E3754116053C002532FC8D18CE7CCA` |
 
-Base Metals and OreSpawn are installed throughout. These are the separately
-approved local migration-hook and retained-generation-settings patches, not
-interchangeable public downloads. Their source pins are in `gradle.properties`.
+Base Metals and OreSpawn were installed throughout. These were the separately
+approved migration-hook and retained-generation-settings patches; the same
+player bytes have since been published. Older public versions are not
+substitutes. Their source pins are in `gradle.properties`.
 The harness and graphical probe are test mods, never part of the player jars
 or the normal Eclipse launch.
 

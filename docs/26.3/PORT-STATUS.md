@@ -1,8 +1,9 @@
 # Minecraft 26.3 Port
 
 This branch starts from the accepted 26.2 sources. The exact test kit has
-passed its automated and manual checks. Publication is being prepared in
-dependency order. See the [release status](RELEASE.md) and
+passed its automated and manual checks. basePower and its dependency patches
+are public; expansion publication follows in dependency order. See the
+[release status](RELEASE.md) and
 [test results](QUALIFICATION.md) for the exact versions, hashes and limits.
 
 The compile baseline is Forge 66.0.0, official 26.3 names, MCP
@@ -10,7 +11,10 @@ The compile baseline is Forge 66.0.0, official 26.3 names, MCP
 dedicated-server compatibility evidence; it does
 not replace the complete 66.0.0 baseline.
 
-## Native Changes Under Review
+## Port Changes
+
+These are the portability decisions assessed during the port. Their original
+requirements are retained here; the completed checks are recorded above.
 
 - Native block-state saves now use `id` and `properties`, with compact strings
   also accepted by the state codec. The older flattening table still requires

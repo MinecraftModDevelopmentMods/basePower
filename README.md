@@ -1,11 +1,12 @@
 # basePower
 
-**Minecraft 26.3 (Forge), version 2.4.18.2603001. Accepted for release.**
+**Minecraft 26.3 (Forge), version 2.4.18.2603001. Released.**
 
 This branch is a fresh port of the accepted 26.2 source. Its machine, recipe,
 old-world upgrade, graphical, full-restart and two-world endurance checks have
 passed against the exact current jars, and manual testing is complete.
-Publication is being prepared in dependency order. See the
+basePower and its dependency patches are public; the matching expansions are
+being published in dependency order. See the
 [release status](docs/26.3/RELEASE.md),
 [26.3 test results](docs/26.3/QUALIFICATION.md) and
 [port record](docs/26.3/PORT-STATUS.md). The
@@ -18,20 +19,22 @@ The [1.21.11 qualification](docs/1.21.11/QUALIFICATION.md) remains historical
 evidence, not proof of this port.
 
 Use the generated `runClientAllAdvantage.launch` in Eclipse to load the
-matching sealed baseSteam and baseElectric test-kit inputs with basePower.
-That developer fixture retains its original profile hashes; it is not a
-moving selector for the latest public downloads.
+matching release-pinned baseSteam and baseElectric jars with basePower.
+Its developer profile checks their exact hashes. Earlier frozen test profiles
+remain unchanged; the launch is not a moving selector for the latest downloads.
 
 basePower continues DrCyano's Power Advantage. It provides shared power,
 fluids and item transport for baseSteam and baseElectric.
 
-## Testing On 26.3
+## Requirements
 
-- Use the local MMD OreSpawn `4.1.1.2603001` on both client and server. This
-  includes the retained-provider-settings fix used by the upgrade tests.
-- Use the local Base Metals `3.1.2.2603001` migration-hook build on both sides.
-  Neither dependency fix is published. Older public jars are not substitutes
-  for this test kit; exact source commits and hashes are in `gradle.properties`.
+- Use [MMD OreSpawn 4.1.1.2603001](https://www.curseforge.com/minecraft/mc-mods/mmd-orespawn/files/9589145)
+  on both client and server. It includes the retained-provider-settings fix
+  used by the upgrade tests.
+- Use [Base Metals 3.1.2.2603001](https://www.curseforge.com/minecraft/mc-mods/base-metals/files/9589195)
+  on both sides. It includes the migration hook needed to preserve old machines.
+  These exact tested jars are now public; source commits and hashes are in
+  `gradle.properties`.
 - baseSteam and baseElectric are separate mods. Use only their matching
   26.3 builds: version `2.2.19.2603001` for each. Additional Loot Tables is not
   needed for the built-in loot.
