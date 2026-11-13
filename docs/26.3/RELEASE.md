@@ -1,9 +1,9 @@
 # Minecraft 26.3 Release
 
 The automated checks and manual testing are complete. Base Metals, OreSpawn
-and basePower are public. baseSteam is processing at CurseForge; baseElectric
-follows after Steam's public downloads are verified. Both expansions pin the
-exact public basePower release.
+and basePower are public. baseSteam is processing at CurseForge; baseElectric's
+matching release is being published in parallel. Both expansions pin the
+exact public basePower release and pass their own publication gates.
 
 ## Final Release Versions
 
@@ -33,8 +33,9 @@ keeps that evidence separate from the original manually accepted test kit.
 
 Steam's existing upload is file `9589874`; the authenticated author dashboard
 shows **Processing**, and it is not yet publicly verified.
-Electric has not been uploaded. Pending files are never uploaded again just
-to retry the rest of publication.
+Electric's public downloads are not yet verified. The expansions do not depend
+on one another, so their uploads may process in parallel after Power is public.
+Pending files are never uploaded again just to retry the rest of publication.
 
 ## Publication Checks
 
