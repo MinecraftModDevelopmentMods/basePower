@@ -1,3 +1,8 @@
+2.4.7.113021 - basePower for Minecraft 1.13.2
+
+- Use the released Base Metals 3.0.3 and OreSpawn 4.1.7 builds.
+- Check local development jars separately from the dependencies approved for publishing.
+
 2.4.6.113021 - basePower for Minecraft 1.13.2
 
 - Fix an intermittent world load and save crash when basePower and Base Metals start together.

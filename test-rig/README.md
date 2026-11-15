@@ -2,7 +2,7 @@
 
 > **Commissioning notice:** This harness builds disposable works. It is not a gameplay mod, registers no content, and must never be shipped inside a PowerAdvantage jar.
 
-The packaged-current profile uses the [released Base Metals 3.0.2 jar](https://www.curseforge.com/minecraft/mc-mods/base-metals/files/9474008). Stage it as `.cache/BaseMetals-3.0.2.113021.jar` inside the test rig; the profile checks the exact bytes.
+The packaged-current profile uses the [released Base Metals 3.0.3 jar](https://www.curseforge.com/minecraft/mc-mods/base-metals/files/9621062) and OreSpawn 4.1.7. Stage the public dependency jars under `.cache` inside the test rig; the profiles check their exact bytes.
 
 The rig turns the 20 cards from the Advantage Works 1.10 handbook plus a public-API fixture into one walkable superflat server world. Power Works lies west of the central concourse, Steam Works north, Electric Works east, and the drill, lift, turbine, pumping, musket, and turret proving grounds south. See the [1.13 migration guide](../docs/1.13/MIGRATION.md) for this port's qualification status.
 
@@ -109,7 +109,7 @@ describe the source fixtures, safety interlocks, and pinned input profiles.
 | Profile/task | Purpose |
 | --- | --- |
 | `verifyWorksDev` | Current Power source and sibling deobf extensions with pinned Base Metals and OreSpawn 4 |
-| `verifyWorksPackagedCurrent` | Reobfuscated Advantage jars with BaseMetals `3.0.1.113021` and pinned OreSpawn `4.1.0.113021` |
+| `verifyWorksPackagedCurrent` | Reobfuscated Advantage jars with BaseMetals `3.0.3.113021` and pinned OreSpawn `4.1.7.113021` |
 | `verifyWorksPackagedDecoupled` | Reobfuscated Advantage jars with OreSpawn 4 but without BaseMetals/Mineralogy |
 | `verifyWorksPackagedMineralogy` | Reobfuscated Advantage and Mineralogy jars; exercises both crude oils through distillation, transfer, persistence, and boilers |
 | `verifyWorksPackagedOptionalPower` | Preserved RF- and Tech Reborn-labelled converter identities through Forge Energy |
@@ -124,7 +124,7 @@ Profiles pin filenames, mod IDs, versions, and SHA-256 values. Most workspace-bu
 Set these only for profiles that need them:
 
 ```text
-ADVANTAGE_WORKS_CURRENT_MODS=<directory containing BaseMetals-3.0.1.113021.jar>
+ADVANTAGE_WORKS_CURRENT_MODS=<directory containing BaseMetals-3.0.3.113021.jar>
 ADVANTAGE_WORKS_JAVA8_HOME=<Java 8 home, when it is not in the default Gradle toolchain cache>
 ADVANTAGE_WORKS_GRADLE_JAVA_HOME=<Java 17 home, when the runner itself is launched on Java 8>
 ```

@@ -72,6 +72,7 @@
 !/gradle/wrapper/gradle-wrapper.jar
 
 /secret.json
+/gradle/development-dependencies.properties
 # Nested local tooling and generated output
 AGENTS.md
 AGENT.md

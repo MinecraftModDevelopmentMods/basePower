@@ -69,9 +69,9 @@ public final class ClientResourceProbe {
             result.add("mod_versions", versions);
             require(versions.has("basepower") && zone.moddev.mc.basepower.PowerAdvantage.VERSION
                     .equals(versions.get("basepower").getAsString()), "Power metadata does not match the compiled version");
-            require("2.4.6.113021".equals(versions.get("basepower").getAsString()), "Wrong native Power candidate");
+            require("2.4.7.113021".equals(versions.get("basepower").getAsString()), "Wrong native Power candidate");
             for (String id : new String[]{"basesteam", "baseelectric"}) {
-                if (versions.has(id)) require("2.2.7.113021".equals(versions.get(id).getAsString()), "Wrong native expansion candidate: " + id);
+                if (versions.has(id)) require("2.2.8.113021".equals(versions.get(id).getAsString()), "Wrong native expansion candidate: " + id);
             }
             require(minecraft.getModelManager().getMissingModel() != null, "Timed out before model baking");
             int items = 0;
@@ -97,6 +97,10 @@ public final class ClientResourceProbe {
                 }
             }
             require(items > 0 && states > 0, "Power Advantage content is not registered");
+            NonNullList<ItemStack> contents = NonNullList.create();
+            ItemGroups.tab_powerAdvantage.fill(contents);
+            require(!contents.isEmpty(), "Power Advantage creative tab is empty");
+            require(!ItemGroups.tab_powerAdvantage.getIcon().isEmpty(), "Power Advantage creative tab has no icon");
             int creativeEntries = verifyCreativeTab(result);
             require(I18n.format("block.basepower.still").equals(I18n.format("tile.basepower.still.name")),
                     "Legacy GUI translation differs from modern block name");

@@ -2,13 +2,15 @@
 
 basePower continues DrCyano's Power Advantage with conveyors, filters, fluid plumbing and the shared systems used by baseSteam and baseElectric.
 
-- Use Forge 25.0.223, Java 8, Base Metals 3.0.2.113021 and MMD OreSpawn 4.1.0.113021. The older Base Metals 3.0.1 download can crash while converting an old world.
+- Use Forge 25.0.223, Java 8, Base Metals 3.0.3.113021 and MMD OreSpawn 4.1.7.113021. The older Base Metals 3.0.1 download can crash while converting an old world.
 - Use basePower 2.4.6.113021 or newer on 1.13.2. The first 1.13.2 build could hit an intermittent Forge load and save crash when starting alongside Base Metals.
 - Back up the world and config. Replace the old Advantage or base* jars together, then open a copy of your world first. Save it, close Minecraft completely, and reopen the copy before upgrading your main world.
 
 The upgrade understands original Advantage 1.10.2 and the released base* builds for 1.10.2 and 1.12.2. Check that the other mods in your world also support 1.13.2.
 
 All three mods share the **basePower** creative tab. Look for the sprocket.
+The [current dependency qualification](docs/1.13/DEPENDENCY-QUALIFICATION-20261115.md)
+records the new candidate jars, checks and release-order requirements.
 The [base* upgrade notes](docs/1.13/BASE-IDENTITY-MIGRATION.md) separate tested scenarios from remaining gaps;
 they are not a guarantee that an entire modpack can be upgraded without losses.
 
@@ -20,7 +22,7 @@ The [manufacturing progression audit](docs/1.13/MANUFACTURING-PROGRESSION.md) tr
 
 The `master-1.13.2` build uses ForgeGradle 7.0.34 and Gradle 9.6.1. Run Gradle with Java 17; Gradle resolves the Java 8 production toolchain.
 
-Build the pinned Base Metals `3.0.2.113021` and OreSpawn `4.1.0.113021` deobf jars in their sibling checkouts, then run:
+Build the pinned Base Metals `3.0.3.113021` and OreSpawn `4.1.7.113021` deobf jars in their sibling checkouts, then run:
 
 ```text
 gradlew.bat clean check build javadoc verifyReleaseDependencies verifyReleaseArtifacts writeReleaseChecksums verifyEclipseProductionClasspath
@@ -28,10 +30,15 @@ gradlew.bat clean check build javadoc verifyReleaseDependencies verifyReleaseArt
 
 The default dependency paths follow the local MMD checkout layout. Other layouts can pass `-PbaseMetalsDeobfJar=<path>` and `-PoreSpawnDeobfJar=<path>`. Dependencies are present on development classpaths but are never embedded in PowerAdvantage artifacts.
 
-The pinned Base Metals development jar predates archive line-ending normalization.
-Both the original Windows-input jar and a clean LF-checkout build have exact
-checksums in `gradle.properties`. Their class bytes and archive entries match;
-only text line endings differ. CI uses the LF build. Unknown hashes still fail.
+Both dependency pins refer to public releases, including the Base Metals startup
+and save-hook repairs. For future unpublished candidates, create the ignored file
+`gradle/development-dependencies.properties` with
+`allowUnreleasedDependencies=true`. The exact jar checksums still apply.
+The file can also set `baseMetalsDeobfJar` and `oreSpawnDeobfJar` to checked
+copies under `libs/development`, so sibling rebuilds cannot change the test inputs.
+Publication is blocked in this mode. Before CI or release, replace `UNRELEASED`
+with the dependency's released source commit and checked artifact hashes.
+OreSpawn is the public [4.1.7 release](https://www.curseforge.com/minecraft/mc-mods/mmd-orespawn/files/9611746).
 Advantage's own archives normalize text to LF.
 All Advantage archives also exclude empty directories left behind by older source layouts.
 

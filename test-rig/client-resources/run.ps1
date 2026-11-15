@@ -31,7 +31,7 @@ function Assert-NativeMetadata([string]$Metadata, [string]$Id) {
     if ($header -notmatch ('(?m)^modId\s*=\s*"' + [regex]::Escape($Id) + '"[ \t]*(?:#[^\r\n]*)?\r?$') -or
         $header -notmatch '(?m)^version\s*=\s*"[^"\r\n]*\.113\d+"[ \t]*(?:#[^\r\n]*)?\r?$' -or
         $Metadata -notmatch '(?m)^loaderVersion\s*=\s*"\[25,') { throw "Not a native Forge 25 candidate: $Id" }
-    $expected = @{ basepower = '2.4.6.113021'; basesteam = '2.2.7.113021'; baseelectric = '2.2.7.113021' }
+    $expected = @{ basepower = '2.4.7.113021'; basesteam = '2.2.8.113021'; baseelectric = '2.2.8.113021' }
     if ($expected.ContainsKey($Id) -and $header -notmatch ('(?m)^version\s*=\s*"' + [regex]::Escape($expected[$Id]) + '"[ \t]*(?:#[^\r\n]*)?\r?$')) {
         throw "Unexpected native candidate version for $Id; expected $($expected[$Id])"
     }
@@ -70,7 +70,7 @@ $inputReport.launch = Get-Record (Join-Path $project $LaunchProfile)
 $inputReport.probe = Get-Record $probe
 $probeMetadata = Read-JarMetadata $probe
 if ($probeMetadata -notmatch 'loaderVersion="\[25,\)"' -or
-    $probeMetadata -notmatch 'versionRange="\[2\.4\.5\.113021,\)"') { throw 'Rebuild the native 1.13 probe; do not substitute a legacy probe.' }
+    $probeMetadata -notmatch 'versionRange="\[2\.4\.6\.113021,\)"') { throw 'Rebuild the native 1.13 probe; do not substitute a legacy probe.' }
 Copy-Item -LiteralPath (Join-Path $project $LaunchProfile) -Destination (Join-Path $runtime 'launch.xml')
 $environment = @{}
 foreach ($map in $launch.launchConfiguration.mapAttribute) {
@@ -101,7 +101,7 @@ $outputFiles = @(Get-ChildItem -LiteralPath $modOutput -Recurse -File | Sort-Obj
 if (@($outputFiles | Where-Object { $_.path -like '*.class' }).Count -eq 0) { throw 'Selected output has no compiled production classes.' }
 $outputFiles | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath (Join-Path $runtime 'production-files.json') -Encoding utf8
 $inputReport.production_files = Get-Record (Join-Path $runtime 'production-files.json')
-if (-not $PowerCandidate) { $PowerCandidate = Join-Path $project 'build/libs-dev/basePower-2.4.6.113021-deobf.jar' }
+if (-not $PowerCandidate) { $PowerCandidate = Join-Path $project 'build/libs-dev/basePower-2.4.7.113021-deobf.jar' }
 $PowerCandidate = (Resolve-Path -LiteralPath $PowerCandidate).Path
 Assert-NativeMetadata (Read-JarMetadata $PowerCandidate) 'basepower'
 $inputReport.power_candidate = Get-Record $PowerCandidate

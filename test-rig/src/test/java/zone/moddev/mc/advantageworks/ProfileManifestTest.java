@@ -32,8 +32,8 @@ public class ProfileManifestTest {
                 profile = new JsonParser().parse(reader).getAsJsonObject();
             }
             assertTrue(file.getName(), profileNames.add(text(profile, "name")));
-            assertEquals("working-tree-from-40811a0", text(profile, "sourceCommit"));
-            assertEquals("2.4.4.113021", text(profile, "sourceVersion"));
+            assertEquals("working-tree-from-25bc7d4", text(profile, "sourceCommit"));
+            assertEquals("2.4.7.113021", text(profile, "sourceVersion"));
             recipeModes.add(text(profile, "recipeMode"));
 
             if ("packaged".equals(text(profile, "mode"))) {
@@ -69,8 +69,8 @@ public class ProfileManifestTest {
                 JsonObject mod = element.getAsJsonObject();
                 if ("orespawn".equals(text(mod, "id"))) {
                     oreSpawnCount++;
-                    assertEquals("4.1.0.113021", text(mod, "version"));
-                    assertEquals("OreSpawn-4.1.0.113021.jar", text(mod, "file"));
+                    assertEquals("4.1.7.113021", text(mod, "version"));
+                    assertEquals("OreSpawn-4.1.7.113021.jar", text(mod, "file"));
                 }
                 assertFalse(file.getName(), text(mod, "id").isEmpty());
                 assertFalse(file.getName(), text(mod, "file").isEmpty());
