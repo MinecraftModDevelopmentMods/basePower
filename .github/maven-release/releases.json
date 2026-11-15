@@ -160,6 +160,15 @@
       "archiveSha256": "442c77085fe7c2ce99e5f613864fdd827bd7afd404b7bf21b01757f3ac399347",
       "mainSha256": "97525ce9c75509c55225e0061d43baf9d29bdbde6df853e1552a64a54c14c3de"
     },
+    "2.4.7.113021": {
+      "branch": "master-1.13.2",
+      "commit": "f4f19e3b72c997f4aa03d090e29ece772722a1e5",
+      "tag": "2.4.7.113021",
+      "runId": 43766134983,
+      "artifactId": 14182353944,
+      "archiveSha256": "471d388104681df8cdf377d77fad1ee17283e8d939df630131c2a59771a87c06",
+      "mainSha256": "e7140e83d55d9ff71f63cd24fcbc09a6f95d24f800c93e83bd6cd60f6a63c74c"
+    },
     "2.4.19.121012": {
       "branch": "master-1.21.1-neo",
       "loader": "neoforge",
