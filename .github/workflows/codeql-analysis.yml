@@ -25,10 +25,10 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           repository: MinecraftModDevelopmentMods/OreSpawn
-          ref: 6a7c2bb07b9a7771128812fcc07d185f7d9df58b
+          ref: 487805da1c3ad9f90fd4679eacc052bab2271b0b
           path: .ci-dependencies/OreSpawn
       - name: Use canonical LF dependency inputs
-        # Base Metals predates archive text normalization; its LF artifact is separately pinned.
+        # Keep dependency text files consistent between Linux and Windows.
         run: git config --global core.autocrlf false
       - name: Read Base Metals development pin
         id: basemetals-pin
@@ -74,7 +74,7 @@ jobs:
           (cd "$basemetals" && bash gradle/stage-orespawn-release.sh "$mirror" &&
             ./gradlew jar "-PorespawnVerificationRepository=$mirror" --no-daemon --stacktrace)
           bm_version=$(sed -n 's/^basemetals_version=//p' gradle.properties)
-          echo "orespawn=$orespawn/build/libs-dev/OreSpawn-4.1.0.113021-deobf.jar" >> "$GITHUB_OUTPUT"
+          echo "orespawn=$orespawn/build/libs-dev/OreSpawn-4.1.7.113021-deobf.jar" >> "$GITHUB_OUTPUT"
           echo "basemetals=$basemetals/build/libs-dev/BaseMetals-$bm_version-deobf.jar" >> "$GITHUB_OUTPUT"
       - name: Initialize CodeQL
         uses: github/codeql-action/init@db488ddef3bf6cb639b32c2e9a7c0a7ea8271d28 # v4

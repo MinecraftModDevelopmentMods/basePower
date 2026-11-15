@@ -5,8 +5,8 @@
   "startupTimeoutSeconds": 180,
   "stationRunSeconds": 5,
   "recipeMode": "NORMAL",
-  "sourceCommit": "working-tree-from-d4ebfea",
-  "sourceVersion": "2.4.6.113021",
+  "sourceCommit": "working-tree-from-25bc7d4",
+  "sourceVersion": "2.4.7.113021",
   "forge": {
     "version": "1.13.2-25.0.223",
     "installerPath": ".cache/forge-1.13.2-25.0.223-installer.jar",
@@ -24,32 +24,32 @@
     },
     {
       "id": "basepower",
-      "version": "2.4.6.113021",
-      "file": "basePower-2.4.6.113021.jar",
-      "path": "../build/libs/basePower-2.4.6.113021.jar",
-      "sha256": "901CAD27BC21B7237CDDAC7B8E7A237183E60AE48B92075DD74BF011D2A18585"
+      "version": "2.4.7.113021",
+      "file": "basePower-2.4.7.113021.jar",
+      "path": "../build/libs/basePower-2.4.7.113021.jar",
+      "sha256": "E7140E83D55D9FF71F63CD24FCBC09A6F95D24F800C93E83BD6CD60F6A63C74C"
     },
     {
       "id": "basesteam",
-      "version": "2.2.7.113021",
-      "file": "baseSteam-2.2.7.113021.jar",
-      "path": "../../SteamAdvantage/SteamAdvantage/build/libs/baseSteam-2.2.7.113021.jar",
-      "sha256": "5E04D04CE6ED3E137ECCBB269F94A2509C80FB31F87A048E0233AABAFB655F83"
+      "version": "2.2.8.113021",
+      "file": "baseSteam-2.2.8.113021.jar",
+      "path": "../../SteamAdvantage/SteamAdvantage/build/libs/baseSteam-2.2.8.113021.jar",
+      "sha256": "2A7C74108B5C2E426C00E27748DA1DC07F52156BA667984244641AC73E524C7F"
     },
     {
       "id": "baseelectric",
-      "version": "2.2.7.113021",
-      "file": "baseElectric-2.2.7.113021.jar",
-      "path": "../../ElectricAdvantage/ElectricAdvantage/build/libs/baseElectric-2.2.7.113021.jar",
-      "sha256": "1170E52BB32BFD62311C325F70E9178C17EB3DE6E2D016759A848902BE1E3B50"
+      "version": "2.2.8.113021",
+      "file": "baseElectric-2.2.8.113021.jar",
+      "path": "../../ElectricAdvantage/ElectricAdvantage/build/libs/baseElectric-2.2.8.113021.jar",
+      "sha256": "96227C99DB329721E43067D4A0D7F8F51738747F600A087917E68E2584A80567"
     },
     {
       "id": "orespawn",
-      "version": "4.1.0.113021",
-      "file": "OreSpawn-4.1.0.113021.jar",
-      "path": "../../../../MinecraftMineralogy/OS113/OreSpawn/build/libs/OreSpawn-4.1.0.113021.jar",
-      "sha256": "66C9CC5F8BE8F08F3DD5FA26EBEA79B52972B2FB86CB4DADBEEBC29AC01D3435",
-      "workspaceProduced": true
+      "version": "4.1.7.113021",
+      "file": "OreSpawn-4.1.7.113021.jar",
+      "path": ".cache/OreSpawn-4.1.7.113021.jar",
+      "sha256": "E65DCCA0623A20111C40779CB0FE2078E98C618FAA68F79C9A28E1E53C63957E",
+      "workspaceProduced": false
     }
   ],
   "name": "worldgen-advantage",

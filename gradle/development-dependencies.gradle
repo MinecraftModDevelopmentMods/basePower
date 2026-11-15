@@ -1,0 +1,21 @@
+// Local candidates need exact jar checks, but cannot have release provenance yet.
+File settingsFile = file('gradle/development-dependencies.properties')
+Properties settings = new Properties()
+if (settingsFile.isFile()) settingsFile.withInputStream { settings.load(it) }
+ext.localDependencyBuild = providers.gradleProperty('useDevelopmentDependencies')
+        .map { it.toBoolean() }
+        .getOrElse(settings.getProperty('allowUnreleasedDependencies', 'false').toBoolean())
+ext.developmentDependencyFiles = localDependencyBuild ? settings : new Properties()
+if (localDependencyBuild) logger.lifecycle('Using pinned local dependency candidates. Publication is disabled.')
+
+def publicationGuard = tasks.register('verifyPublishableDependencies') {
+    group = 'verification'
+    description = 'Refuses publication while a dependency is still a local candidate.'
+    doLast {
+        if (localDependencyBuild || project.findProperty('basemetals_source_commit') == 'UNRELEASED'
+                || project.findProperty('basepower_source_ref') == 'UNRELEASED') {
+            throw new GradleException('Publish the dependency candidates and record their released pins before publishing this mod.')
+        }
+    }
+}
+tasks.matching { it.name.startsWith('publish') }.configureEach { dependsOn publicationGuard }

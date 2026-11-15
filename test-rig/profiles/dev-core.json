@@ -7,8 +7,8 @@
   "shutdownTimeoutSeconds": 60,
   "stationRunSeconds": 5,
   "recipeMode": "NORMAL",
-  "sourceCommit": "working-tree-from-d4ebfea",
-  "sourceVersion": "2.4.6.113021",
+  "sourceCommit": "working-tree-from-25bc7d4",
+  "sourceVersion": "2.4.7.113021",
   "mods": [
     {
       "id": "advantageworkstest",
@@ -20,17 +20,17 @@
     },
     {
       "id": "basesteam",
-      "version": "2.2.7.113021",
-      "file": "baseSteam-2.2.7.113021-deobf.jar",
-      "path": "../../SteamAdvantage/SteamAdvantage/build/libs-dev/baseSteam-2.2.7.113021-deobf.jar",
-      "sha256": "F56F3FC2DF9EEE77ACC50DF228FAD0A7ABCF02A57F864AB8B84348F8D033DF84"
+      "version": "2.2.8.113021",
+      "file": "baseSteam-2.2.8.113021-deobf.jar",
+      "path": "../../SteamAdvantage/SteamAdvantage/build/libs-dev/baseSteam-2.2.8.113021-deobf.jar",
+      "sha256": "9BF6707118BDA47AFC0102B6C3AFD2AD5A14DA6B14F44270F84B9DA7F6ACE75B"
     },
     {
       "id": "baseelectric",
-      "version": "2.2.7.113021",
-      "file": "baseElectric-2.2.7.113021-deobf.jar",
-      "path": "../../ElectricAdvantage/ElectricAdvantage/build/libs-dev/baseElectric-2.2.7.113021-deobf.jar",
-      "sha256": "620074389CE2CE432BBD27256CBBEF3D3195C66461002D10B36C65B7ECF39B18"
+      "version": "2.2.8.113021",
+      "file": "baseElectric-2.2.8.113021-deobf.jar",
+      "path": "../../ElectricAdvantage/ElectricAdvantage/build/libs-dev/baseElectric-2.2.8.113021-deobf.jar",
+      "sha256": "A2DF2F314C808948F5EFF364522304B0C53D59BCA271AFB8B82E156A31B3F70F"
     }
   ]
 }
