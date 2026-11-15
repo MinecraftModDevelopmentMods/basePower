@@ -29,7 +29,9 @@ class NeoForgeTargetTests(unittest.TestCase):
         for version, release in manifest["releases"].items():
             with self.subTest(version=version):
                 minecraft, java = verify.release_target(release["branch"])
-                self.assertEqual((minecraft, java, "forge", "Forge"),
+                loader, display = (("neoforge", "NeoForge") if release["branch"] == "master-1.21.1-neo"
+                                   else ("forge", "Forge"))
+                self.assertEqual((minecraft, java, loader, display),
                                  verify.release_settings(version, release))
 
     def test_only_the_exact_native_branch_is_accepted(self):
