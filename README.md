@@ -24,7 +24,7 @@ All three dependencies are required on both client and server:
 Base Metals **4.0.0.121012+Neo is not a substitute**. It lacks the migration
 extension used to preserve old Advantage machine and player data.
 
-The coordinated expansion candidates are baseSteam and baseElectric
+The matching expansion versions are baseSteam and baseElectric
 **2.2.20.121012**. They remain separate mod jars; dependencies are not embedded.
 MMDLib supplies the shared crushing recipe contract, not replacement machinery.
 Recipe removal remains authoritative and drill mining keeps normal block drops.
@@ -51,8 +51,7 @@ $env:GRADLE_USER_HOME='D:/PowerAdvantage/.gradle-power1211neo'
 Do not start a second Power Gradle process while that cache is in use. This
 command is documentation, not evidence that the current candidate passed it.
 The local artifact checks bind all three dependency hashes to `gradle.properties`.
-Keep failed
-receipts, disposable worlds and frozen inputs; avoid routine `clean` during a
+Keep failed receipts, disposable worlds and frozen inputs; avoid routine `clean` during a
 qualification campaign. Outputs are under `build/libs`.
 
 ## Eclipse And Client

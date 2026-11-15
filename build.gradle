@@ -476,3 +476,5 @@ neoForge.runs.clientResourceCheck.taskBefore(stageDevelopmentMods('stageClientRe
 apply from: 'gradle/verify-eclipse-ecj.gradle'
 
 apply from: 'gradle/client-integration.gradle'
+
+apply from: 'gradle/reproducible-docs.gradle'
