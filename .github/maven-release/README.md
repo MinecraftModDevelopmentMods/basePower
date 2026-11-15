@@ -1,6 +1,6 @@
 # MMD Maven releases
 
-## New Forge releases
+## New releases
 
 Use **Release basePower** on the MMD repository's default branch. After the
 version branch passes CI, tag the exact tested commit and add the CI run, artifact
@@ -16,6 +16,25 @@ Minecraft 1.16.5, Java 16 for Minecraft 1.17.1, Java 17 through Minecraft 1.20.1
 Java 21 for Minecraft 1.20.6 through 1.21.11, and Java 25 for Minecraft 26.1.2,
 26.2 and 26.3. The 26.3 line has passed automated and manual testing.
 Unknown version branches are rejected until their release target is reviewed.
+
+## NeoForge 1.21.1
+
+The only native target is `master-1.21.1-neo`: Minecraft 1.21.1, Java 21,
+loader `neoforge`, and version suffix `.121012`. Forge 1.21.1 keeps
+`.121011`. The branch selects the loader; an optional `loader` field in a
+release record must agree. Other native branches and mismatched codes are
+rejected.
+
+The upload name uses the selected loader. Native releases add MMDLib
+(`261744`) as a required CurseForge relation; Forge relations stay unchanged.
+CI must upload exactly one checksum file, `build/release/SHA256SUMS`, sealing
+the three release jars. Do not upload a second copy from `build/libs`.
+
+This support adds no release record or approval. Record only the actual merged
+commit, matching tag, successful branch CI run, artifact ID and exact archive
+and jar hashes. Check public dependencies in order: basePower, baseSteam, then
+baseElectric. Run check-only before publishing and resume an accepted
+CurseForge upload with its existing file ID.
 
 ## Existing CurseForge releases
 

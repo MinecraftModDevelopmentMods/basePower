@@ -28,7 +28,10 @@ def digest(data):
 
 
 def release_target(branch):
-    require(branch.startswith("master-"), "Release requires a version master branch")
+    require(isinstance(branch, str) and branch.startswith("master-"),
+            "Release requires a version master branch")
+    if branch == "master-1.21.1-neo":
+        return "1.21.1", "Java 21"
     minecraft = branch.removeprefix("master-")
     java_versions = {
         "1.10.2": 8, "1.12.2": 8, "1.13.2": 8, "1.14.4": 8,
@@ -38,6 +41,17 @@ def release_target(branch):
     }
     require(minecraft in java_versions, f"Unsupported Minecraft version: {minecraft}")
     return minecraft, f"Java {java_versions[minecraft]}"
+
+
+def release_settings(version, release):
+    minecraft, java = release_target(release["branch"])
+    loader = "neoforge" if release["branch"] == "master-1.21.1-neo" else "forge"
+    require(release.get("loader", loader) == loader, "Release loader does not match the branch")
+    major, minor, *patch = map(int, minecraft.split("."))
+    code = f"{major}{minor:02d}{patch[0] if patch else 0:02d}{2 if loader == 'neoforge' else 1}"
+    require(isinstance(version, str) and re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+\." + code, version),
+            "Release version code does not match Minecraft and loader")
+    return minecraft, java, loader, "NeoForge" if loader == "neoforge" else "Forge"
 
 
 def read_url(url, allow_absent=False):
@@ -60,6 +74,7 @@ def github(path):
 
 
 def stage(manifest, version, release, work, candidate=False):
+    release_settings(version, release)
     repo = manifest["repository"]
     require(os.environ.get("GITHUB_REPOSITORY", repo) == repo, "Wrong source repository")
     artifact_id = release["artifactId"]
@@ -84,6 +99,10 @@ def stage(manifest, version, release, work, candidate=False):
 
     jars = jar_names(manifest, version)
     with ZipFile(archive) as bundle:
+        checksum_paths = [name for name in bundle.namelist()
+                          if name.rsplit("/", 1)[-1] in ("SHA256SUMS", "SHA256SUMS.txt")]
+        require(checksum_paths == ["build/release/SHA256SUMS"],
+                "Expected exactly one canonical CI checksum path: build/release/SHA256SUMS")
         sums = {}
         for line in bundle.read("build/release/SHA256SUMS").decode("ascii").splitlines():
             sha, name = line.split(maxsplit=1)
@@ -174,9 +193,9 @@ def main():
     manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
     require(version in manifest["releases"], f"Version is not approved: {version}")
     release, work = manifest["releases"][version], Path(folder)
+    minecraft, java, loader, loader_display = release_settings(version, release)
     if mode == "target":
-        minecraft, java = release_target(release["branch"])
-        print(f"minecraft={minecraft}\njava={java}")
+        print(f"minecraft={minecraft}\njava={java}\nloader={loader}\nloader_display={loader_display}")
     elif mode in ("stage", "stage-candidate"):
         stage(manifest, version, release, work, candidate=mode == "stage-candidate")
     elif mode == "verify-curseforge":
