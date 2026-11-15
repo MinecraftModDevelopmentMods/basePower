@@ -2,8 +2,8 @@ package zone.moddev.mc.basepower.client;
 
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 /** Configure the translucent render layer for the registered oils. */
 @OnlyIn(Dist.CLIENT)

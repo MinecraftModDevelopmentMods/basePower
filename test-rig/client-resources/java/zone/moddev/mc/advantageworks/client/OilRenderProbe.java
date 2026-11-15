@@ -1,5 +1,7 @@
 package zone.moddev.mc.advantageworks.client;
 
+import net.minecraft.core.registries.BuiltInRegistries;
+
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import net.minecraft.world.level.block.state.BlockState;
@@ -18,8 +20,6 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.core.Direction;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.BlockAndTintGetter;
@@ -81,12 +81,12 @@ final class OilRenderProbe {
     }
 
     private static void requireBucket(net.minecraft.world.item.Item bucket, Fluid expected) {
-        net.minecraftforge.fluids.FluidStack contents = zone.moddev.mc.basepower.util.FluidContainerHelper
+        net.neoforged.neoforge.fluids.FluidStack contents = zone.moddev.mc.basepower.util.FluidContainerHelper
                 .getFluidContained(new ItemStack(bucket))
-                .orElseThrow(() -> new IllegalStateException("Bucket cannot supply a fluid container: " + ForgeRegistries.ITEMS.getKey(bucket)));
-        if (!(bucket instanceof BucketItem) || ((BucketItem) bucket).getFluid() != expected
+                .orElseThrow(() -> new IllegalStateException("Bucket cannot supply a fluid container: " + BuiltInRegistries.ITEM.getKey(bucket)));
+        if (!(bucket instanceof BucketItem) || zone.moddev.mc.basepower.util.FluidContainerHelper.fluidForBucket(bucket) != expected
                 || expected.getBucket() != bucket || contents.getFluid() != expected || contents.getAmount() != 1000) {
-            throw new IllegalStateException("Wrong bucket fluid: " + ForgeRegistries.ITEMS.getKey(bucket));
+            throw new IllegalStateException("Wrong bucket fluid: " + BuiltInRegistries.ITEM.getKey(bucket));
         }
     }
 
@@ -123,8 +123,8 @@ final class OilRenderProbe {
                 && u >= sprite.getU0() && u <= sprite.getU1() && v >= sprite.getV0() && v <= sprite.getV1();
         boolean correctTint = !(state.getType() instanceof Fluids.PowerFluid) || rgb == 0xFFFFFF;
         JsonObject entry = new JsonObject();
-        entry.addProperty("fluid", ForgeRegistries.FLUIDS.getKey(state.getType()).toString());
-        entry.addProperty("block", ForgeRegistries.BLOCKS.getKey(state.createLegacyBlock().getBlock()).toString());
+        entry.addProperty("fluid", BuiltInRegistries.FLUID.getKey(state.getType()).toString());
+        entry.addProperty("block", BuiltInRegistries.BLOCK.getKey(state.createLegacyBlock().getBlock()).toString());
         entry.addProperty("expected_sprite", texture);
         entry.addProperty("correct_sprite", correctSprite);
         entry.addProperty("vertex_rgb", String.format("%06X", rgb));
@@ -138,7 +138,7 @@ final class OilRenderProbe {
     private static int elementOffset(VertexFormatElement.Usage usage, int index) {
         for (int i = 0; i < DefaultVertexFormat.BLOCK.getElements().size(); i++) {
             VertexFormatElement element = DefaultVertexFormat.BLOCK.getElements().get(i);
-            if (element.usage() == usage && element.index() == index) return DefaultVertexFormat.BLOCK.getOffset(i);
+            if (element.usage() == usage && element.index() == index) return DefaultVertexFormat.BLOCK.getOffset(element);
         }
         throw new IllegalStateException("Native block vertex format lacks " + usage + " " + index);
     }

@@ -1,0 +1,282 @@
+import groovy.json.JsonOutput
+import java.nio.file.Files
+import java.security.MessageDigest
+import java.util.jar.JarFile
+
+def assertUniqueEclipseEntries = { List entries ->
+    def duplicates = entries.groupBy { [it.kind, it.path] }.findAll { key, rows -> rows.size() > 1 }
+    if (duplicates) throw new GradleException('Duplicate Eclipse classpath entries: ' + duplicates.keySet())
+}
+
+def verifyEclipseClasspathMerging = tasks.register('verifyEclipseClasspathMerging') {
+    group = 'verification'
+    description = 'Rejects duplicate Eclipse entries and tests repeated Gradle/Buildship classpath merging.'
+    dependsOn tasks.named('eclipseClasspath')
+    doLast {
+        def rows = { model -> model.entries.collect { [kind: it.kind, path: it.path] } }
+        def model = new org.gradle.plugins.ide.eclipse.model.Classpath(eclipse.classpath.fileReferenceFactory)
+        file('.classpath').withInputStream { model.load(it) }
+        assertUniqueEclipseEntries(rows(model))
+        def original = rows(model)
+        boolean rejected = false
+        try {
+            assertUniqueEclipseEntries(original + [original.first()])
+        } catch (GradleException expected) {
+            if (!expected.message.startsWith('Duplicate Eclipse classpath entries:')) throw expected
+            rejected = true
+        }
+        if (!rejected) throw new GradleException('Duplicate classpath negative control was not rejected')
+        def passes = []
+        3.times { index ->
+            // Exercise the same merger as eclipseClasspath and the Tooling API,
+            // including loading the file produced by the previous refresh.
+            eclipse.classpath.mergeXmlClasspath(model)
+            assertUniqueEclipseEntries(rows(model))
+            if (rows(model).toSet() != original.toSet())
+                throw new GradleException('Eclipse classpath entries changed on refresh ' + (index + 1))
+            passes.add([refresh: index + 1, entries: model.entries.size()])
+            def output = new ByteArrayOutputStream()
+            model.store(output)
+            model = new org.gradle.plugins.ide.eclipse.model.Classpath(eclipse.classpath.fileReferenceFactory)
+            model.load(new ByteArrayInputStream(output.toByteArray()))
+            assertUniqueEclipseEntries(rows(model))
+        }
+        File report = layout.buildDirectory.file('reports/eclipse-classpath-merging.json').get().asFile
+        report.parentFile.mkdirs()
+        report.setText(JsonOutput.prettyPrint(JsonOutput.toJson([
+                status: 'PASS', duplicateControlRejected: rejected, refreshes: passes])) + '\n', 'UTF-8')
+        logger.lifecycle('Eclipse classpath PASS: 3 repeated merges; duplicate-entry control rejected.')
+    }
+}
+def verifyEclipseSynchronization = tasks.register('verifyEclipseSynchronization') {
+    group = 'verification'
+    description = 'Runs the actual NeoForge IDE sync tasks without opting into a test world or Minecraft launch.'
+    dependsOn tasks.named('neoForgeIdeSync')
+    doLast {
+        Set<Task> dependencies = new LinkedHashSet<>()
+        def collect
+        collect = { Task task ->
+            if (dependencies.add(task)) task.taskDependencies.getDependencies(task).each { collect(it) }
+        }
+        collect(tasks.named('neoForgeIdeSync').get())
+        def unsafe = dependencies.findAll { it.name == 'prepareNativeClientIntegration' || it.name.startsWith('runClient')
+                || it.name.startsWith('runServer') || it.name.startsWith('runGameTest') }
+        if (unsafe) throw new GradleException('IDE sync must not launch Minecraft or prepare a copied world: ' + unsafe*.path)
+        File report = layout.buildDirectory.file('reports/eclipse-synchronization.json').get().asFile
+        report.parentFile.mkdirs()
+        report.setText(JsonOutput.prettyPrint(JsonOutput.toJson([
+                status: 'PASS', synchronizationTasks: dependencies*.path.sort()])) + '\n', 'UTF-8')
+        logger.lifecycle('Eclipse synchronization PASS: native sync completed without test-world preparation or game launches.')
+    }
+}
+tasks.named('check') { dependsOn verifyEclipseClasspathMerging, verifyEclipseSynchronization }
+tasks.matching { it.name == 'verifyEclipseProductionClasspath' }.configureEach {
+    dependsOn verifyEclipseClasspathMerging, verifyEclipseSynchronization
+}
+
+// Apply after the Java/Eclipse plugins in Power, Steam or Electric. This gate
+// compiles the generated Eclipse model, not Gradle's javac class outputs.
+def ecjVersion = '3.40.0'
+def ecjSha256 = '05cc22a24e7982970f63a405fc6c820bc80b806f27f3c5a6236fc475f8f7152b'
+def ecjCompiler = configurations.create('eclipseEcjCompiler') {
+    canBeConsumed = false
+    canBeResolved = true
+    transitive = false
+}
+dependencies.add(ecjCompiler.name, "org.eclipse.jdt:ecj:${ecjVersion}")
+def ecjJava = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(21) }
+
+tasks.register('verifyEclipseEcj') {
+    group = 'verification'
+    description = 'Compiles native production and all test-marked Eclipse sources with pinned Java 21 ECJ.'
+    dependsOn verifyEclipseClasspathMerging, verifyEclipseSynchronization
+    outputs.upToDateWhen { false }
+    doLast {
+        def fail = { String message -> throw new GradleException(message) }
+        def hash = { File input -> MessageDigest.getInstance('SHA-256').digest(input.bytes).encodeHex().toString() }
+        def attributes = { node ->
+            def values = [:]
+            node.attributes.attribute.each {
+                String key = it.@name.text()
+                if (values.containsKey(key)) fail('Duplicate Eclipse classpath attribute: ' + key)
+                values[key] = it.@value.text()
+            }
+            values
+        }
+        def xml = { File input, boolean compilerLog = false ->
+            def parser = new groovy.xml.XmlSlurper(false, false, compilerLog)
+            parser.setFeature('http://apache.org/xml/features/disallow-doctype-decl', !compilerLog)
+            parser.setFeature('http://xml.org/sax/features/external-general-entities', false)
+            parser.setFeature('http://xml.org/sax/features/external-parameter-entities', false)
+            parser.setFeature('http://apache.org/xml/features/nonvalidating/load-external-dtd', false)
+            parser.setEntityResolver({ String publicId, String systemId ->
+                new org.xml.sax.InputSource(new StringReader(''))
+            } as org.xml.sax.EntityResolver)
+            parser.parse(input)
+        }
+        def resolve = { String path -> file(path).canonicalFile }
+        String runId = providers.gradleProperty('eclipseEcjRunId').getOrElse(
+                new Date().format('yyyyMMdd-HHmmss') + '-' + UUID.randomUUID().toString())
+        if (!(runId ==~ /[A-Za-z0-9_-]+/)) fail('Unsafe eclipseEcjRunId')
+        File reports = layout.buildDirectory.dir('ecj-reports/' + runId).get().asFile.canonicalFile
+        File production = layout.buildDirectory.dir('ecj-production/' + runId).get().asFile.canonicalFile
+        File tests = layout.buildDirectory.dir('ecj-test/' + runId).get().asFile.canonicalFile
+        [reports, production, tests].each {
+            if (!it.toPath().startsWith(layout.buildDirectory.get().asFile.canonicalFile.toPath()) || it.exists()) {
+                fail('Use fresh, contained ECJ outputs; retain prior evidence: ' + it)
+            }
+            Files.createDirectories(it.toPath())
+        }
+        File classpathFile = file('.classpath')
+        def report = [status: 'RUNNING', project: projectDir.canonicalPath,
+                scope: 'ECJ compilation only; no Minecraft launch or JUnit execution',
+                compiler: [coordinate: "org.eclipse.jdt:ecj:${ecjVersion}", sha256: ecjSha256],
+                compilations: [:], controls: [:], inputs: [:]]
+        try {
+            File compiler = ecjCompiler.singleFile
+            if (hash(compiler) != ecjSha256) fail('ECJ compiler SHA-256 mismatch')
+            def launcher = ecjJava.get()
+            File java = launcher.executablePath.asFile
+            if (launcher.metadata.languageVersion.asInt() != 21) fail('ECJ requires an actual Java 21 launcher')
+            report.java = [home: launcher.metadata.installationPath.asFile.canonicalPath, sha256: hash(java)]
+            if (!classpathFile.isFile()) fail('Generate the resolved Eclipse .classpath first')
+            def model = xml(classpathFile)
+            def entries = model.classpathentry.toList()
+            assertUniqueEclipseEntries(entries.collect { [kind: it.@kind.text(), path: it.@path.text()] })
+            def containers = entries.findAll { it.@kind.text() == 'con' }
+            def jres = containers.findAll { it.@path.text().startsWith('org.eclipse.jdt.launching.JRE_CONTAINER/') }
+            def buildship = containers.findAll { it.@path.text() == 'org.eclipse.buildship.core.gradleclasspathcontainer' }
+            if (jres.size() != 1 || !jres[0].@path.text().contains('/JavaSE-21/')
+                    || containers.size() != jres.size() + buildship.size() || buildship.size() > 1)
+                fail('Eclipse must select Java 21 and no unknown classpath containers')
+            // Buildship may retain its marker after a refresh. ECJ still uses the
+            // explicit, existence-checked library entries below, not that marker.
+            if (entries.any { !(it.@kind.text() in ['src', 'lib', 'con', 'output']) }) {
+                fail('Unresolved Eclipse project/variable/container entry; do not flatten it silently')
+            }
+            def roots = entries.findAll { it.@kind.text() == 'src' }.collect { node ->
+                def attrs = attributes(node)
+                boolean test = attrs.test == 'true'
+                if (attrs.gradle_scope && attrs.gradle_scope != 'main' && !test) fail('Test source root lacks the Eclipse test flag: ' + node.@path)
+                File root = resolve(node.@path.text())
+                if (!root.toPath().startsWith(projectDir.canonicalFile.toPath()) || !root.isDirectory()) fail('Missing/external Eclipse source root: ' + root)
+                String output = node.@output.text() ?: entries.find { it.@kind.text() == 'output' }?.@path?.text()
+                if (!output) fail('Eclipse source root lacks an output: ' + root)
+                def tree = fileTree(root)
+                if (node.@including.text()) tree.include(node.@including.text().split(/\|/).toList())
+                if (node.@excluding.text()) tree.exclude(node.@excluding.text().split(/\|/).toList())
+                [root: root, output: resolve(output), test: test,
+                 sources: tree.files.findAll { it.name.endsWith('.java') }.sort { it.canonicalPath }]
+            }
+            def mainOutputs = roots.findAll { !it.test }.collect { it.output }.toSet()
+            if (roots.any { it.test && mainOutputs.contains(it.output) }) fail('Eclipse production/test outputs overlap')
+            def blocked = roots.collect { it.output }
+            blocked.addAll(entries.findAll { it.@kind.text() == 'output' }.collect { resolve(it.@path.text()) })
+            sourceSets.each { blocked.addAll(it.output.files.collect { output -> output.canonicalFile }) }
+            blocked.addAll([production, tests])
+            def libraries = entries.findAll { it.@kind.text() == 'lib' }.collect { node ->
+                File library = resolve(node.@path.text())
+                if (!library.isFile() || !library.name.endsWith('.jar')) fail('Missing/non-archive Eclipse library: ' + library)
+                if (blocked.any { library.toPath().startsWith(it.toPath()) }) fail('Existing IDE/javac output on ECJ classpath: ' + library)
+                def attrs = attributes(node)
+                def scopes = (attrs.gradle_used_by_scope ?: '').tokenize(',')
+                boolean test = attrs.test == 'true' || (scopes && !scopes.contains('main'))
+                if (attrs.test == 'true' && scopes.contains('main')) fail('Test-only library marked as a production dependency: ' + library)
+                if (attrs.module == 'true' || !node.accessrules.accessrule.isEmpty()) fail('Explicit Eclipse module/access rules require a dedicated adapter: ' + library)
+                new JarFile(library).withCloseable { jar ->
+                    if (jar.manifest?.mainAttributes?.getValue('Class-Path')?.trim()) fail('Hidden manifest Class-Path is forbidden: ' + library)
+                    String ownPackage = 'zone/moddev/mc/' + project.property('mod_id') + '/'
+                    if (jar.entries().any { it.name.startsWith(ownPackage) && it.name.endsWith('.class') }) fail('Own compiled mod cannot satisfy its ECJ compilation: ' + library)
+                    if (jar.getEntry('net/minecraftforge/common/MinecraftForge.class')) fail('Legacy Forge APIs on native Eclipse classpath: ' + library)
+                }
+                [file: library, test: test]
+            }
+            if (!libraries.any { it.file.name == 'neoforge-' + project.neo_version + '.jar' }) fail('Pinned native NeoForge development jar missing')
+            def mainSources = roots.findAll { !it.test }.collectMany { it.sources }.unique().sort { it.canonicalPath }
+            def testSources = roots.findAll { it.test }.collectMany { it.sources }.unique().sort { it.canonicalPath }
+            if (!mainSources || !testSources) fail('Both production and test Eclipse source inventories must be nonempty')
+            if ((mainSources + testSources).any { it.name == 'module-info.java' }) fail('Named source modules require a module-path adapter, not classpath compilation')
+            if (mainSources.intersect(testSources)) fail('A Java source belongs to both production and tests')
+            def mainLibraries = libraries.findAll { !it.test }.collect { it.file }
+            def testLibraries = libraries.collect { it.file }
+            def inputs = ([classpathFile] + libraries.collect { it.file } + mainSources + testSources).unique()
+            inputs.each { report.inputs[it.canonicalPath] = hash(it) }
+            report.eclipse = [sha256: hash(classpathFile), sourceRoots: roots.collect {
+                    [path: it.root.canonicalPath, test: it.test, ideOutput: it.output.canonicalPath, sources: it.sources.size()] },
+                    productionLibraries: mainLibraries.collect { it.canonicalPath }, testLibraries: testLibraries.collect { it.canonicalPath }]
+            File emptySources = new File(reports, 'empty-sourcepath')
+            emptySources.mkdirs()
+            def quote = { Object value ->
+                String text = value.toString().replace('\\', '/')
+                if (text.contains('"') || text.contains('\n') || text.contains('\r') || text.contains('[') || text.contains(']')) fail('Unsafe ECJ argument: ' + text)
+                '"' + text + '"'
+            }
+            def compile = { String name, List<File> sources, List<File> cp, File destination, String rejectedType ->
+                destination.mkdirs()
+                File argsFile = new File(reports, name + '.args')
+                File diagnostics = new File(reports, name + '.xml')
+                def arguments = ['--release', '21', '-proc:none', '-encoding', 'UTF-8', '-err:+forbidden,discouraged',
+                        '-sourcepath', emptySources.canonicalPath, '-classpath', cp.collect { it.canonicalPath }.join(File.pathSeparator),
+                        '-d', destination.canonicalPath, '-log', diagnostics.canonicalPath] + sources.collect { it.canonicalPath }
+                argsFile.setText(arguments.collect(quote).join('\n') + '\n', 'UTF-8')
+                def execution = providers.exec {
+                    commandLine java.absolutePath, '-Xmx2G', '-jar', compiler.absolutePath, '@' + argsFile.absolutePath
+                    ignoreExitValue = true
+                }
+                int code = execution.result.get().exitValue
+                String stdout = execution.standardOutput.asText.get()
+                String stderr = execution.standardError.asText.get()
+                new File(reports, name + '.stdout.log').setText(stdout, 'UTF-8')
+                new File(reports, name + '.stderr.log').setText(stderr, 'UTF-8')
+                if (!diagnostics.isFile()) fail('ECJ did not emit XML diagnostics: ' + name)
+                def problems = xml(diagnostics, true).depthFirst().findAll { it.@severity.text() }
+                int errors = problems.count { it.@severity.text().equalsIgnoreCase('ERROR') }
+                int warnings = problems.count { it.@severity.text().equalsIgnoreCase('WARNING') }
+                def result = [exitCode: code, errors: errors, warnings: warnings, sources: sources.size(),
+                        argumentsSha256: hash(argsFile), output: destination.canonicalPath]
+                if (rejectedType != null) {
+                    result.rejected = code != 0 && errors > 0 && (stdout + stderr).contains(rejectedType)
+                    report.controls[name] = result
+                    if (!result.rejected) fail('ECJ negative control did not reject its intended type: ' + name)
+                } else {
+                    report.compilations[name] = result
+                    if (code != 0 || errors != 0) fail('ECJ compilation failed: ' + name + '; inspect ' + reports)
+                    def classes = fileTree(destination).matching { include '**/*.class' }.files
+                    if (!classes) fail('ECJ emitted no classes: ' + name)
+                    classes.each {
+                        byte[] bytes = it.bytes
+                        if (bytes.length < 8 || (bytes[0] & 255) != 202 || (bytes[1] & 255) != 254
+                                || (bytes[2] & 255) != 186 || (bytes[3] & 255) != 190
+                                || (((bytes[6] & 255) << 8) | (bytes[7] & 255)) != 65) fail('Invalid/non-Java-21 ECJ class: ' + it)
+                    }
+                    result.classes = classes.size()
+                }
+            }
+            File controls = new File(reports, 'control-sources/eclipse/ecj/control')
+            controls.mkdirs()
+            File marker = new File(controls, 'TestOnlyMarker.java')
+            marker.setText('package eclipse.ecj.control; public final class TestOnlyMarker {}\n', 'UTF-8')
+            compile('production', mainSources, mainLibraries, new File(production, 'classes'), null)
+            compile('test', testSources + [marker], [new File(production, 'classes')] + testLibraries, new File(tests, 'classes'), null)
+            report.compilations.test.controlSources = 1
+            [
+                'test-output-leak': ['MainMustNotSeeTestOutput', 'eclipse.ecj.control.TestOnlyMarker', 'TestOnlyMarker'],
+                'junit-leak': ['MainMustNotUseJUnit', 'org.junit.Test', 'org.junit'],
+                'restricted-jdk': ['MainMustNotUseInternalJdk', 'sun.security.x509.X500Name', 'X500Name']
+            ].each { name, spec ->
+                File source = new File(controls, spec[0] + '.java')
+                source.setText('public class ' + spec[0] + ' { ' + spec[1] + ' value; }\n', 'UTF-8')
+                compile(name, [source], mainLibraries, new File(reports, name + '-classes'), spec[2])
+            }
+            report.inputs.each { path, before -> if (hash(new File(path)) != before) fail('ECJ input changed during compilation: ' + path) }
+            report.status = 'PASS'
+            logger.lifecycle('ECJ PASS: {} production sources, {} test sources, 3 isolation/module controls. Evidence: {}', mainSources.size(), testSources.size(), reports)
+        } catch (Exception failure) {
+            report.status = 'FAIL'
+            report.error = failure.toString()
+            throw failure
+        } finally {
+            new File(reports, 'report.json').setText(JsonOutput.prettyPrint(JsonOutput.toJson(report)) + '\n', 'UTF-8')
+        }
+    }
+}

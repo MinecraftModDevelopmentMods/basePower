@@ -1,5 +1,7 @@
 package zone.moddev.mc.advantageworks;
 
+import net.minecraft.core.registries.BuiltInRegistries;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
@@ -53,10 +55,10 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.level.LevelEvent;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.RegisterCommandsEvent;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.level.LevelEvent;
+
+import net.neoforged.neoforge.event.RegisterCommandsEvent;
 
 /** Native additional-dimension player and entity observations, without client acceptance claims. */
 final class DimensionEntityProbe {
@@ -75,10 +77,10 @@ final class DimensionEntityProbe {
     static void register() {
         if (!MARKER.isFile()) return;
         DimensionEntityProbe probe = new DimensionEntityProbe();
-        MinecraftForge.EVENT_BUS.addListener(probe::load);
-        MinecraftForge.EVENT_BUS.addListener(probe::tick);
-        MinecraftForge.EVENT_BUS.addListener(probe::entityJoining);
-        MinecraftForge.EVENT_BUS.addListener(probe::starting);
+        NeoForge.EVENT_BUS.addListener(probe::load);
+        WorksLevelTick.listen(NeoForge.EVENT_BUS, probe::tick);
+        NeoForge.EVENT_BUS.addListener(probe::entityJoining);
+        NeoForge.EVENT_BUS.addListener(probe::starting);
     }
 
     private static boolean marked(Level world) {
@@ -106,9 +108,9 @@ final class DimensionEntityProbe {
         } catch (Exception ex) { throw new IllegalStateException("Dimension load preparation failed", ex); }
     }
 
-    private void tick(TickEvent.LevelTickEvent event) {
+    private void tick(WorksLevelTick event) {
         if (!marked(event.level) || !DEFINITION.isFile()) return;
-        if (event.phase == TickEvent.Phase.START) {
+        if (event.phase == WorksLevelTick.Phase.START) {
             try {
                 JsonObject definition = definition();
                 int selected = dimension(definition);
@@ -125,13 +127,13 @@ final class DimensionEntityProbe {
                 for (Entity entity : witnesses((ServerLevel) event.level)) hold.hold(entity);
                 held.put(event.level, hold);
             } catch (Exception ex) { throw new IllegalStateException("Dimension tick preparation failed", ex); }
-        } else if (event.phase == TickEvent.Phase.END) {
+        } else if (event.phase == WorksLevelTick.Phase.END) {
             NativeEntityHold hold = held.remove(event.level);
             if (hold != null) hold.restore();
         }
     }
 
-    private void entityJoining(net.minecraftforge.event.entity.EntityJoinLevelEvent event) {
+    private void entityJoining(net.neoforged.neoforge.event.entity.EntityJoinLevelEvent event) {
         if (!(event.getLevel() instanceof ServerLevel) || !marked(event.getLevel())
                 || !DEFINITION.isFile() || !witnessed(event.getEntity())) return;
         try {
@@ -166,7 +168,7 @@ final class DimensionEntityProbe {
         prepare(world);
         if (operation.equals("operate")) {
             live.add(world);
-            for (Entity entity : witnesses(world)) entity.canUpdate(true);
+            for (Entity entity : witnesses(world)) WorksEntityUpdates.set(entity, true);
         }
         JsonObject result = snapshot(server, world, definition, operation);
         if (request != null) result.add("respawnRequest", request.getAsJsonObject("evidence"));
@@ -321,7 +323,7 @@ final class DimensionEntityProbe {
             JsonObject context = Native117EntityContext.observe(entity, world);
             // This native writer includes type ID and works for both roots and riding passengers.
             CompoundTag nbt = entityNbt(entity);
-            JsonObject entry = encode(nbt); entry.addProperty("witness", nbt.getCompound("ForgeData").getString(WITNESS));
+            JsonObject entry = encode(nbt); entry.addProperty("witness", nbt.getCompound("NeoForgeData").getString(WITNESS));
             entry.add("worldDimensionKey", context.get("worldDimensionKey"));
             entry.add("sameWorld", context.get("sameWorld"));
             entry.add("entityWorlds", context.get("entityWorlds"));
@@ -333,7 +335,7 @@ final class DimensionEntityProbe {
             entry.add("passengerUuids", passengers);
             Entity leash = entity instanceof Mob ? ((Mob) entity).getLeashHolder() : null;
             entry.add("leashHolderUuid", leash == null ? JsonNull.INSTANCE : JSON.toJsonTree(leash.getUUID().toString()));
-            entry.add("leashHolderType", leash == null ? JsonNull.INSTANCE : JSON.toJsonTree(net.minecraftforge.registries.ForgeRegistries.ENTITY_TYPES.getKey(leash.getType()).toString()));
+            entry.add("leashHolderType", leash == null ? JsonNull.INSTANCE : JSON.toJsonTree(BuiltInRegistries.ENTITY_TYPE.getKey(leash.getType()).toString()));
             BlockPos leashPos = leash instanceof net.minecraft.world.entity.decoration.BlockAttachedEntity attached
                     ? attached.getPos() : null;
             entry.add("leashHolderPosition", leashPos == null ? JsonNull.INSTANCE
@@ -342,7 +344,7 @@ final class DimensionEntityProbe {
         }
         result.add("entities", entities);
         BlockPos pos = new BlockPos(176, 101, 8); JsonObject generator = new JsonObject();
-        generator.addProperty("actualName", net.minecraftforge.registries.ForgeRegistries.BLOCKS.getKey(world.getBlockState(pos).getBlock()).toString());
+        generator.addProperty("actualName", BuiltInRegistries.BLOCK.getKey(world.getBlockState(pos).getBlock()).toString());
         BlockEntity tile = world.getBlockEntity(pos); if (tile != null) generator.add("tile", encode(WorksBlockData.save(tile)));
         result.add("generator", generator);
         return result;
@@ -447,7 +449,7 @@ final class DimensionEntityProbe {
     private static CompoundTag entityNbt(Entity entity) {
         if (entity instanceof LeashFenceKnotEntity) {
             CompoundTag nbt = entity.saveWithoutId(new CompoundTag());
-            nbt.putString("id", net.minecraftforge.registries.ForgeRegistries.ENTITY_TYPES.getKey(entity.getType()).toString());
+            nbt.putString("id", BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()).toString());
             return nbt;
         }
         CompoundTag nbt = new CompoundTag();

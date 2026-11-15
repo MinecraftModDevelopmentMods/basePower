@@ -1,5 +1,7 @@
 package cyano.poweradvantage.api.fluid;
 
+import net.minecraft.core.registries.BuiltInRegistries;
+
 import javax.annotation.Nullable;
 
 import net.minecraft.world.level.material.Fluid;
@@ -37,7 +39,7 @@ public final class FluidStack {
     }
 
     public CompoundTag writeToNBT(CompoundTag nbt) {
-        ResourceLocation id = net.minecraftforge.registries.ForgeRegistries.FLUIDS.getKey(fluid);
+        ResourceLocation id = BuiltInRegistries.FLUID.getKey(fluid);
         if (id != null) nbt.putString("FluidName", id.toString());
         nbt.putInt("Amount", amount);
         if (tag != null) nbt.put("Tag", tag.copy());

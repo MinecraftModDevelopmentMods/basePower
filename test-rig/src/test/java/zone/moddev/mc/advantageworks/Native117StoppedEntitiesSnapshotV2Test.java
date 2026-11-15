@@ -75,7 +75,9 @@ public class Native117StoppedEntitiesSnapshotV2Test {
     }
 
     @Test public void resourceIsExactIndependentNativeControl() throws Exception {
-        assertEquals("83990C70FA3F6AD0CDC2803CA956B6CF1227EA5B5701D95175874B7D9EEA0AB8",
+        assertEquals("native1211neo-helper-contract.json", Native117StoppedEntitiesSnapshotV2.CONTRACT);
+        assertEquals("native1211neo-leash-knot-nosave-v1", Native117StoppedEntitiesSnapshotV2.POLICY);
+        assertEquals("F08C57BED42AEC4E0FEF8A9B7CBE79C0C7E0FA8D655BEB140FA2E7E1ECBB0CC0",
                 Native117StoppedEntitiesSnapshotV2.sha(Native117StoppedEntitiesSnapshotV2.contract()));
     }
 }

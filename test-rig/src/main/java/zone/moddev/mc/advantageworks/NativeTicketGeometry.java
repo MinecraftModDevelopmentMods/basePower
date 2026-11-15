@@ -14,7 +14,7 @@ import net.minecraft.server.level.DistanceManager;
 import net.minecraft.server.level.TicketType;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerChunkCache;
-import net.minecraftforge.fml.util.ObfuscationReflectionHelper;
+import net.neoforged.fml.util.ObfuscationReflectionHelper;
 
 /** Read-only engine observations; never adds tickets or loads witness chunks. */
 final class NativeTicketGeometry {
@@ -30,10 +30,10 @@ final class NativeTicketGeometry {
             }
             ServerChunkCache provider = world.getChunkSource();
             DistanceManager manager = ObfuscationReflectionHelper.getPrivateValue(
-                    ServerChunkCache.class, provider, "f_8327_");
+                    ServerChunkCache.class, provider, "distanceManager");
             // Forge 36 adds a second map, forcedTickets; observe the vanilla tickets map only.
             Long2ObjectOpenHashMap<?> tickets = ObfuscationReflectionHelper.getPrivateValue(
-                    DistanceManager.class, manager, "f_140761_");
+                    DistanceManager.class, manager, "tickets");
             Set<Integer> forcedLevels = new TreeSet<>();
             for (Object value : tickets.values()) {
                 for (Object entry : (Iterable<?>) value) {

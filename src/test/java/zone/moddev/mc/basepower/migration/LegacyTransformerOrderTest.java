@@ -187,7 +187,11 @@ public class LegacyTransformerOrderTest {
     }
 
     static InputStream resource(String name) {
-        InputStream input = LegacyTransformerOrderTest.class.getResourceAsStream(name);
+        InputStream input = name.endsWith(".class")
+                ? zone.moddev.mc.advantageworks.unit.NativeClassResources.open(name)
+                : name.contains("basemetals_")
+                        ? zone.moddev.mc.basemetals.BaseMetals.class.getResourceAsStream(name)
+                        : LegacyTransformerOrderTest.class.getResourceAsStream(name);
         assertNotNull("Missing pinned native dependency resource " + name, input);
         return input;
     }

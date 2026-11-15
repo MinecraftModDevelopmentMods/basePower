@@ -153,7 +153,7 @@ public class Native117RespawnRequestTest {
     }
 
     @Test public void commandDispatchConsumesTheValidatedDefinitionAndAcknowledgesBeforeWriting() throws Exception {
-        String source = Files.readString(Path.of("src/main/java/zone/moddev/mc/advantageworks/DimensionEntityProbe.java"));
+        String source = Files.readString(zone.moddev.mc.advantageworks.unit.TestProject.path("src/main/java/zone/moddev/mc/advantageworks/DimensionEntityProbe.java"));
         String execute = source.substring(source.indexOf("private void execute("), source.indexOf("private static JsonObject definition()"));
         assertTrue(execute.contains("operation.equals(\"respawn\") ? respawnRequest(DEFINITION.toPath(), label) : null"));
         assertTrue(execute.contains("request == null ? definition() : request.getAsJsonObject(\"definition\")"));

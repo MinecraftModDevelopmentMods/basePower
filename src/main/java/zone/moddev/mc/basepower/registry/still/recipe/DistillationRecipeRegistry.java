@@ -1,5 +1,7 @@
 package zone.moddev.mc.basepower.registry.still.recipe;
 
+import net.minecraft.core.registries.BuiltInRegistries;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -137,7 +139,7 @@ public class DistillationRecipeRegistry {
 	}
 
 	private static String id(Fluid fluid) {
-		ResourceLocation id = net.minecraftforge.registries.ForgeRegistries.FLUIDS.getKey(fluid);
+		ResourceLocation id = BuiltInRegistries.FLUID.getKey(fluid);
 		return id == null ? "unknown" : id.toString();
 	}
 	

@@ -13,7 +13,7 @@ import static org.junit.Assert.*;
 public class Native114ProfileTest {
     @Test
     public void profilesSeparateUnqualifiedDestinationsFromHistoricalSources() throws Exception {
-        File[] files = new File("profiles/native114").listFiles((dir, name) -> name.endsWith(".json"));
+        File[] files = zone.moddev.mc.advantageworks.unit.TestProject.path("profiles/native114").toFile().listFiles((dir, name) -> name.endsWith(".json"));
         assertNotNull(files);
         assertEquals(10, files.length);
         int ported = 0, blocked = 0;
@@ -29,7 +29,7 @@ public class Native114ProfileTest {
             assertEquals(64, raw.getAsJsonObject("forge").get("sha256").getAsString().length());
             String source = raw.get("legacySourceProfile").getAsString();
             assertTrue(source, source.startsWith("../../../PA113/PowerAdvantage/test-rig/profiles/"));
-            assertEquals(new File(".").getCanonicalFile(), WorksRunner.findTestRig(file));
+            assertEquals(zone.moddev.mc.advantageworks.unit.TestProject.path(".").toFile().getCanonicalFile(), WorksRunner.findTestRig(file));
             if (raw.get("portStatus").getAsString().equals("UNPORTED")) {
                 blocked++;
                 try { WorksRunner.readProfile(file, "1.14.4", "1.14.4-28.2.26"); fail("Unported profile was accepted: " + file); }
@@ -69,7 +69,7 @@ public class Native114ProfileTest {
     @Test
     public void historicalQualificationCannotBeLaunchedAsNative114() throws Exception {
         try {
-            WorksRunner.readProfile(new File("profiles/packaged-current.json"));
+            WorksRunner.readProfile(zone.moddev.mc.advantageworks.unit.TestProject.path("profiles/packaged-current.json").toFile());
             fail("Historical 1.13.2 profile must not launch native114");
         } catch (IllegalArgumentException expected) {
             assertTrue(expected.getMessage().contains("Historical source profile"));

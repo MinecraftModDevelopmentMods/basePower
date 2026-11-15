@@ -1,5 +1,7 @@
 package zone.moddev.mc.advantageworks;
 
+import net.minecraft.core.registries.BuiltInRegistries;
+
 import com.mojang.authlib.GameProfile;
 import cyano.poweradvantage.api.ConduitType;
 import cyano.poweradvantage.api.PowerRequest;
@@ -23,7 +25,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.level.GameType;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraft.core.registries.Registries;
 
 /** Eight supplemental cases included by the Steam operating catalog. */
 final class SteamOperationalSupplementalCases {
@@ -240,7 +242,7 @@ final class SteamOperationalSupplementalCases {
     }
 
     private static Item item(MachineContext c, String id) {
-        Item item = ForgeRegistries.ITEMS.getValue(ResourceLocation.parse(id));
+        Item item = zone.moddev.mc.basepower.util.RegistryValues.find(BuiltInRegistries.ITEM, ResourceLocation.parse(id));
         c.require(item != null && item != net.minecraft.world.item.Items.AIR, "Registered item " + id);
         return item;
     }

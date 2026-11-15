@@ -1,5 +1,7 @@
 package zone.moddev.mc.advantageworks;
 
+import net.minecraft.core.registries.BuiltInRegistries;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.mojang.brigadier.arguments.StringArgumentType;
@@ -26,11 +28,11 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.chunk.LevelChunk;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.level.ChunkEvent;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.fml.ModList;
-import net.minecraftforge.event.RegisterCommandsEvent;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.level.ChunkEvent;
+
+import net.neoforged.fml.ModList;
+import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import zone.moddev.mc.basepower.conduitnetwork.ConduitRegistry;
 
 /** Observes real tile movement and chunk lifecycles only in marked disposable worlds. */
@@ -179,10 +181,10 @@ final class LifecycleProbe {
         } catch (Exception error) {
             throw new IllegalStateException("Invalid lifecycle fixture", error);
         }
-        MinecraftForge.EVENT_BUS.addListener(probe::starting);
-        MinecraftForge.EVENT_BUS.addListener(probe::tick);
-        MinecraftForge.EVENT_BUS.addListener(probe::unload);
-        MinecraftForge.EVENT_BUS.addListener(probe::load);
+        NeoForge.EVENT_BUS.addListener(probe::starting);
+        WorksLevelTick.listen(NeoForge.EVENT_BUS, probe::tick);
+        NeoForge.EVENT_BUS.addListener(probe::unload);
+        NeoForge.EVENT_BUS.addListener(probe::load);
     }
 
     private void starting(RegisterCommandsEvent event) {
@@ -232,7 +234,7 @@ final class LifecycleProbe {
                     if (oil.bucket == null) continue;
                     BlockPos source = position(oil.source);
                     if (!world.isEmptyBlock(source)) throw new IllegalStateException("Oil source is not empty: " + oil.id);
-                    net.minecraft.world.item.Item item = net.minecraftforge.registries.ForgeRegistries.ITEMS.getValue(
+                    net.minecraft.world.item.Item item = zone.moddev.mc.basepower.util.RegistryValues.find(BuiltInRegistries.ITEM,
                             net.minecraft.resources.ResourceLocation.parse(oil.bucket));
                     if (!(item instanceof net.minecraft.world.item.BucketItem)
                             || !((net.minecraft.world.item.BucketItem) item).emptyContents(null, world, source, null))
@@ -250,7 +252,7 @@ final class LifecycleProbe {
                     if (fixture.from == null) continue;
                     int[] current = fixture.route == null ? fixture.from : fixture.route.get(routeSteps.getOrDefault(fixture.id, 0));
                     BlockEntity tile = world.getBlockEntity(position(current));
-                    if (!(tile instanceof PoweredEntity) || !fixture.block.equals(net.minecraftforge.registries.ForgeRegistries.BLOCKS.getKey(world.getBlockState(tile.getBlockPos()).getBlock()).toString()))
+                    if (!(tile instanceof PoweredEntity) || !fixture.block.equals(BuiltInRegistries.BLOCK.getKey(world.getBlockState(tile.getBlockPos()).getBlock()).toString()))
                         throw new IllegalStateException("Missing drill " + fixture.id);
                     float reserve = "low-prime".equals(operation) ? ("steam".equals(fixture.energyType) ? 9 : 249) : fixture.initialEnergy;
                     ((PoweredEntity) tile).setEnergy(reserve, new ConduitType(fixture.energyType));
@@ -349,7 +351,7 @@ final class LifecycleProbe {
             flags.put("notRemoved", tile != null && !tile.isRemoved());
             flags.put("blockTypeValid", tile instanceof PoweredEntity && chunk != null
                     && tile.getType().isValid(chunk.getBlockState(pos))
-                    && fixture.block.equals(net.minecraftforge.registries.ForgeRegistries.BLOCKS.getKey(chunk.getBlockState(pos).getBlock()).toString()));
+                    && fixture.block.equals(BuiltInRegistries.BLOCK.getKey(chunk.getBlockState(pos).getBlock()).toString()));
             String bindingFailure = null;
             if (tile != null) {
                 try { request.bindings.put(fixture.id, new LifecycleNaturalTickObserver(world, tile)); }
@@ -466,16 +468,16 @@ final class LifecycleProbe {
         System.out.println("ADVLIFECYCLE COMPLETE " + request.operation + " " + request.label);
     }
 
-    private void roundTripTick(TickEvent.LevelTickEvent event) {
+    private void roundTripTick(WorksLevelTick event) {
         RoundTripRequest request = roundTrip;
         if (request == null || event.level != request.world) return;
         boolean finish = false;
         try {
-            if (event.phase == TickEvent.Phase.START && !request.window.started) {
+            if (event.phase == WorksLevelTick.Phase.START && !request.window.started) {
                 if (request.window.start(request.world.getGameTime(), System.nanoTime(), roundTripPrerequisites(request)))
                     applyRoundTrip(request);
                 finish = request.window.finished;
-            } else if (event.phase == TickEvent.Phase.END && request.window.started) {
+            } else if (event.phase == WorksLevelTick.Phase.END && request.window.started) {
                 boolean complete = request.bindings.values().stream().allMatch(binding -> binding.capture.complete() && binding.current(request.world));
                 request.window.end(request.world.getGameTime(), complete);
                 finish = true;
@@ -541,7 +543,7 @@ final class LifecycleProbe {
         LevelChunk chunk = world.getChunkSource().getChunkNow(pos.getX() >> 4, pos.getZ() >> 4);
         result.put("loaded", chunk != null);
         if (chunk == null) return result;
-        result.put("block", net.minecraftforge.registries.ForgeRegistries.BLOCKS.getKey(chunk.getBlockState(pos).getBlock()).toString());
+        result.put("block", BuiltInRegistries.BLOCK.getKey(chunk.getBlockState(pos).getBlock()).toString());
         result.put("state", chunk.getBlockState(pos).toString());
         BlockEntity tile = chunk.getBlockEntity(pos, LevelChunk.EntityCreationType.CHECK);
         if (tile != null) {
@@ -557,7 +559,7 @@ final class LifecycleProbe {
         return result;
     }
 
-    private void tick(TickEvent.LevelTickEvent event) {
+    private void tick(WorksLevelTick event) {
         roundTripTick(event);
         if (!watching || !(event.level instanceof ServerLevel)) return;
         ServerLevel world = (ServerLevel) event.level;
@@ -566,7 +568,7 @@ final class LifecycleProbe {
             int step = routeSteps.getOrDefault(fixture.id, 0);
             int[] from = fixture.route == null ? fixture.from : fixture.route.get(step);
             int[] to = fixture.route == null ? fixture.to : fixture.route.get(step + 1);
-            if (event.phase == TickEvent.Phase.START) {
+            if (event.phase == WorksLevelTick.Phase.START) {
                 Map<String, Object> original = witness(world, from);
                 if (fixture.block.equals(original.get("block"))) before.put(fixture.id, original);
             } else {

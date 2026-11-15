@@ -1,5 +1,7 @@
 package cyano.poweradvantage.api.simple;
 
+import net.minecraft.core.registries.BuiltInRegistries;
+
 import zone.moddev.mc.basepower.init.Fluids;
 
 /**
@@ -11,7 +13,7 @@ int guiID = zone.moddev.mc.basepower.registry.MachineGUIRegistry.addGUI(new MySi
 Block myMachineBlock = new MyBlockSimpleFluidSource(guiID,PowerAdvantage.getInstance());
 myMachineBlock.setTranslationKey(MODID+"."+"my_machine");
 myMachineBlock.setRegistryName(MODID, "my_machine");
-net.minecraftforge.fml.common.registry.ForgeRegistries.BLOCKS.register(myMachineBlock);
+net.neoforged.fml.common.registry.BuiltInRegistries.BLOCK.register(myMachineBlock);
  * </pre>
  * @author DrCyano
  *

@@ -58,8 +58,8 @@ public class NativeEntityTickGateTest {
         NativeEntityHold first = new NativeEntityHold(), second = new NativeEntityHold();
         first.hold(boat); second.hold(boat);
         first.restore();
-        assertFalse(boat.canUpdate()); assertFalse(gate.contains(boat));
+        assertFalse(WorksEntityUpdates.get(boat)); assertFalse(gate.contains(boat));
         second.restore();
-        assertTrue(boat.canUpdate()); assertTrue(gate.contains(boat));
+        assertTrue(WorksEntityUpdates.get(boat)); assertTrue(gate.contains(boat));
     }
 }

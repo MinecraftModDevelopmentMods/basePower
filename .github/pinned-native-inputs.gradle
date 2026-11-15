@@ -1,0 +1,36 @@
+import groovy.json.JsonSlurper
+import java.security.MessageDigest
+
+allprojects {
+    afterEvaluate { project ->
+        def lock = new JsonSlurper().parse(project.file('.github/native-dependencies.json'))
+        if (lock.status != 'HOSTED_INPUTS_READY') {
+            throw new GradleException('Hosted dependency bootstrap is blocked; local hook hashes are not release pins')
+        }
+        def arguments = [basemetals: 'baseMetalsJar', mmdlib: 'mmdlibJar', orespawn: 'oreSpawnJar']
+        def resolved = [:]
+        lock.dependencies.each { pin ->
+            def path = project.providers.gradleProperty(arguments[pin.id]).orNull
+            if (!path) throw new GradleException('Missing pinned dependency path: ' + pin.id)
+            File jar = project.file(path)
+            String actual = jar.isFile() ? MessageDigest.getInstance('SHA-256').digest(jar.bytes)
+                    .encodeHex().toString().toUpperCase(Locale.ROOT) : ''
+            if (pin.state != 'PUBLISHED' || actual != pin.sha256
+                    || project.property(pin.versionProperty) != pin.version
+                    || project.property(pin.hashProperty) != pin.sha256) {
+                throw new GradleException('Changed or unapproved hosted input: ' + pin.id)
+            }
+            resolved[pin.id] = jar
+        }
+        // Use exactly the verified files rather than independently resolving Maven bytes again.
+        project.configurations.configureEach {
+            withDependencies { dependencies ->
+                dependencies.removeAll { dependency -> lock.dependencies.any { pin ->
+                    dependency.group == pin.group && dependency.name == pin.artifact
+                } }
+            }
+        }
+        project.dependencies.add('pinnedBaseMetals', project.files(resolved.basemetals))
+        project.dependencies.add('implementation', project.files(resolved.mmdlib, resolved.orespawn))
+    }
+}

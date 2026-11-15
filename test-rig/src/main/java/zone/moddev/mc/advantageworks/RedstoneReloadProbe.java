@@ -1,5 +1,7 @@
 package zone.moddev.mc.advantageworks;
 
+import net.minecraft.core.registries.BuiltInRegistries;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
@@ -31,9 +33,9 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Registry;
 import net.minecraft.world.level.Level;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.RegisterCommandsEvent;
-import net.minecraftforge.event.TickEvent;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.RegisterCommandsEvent;
+
 
 /** Separate cold-process experiment: finite earned work, never expected-state restoration. */
 final class RedstoneReloadProbe {
@@ -63,8 +65,8 @@ final class RedstoneReloadProbe {
     static void register() {
         if (!MARKER.isFile()) return;
         RedstoneReloadProbe probe = new RedstoneReloadProbe();
-        MinecraftForge.EVENT_BUS.addListener(probe::commands);
-        MinecraftForge.EVENT_BUS.addListener(probe::tick);
+        NeoForge.EVENT_BUS.addListener(probe::commands);
+        WorksLevelTick.listen(NeoForge.EVENT_BUS, probe::tick);
     }
 
     private static List<Witness> definitions() {
@@ -112,10 +114,10 @@ final class RedstoneReloadProbe {
 
     private boolean paused() { return phase != Phase.SEEDING && phase != Phase.OPERATING; }
 
-    private void tick(TickEvent.LevelTickEvent event) {
+    private void tick(WorksLevelTick event) {
         if (!(event.level instanceof ServerLevel) || event.level.dimension() != Level.OVERWORLD) return;
         ServerLevel current = (ServerLevel) event.level;
-        if (event.phase == TickEvent.Phase.START) {
+        if (event.phase == WorksLevelTick.Phase.START) {
             tickStart = current.getGameTime();
             if (paused()) {
                 suspended.addAll(NativeBlockEntityTicks.drain(current));
@@ -280,11 +282,11 @@ final class RedstoneReloadProbe {
             row.put("pos", coordinates(witness.pos));
             row.put("held", witness.held);
             row.put("offset", witness.offset);
-            row.put("block", net.minecraftforge.registries.ForgeRegistries.BLOCKS.getKey(state.getBlock()).toString());
+            row.put("block", BuiltInRegistries.BLOCK.getKey(state.getBlock()).toString());
             row.put("state", state.toString());
             row.put("active", active(state));
             row.put("signal", world.hasNeighborSignal(witness.pos));
-            row.put("holdBlock", net.minecraftforge.registries.ForgeRegistries.BLOCKS.getKey(world.getBlockState(witness.pos.above()).getBlock()).toString());
+            row.put("holdBlock", BuiltInRegistries.BLOCK.getKey(world.getBlockState(witness.pos.above()).getBlock()).toString());
             row.put("energy", ((PoweredEntity) tile).getEnergy(new ConduitType("electricity")));
             row.put("progress", (int) nbt.getShort("progress"));
             row.put("nbt", nbt.toString());

@@ -1,5 +1,7 @@
 package zone.moddev.mc.basepower.registry;
 
+import net.minecraft.core.registries.BuiltInRegistries;
+
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.ChestBlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntity;

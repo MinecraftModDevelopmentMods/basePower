@@ -1,5 +1,7 @@
 package zone.moddev.mc.basepower.registry.still.recipe;
 
+import net.minecraft.core.registries.BuiltInRegistries;
+
 import java.util.Collection;
 import java.util.LinkedList;
 
@@ -119,7 +121,7 @@ public class DistillationRecipe {
 	 */
 	public Collection<FluidStack> getValidInputs() {
 		LinkedList<FluidStack> l = new LinkedList<>();
-		for (Fluid f : net.minecraftforge.registries.ForgeRegistries.FLUIDS) {
+		for (Fluid f : BuiltInRegistries.FLUID) {
 			FluidStack stack = new FluidStack(f, FluidTank.BUCKET_VOLUME);
 			if (this.isValidInput(stack)) {
 				l.add(stack);

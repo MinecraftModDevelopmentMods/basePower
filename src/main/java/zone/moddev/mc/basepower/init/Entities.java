@@ -3,10 +3,11 @@ package zone.moddev.mc.basepower.init;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.RegisterEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
+import net.neoforged.neoforge.registries.RegisterEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.Mod;
 import zone.moddev.mc.basepower.PowerAdvantage;
 import zone.moddev.mc.basepower.machines.conveyors.TileEntityBlockFilter;
 import zone.moddev.mc.basepower.machines.conveyors.TileEntityConveyor;
@@ -30,7 +31,7 @@ import cyano.poweradvantage.api.modsupport.rf.TileEntityRFSteamConverter;
 import cyano.poweradvantage.api.modsupport.techreborn.TileEntityTRElectricityConverter;
 
 /** Stable tile identities with the native 1.14 valid-block lists. */
-@Mod.EventBusSubscriber(modid = PowerAdvantage.MODID, bus = Mod.EventBusSubscriber.Bus.MOD)
+@net.neoforged.fml.common.EventBusSubscriber(modid = PowerAdvantage.MODID, bus = net.neoforged.fml.common.EventBusSubscriber.Bus.MOD)
 public final class Entities {
     public static BlockEntityType<TerminalFluidPipeTileEntity> PIPE_TERMINAL;
     public static BlockEntityType<FluidDrainTileEntity> FLUID_DRAIN;
@@ -57,7 +58,7 @@ public final class Entities {
 
     @SubscribeEvent
     public static void register(RegisterEvent event) {
-        if (!ForgeRegistries.Keys.BLOCK_ENTITY_TYPES.equals(event.getRegistryKey())) return;
+        if (!Registries.BLOCK_ENTITY_TYPE.equals(event.getRegistryKey())) return;
         PIPE_TERMINAL = register(event, "tileentity.pipe_terminal", TerminalFluidPipeTileEntity::new, Blocks.fluid_pipe_terminal);
         FLUID_DRAIN = register(event, "tileentity.fluid_drain", FluidDrainTileEntity::new, Blocks.fluid_drain);
         FLUID_DISCHARGE = register(event, "tileentity.fluid_discharge", FluidDischargeTileEntity::new, Blocks.fluid_discharge);
@@ -85,7 +86,7 @@ public final class Entities {
             RegisterEvent event, String id,
             BlockEntityType.BlockEntitySupplier<T> factory, net.minecraft.world.level.block.Block... validBlocks) {
         BlockEntityType<T> type = BlockEntityType.Builder.<T>of(factory, validBlocks).build(null);
-        event.register(ForgeRegistries.Keys.BLOCK_ENTITY_TYPES, ResourceLocation.fromNamespaceAndPath(PowerAdvantage.MODID, id), () -> type);
+        event.register(Registries.BLOCK_ENTITY_TYPE, ResourceLocation.fromNamespaceAndPath(PowerAdvantage.MODID, id), () -> type);
         return type;
     }
 }

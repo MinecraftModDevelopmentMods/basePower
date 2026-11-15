@@ -1,5 +1,7 @@
 package cyano.poweradvantage.api;
 
+import net.minecraft.core.registries.BuiltInRegistries;
+
 import net.minecraft.core.HolderLookup;
 import zone.moddev.mc.basepower.conduitnetwork.ConduitRegistry;
 import net.minecraft.world.level.block.state.BlockState;
@@ -32,27 +34,22 @@ public abstract class PoweredEntity extends BlockEntity implements IPowerMachine
     private final zone.moddev.mc.basepower.util.MachineCapabilities machineCapabilities =
             new zone.moddev.mc.basepower.util.MachineCapabilities(this);
 
-    @Override
-    public <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(
-            net.minecraftforge.common.capabilities.Capability<T> capability, net.minecraft.core.Direction face) {
-        if (!areCapabilitiesValid()) return net.minecraftforge.common.util.LazyOptional.empty();
-        if (machineCapabilities == null) return super.getCapability(capability, face);
-        net.minecraftforge.common.util.LazyOptional<T> local = machineCapabilities.get(capability, face);
-        return local.isPresent() ? local : super.getCapability(capability, face);
+    public final zone.moddev.mc.basepower.util.MachineCapabilities machineCapabilities() {
+        return machineCapabilities;
     }
 
-    @Override public void invalidateCaps() {
-        if (machineCapabilities != null) machineCapabilities.invalidate();
-        super.invalidateCaps();
+    public void invalidateCaps() { machineCapabilities.invalidate(); }
+    public void reviveCaps() { machineCapabilities.revive(); }
+    protected boolean areCapabilitiesValid() { return !isRemoved() && machineCapabilities.isValid(); }
+
+    @Override public void setRemoved() {
+        invalidateCaps();
+        super.setRemoved();
     }
 
-    @Override public void reviveCaps() {
-        super.reviveCaps();
-        if (machineCapabilities != null) machineCapabilities.revive();
-    }
-
-    protected boolean areCapabilitiesValid() {
-        return !isRemoved() && (machineCapabilities == null || machineCapabilities.isValid());
+    @Override public void onChunkUnloaded() {
+        invalidateCaps();
+        super.onChunkUnloaded();
     }
 
     @Override public void clearRemoved() {

@@ -77,7 +77,7 @@ public class NativeEntityReadSelectorsTest {
             assertEquals("Read selectors must never call the allocating getter", 0, entity.persistentReads);
             assertEquals("Selection must not serialize an entity or invoke its save callbacks", serializations, entity.serializations);
             assertEquals(before, entity.saveWithoutId(new CompoundTag()));
-            assertEquals(data != null, before.contains("ForgeData"));
+            assertEquals(data != null, before.contains("NeoForgeData"));
             assertEquals(ticks, entity.tickCount);
             assertFalse(entity.isRemoved());
         }

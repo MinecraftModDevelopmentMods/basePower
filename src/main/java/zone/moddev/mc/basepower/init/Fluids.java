@@ -1,5 +1,7 @@
 package zone.moddev.mc.basepower.init;
 
+import net.minecraft.core.registries.BuiltInRegistries;
+
 import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -18,19 +20,19 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Registry;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.LevelReader;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fluids.FluidType;
-import net.minecraftforge.fluids.ForgeFlowingFluid;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.RegisterEvent;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.neoforge.fluids.FluidType;
+import net.neoforged.neoforge.fluids.BaseFlowingFluid;
+import net.neoforged.fml.common.Mod;
+import net.minecraft.core.registries.Registries;
+import net.neoforged.neoforge.registries.RegisterEvent;
 import zone.moddev.mc.basepower.PowerAdvantage;
 
 /** Native Forge fluids and their persistent PowerAdvantage conduit identities. */
-@Mod.EventBusSubscriber(modid = PowerAdvantage.MODID, bus = Mod.EventBusSubscriber.Bus.MOD)
+@net.neoforged.fml.common.EventBusSubscriber(modid = PowerAdvantage.MODID, bus = net.neoforged.fml.common.EventBusSubscriber.Bus.MOD)
 public final class Fluids {
     public static final ConduitType fluidConduit_general = new ConduitType("fluid");
     private static final Map<Fluid, ConduitType> FLUID_TYPES = new IdentityHashMap<>();
@@ -57,19 +59,19 @@ public final class Fluids {
 
     @SubscribeEvent
     public static void registerFluids(RegisterEvent event) {
-        if (ForgeRegistries.Keys.FLUID_TYPES.equals(event.getRegistryKey())) {
+        if (net.neoforged.neoforge.registries.NeoForgeRegistries.Keys.FLUID_TYPES.equals(event.getRegistryKey())) {
             crudeOilType = oilType("crude_oil", 850, 6000);
             refinedOilType = oilType("refined_oil", 720, 1000);
-            event.register(ForgeRegistries.Keys.FLUID_TYPES, id("crude_oil"), () -> crudeOilType);
-            event.register(ForgeRegistries.Keys.FLUID_TYPES, id("refined_oil"), () -> refinedOilType);
+            event.register(net.neoforged.neoforge.registries.NeoForgeRegistries.Keys.FLUID_TYPES, id("crude_oil"), () -> crudeOilType);
+            event.register(net.neoforged.neoforge.registries.NeoForgeRegistries.Keys.FLUID_TYPES, id("refined_oil"), () -> refinedOilType);
         }
-        if (!ForgeRegistries.Keys.FLUIDS.equals(event.getRegistryKey())) return;
+        if (!Registries.FLUID.equals(event.getRegistryKey())) return;
         prepareOilFluids();
 
-        event.register(ForgeRegistries.Keys.FLUIDS, id("flowing_crude_oil"), () -> flowing_crude_oil);
-        event.register(ForgeRegistries.Keys.FLUIDS, id("crude_oil"), () -> crude_oil);
-        event.register(ForgeRegistries.Keys.FLUIDS, id("flowing_refined_oil"), () -> flowing_refined_oil);
-        event.register(ForgeRegistries.Keys.FLUIDS, id("refined_oil"), () -> refined_oil);
+        event.register(Registries.FLUID, id("flowing_crude_oil"), () -> flowing_crude_oil);
+        event.register(Registries.FLUID, id("crude_oil"), () -> crude_oil);
+        event.register(Registries.FLUID, id("flowing_refined_oil"), () -> flowing_refined_oil);
+        event.register(Registries.FLUID, id("refined_oil"), () -> refined_oil);
         registerNewFluid(crude_oil);
         registerNewFluid(flowing_crude_oil);
         registerNewFluid(refined_oil);
@@ -101,7 +103,7 @@ public final class Fluids {
     }
 
     public static ConduitType registerNewFluid(Fluid fluid) {
-        ResourceLocation id = ForgeRegistries.FLUIDS.getKey(fluid);
+        ResourceLocation id = BuiltInRegistries.FLUID.getKey(fluid);
         ConduitType type = new ConduitType(id == null ? "unknown_fluid" : id.toString());
         FLUID_TYPES.put(fluid, type);
         return type;
@@ -137,13 +139,13 @@ public final class Fluids {
     private static Fluid registeredFluid(ResourceLocation id) {
         // Forge's defaulted fluid registry returns EMPTY, not null, for unknown names.
         // Do not let a missing basepower:water hide the legacy vanilla fallback.
-        return net.minecraftforge.registries.ForgeRegistries.FLUIDS.containsKey(id)
-                ? net.minecraftforge.registries.ForgeRegistries.FLUIDS.getValue(id) : null;
+        return BuiltInRegistries.FLUID.containsKey(id)
+                ? zone.moddev.mc.basepower.util.RegistryValues.find(BuiltInRegistries.FLUID, id) : null;
     }
 
     public enum Kind { CRUDE, REFINED }
 
-    public abstract static class PowerFluid extends ForgeFlowingFluid {
+    public abstract static class PowerFluid extends BaseFlowingFluid {
         private final Kind kind;
 
         protected PowerFluid(Kind kind) {
@@ -152,8 +154,8 @@ public final class Fluids {
         }
         public Kind getKind() { return kind; }
 
-        private static ForgeFlowingFluid.Properties properties(Kind kind) {
-            return new ForgeFlowingFluid.Properties(
+        private static BaseFlowingFluid.Properties properties(Kind kind) {
+            return new BaseFlowingFluid.Properties(
                     () -> kind == Kind.CRUDE ? crudeOilType : refinedOilType,
                     () -> kind == Kind.CRUDE ? crude_oil : refined_oil,
                     () -> kind == Kind.CRUDE ? flowing_crude_oil : flowing_refined_oil)

@@ -12,8 +12,8 @@ import net.minecraft.client.renderer.texture.TextureAtlas;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.client.renderer.BiomeColors;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import cyano.poweradvantage.api.fluid.FluidStack;
 
 
@@ -67,7 +67,7 @@ public class FluidTankGUI extends SimpleMachineGUI {
 		if (fs == null || fs.getFluid() == null || width <= 0 || height <= 0) return;
 		// The atlas supplies the current animation frame; water's sprite is grayscale.
 		var fluidStack = zone.moddev.mc.basepower.util.ForgeFluidAdapter.toForge(fs);
-		var rendering = net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions.of(fs.getFluid());
+		var rendering = net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions.of(fs.getFluid());
 		var stillTexture = rendering.getStillTexture(fluidStack);
 		if (stillTexture == null) return;
 		TextureAtlasSprite sprite = guiContainer.getMinecraft().getTextureAtlas(TextureAtlas.LOCATION_BLOCKS)

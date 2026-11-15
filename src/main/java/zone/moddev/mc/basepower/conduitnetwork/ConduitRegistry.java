@@ -15,10 +15,9 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.core.Direction;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.energy.IEnergyStorage;
-import net.minecraftforge.event.level.ChunkEvent;
+import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.energy.IEnergyStorage;
+import net.neoforged.neoforge.event.level.ChunkEvent;
 
 import java.util.*;
 import java.util.concurrent.locks.Lock;
@@ -130,10 +129,10 @@ public class ConduitRegistry {
 						}
 					} else if (e != null && PowerAdvantage.forgeEnergyConversionTable.containsKey(conduitType)) {
 						for (Direction side : Direction.values()) {
-							LazyOptional<IEnergyStorage> capability = e.getCapability(ForgeCapabilities.ENERGY, side);
-							if (!capability.isPresent()) continue;
-							capability.ifPresent(storage -> requests.add(Wrappers.wrapForgeEnergyRequest(storage,
-									energyType, PowerAdvantage.forgeEnergyConversionTable.get(conduitType))));
+							IEnergyStorage storage = w.getCapability(Capabilities.EnergyStorage.BLOCK, e.getBlockPos(), side);
+							if (storage == null) continue;
+							requests.add(Wrappers.wrapForgeEnergyRequest(storage,
+									energyType, PowerAdvantage.forgeEnergyConversionTable.get(conduitType)));
 							break;
 						}
 					}

@@ -1,5 +1,7 @@
 package zone.moddev.mc.basepower.registry.still.recipe;
 
+import net.minecraft.core.registries.BuiltInRegistries;
+
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.core.Registry;
@@ -28,7 +30,7 @@ public class RegistryNameFluidReference extends FluidReference {
 	 */
 	@Override
 	public boolean matches(Fluid fluid) {
-		ResourceLocation id = net.minecraftforge.registries.ForgeRegistries.FLUIDS.getKey(fluid);
+		ResourceLocation id = BuiltInRegistries.FLUID.getKey(fluid);
 		return id != null && (reference.equals(id.toString()) || reference.equals(id.getPath()));
 	}
 

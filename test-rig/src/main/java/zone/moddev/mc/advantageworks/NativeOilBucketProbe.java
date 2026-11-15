@@ -1,5 +1,7 @@
 package zone.moddev.mc.advantageworks;
 
+import net.minecraft.core.registries.BuiltInRegistries;
+
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -23,12 +25,11 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.event.RegisterCommandsEvent;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.IFluidHandler;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.RegisterCommandsEvent;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler;
+import net.minecraft.core.registries.Registries;
 
 /** Real survival interactions on live fluid blocks and native Power tanks. */
 final class NativeOilBucketProbe {
@@ -46,15 +47,16 @@ final class NativeOilBucketProbe {
             super(world, new GameProfile(UUID.fromString("e95991d9-1ed7-4a81-91f6-0f42e21667a0"), "OilBucketProbe"));
         }
 
-        @Override public void openMenu(MenuProvider provider, BlockPos pos) {
+        @Override public java.util.OptionalInt openMenu(MenuProvider provider, BlockPos pos) {
             // The offline actor records the real block's menu fallback at the packet boundary.
             menuPosition = pos.immutable();
             menuRequests++;
+            return java.util.OptionalInt.empty();
         }
     }
 
     static void register() {
-        if (Files.isRegularFile(MARKER)) MinecraftForge.EVENT_BUS.addListener(NativeOilBucketProbe::commands);
+        if (Files.isRegularFile(MARKER)) NeoForge.EVENT_BUS.addListener(NativeOilBucketProbe::commands);
     }
 
     private static void commands(RegisterCommandsEvent event) {
@@ -118,24 +120,23 @@ final class NativeOilBucketProbe {
         var source = world.getFluidState(basin);
         require(source.isSource() && source.getType() == oil, "Bucket did not place the exact oil source: " + source);
         expectHand(player, Items.BUCKET);
-        row.addProperty("placedSource", ForgeRegistries.FLUIDS.getKey(source.getType()).toString());
+        row.addProperty("placedSource", BuiltInRegistries.FLUID.getKey(source.getType()).toString());
         row.addProperty("placementBucket", "minecraft:bucket");
         var pickedUp = player.gameMode.useItem(player, world, player.getItemInHand(HAND), HAND);
         require(pickedUp.consumesAction(), "Empty bucket world use returned " + pickedUp);
         require(world.getFluidState(basin).isEmpty() && world.getBlockState(basin).isAir(), "Oil source remains after pickup");
         expectHand(player, filled);
-        row.addProperty("pickupBucket", ForgeRegistries.ITEMS.getKey(filled).toString());
+        row.addProperty("pickupBucket", BuiltInRegistries.ITEM.getKey(filled).toString());
     }
 
     private static IFluidHandler machine(ServerLevel world, BlockPos pos, Fluid oil, int amount) {
         world.setBlockAndUpdate(pos, Blocks.AIR.defaultBlockState());
-        var block = ForgeRegistries.BLOCKS.getValue(ResourceLocation.fromNamespaceAndPath("basepower", "fluid_storage_tank"));
+        var block = zone.moddev.mc.basepower.util.RegistryValues.find(BuiltInRegistries.BLOCK, ResourceLocation.fromNamespaceAndPath("basepower", "fluid_storage_tank"));
         require(block != null, "Storage tank block unavailable");
         world.setBlockAndUpdate(pos, block.defaultBlockState());
         var tile = world.getBlockEntity(pos);
         require(tile != null, "Storage tank tile unavailable");
-        var tank = tile.getCapability(ForgeCapabilities.FLUID_HANDLER, Direction.UP)
-                .orElseThrow(() -> new AssertionError("Storage tank capability unavailable"));
+        var tank = WorksCapabilities.fluid(tile, Direction.UP);
         require(tank.getTankCapacity(0) == 4000, "Storage tank capacity changed");
         if (amount > 0) require(tank.fill(new FluidStack(oil, amount), IFluidHandler.FluidAction.EXECUTE) == amount,
                 "Failed to seed exact tank quantity");
@@ -183,7 +184,7 @@ final class NativeOilBucketProbe {
         require(world.getFluidState(pos.above()).isEmpty(), "Blocked transfer spilled into the world");
         row.addProperty("beforeMb", amount);
         row.addProperty("afterMb", tank.getFluidInTank(0).getAmount());
-        row.addProperty("heldBucket", ForgeRegistries.ITEMS.getKey(held).toString());
+        row.addProperty("heldBucket", BuiltInRegistries.ITEM.getKey(held).toString());
         row.addProperty("menuFallbackRequests", player.menuRequests - beforeMenus);
     }
 
@@ -196,8 +197,8 @@ final class NativeOilBucketProbe {
         JsonArray checks = new JsonArray();
         for (int index = 0; index < 2; index++) {
             String name = index == 0 ? "crude_oil" : "refined_oil";
-            var oil = ForgeRegistries.FLUIDS.getValue(ResourceLocation.fromNamespaceAndPath("basepower", name));
-            var filled = ForgeRegistries.ITEMS.getValue(ResourceLocation.fromNamespaceAndPath("basepower", name + "_bucket"));
+            var oil = zone.moddev.mc.basepower.util.RegistryValues.find(BuiltInRegistries.FLUID, ResourceLocation.fromNamespaceAndPath("basepower", name));
+            var filled = zone.moddev.mc.basepower.util.RegistryValues.find(BuiltInRegistries.ITEM, ResourceLocation.fromNamespaceAndPath("basepower", name + "_bucket"));
             require(oil != null && filled instanceof net.minecraft.world.item.BucketItem, "Oil source or bucket unavailable");
             int x = 1072 + 16 * index;
             BlockPos basin = new BlockPos(x, 8, 1025), tank = new BlockPos(x, 8, 1029);

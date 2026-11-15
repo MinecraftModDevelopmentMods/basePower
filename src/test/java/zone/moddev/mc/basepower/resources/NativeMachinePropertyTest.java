@@ -21,7 +21,7 @@ public class NativeMachinePropertyTest {
         net.minecraft.SharedConstants.tryDetectVersion();
         Bootstrap.bootStrap();
         // Plain JUnit does not open the registry event that allows block construction.
-        net.minecraftforge.registries.GameData.unfreezeData();
+        net.neoforged.neoforge.registries.GameData.unfreezeData();
     }
 
     @Test public void machineDefaultsKeepPistonResistanceAndNonOccludingRendering() {

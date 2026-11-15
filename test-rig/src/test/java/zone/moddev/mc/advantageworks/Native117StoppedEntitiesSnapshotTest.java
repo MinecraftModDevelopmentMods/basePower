@@ -25,7 +25,7 @@ import net.minecraft.world.entity.vehicle.Boat;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.event.server.ServerStoppingEvent;
+import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
@@ -61,7 +61,7 @@ public class Native117StoppedEntitiesSnapshotTest {
         CompoundTag captured = decode(row);
         assertEquals(before, captured);
         assertEquals(7, captured.getCompound("Item").getInt("count"));
-        assertEquals("keep exactly", captured.getCompound("ForgeData").getString("Private"));
+        assertEquals("keep exactly", captured.getCompound("NeoForgeData").getString("Private"));
         assertEquals("minecraft:the_nether", row.get("worldDimensionKey").getAsString());
         assertEquals(entity.getUUID().toString(), row.get("uuid").getAsString());
         assertEquals(ticks, entity.tickCount);
@@ -141,7 +141,7 @@ public class Native117StoppedEntitiesSnapshotTest {
 
     @Test public void entrypointRegistersNativeStoppingHandlerAndRealEnumeration() throws Exception {
         assertNotNull(Native117StoppedEntitiesSnapshot.class.getDeclaredMethod("stopping", ServerStoppingEvent.class));
-        Path sources = Path.of("src/main/java/zone/moddev/mc/advantageworks");
+        Path sources = zone.moddev.mc.advantageworks.unit.TestProject.path("src/main/java/zone/moddev/mc/advantageworks");
         assertTrue(Files.readString(sources.resolve("AdvantageWorksMod.java")).contains("Native117StoppedEntitiesSnapshot.register();"));
         String source = Files.readString(sources.resolve("Native117StoppedEntitiesSnapshot.java"));
         assertTrue(source.contains("world.getAllEntities()"));

@@ -5,18 +5,18 @@ import java.util.List;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.TickingBlockEntity;
-import net.minecraftforge.fml.util.ObfuscationReflectionHelper;
+import net.neoforged.fml.util.ObfuscationReflectionHelper;
 
 /** Holds real native ticker registrations without replacing tiles or writing state. */
 final class NativeBlockEntityTicks {
     private NativeBlockEntityTicks() {}
 
     private static List<TickingBlockEntity> active(Level world) {
-        return ObfuscationReflectionHelper.getPrivateValue(Level.class, world, "f_151512_");
+        return ObfuscationReflectionHelper.getPrivateValue(Level.class, world, "blockEntityTickers");
     }
 
     private static List<TickingBlockEntity> pending(Level world) {
-        return ObfuscationReflectionHelper.getPrivateValue(Level.class, world, "f_151503_");
+        return ObfuscationReflectionHelper.getPrivateValue(Level.class, world, "pendingBlockEntityTickers");
     }
 
     static List<TickingBlockEntity> registrations(Level world) {

@@ -1,5 +1,7 @@
 package zone.moddev.mc.basepower.migration;
 
+import net.minecraft.core.registries.BuiltInRegistries;
+
 import com.mojang.datafixers.DSL;
 import com.mojang.datafixers.DataFixer;
 import com.mojang.datafixers.schemas.Schema;
@@ -33,7 +35,7 @@ public class LegacyMachineItemsTest {
 
     @BeforeClass public static void bootstrap() {
         net.minecraft.SharedConstants.tryDetectVersion(); net.minecraft.server.Bootstrap.bootStrap();
-        net.minecraftforge.registries.GameData.unfreezeData();
+        net.neoforged.neoforge.registries.GameData.unfreezeData();
         registryLookup = net.minecraft.data.registries.VanillaRegistries.createLookup();
         AdvantageLegacyMigrations.registerPowerAdvantage();
     }
@@ -241,9 +243,9 @@ public class LegacyMachineItemsTest {
 
     @Test public void registeredForeignToolKeepsWearInDirectAndNestedMachineSlots() {
         String id = "advantageworks_unit:legacy_foreign_tool";
-        net.minecraftforge.registries.GameData.unfreezeData();
+        net.neoforged.neoforge.registries.GameData.unfreezeData();
         var tool = new net.minecraft.world.item.Item(new net.minecraft.world.item.Item.Properties().durability(250));
-        net.minecraftforge.registries.ForgeRegistries.ITEMS.register(net.minecraft.resources.ResourceLocation.parse(id), tool);
+        net.minecraft.core.Registry.register(BuiltInRegistries.ITEM, net.minecraft.resources.ResourceLocation.parse(id), tool);
         CompoundTag foreign = stack(id, 9, 1);
         CompoundTag payload = new CompoundTag();
         payload.putInt("Fixture", 31);

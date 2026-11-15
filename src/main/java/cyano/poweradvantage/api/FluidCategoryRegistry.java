@@ -1,5 +1,7 @@
 package cyano.poweradvantage.api;
 
+import net.minecraft.core.registries.BuiltInRegistries;
+
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -46,7 +48,7 @@ public final class FluidCategoryRegistry {
     /** Returns true when the fluid's registry name belongs to the category. */
     public static synchronized boolean matches(String category, Fluid fluid) {
         if (fluid == null) return false;
-        ResourceLocation id = net.minecraftforge.registries.ForgeRegistries.FLUIDS.getKey(fluid);
+        ResourceLocation id = BuiltInRegistries.FLUID.getKey(fluid);
         return id != null && matches(category, id.toString());
     }
 
@@ -71,7 +73,7 @@ public final class FluidCategoryRegistry {
     /** Returns the currently registered fluids represented by a category. */
     public static synchronized Set<Fluid> getRegisteredFluids(String category) {
         LinkedHashSet<Fluid> fluids = new LinkedHashSet<>();
-        for (Fluid fluid : net.minecraftforge.registries.ForgeRegistries.FLUIDS) {
+        for (Fluid fluid : BuiltInRegistries.FLUID) {
             if (matches(category, fluid)) fluids.add(fluid);
         }
         return Collections.unmodifiableSet(fluids);

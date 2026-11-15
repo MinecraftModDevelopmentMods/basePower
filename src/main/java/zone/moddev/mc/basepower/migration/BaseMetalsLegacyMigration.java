@@ -1,10 +1,12 @@
 package zone.moddev.mc.basepower.migration;
 
+import net.minecraft.core.registries.BuiltInRegistries;
+
 import cyano.poweradvantage.api.migration.LegacyMigrationApi;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraft.core.registries.Registries;
 import zone.moddev.mc.basemetals.api.migration.Legacy112MigrationExtension;
 
 /** Loaded only when Base Metals is present. */
@@ -36,9 +38,9 @@ public final class BaseMetalsLegacyMigration implements Legacy112MigrationExtens
     public BlockState decodeBlockState(ResourceLocation legacyId, int metadata) {
         if (!LegacyMigrationApi.handlesNamespace(legacyId.getNamespace())) return null;
         ResourceLocation target = LegacyMigrationApi.blockTarget(legacyId);
-        if (!ForgeRegistries.BLOCKS.containsKey(target)) {
+        if (!BuiltInRegistries.BLOCK.containsKey(target)) {
             throw new IllegalStateException("No replacement for saved Advantage block " + legacyId + " (expected " + target + ")");
         }
-        return LegacyMigrationApi.decodeBlockState(legacyId, ForgeRegistries.BLOCKS.getValue(target), metadata);
+        return LegacyMigrationApi.decodeBlockState(legacyId, zone.moddev.mc.basepower.util.RegistryValues.find(BuiltInRegistries.BLOCK, target), metadata);
     }
 }

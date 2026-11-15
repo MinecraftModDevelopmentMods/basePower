@@ -1,5 +1,7 @@
 package zone.moddev.mc.advantageworks;
 
+import net.minecraft.core.registries.BuiltInRegistries;
+
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -15,9 +17,9 @@ import net.minecraft.world.level.block.state.properties.Property;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.RegisterCommandsEvent;
+import net.neoforged.neoforge.common.NeoForge;
+
+import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import zone.moddev.mc.advantageworks.connected.ConnectedSession;
 
 /** The target adapter has no construction, inventory, energy or network-reset operation. */
@@ -29,9 +31,9 @@ final class ConnectedProbe implements ConnectedSession.Port {
     static void register() {
         if (!new File("advantage-connected.allow").isFile()) return;
         ConnectedProbe probe = new ConnectedProbe();
-        MinecraftForge.EVENT_BUS.addListener(probe::tick);
-        MinecraftForge.EVENT_BUS.addListener(probe::chunkLoaded);
-        MinecraftForge.EVENT_BUS.addListener(probe::starting);
+        WorksLevelTick.listen(NeoForge.EVENT_BUS, probe::tick);
+        NeoForge.EVENT_BUS.addListener(probe::chunkLoaded);
+        NeoForge.EVENT_BUS.addListener(probe::starting);
     }
 
     private ConnectedSession get(ServerLevel current) throws Exception {
@@ -43,15 +45,15 @@ final class ConnectedProbe implements ConnectedSession.Port {
         return session;
     }
 
-    private void tick(TickEvent.LevelTickEvent event) {
+    private void tick(WorksLevelTick event) {
         if (event.level.isClientSide || Native117Worlds.legacyId(event.level.dimension()) != 0) return;
         try {
             ConnectedSession current = get((ServerLevel) event.level);
-            if (event.phase == TickEvent.Phase.START) current.start(); else current.end();
+            if (event.phase == WorksLevelTick.Phase.START) current.start(); else current.end();
         } catch (Exception ex) { throw new IllegalStateException("Connected probe failed", ex); }
     }
 
-    private void chunkLoaded(net.minecraftforge.event.level.ChunkEvent.Load event) {
+    private void chunkLoaded(net.neoforged.neoforge.event.level.ChunkEvent.Load event) {
         if (!(event.getLevel() instanceof ServerLevel)) return;
         ServerLevel loaded = (ServerLevel) event.getLevel();
         if (loaded.dimension() != net.minecraft.world.level.Level.OVERWORLD) return;
@@ -101,7 +103,7 @@ final class ConnectedProbe implements ConnectedSession.Port {
             entry.remove("seed");
             BlockPos pos = new BlockPos(e.get("x").getAsInt(), e.get("y").getAsInt(), e.get("z").getAsInt());
             BlockState state = world.getBlockState(pos);
-            entry.addProperty("actualName", net.minecraftforge.registries.ForgeRegistries.BLOCKS.getKey(state.getBlock()).toString());
+            entry.addProperty("actualName", BuiltInRegistries.BLOCK.getKey(state.getBlock()).toString());
             JsonObject properties = new JsonObject();
             for (Property<?> p : state.getProperties()) properties.addProperty(p.getName(), state.getValue(p).toString().toLowerCase(java.util.Locale.ROOT));
             entry.add("properties", properties);
@@ -113,7 +115,7 @@ final class ConnectedProbe implements ConnectedSession.Port {
                 entry.addProperty("nbt", tag.toString());
                 entry.addProperty("nbtBase64", java.util.Base64.getEncoder().encodeToString(bytes.toByteArray()));
                 entry.addProperty("objectIdentity", System.identityHashCode(tile));
-                entry.addProperty("witness", tag.getCompound("ForgeData").getString("AdvConnectedWitness"));
+                entry.addProperty("witness", tag.getCompound("NeoForgeData").getString("AdvConnectedWitness"));
             }
             result.add(entry);
         }

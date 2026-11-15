@@ -10,7 +10,18 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 public class NativeLootContractTest {
-    private static final Path ROOT = Paths.get("src/main/resources");
+    private static final Path ROOT = zone.moddev.mc.advantageworks.unit.TestProject.path("src/main/resources");
+
+    @Test public void chestPartsModifierUsesTheNativeLoaderIndex() throws Exception {
+        assertFalse("NeoForge never reads the Forge index", Files.exists(
+                ROOT.resolve("data/forge/loot_modifiers/global_loot_modifiers.json")));
+        JsonObject index = read(ROOT.resolve("data/neoforge/loot_modifiers/global_loot_modifiers.json"));
+        assertFalse("Do not remove other mods' loot modifiers", index.get("replace").getAsBoolean());
+        assertEquals(1, index.getAsJsonArray("entries").size());
+        assertEquals("basepower:vanilla_chest_parts", index.getAsJsonArray("entries").get(0).getAsString());
+        JsonObject modifier = read(ROOT.resolve("data/basepower/loot_modifiers/vanilla_chest_parts.json"));
+        assertEquals("basepower:vanilla_chest_parts", modifier.get("type").getAsString());
+    }
 
     @Test public void everyRegisteredBlockHasANativeLootTable() throws Exception {
         try (java.util.stream.Stream<Path> states = Files.list(ROOT.resolve("assets/basepower/blockstates"))) {

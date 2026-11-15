@@ -1,5 +1,7 @@
 package zone.moddev.mc.advantageworks;
 
+import net.minecraft.core.registries.BuiltInRegistries;
+
 import static org.junit.Assert.*;
 
 import com.google.gson.JsonObject;

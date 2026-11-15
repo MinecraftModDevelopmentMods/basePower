@@ -1,5 +1,7 @@
 package zone.moddev.mc.basepower.init;
 
+import net.minecraft.core.registries.BuiltInRegistries;
+
 import java.util.Comparator;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -9,9 +11,9 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.BlockItem;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.registries.DeferredRegister;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.neoforge.registries.DeferredRegister;
+import net.minecraft.core.registries.Registries;
 import zone.moddev.mc.basepower.PowerAdvantage;
 
 public final class ItemGroups {
@@ -27,7 +29,7 @@ public final class ItemGroups {
 				.icon(() -> Items.sprocket.getDefaultInstance())
 				.displayItems((parameters, output) -> VISIBLE_ITEMS.stream()
 						.sorted(Comparator.comparing(ItemGroups::category, String.CASE_INSENSITIVE_ORDER)
-								.thenComparing(ForgeRegistries.ITEMS::getKey))
+								.thenComparing(BuiltInRegistries.ITEM::getKey))
 						.forEach(output::accept))
 				.build());
 	}
@@ -47,7 +49,7 @@ public final class ItemGroups {
 
 	private static String category(Item item) {
 		StringBuilder sb = new StringBuilder();
-		sb.append(ForgeRegistries.ITEMS.getKey(item).getNamespace());
+		sb.append(BuiltInRegistries.ITEM.getKey(item).getNamespace());
 		if (item instanceof BlockItem) {
 			if (((BlockItem) item).getBlock().defaultBlockState().hasBlockEntity()) {
 				sb.append("A");

@@ -1,5 +1,7 @@
 package zone.moddev.mc.basepower.resources;
 
+import net.minecraft.core.registries.BuiltInRegistries;
+
 import cyano.poweradvantage.api.GUIBlock;
 import java.io.InputStream;
 import net.minecraft.core.BlockPos;
@@ -21,7 +23,7 @@ public class NativeBlockEntityFactoryTest {
     @BeforeClass public static void bootstrap() {
         net.minecraft.SharedConstants.tryDetectVersion();
         net.minecraft.server.Bootstrap.bootStrap();
-        net.minecraftforge.registries.GameData.unfreezeData();
+        net.neoforged.neoforge.registries.GameData.unfreezeData();
     }
 
     @Test public void nativeFactoriesKeepTheActualPositionAndFacing() {

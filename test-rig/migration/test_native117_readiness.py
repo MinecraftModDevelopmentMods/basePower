@@ -6,6 +6,7 @@ import tempfile
 import unittest
 
 import native117_readiness as native
+from native1211neo_preservation import require_native_readiness_tick
 
 BOUNDS = (74, 63, 75, 64)
 
@@ -75,7 +76,9 @@ class NativeReadinessTests(unittest.TestCase):
     def test_command_is_read_only_and_native_end_checks_are_literal(self):
         source = (Path(__file__).resolve().parents[1] /
                   "src/main/java/zone/moddev/mc/advantageworks/Native117Readiness.java").read_text()
-        self.assertIn("TickEvent.Phase.END", source)
+        bridge = (Path(__file__).resolve().parents[1] /
+                  "src/main/java/zone/moddev/mc/advantageworks/WorksLevelTick.java").read_text()
+        require_native_readiness_tick(source, bridge)
         self.assertIn("Native118ChunkTicking.withEntitiesLoaded(world, pos)", source)
         self.assertIn("world.isPositionEntityTicking(pos)", source)
         native = (Path(__file__).resolve().parents[1] /

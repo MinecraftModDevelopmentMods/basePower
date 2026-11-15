@@ -26,7 +26,7 @@ public class InteractiveFluidBlock extends LiquidBlock {
 
     public InteractiveFluidBlock(Supplier<? extends FlowingFluid> fluid, Block.Properties properties,
             boolean flammable, BiConsumer<Level, LivingEntity> immersionEffect) {
-        super(fluid, properties);
+        super(fluid.get(), properties);
         this.flammable = flammable;
         this.immersionEffect = immersionEffect;
     }

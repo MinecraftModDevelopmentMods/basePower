@@ -1,5 +1,7 @@
 package zone.moddev.mc.advantageworks;
 
+import net.minecraft.core.registries.BuiltInRegistries;
+
 import static org.junit.Assert.*;
 
 import com.mojang.authlib.GameProfile;
@@ -10,7 +12,6 @@ import java.nio.file.Files;
 import java.util.UUID;
 import java.util.List;
 import net.minecraft.core.RegistryAccess;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.NbtAccounter;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.world.item.enchantment.Enchantment;

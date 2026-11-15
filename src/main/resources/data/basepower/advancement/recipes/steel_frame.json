@@ -6,7 +6,7 @@
       "conditions": {
         "items": [
           {
-            "items": "#forge:bars/steel"
+            "items": "#c:bars/steel"
           }
         ]
       }

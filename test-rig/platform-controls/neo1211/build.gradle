@@ -1,0 +1,103 @@
+import groovy.json.JsonOutput
+import java.security.MessageDigest
+import java.util.zip.ZipFile
+
+plugins {
+    id 'java'
+    id 'net.neoforged.moddev' version '2.0.148'
+}
+
+version = '1.0.0'
+java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+repositories { mavenCentral() }
+dependencies {
+    testImplementation 'junit:junit:4.13.2'
+    testRuntimeOnly 'org.junit.vintage:junit-vintage-engine:5.11.4'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+neoForge {
+    version = '21.1.265'
+    mods { native1211neo_platform_controls { sourceSet sourceSets.main } }
+    unitTest { enable(); testedMod = mods.native1211neo_platform_controls }
+}
+neoForge.addModdingDependenciesTo(sourceSets.test)
+def generatedJava = layout.buildDirectory.dir('generated-controls/java')
+def generatedResources = layout.buildDirectory.dir('generated-controls/resources')
+sourceSets.test.java.srcDir(generatedJava)
+sourceSets.test.resources.srcDir(generatedResources)
+
+tasks.register('prepareNativePlatformControls') {
+    dependsOn 'createMinecraftArtifacts'
+    inputs.files('../NativeLeashKnotPlatformControl.java', '../NativeWolfPlatformControl.java')
+    outputs.dirs(generatedJava, generatedResources)
+    doLast {
+        def hash = { byte[] bytes -> MessageDigest.getInstance('SHA-256').digest(bytes).encodeHex().toString().toUpperCase(Locale.ROOT) }
+        def adapt = { String text, String before, String after ->
+            if (text.indexOf(before) < 0 || text.indexOf(before) != text.lastIndexOf(before)) {
+                throw new GradleException('Native control adapter must match once: ' + before)
+            }
+            text.replace(before, after)
+        }
+        def sources = [NativeLeashKnotPlatformControl: '4EBC6D2F7BD7B9C0F64040E6E205892E77B919EABA50EC6CB8C89DBA4435E550',
+                       NativeWolfPlatformControl: 'B69B024C40E838C66D99865454E3CF08EBAC767D318C2D766D7BE2D155DDF5FF']
+        File output = new File(generatedJava.get().asFile, 'zone/moddev/mc/nativeplatform')
+        output.mkdirs()
+        sources.each { name, expected ->
+            File source = file('../' + name + '.java')
+            String text = source.getText('UTF-8').replace('\r\n', '\n')
+            if (hash(text.getBytes('UTF-8')) != expected) throw new GradleException('Historical control source changed: ' + source)
+            if (name == 'NativeLeashKnotPlatformControl') {
+                text = adapt(text, 'zone.moddev.mc.advantageworks.unit.ForgeUnitRegistries.registerVanillaFluidTypes();',
+                        'NeoControlBootstrap.verifyNativeRegistries();')
+                text = adapt(text, '"native1211-leash-knot-nosave-v1"', '"native1211neo-leash-knot-nosave-v1"')
+                text = adapt(text, 'proof.put("forgeVersion", net.minecraftforge.versions.forge.ForgeVersion.getVersion());',
+                        'proof.put("neoForgeVersion", net.neoforged.neoforge.internal.versions.neoforge.NeoForgeVersion.getVersion());')
+                text = adapt(text, 'proof.put("nativeClassSha256", classes);',
+                        'proof.put("nativeClassSha256", classes); proof.put("loadedMods", NeoControlBootstrap.modVersions());')
+            } else {
+                text = adapt(text, 'import net.minecraftforge.registries.ForgeRegistries;\n', '')
+                text = adapt(text, 'import zone.moddev.mc.advantageworks.unit.ForgeUnitRegistries;\n', '')
+                text = adapt(text, 'ForgeUnitRegistries.registerVanillaFluidTypes();', 'NeoControlBootstrap.verifyNativeRegistries();')
+                text = adapt(text, 'ForgeUnitRegistries.registerForgeEntries("ATTRIBUTES", ForgeRegistries.Keys.ATTRIBUTES, ForgeRegistries.ATTRIBUTES);',
+                        'NeoControlBootstrap.verifyNativeAttributes();')
+            }
+            text = adapt(text, 'public static void main(String[] args) throws Exception {',
+                    'public static void main(String[] args) throws Exception {\n        NeoControlBootstrap.verifyNativeClassHashes();')
+            new File(output, name + '.java').setText('package zone.moddev.mc.nativeplatform;\n\n' + text, 'UTF-8')
+        }
+        File nativeJar = layout.buildDirectory.file('moddev/artifacts/neoforge-21.1.265.jar').get().asFile
+        def nativeClasses = [:]
+        new ZipFile(nativeJar).withCloseable { jar ->
+            ['net.minecraft.world.entity.Entity', 'net.minecraft.world.entity.EntityType',
+             'net.minecraft.world.entity.decoration.LeashFenceKnotEntity', 'net.minecraft.world.entity.animal.Wolf'].each { name ->
+                def entry = jar.getEntry(name.replace('.', '/') + '.class')
+                if (entry == null) throw new GradleException('Native NeoForge class missing: ' + name)
+                jar.getInputStream(entry).withCloseable { nativeClasses[name] = hash(it.readAllBytes()) }
+            }
+        }
+        generatedResources.get().asFile.mkdirs()
+        new File(generatedResources.get().asFile, 'native-platform-class-sha256.json').setText(JsonOutput.prettyPrint(JsonOutput.toJson(
+                [minecraftVersion: '1.21.1', neoForgeVersion: '21.1.265', nativeJarSha256: hash(nativeJar.bytes),
+                 nativeClassSha256: nativeClasses, historicalControlSourceSha256: sources])) + '\n', 'UTF-8')
+    }
+}
+tasks.named('compileTestJava') { dependsOn 'prepareNativePlatformControls' }
+tasks.named('processTestResources') { dependsOn 'prepareNativePlatformControls' }
+tasks.withType(JavaCompile).configureEach { options.release = 21; options.encoding = 'UTF-8'; options.compilerArgs.add('-proc:none') }
+
+String runId = providers.gradleProperty('platformControlRunId').getOrElse(new Date().format('yyyyMMdd-HHmmss') + '-' + UUID.randomUUID())
+if (!(runId ==~ /[A-Za-z0-9_-]+/)) throw new GradleException('Unsafe platformControlRunId')
+File evidence = layout.buildDirectory.dir('control-evidence/' + runId).get().asFile
+tasks.named('test', Test) {
+    useJUnitPlatform()
+    maxHeapSize = '2G'
+    maxParallelForks = 1
+    jvmArgs '-XX:ActiveProcessorCount=4'
+    systemProperty 'native.control.evidenceRoot', evidence.absolutePath
+    testLogging { events 'failed', 'passed'; exceptionFormat = 'full'; showStandardStreams = true }
+    outputs.upToDateWhen { false }
+    doFirst {
+        if (evidence.exists()) throw new GradleException('Retain prior native control evidence: ' + evidence)
+        evidence.mkdirs()
+    }
+}

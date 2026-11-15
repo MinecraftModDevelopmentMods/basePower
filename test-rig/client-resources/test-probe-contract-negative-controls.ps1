@@ -10,14 +10,14 @@ $controls = @(
     @{ name='recipe-pixel-threshold'; file='RecipeBookGroupingProbe'; before='colored > 1000'; after='colored > 100' },
     @{ name='recipe-cell-count'; file='RecipeBookGroupingProbe'; before='shown.size() == 13'; after='shown.size() >= 1' },
     @{ name='recipe-packet-tail'; file='RecipeBookGroupingProbe'; before='require(!buffer.isReadable(),'; after='require(true,' },
-    @{ name='tank-packet-quantity'; file='TankVisualProbe'; before='clientTank.getTank().getFluidAmount() == 10000'; after='clientTank.getTank().getFluidAmount() == 1000' },
-    @{ name='tank-simulation-mutation'; file='TankVisualProbe'; before='serverTank.getTank().getFluidAmount() == 0'; after='serverTank.getTank().getFluidAmount() >= 0' },
-    @{ name='tank-pixel-coordinate'; file='TankVisualProbe'; before='image.getRGB(88, 39)'; after='image.getRGB(0, 0)' },
-    @{ name='tank-blue-threshold'; file='TankVisualProbe'; before='blue > red + 20 && blue > green + 10'; after='blue >= 0' },
+    @{ name='tank-packet-quantity'; file='TankVisualProbe'; before='client.getTank().getFluidAmount() == amount'; after='client.getTank().getFluidAmount() >= 0' },
+    @{ name='tank-simulation-mutation'; file='TankVisualProbe'; before='server.getTank().getFluidAmount() == 0'; after='server.getTank().getFluidAmount() >= 0' },
+    @{ name='tank-pixel-coordinate'; file='TankVisualProbe'; before='expected.getRGB(x, y)'; after='expected.getRGB(0, 0)' },
+    @{ name='tank-reference-threshold'; file='TankVisualProbe'; before='visible >= rows * TILE / 2'; after='visible >= 0' },
     @{ name='bucket-volume'; file='OilRenderProbe'; before='contents.getAmount() != 1000'; after='contents.getAmount() != 100' },
     @{ name='bucket-fluid-identity'; file='OilRenderProbe'; before='contents.getFluid() != expected'; after='false' },
-    @{ name='fluid-primitive-capture'; file='OilRenderProbe'; before='int vertices = built.getFirst().vertexCount();'; after='int vertices = 4;' },
-    @{ name='fluid-tags-restore'; file='OilRenderProbe'; before='fluidRegistry.reset(restore);'; after='fluidRegistry.reset(temporary);' },
+    @{ name='fluid-primitive-capture'; file='OilRenderProbe'; before='int vertices = built.drawState().vertexCount();'; after='int vertices = 4;' },
+    @{ name='fluid-tags-restore'; file='OilRenderProbe'; before='BuiltInRegistries.FLUID.bindTags(previous);'; after='BuiltInRegistries.FLUID.bindTags(synthetic);' },
     @{ name='missing-model'; file='ClientResourceProbe'; before='require(model != missing,'; after='require(model == missing,' },
     @{ name='missing-model-quads'; file='ClientResourceProbe'; before='!requireQuads || !quads.isEmpty()'; after='true' },
     @{ name='missing-caption'; file='MachineGuiLayoutProbe'; before='require(labelError == null, labelError);'; after='require(true, labelError);' },
@@ -31,8 +31,21 @@ $controls = @(
     @{ name='geometry-actual-texture'; file='ChildRendererGeometryProbe'; before='expectedTexture.equals(selectedTexture)'; after='true' },
     @{ name='geometry-matrix-balance'; file='ChildRendererGeometryProbe'; before='position.equals(original.pose()) && normal.equals(original.normal())'; after='true' },
     @{ name='geometry-manual-gap'; file='ChildRendererGeometryProbe'; before='passed == 25 && gaps == 1'; after='passed >= 0' },
-    @{ name='projection-y-order'; file='NativeGuiProjection'; before='orthographic(0, width, 0, height, near, far)'; after='orthographic(0, width, height, 0, near, far)'; error='Native projection adapter changed' },
-    @{ name='projection-restoration'; file='NativeGuiProjection'; before='RenderSystem.setProjectionMatrix(projection);'; after=''; error='Native projection adapter changed' },
+    @{ name='projection-y-order'; file='NativeGuiProjection'; before='setOrtho(0, width, height, 0, near, far)'; after='setOrtho(0, width, 0, height, near, far)' },
+    @{ name='projection-restoration'; file='NativeGuiProjection'; before='RenderSystem.setProjectionMatrix(projection, sorting);'; after='' },
+    @{ name='tank-independent-sprite'; file='TankVisualProbe'; before='graphics.blit(GAUGE_X, y, 0, TILE, TILE, sprite,'; after='graphics.blit(0, 0, 0, TILE, TILE, sprite,' },
+    @{ name='tank-pixel-equality'; file='TankVisualProbe'; before='if (actual.getRGB(x, y) != expectedPixel) different++;'; after='if (false) different++;' },
+    @{ name='tank-native-capability'; file='TankVisualProbe'; before='require(handler != null,'; after='require(true,' },
+    @{ name='registry-packet-tail'; file='RecipeBookGroupingProbe'; before='require(!snapshotBuffer.isReadable(),'; after='require(true,' },
+    @{ name='registry-receipt-sha'; file='RecipeBookGroupingProbe'; before='require(packetHash.equals(receipt.get("packetSha256").getAsString())'; after='require(true || packetHash.equals(receipt.get("packetSha256").getAsString())' },
+    @{ name='registry-receipt-version'; file='RecipeBookGroupingProbe'; before='"21.1.265".equals(receipt.get("neoForgeVersion").getAsString())'; after='true' },
+    @{ name='registry-receipt-same-ids'; file='RecipeBookGroupingProbe'; before='require(receipt.get("sameRegistries").getAsBoolean(),'; after='require(true,' },
+    @{ name='registry-receipt-filename'; file='RecipeBookGroupingProbe'; before='snapshotName(packetName).equals(receipt.get("file").getAsString())'; after='true' },
+    @{ name='registry-wire-count'; file='RecipeBookGroupingProbe'; before='require(wireCount == receipt.get("registryCount").getAsInt(),'; after='require(true,' },
+    @{ name='registry-apply-exact-ids'; file='RecipeBookGroupingProbe'; before='applied.byId(id.getIntKey()) != null && applied.byId(id.getIntKey()) == applied.get(id.getValue())'; after='true' },
+    @{ name='registry-per-packet-load'; file='RecipeBookGroupingProbe'; before='NativeRecipeFixture fixture = loadNativeFixture(file, manifest);'; after='NativeRecipeFixture fixture = loadNativeFixture(packets.get(0), manifest);' },
+    @{ name='registry-sidecar-set'; file='RecipeBookGroupingProbe'; before='require(snapshotNames.equals(packetNames.stream().map(RecipeBookGroupingProbe::snapshotName).collect(Collectors.toSet())),'; after='require(true,' },
+    @{ name='registry-packet-recipe-count'; file='RecipeBookGroupingProbe'; before='require(packet.getRecipes().size() == manifest.getAsJsonObject("registrySnapshot").get("recipeCount").getAsInt(),'; after='require(true,' },
     @{ name='runner-caption-count'; path='run.ps1'; before='{ 351 } else { 126 }'; after='{ 350 } else { 126 }'; error='Runner must require all 351' },
     @{ name='runner-negative-count'; path='run.ps1'; before='($expectedGuiTextChecks + 4)'; after='($expectedGuiTextChecks + 3)'; error='Runner must require all 351' }
 )
@@ -69,7 +82,7 @@ try {
         if ((Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash -cne $inputs[$path]) { throw "Actual probe source changed during controls: $path" }
     }
 } finally {
-    [ordered]@{ scope='STATIC_CONTRACT_MUTATIONS_NOT_RENDERED_CLIENT'; baseline='c310d0ca63ad9a8408dd4bba75172afafa5c71b7';
+    [ordered]@{ scope='STATIC_CONTRACT_MUTATIONS_NOT_RENDERED_CLIENT'; baseline='8d9937b3c0c9ef28a231b90fc2ff6adfea1af733';
         planned=$controls.Count; completed=$results.Count; inputs=$inputs; results=$results } |
         ConvertTo-Json -Depth 7 | Set-Content -LiteralPath (Join-Path $output 'results.json') -Encoding utf8
 }

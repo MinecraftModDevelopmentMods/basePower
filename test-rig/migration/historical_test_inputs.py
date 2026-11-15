@@ -11,12 +11,14 @@ POWER115 = "5b8e73a78391960643420a09798a1ef8eb06f518"
 POWER116 = "c310d0ca63ad9a8408dd4bba75172afafa5c71b7"
 ADVANTAGE117 = "bfd51b06942ed4f7f8b59576e7ef233e79a91e02"
 BASE117_ADAPTERS = "7aef5b899a45aa23f33397081e762c46d770e39c"
+ACCEPTED_FORGE1211 = "8d9937b3c0c9ef28a231b90fc2ff6adfea1af733"
 STATIONS = "src/main/resources/assets/advantageworkstest/works/works-1.13.2.json"
 JAVA = "src/main/java/zone/moddev/mc/advantageworks/"
 JAVA_TESTS = "src/test/java/zone/moddev/mc/advantageworks/"
 
-# These named files now serve the active port. All other ledger entries still
-# check the worktree directly, so an unrelated edit cannot hide in the archive.
+# These named files now serve the active port and have a separate preservation
+# guard against ACCEPTED_FORGE1211. Historical ledger reads remain unchanged.
+# All other entries check the worktree, so unrelated edits cannot hide here.
 ACTIVE_ADAPTERS = frozenset({
     STATIONS, "README.md", "client-resources/resources/gui-label-expectations.json",
     *("migration/" + name + ".py" for name in (

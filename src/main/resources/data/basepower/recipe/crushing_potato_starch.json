@@ -1,5 +1,5 @@
 {
-  "type": "basemetals:crushing",
+  "type": "mmdlib:crushing",
   "ingredient": [
     {
       "item": "minecraft:potato"
@@ -12,8 +12,10 @@
     "id": "basepower:starch",
     "count": 1
   },
-  "forge:condition": {
-    "type": "forge:mod_loaded",
-    "modid": "basemetals"
-  }
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "basemetals"
+    }
+  ]
 }

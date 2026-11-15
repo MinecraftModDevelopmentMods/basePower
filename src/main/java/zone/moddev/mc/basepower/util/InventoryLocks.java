@@ -4,17 +4,17 @@ import java.lang.reflect.Field;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BaseContainerBlockEntity;
 import net.minecraft.world.LockCode;
-import net.minecraftforge.fml.util.ObfuscationReflectionHelper;
+import net.neoforged.fml.util.ObfuscationReflectionHelper;
 
 /** Keeps automation from bypassing vanilla container locks. */
 public final class InventoryLocks {
     // Ordinary inventories need no vanilla field access or Forge name remapper.
     private static final class Fields {
-        static final Field CODE = ObfuscationReflectionHelper.findField(BaseContainerBlockEntity.class, "f_58621_");
+        static final Field CODE = ObfuscationReflectionHelper.findField(BaseContainerBlockEntity.class, "lockKey");
         static final Field FIRST = ObfuscationReflectionHelper.findField(
-                net.minecraft.world.CompoundContainer.class, "f_18910_");
+                net.minecraft.world.CompoundContainer.class, "container1");
         static final Field SECOND = ObfuscationReflectionHelper.findField(
-                net.minecraft.world.CompoundContainer.class, "f_18911_");
+                net.minecraft.world.CompoundContainer.class, "container2");
     }
 
     private InventoryLocks() {}

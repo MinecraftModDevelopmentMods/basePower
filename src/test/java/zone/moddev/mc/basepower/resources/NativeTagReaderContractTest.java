@@ -22,7 +22,7 @@ public class NativeTagReaderContractTest {
     @BeforeClass public static void bootstrap() { net.minecraft.SharedConstants.tryDetectVersion(); net.minecraft.server.Bootstrap.bootStrap(); }
 
     @Test public void optionalSteelBarsUseTheNativeParserWithAndWithoutBaseMetals() throws Exception {
-        JsonObject json = new JsonParser().parse(new String(Files.readAllBytes(Paths.get(
+        JsonObject json = new JsonParser().parse(new String(Files.readAllBytes(zone.moddev.mc.advantageworks.unit.TestProject.path(
                 "src/main/resources/data/forge/tags/item/bars/steel.json")), StandardCharsets.UTF_8)).getAsJsonObject();
         assertFalse("Do not silently ignore an obsolete optional array", json.has("optional"));
         assertTrue(NativeTestTags.<Item>resolve(id -> null, id -> null, json).isEmpty());

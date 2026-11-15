@@ -1,5 +1,7 @@
 package zone.moddev.mc.advantageworks.client;
 
+import net.minecraft.core.registries.BuiltInRegistries;
+
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import cyano.poweradvantage.api.GUIBlock;
@@ -23,15 +25,14 @@ import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.RegistryAccess;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.fluids.capability.IFluidHandler;
-import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction;
 import zone.moddev.mc.basepower.registry.MachineGUIRegistry;
 import zone.moddev.mc.basepower.init.Blocks;
 
@@ -73,8 +74,11 @@ final class TankVisualProbe {
         var factory = (net.minecraft.world.level.block.EntityBlock) block;
         var server = (TileEntitySimpleFluidMachine) factory.newBlockEntity(BlockPos.ZERO, state);
         var client = (TileEntitySimpleFluidMachine) factory.newBlockEntity(BlockPos.ZERO, state);
-        IFluidHandler handler = server.getCapability(ForgeCapabilities.FLUID_HANDLER, Direction.UP)
-                .orElseThrow(() -> new IllegalStateException(name + " tank has no native Forge fluid capability"));
+        PacketLevel capabilityLevel = PacketLevel.withRegistries(
+                RegistryAccess.fromRegistryOfRegistries(BuiltInRegistries.REGISTRY));
+        IFluidHandler handler = Capabilities.FluidHandler.BLOCK.getCapability(
+                capabilityLevel, BlockPos.ZERO, state, server, Direction.UP);
+        require(handler != null, name + " tank has no native NeoForge fluid capability");
         int capacity = server.getTank().getCapacity();
         RegistryAccess registries = RegistryAccess.fromRegistryOfRegistries(BuiltInRegistries.REGISTRY);
         PacketLevel packetLevel = PacketLevel.withRegistries(registries);
@@ -128,7 +132,7 @@ final class TankVisualProbe {
     private static void syncTank(TileEntitySimpleFluidMachine server, TileEntitySimpleFluidMachine client, PacketLevel packetLevel,
             RegistryAccess registries) {
         RegistryFriendlyByteBuf buffer = new RegistryFriendlyByteBuf(Unpooled.buffer(), registries);
-        // Forge 50 obtains the packet's registry access from the sending block entity's level.
+        // The native packet factory reads registry access from the sending block entity's level.
         server.setLevel(packetLevel);
         try {
             ClientboundBlockEntityDataPacket.STREAM_CODEC.encode(buffer, server.getUpdatePacket());

@@ -1,5 +1,7 @@
 package zone.moddev.mc.advantageworks;
 
+import net.minecraft.core.registries.BuiltInRegistries;
+
 import cyano.poweradvantage.api.ConduitType;
 import cyano.poweradvantage.api.PoweredEntity;
 import cyano.poweradvantage.api.simple.TileEntitySimpleFluidMachine;
@@ -24,7 +26,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraft.core.registries.Registries;
 
 final class MachineContext {
     public final ServerLevel world;
@@ -93,9 +95,9 @@ final class MachineContext {
 
     void block(int x, int y, int z, String id) {
         ResourceLocation name = ResourceLocation.parse(id);
-        if (!ForgeRegistries.BLOCKS.containsKey(name)) throw new IllegalArgumentException("Missing block " + id);
+        if (!BuiltInRegistries.BLOCK.containsKey(name)) throw new IllegalArgumentException("Missing block " + id);
         mutation("block", at(x, y, z), id);
-        world.setBlock(at(x, y, z), ForgeRegistries.BLOCKS.getValue(name).defaultBlockState(), 3);
+        world.setBlock(at(x, y, z), zone.moddev.mc.basepower.util.RegistryValues.find(BuiltInRegistries.BLOCK, name).defaultBlockState(), 3);
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
@@ -129,17 +131,17 @@ final class MachineContext {
 
     void put(int x, int y, int z, int slot, String item, int count) {
         ResourceLocation id = ResourceLocation.parse(item);
-        if (!ForgeRegistries.ITEMS.containsKey(id) || count < 0 || count > 64) throw new IllegalArgumentException("Invalid stock " + item);
+        if (!BuiltInRegistries.ITEM.containsKey(id) || count < 0 || count > 64) throw new IllegalArgumentException("Invalid stock " + item);
         mutation("inventory", at(x, y, z), slot + ":" + item + ":" + count);
         Container inventory = inventory(x, y, z);
         if (slot < 0 || slot >= inventory.getContainerSize()) throw new IllegalArgumentException("Invalid fixture slot");
-        inventory.setItem(slot, count == 0 ? ItemStack.EMPTY : new ItemStack(ForgeRegistries.ITEMS.getValue(id), count));
+        inventory.setItem(slot, count == 0 ? ItemStack.EMPTY : new ItemStack(zone.moddev.mc.basepower.util.RegistryValues.find(BuiltInRegistries.ITEM, id), count));
         inventory.setChanged();
     }
 
     int count(int x, int y, int z, String item) {
-        Item expected = ForgeRegistries.ITEMS.getValue(ResourceLocation.parse(item));
-        if (!ForgeRegistries.ITEMS.containsKey(ResourceLocation.parse(item))) throw new IllegalArgumentException("Missing item " + item);
+        Item expected = zone.moddev.mc.basepower.util.RegistryValues.find(BuiltInRegistries.ITEM, ResourceLocation.parse(item));
+        if (!BuiltInRegistries.ITEM.containsKey(ResourceLocation.parse(item))) throw new IllegalArgumentException("Missing item " + item);
         Container inventory = inventory(x, y, z);
         int total = 0;
         for (int slot = 0; slot < inventory.getContainerSize(); slot++) {
@@ -181,11 +183,11 @@ final class MachineContext {
 
     void tank(int x, int y, int z, String fluid, int amount) {
         ResourceLocation id = ResourceLocation.parse(fluid);
-        if (!ForgeRegistries.FLUIDS.containsKey(id) || amount < 0) throw new IllegalArgumentException("Invalid fluid reserve");
+        if (!BuiltInRegistries.FLUID.containsKey(id) || amount < 0) throw new IllegalArgumentException("Invalid fluid reserve");
         mutation("tank", at(x, y, z), fluid + ":" + amount);
         cyano.poweradvantage.api.fluid.FluidTank tank = ((TileEntitySimpleFluidMachine) tile(x, y, z)).getTank();
         if (amount > tank.getCapacity()) throw new IllegalArgumentException("Tank reserve exceeds capacity");
-        tank.setFluid(new cyano.poweradvantage.api.fluid.FluidStack(ForgeRegistries.FLUIDS.getValue(id), amount));
+        tank.setFluid(new cyano.poweradvantage.api.fluid.FluidStack(zone.moddev.mc.basepower.util.RegistryValues.find(BuiltInRegistries.FLUID, id), amount));
         tile(x, y, z).setChanged();
     }
 
@@ -231,7 +233,7 @@ final class MachineContext {
             JsonObject row = new JsonObject();
             row.addProperty("x", pos.getX()); row.addProperty("y", pos.getY()); row.addProperty("z", pos.getZ());
             BlockState state = world.getBlockState(pos);
-            row.addProperty("block", net.minecraftforge.registries.ForgeRegistries.BLOCKS.getKey(state.getBlock()).toString());
+            row.addProperty("block", BuiltInRegistries.BLOCK.getKey(state.getBlock()).toString());
             row.addProperty("state", state.toString());
             BlockEntity tile = world.getBlockEntity(pos);
             if (tile != null) row.addProperty("nbt", WorksBlockData.save(tile).toString());

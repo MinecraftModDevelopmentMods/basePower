@@ -8,17 +8,13 @@ import cyano.poweradvantage.api.modsupport.TileEntityConverter;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.core.Direction;
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.energy.IEnergyStorage;
+import net.neoforged.neoforge.energy.IEnergyStorage;
 import zone.moddev.mc.basepower.PowerAdvantage;
 
 /** Forge Energy bridge retained behind the historical RF-labelled block IDs. */
 public class TileEntityRFConverter extends TileEntityConverter implements IEnergyStorage {
     private final int forgeBufferSize;
     private final int halfBuffer;
-    private LazyOptional<IEnergyStorage> energyCapability = LazyOptional.of(() -> this);
     private int forgeBuffer;
 
     protected TileEntityRFConverter(BlockEntityType<?> tileType, net.minecraft.core.BlockPos pos, net.minecraft.world.level.block.state.BlockState state, ConduitType type,
@@ -35,7 +31,9 @@ public class TileEntityRFConverter extends TileEntityConverter implements IEnerg
         Direction side = Direction.values()[index];
         BlockEntity neighbor = getLevel().getBlockEntity(getBlockPos().relative(side));
         if (neighbor == null) return;
-        neighbor.getCapability(ForgeCapabilities.ENERGY, side.getOpposite()).ifPresent(storage -> {
+        IEnergyStorage storage = getLevel().getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.BLOCK,
+                neighbor.getBlockPos(), side.getOpposite());
+        if (storage != null) {
             int delta = forgeBuffer - halfBuffer;
             if (delta < 0 && storage.canExtract()) {
                 int extracted = storage.extractEnergy(-delta, true);
@@ -45,7 +43,7 @@ public class TileEntityRFConverter extends TileEntityConverter implements IEnerg
                 int accepted = storage.receiveEnergy(delta, true);
                 if (accepted > 0) storage.receiveEnergy(extractEnergy(accepted, false), false);
             }
-        });
+        }
     }
 
     @Override public int receiveEnergy(int maxReceive, boolean simulate) {
@@ -62,22 +60,6 @@ public class TileEntityRFConverter extends TileEntityConverter implements IEnerg
     @Override public int getMaxEnergyStored() { return forgeBufferSize; }
     @Override public boolean canExtract() { return true; }
     @Override public boolean canReceive() { return true; }
-
-    @Override
-    public <T> LazyOptional<T> getCapability(@Nonnull Capability<T> capability, @Nullable Direction side) {
-        if (!areCapabilitiesValid()) return LazyOptional.empty();
-        return energyCapability != null && capability == ForgeCapabilities.ENERGY ? energyCapability.cast() : super.getCapability(capability, side);
-    }
-
-    @Override public void invalidateCaps() {
-        super.invalidateCaps();
-        if (energyCapability != null) energyCapability.invalidate();
-    }
-
-    @Override public void reviveCaps() {
-        super.reviveCaps();
-        if (energyCapability != null && !energyCapability.isPresent()) energyCapability = LazyOptional.of(() -> this);
-    }
 
     @Override public double getOtherEnergy() { return forgeBuffer; }
     @Override public double getOtherEnergyCapacity() { return forgeBufferSize; }

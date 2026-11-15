@@ -16,17 +16,18 @@ import net.minecraft.util.datafix.DataFixTypes;
 import net.minecraft.util.datafix.fixes.References;
 import net.minecraft.server.Bootstrap;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraftforge.common.ForgeMod;
+import net.neoforged.neoforge.common.NeoForgeMod;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import zone.moddev.mc.advantageworks.unit.ForgeUnitRegistries;
 
 public class LegacyForgeAttributeRegistryTest {
     private static final String[][] ALIASES = {
-        {"forge.swimSpeed", "forge:swim_speed"},
-        {"forge.nameTagDistance", "forge:nametag_distance"},
+        {"forge.swimSpeed", "neoforge:swim_speed"},
+        {"forge.nameTagDistance", "neoforge:nametag_distance"},
         {"forge.entity_gravity", "minecraft:generic.gravity"},
         {"generic.reachDistance", "minecraft:player.block_interaction_range"}
     };
@@ -39,8 +40,8 @@ public class LegacyForgeAttributeRegistryTest {
 
     static void registerForgeAttributes() throws ReflectiveOperationException {
         ForgeUnitRegistries.registerVanillaFluidTypes();
-        if (ForgeMod.SWIM_SPEED.isPresent()) return;
-        ForgeUnitRegistries.registerForgeEntries("ATTRIBUTES", ForgeRegistries.Keys.ATTRIBUTES, ForgeRegistries.ATTRIBUTES);
+        if (NeoForgeMod.SWIM_SPEED.isBound()) return;
+        ForgeUnitRegistries.registerForgeEntries("ATTRIBUTES", Registries.ATTRIBUTE, BuiltInRegistries.ATTRIBUTE);
     }
 
 
@@ -66,7 +67,7 @@ public class LegacyForgeAttributeRegistryTest {
                     new Dynamic<>(NbtOps.INSTANCE, source.copy()), 1343,
                     SharedConstants.getCurrentVersion().getDataVersion().getVersion()).getValue();
             Wolf negative = new Wolf(EntityType.WOLF, world); negative.load(raw);
-            AttributeInstance old = negative.getAttribute(ForgeRegistries.ATTRIBUTES.getHolder(
+            AttributeInstance old = negative.getAttribute(BuiltInRegistries.ATTRIBUTE.getHolder(
                     ResourceLocation.parse(ALIASES[index][1])).orElseThrow());
             assertNotEquals(ALIASES[index][0], values[index], old.getBaseValue(), 0D);
             CompoundTag root = chunk(source);
@@ -86,7 +87,7 @@ public class LegacyForgeAttributeRegistryTest {
         CompoundTag value = actual.getList("attributes", 10).getCompound(0);
         assertEquals("minecraft:player.block_interaction_range", value.getString("id"));
         var reach = net.minecraft.world.entity.ai.attributes.Attributes.BLOCK_INTERACTION_RANGE;
-        assertSame(reach.value(), ForgeRegistries.ATTRIBUTES.getValue(
+        assertSame(reach.value(), BuiltInRegistries.ATTRIBUTE.get(
                 ResourceLocation.parse(value.getString("id"))));
         AttributeInstance nativeAttribute = new AttributeInstance(reach, unused -> {});
         nativeAttribute.load(value);
@@ -177,7 +178,7 @@ public class LegacyForgeAttributeRegistryTest {
         CompoundTag converted = fixedEntity(root);
         Wolf nativeReader = new Wolf(EntityType.WOLF, NativeWolfTestWorld.create());
         nativeReader.load(converted);
-        AttributeInstance speed = nativeReader.getAttribute(ForgeMod.SWIM_SPEED.getHolder().orElseThrow());
+        AttributeInstance speed = nativeReader.getAttribute(NeoForgeMod.SWIM_SPEED);
         assertEquals(2D, speed.getBaseValue(), 0D);
         assertNotNull(speed.getModifier(modifierId()));
         assertEquals(2.125D, speed.getValue(), 0D);

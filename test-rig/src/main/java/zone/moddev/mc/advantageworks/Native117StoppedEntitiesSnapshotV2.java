@@ -27,23 +27,23 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.decoration.LeashFenceKnotEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.storage.LevelResource;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.eventbus.api.EventPriority;
-import net.minecraftforge.event.server.ServerStartingEvent;
-import net.minecraftforge.event.server.ServerStoppingEvent;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.bus.api.EventPriority;
+import net.neoforged.neoforge.event.server.ServerStartingEvent;
+import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 import org.apache.logging.log4j.LogManager;
 
 /** Versioned stop-boundary observation. Native no-save helpers are never saved-state witnesses. */
 final class Native117StoppedEntitiesSnapshotV2 {
-    static final String CONTRACT = "native1211-helper-contract.json";
-    static final String POLICY = "native1211-leash-knot-nosave-v1";
+    static final String CONTRACT = "native1211neo-helper-contract.json";
+    static final String POLICY = "native1211neo-leash-knot-nosave-v1";
     private static final Map<MinecraftServer, String> BOOTS = Collections.synchronizedMap(new WeakHashMap<>());
 
     private Native117StoppedEntitiesSnapshotV2() {}
 
     static void register() {
-        MinecraftForge.EVENT_BUS.addListener(EventPriority.LOWEST, Native117StoppedEntitiesSnapshotV2::starting);
-        MinecraftForge.EVENT_BUS.addListener(EventPriority.LOWEST, Native117StoppedEntitiesSnapshotV2::stopping);
+        NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, Native117StoppedEntitiesSnapshotV2::starting);
+        NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, Native117StoppedEntitiesSnapshotV2::stopping);
     }
 
     static byte[] contract() throws IOException {

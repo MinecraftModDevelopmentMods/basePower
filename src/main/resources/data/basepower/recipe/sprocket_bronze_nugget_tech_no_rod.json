@@ -7,10 +7,10 @@
   ],
   "key": {
     "x": {
-      "tag": "forge:ingots/steel"
+      "tag": "c:ingots/steel"
     },
     "/": {
-      "tag": "forge:nuggets/bronze"
+      "tag": "c:nuggets/bronze"
     }
   },
   "result": {
@@ -18,25 +18,27 @@
     "count": 4
   },
   "group": "basepower:sprocket",
-  "forge:condition": {
-    "type": "forge:and",
-    "values": [
-      {
-        "type": "basepower:recipe_mode",
-        "mode": "TECH_PROGRESSION"
-      },
-      {
-        "type": "basepower:tag_empty",
-        "tag": "forge:rods"
-      },
-      {
-        "type": "basepower:tag_not_empty",
-        "tag": "forge:ingots/steel"
-      },
-      {
-        "type": "basepower:tag_not_empty",
-        "tag": "forge:nuggets/bronze"
-      }
-    ]
-  }
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:and",
+      "values": [
+        {
+          "type": "basepower:recipe_mode",
+          "mode": "TECH_PROGRESSION"
+        },
+        {
+          "type": "basepower:tag_empty",
+          "tag": "c:rods"
+        },
+        {
+          "type": "basepower:tag_not_empty",
+          "tag": "c:ingots/steel"
+        },
+        {
+          "type": "basepower:tag_not_empty",
+          "tag": "c:nuggets/bronze"
+        }
+      ]
+    }
+  ]
 }

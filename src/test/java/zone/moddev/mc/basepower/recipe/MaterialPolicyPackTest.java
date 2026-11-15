@@ -25,7 +25,7 @@ public class MaterialPolicyPackTest {
         int index = 0;
         for (String metal : new String[] {"lead", "tin", "silver"}) {
             JsonObject entry = solder.getAsJsonArray("values").get(index++).getAsJsonObject();
-            assertEquals("#forge:ingots/" + metal, entry.get("id").getAsString());
+            assertEquals("#c:ingots/" + metal, entry.get("id").getAsString());
             assertFalse(entry.get("required").getAsBoolean());
         }
     }
@@ -41,13 +41,13 @@ public class MaterialPolicyPackTest {
 
     @Test public void policyOnlySuppliesServerDataAndHonoursResourceDiscovery() {
         MaterialPolicyPack pack = new MaterialPolicyPack(true, false);
-        ResourceLocation rubber = ResourceLocation.fromNamespaceAndPath("forge", "tags/item/rubber.json");
+        ResourceLocation rubber = ResourceLocation.fromNamespaceAndPath("c", "tags/item/rubber.json");
         assertNotNull(pack.getResource(PackType.SERVER_DATA, rubber));
         assertNull(pack.getResource(PackType.CLIENT_RESOURCES, rubber));
-        assertEquals(Set.of(rubber, ResourceLocation.parse("forge:tags/item/ingots/rubber.json"),
-                ResourceLocation.parse("forge:tags/item/solder.json")), list(pack, PackType.SERVER_DATA, "forge"));
+        assertEquals(Set.of(rubber, ResourceLocation.parse("c:tags/item/ingots/rubber.json"),
+                ResourceLocation.parse("c:tags/item/solder.json")), list(pack, PackType.SERVER_DATA, "c"));
         assertTrue(list(pack, PackType.SERVER_DATA, "basepower").isEmpty());
-        assertTrue(list(pack, PackType.CLIENT_RESOURCES, "forge").isEmpty());
+        assertTrue(list(pack, PackType.CLIENT_RESOURCES, "c").isEmpty());
     }
 
     private static Set<ResourceLocation> list(MaterialPolicyPack pack, PackType type, String namespace) {
@@ -58,7 +58,7 @@ public class MaterialPolicyPackTest {
 
     private static JsonObject read(MaterialPolicyPack pack, String path) throws Exception {
         try (InputStream stream = pack.getResource(PackType.SERVER_DATA,
-                ResourceLocation.fromNamespaceAndPath("forge", "tags/item/" + path + ".json")).get()) {
+                ResourceLocation.fromNamespaceAndPath("c", "tags/item/" + path + ".json")).get()) {
             return new JsonParser().parse(new String(stream.readAllBytes(), StandardCharsets.UTF_8)).getAsJsonObject();
         }
     }

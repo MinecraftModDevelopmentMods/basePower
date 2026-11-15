@@ -1,5 +1,7 @@
 package zone.moddev.mc.advantageworks.client;
 
+import net.minecraft.core.registries.BuiltInRegistries;
+
 import com.google.gson.JsonObject;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
@@ -14,11 +16,10 @@ import net.minecraft.core.RegistryAccess;
 import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.bus.api.SubscribeEvent;
 import org.apache.logging.log4j.LogManager;
 import zone.moddev.mc.basepower.init.ItemGroups;
 
@@ -32,33 +33,33 @@ import net.minecraft.util.RandomSource;
 
 /** Runs after native resource baking, without opening or generating a world. */
 @Mod(ClientResourceProbe.MODID)
-@Mod.EventBusSubscriber(modid = ClientResourceProbe.MODID, value = Dist.CLIENT)
+@net.neoforged.fml.common.EventBusSubscriber(modid = ClientResourceProbe.MODID, value = Dist.CLIENT)
 public final class ClientResourceProbe {
     static final String MODID = "advantageclientresources";
     private static boolean finished;
     private static int ticks;
 
-    @SubscribeEvent public static void tick(TickEvent.ClientTickEvent event) {
-        if (!Boolean.getBoolean("advantageworks.clientResources") || finished || event.phase != TickEvent.Phase.END) return;
+    @SubscribeEvent public static void tick(ClientTickEvent.Post event) {
+        if (!Boolean.getBoolean("advantageworks.clientResources") || finished) return;
         Minecraft minecraft = Minecraft.getInstance();
         if (++ticks < 5 || ((minecraft.getOverlay() != null || minecraft.getModelManager().getMissingModel() == null) && ticks < 1200)) return;
         finished = true;
         JsonObject result = new JsonObject();
         try {
-            result.addProperty("minecraft", net.minecraftforge.versions.mcp.MCPVersion.getMCVersion());
-            result.addProperty("forge", net.minecraftforge.versions.forge.ForgeVersion.getVersion());
+            result.addProperty("minecraft", net.minecraft.SharedConstants.getCurrentVersion().getName());
+            result.addProperty("neoforge", net.neoforged.neoforge.internal.versions.neoforge.NeoForgeVersion.getVersion());
             require("1.21.1".equals(result.get("minecraft").getAsString())
-                    && "52.1.0".equals(result.get("forge").getAsString()), "Wrong native client target");
+                    && "21.1.265".equals(result.get("neoforge").getAsString()), "Wrong native client target");
             require(minecraft.level == null && minecraft.player == null && !minecraft.hasSingleplayerServer(),
                     "Resource probe must not open a world or connect to a server");
             verifyNetworkBootstrap(result);
             com.google.gson.JsonArray mods = new com.google.gson.JsonArray();
             JsonObject versions = new JsonObject();
             for (String id : new String[]{"basepower", "basesteam", "baseelectric"}) {
-                boolean loaded = net.minecraftforge.fml.ModList.get().isLoaded(id);
+                boolean loaded = net.neoforged.fml.ModList.get().isLoaded(id);
                 if (loaded) {
                     mods.add(id);
-                    versions.addProperty(id, net.minecraftforge.fml.ModList.get().getModContainerById(id).get()
+                    versions.addProperty(id, net.neoforged.fml.ModList.get().getModContainerById(id).get()
                             .getModInfo().getVersion().toString());
                 }
                 if (Boolean.getBoolean("advantageworks.requireExtensions")) require(loaded, "Combined launch omitted " + id);
@@ -67,9 +68,9 @@ public final class ClientResourceProbe {
             result.add("mod_versions", versions);
             require(versions.has("basepower") && zone.moddev.mc.basepower.PowerAdvantage.VERSION
                     .equals(versions.get("basepower").getAsString()), "Power metadata does not match the compiled version");
-            require("2.4.14.121011".equals(versions.get("basepower").getAsString()), "Wrong native Power candidate");
+            require("2.4.19.121012".equals(versions.get("basepower").getAsString()), "Wrong native Power candidate");
             for (String id : new String[]{"basesteam", "baseelectric"}) {
-                if (versions.has(id)) require("2.2.15.121011".equals(versions.get(id).getAsString()), "Wrong native expansion candidate: " + id);
+                if (versions.has(id)) require("2.2.20.121012".equals(versions.get(id).getAsString()), "Wrong native expansion candidate: " + id);
             }
             require(minecraft.getModelManager().getMissingModel() != null, "Timed out before model baking");
             require(minecraft.getOverlay() == null, "Timed out before native resource loading completed");
@@ -80,8 +81,8 @@ public final class ClientResourceProbe {
                     "basesteam:pump_pipe_steam", "basesteam:drillbit",
                     "baseelectric:pump_pipe_electric", "baseelectric:laser_turret_evil");
             BakedModel missing = minecraft.getModelManager().getMissingModel();
-            for (Item item : ForgeRegistries.ITEMS) {
-                ResourceLocation id = ForgeRegistries.ITEMS.getKey(item);
+            for (Item item : BuiltInRegistries.ITEM) {
+                ResourceLocation id = BuiltInRegistries.ITEM.getKey(item);
                 if (id == null || !included(id.getNamespace())) continue;
                 ItemStack stack = new ItemStack(item);
                 String key = item.getDescriptionId(stack);
@@ -91,8 +92,8 @@ public final class ClientResourceProbe {
                 if (!hidden.contains(id.toString())) expectedCreative.add(id);
                 items++;
             }
-            for (Block block : ForgeRegistries.BLOCKS) {
-                ResourceLocation id = ForgeRegistries.BLOCKS.getKey(block);
+            for (Block block : BuiltInRegistries.BLOCK) {
+                ResourceLocation id = BuiltInRegistries.BLOCK.getKey(block);
                 if (id == null || !included(id.getNamespace())) continue;
                 for (BlockState state : block.getStateDefinition().getPossibleStates()) {
                     BakedModel model = minecraft.getModelManager().getBlockModelShaper().getBlockModel(state);
@@ -112,7 +113,7 @@ public final class ClientResourceProbe {
                     "The shared creative tab title is not translated");
             var creativeIds = new java.util.HashSet<ResourceLocation>();
             for (ItemStack stack : contents) {
-                ResourceLocation id = ForgeRegistries.ITEMS.getKey(stack.getItem());
+                ResourceLocation id = BuiltInRegistries.ITEM.getKey(stack.getItem());
                 require(id != null && creativeIds.add(id), "Duplicate or unregistered creative entry: " + id);
             }
             var missingCreative = new java.util.HashSet<>(expectedCreative);
@@ -165,7 +166,7 @@ public final class ClientResourceProbe {
 
     private static void verifyModel(BakedModel model, BakedModel missing, BlockState state, String id, boolean requireQuads) {
         require(model != missing, "Missing baked model: " + id);
-        require(!"missingno".equals(model.getParticleIcon(net.minecraftforge.client.model.data.ModelData.EMPTY)
+        require(!"missingno".equals(model.getParticleIcon(net.neoforged.neoforge.client.model.data.ModelData.EMPTY)
                 .contents().name().getPath()), "Missing particle texture: " + id);
         RandomSource random = RandomSource.create(42L);
         List<BakedQuad> quads = new ArrayList<>(model.getQuads(state, null, random));

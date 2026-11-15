@@ -6,23 +6,23 @@ import static org.junit.Assert.*;
 
 public class WorksWorldGuardTest {
     @Test public void nativeRootDotRetainsTheActualWorldName() {
-        assertTrue(WorksWorldGuard.authorized(Paths.get("runtime/AdvantageWorksMigration/."), true));
+        assertTrue(WorksWorldGuard.authorized(zone.moddev.mc.advantageworks.unit.TestProject.path("runtime/AdvantageWorksMigration/."), true));
     }
 
     @Test public void plainMarkedWorksWorldRemainsAllowed() {
-        assertTrue(WorksWorldGuard.authorized(Paths.get("runtime/AdvantageWorks"), true));
+        assertTrue(WorksWorldGuard.authorized(zone.moddev.mc.advantageworks.unit.TestProject.path("runtime/AdvantageWorks"), true));
     }
 
     @Test public void missingMarkerStillFailsClosed() {
-        assertFalse(WorksWorldGuard.authorized(Paths.get("runtime/AdvantageWorksMigration/."), false));
+        assertFalse(WorksWorldGuard.authorized(zone.moddev.mc.advantageworks.unit.TestProject.path("runtime/AdvantageWorksMigration/."), false));
     }
 
     @Test public void unrelatedWorldStillFailsClosed() {
-        assertFalse(WorksWorldGuard.authorized(Paths.get("runtime/Sylvester/."), true));
+        assertFalse(WorksWorldGuard.authorized(zone.moddev.mc.advantageworks.unit.TestProject.path("runtime/Sylvester/."), true));
     }
 
     @Test public void parentTraversalCannotBorrowAWorksPrefix() {
-        assertFalse(WorksWorldGuard.authorized(Paths.get("runtime/AdvantageWorks/../Sylvester/."), true));
+        assertFalse(WorksWorldGuard.authorized(zone.moddev.mc.advantageworks.unit.TestProject.path("runtime/AdvantageWorks/../Sylvester/."), true));
     }
 
     @Test public void missingWorldFailsClosed() {

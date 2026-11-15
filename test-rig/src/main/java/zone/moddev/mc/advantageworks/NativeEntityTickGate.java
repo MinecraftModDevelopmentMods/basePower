@@ -43,8 +43,8 @@ final class NativeEntityTickGate extends EntityTickList {
     }
 
     void hold(Entity entity, Object owner) {
-        holds.computeIfAbsent(entity, ignored -> new Hold(entity.canUpdate())).owners.add(owner);
-        entity.canUpdate(false);
+        holds.computeIfAbsent(entity, ignored -> new Hold(WorksEntityUpdates.get(entity))).owners.add(owner);
+        WorksEntityUpdates.set(entity, false);
     }
 
     void release(Entity entity, Object owner) {
@@ -52,7 +52,7 @@ final class NativeEntityTickGate extends EntityTickList {
         if (hold == null || !hold.owners.remove(owner)) throw new AssertionError("Unobserved native entity hold");
         if (hold.owners.isEmpty()) {
             holds.remove(entity);
-            entity.canUpdate(hold.updating);
+            WorksEntityUpdates.set(entity, hold.updating);
         }
     }
 

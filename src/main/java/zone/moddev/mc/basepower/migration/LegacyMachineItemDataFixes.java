@@ -1,11 +1,12 @@
 package zone.moddev.mc.basepower.migration;
 
+import net.minecraft.core.registries.BuiltInRegistries;
+
 import cyano.poweradvantage.api.migration.LegacyMigrationApi;
 import com.mojang.datafixers.DataFixer;
 import com.mojang.serialization.Dynamic;
 import java.util.ArrayList;
 import java.util.Objects;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.nbt.ListTag;

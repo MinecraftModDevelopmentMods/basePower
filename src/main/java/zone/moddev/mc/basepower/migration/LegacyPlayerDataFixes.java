@@ -30,8 +30,12 @@ public final class LegacyPlayerDataFixes {
     public static CompoundTag update(DataFixer fixer, DataFixTypes type, CompoundTag source, int version) {
         if (type != DataFixTypes.PLAYER) throw new IllegalArgumentException("Expected native PLAYER type");
         CompoundTag result = source.copy();
+        NativePersistentData.prepare(result, true);
         int current = SharedConstants.getCurrentVersion().getDataVersion().getVersion();
-        if (version >= current) return result;
+        if (version >= current) {
+            LegacyEntityDataFixes.renameNativeAttributes(result);
+            return result;
+        }
         LegacyEntityDataFixes.preparePlayerAttributes(result);
         if (version < 704) {
             // Re-read the native namespaced container schema before later choice fixes.

@@ -1,118 +1,82 @@
-name: basePower 1.21.1 CI
+name: basePower NeoForge 1.21.1 CI
 
 on:
   push:
-    branches: [master-1.21.1, 'feature/**']
+    branches: [master-1.21.1-neo, 'feature/**']
   pull_request:
-    branches: [master-1.21.1]
+    branches: [master-1.21.1-neo]
 
 permissions:
   contents: read
 
 concurrency:
-  group: basepower-1.21.1-${{ github.workflow }}-${{ github.ref }}
+  group: basepower-1211-neo-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   build:
     name: Build, test, and audit
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 30
     steps:
-      - name: Check out PowerAdvantage
+      - name: Check out Power source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-      - name: Test target-derived dependency guards
-        run: bash .github/test-base-metals-pin.sh
-      - name: Require the Base Metals pin on upstream master-1.21.1
-        id: base-metals-pin
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: bash .github/verify-base-metals-pin.sh
+        with:
+          fetch-depth: 0
       - name: Use canonical LF dependency inputs
         run: git config --global core.autocrlf false
-      - name: Check out pinned OreSpawn
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          repository: MinecraftModDevelopmentMods/OreSpawn
-          ref: 62c08169c71f4d4fd8f107289e63fd2a4c7c655c
-          path: .ci-dependencies/OreSpawn
-      - name: Check out pinned Base Metals
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          repository: MinecraftModDevelopmentMods/BaseMetals
-          ref: 327c197bcdd0bb5e883d844bb6a6c8791bc580b7
-          path: .ci-dependencies/BaseMetals
-      - name: Install pinned Java 25 Mavenizer runtime
-        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
-        with:
-          distribution: temurin
-          java-version: '25.0.3+9.0.LTS'
-      - name: Install Java 8 launcher helper
-        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
-        with:
-          distribution: temurin
-          java-version: '8.0.502+7'
+      - name: Test native dependency guards
+        shell: pwsh
+        run: ./.github/test-native-dependencies.ps1
+      - name: Require approved public native dependency pins
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: ./.github/verify-native-dependencies.ps1 -DownloadDirectory "$env:RUNNER_TEMP/power-native-inputs"
       - name: Install Java 21 for Gradle and production
         uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
         with:
           distribution: temurin
           java-version: '21.0.7+6.0.LTS'
-      - name: Use pinned build toolchains
-        # These are Gradle project properties, not JVM system properties.
-        shell: bash
+      - name: Use pinned build toolchain
         run: >-
-          echo "MMD_GRADLE_TOOLCHAINS=-Porg.gradle.java.installations.paths=$JAVA_HOME,$JAVA_HOME_8_X64,$JAVA_HOME_25_X64
+          echo "MMD_GRADLE_TOOLCHAINS=-Porg.gradle.java.installations.paths=$JAVA_HOME
           -Porg.gradle.java.installations.auto-detect=false
           -Porg.gradle.java.installations.auto-download=false" >> "$GITHUB_ENV"
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6
-      - name: Build pinned development dependencies
-        id: dependencies
-        shell: bash
+      - name: Build and audit native candidate
         run: |
-          set -euo pipefail
-          orespawn="$GITHUB_WORKSPACE/.ci-dependencies/OreSpawn"
-          basemetals="$GITHUB_WORKSPACE/.ci-dependencies/BaseMetals"
-          mavenizer="$orespawn/ci-fixtures/tools/minecraft-mavenizer-0.5.21-orespawn-compat.jar"
-          mirror="$RUNNER_TEMP/orespawn-mirror"
-          (cd "$basemetals" && bash gradle/stage-orespawn-release.sh "$mirror")
-          (cd "$orespawn" && bash gradlew $MMD_GRADLE_TOOLCHAINS jar --no-daemon --stacktrace)
-          (cd "$basemetals" && bash gradlew $MMD_GRADLE_TOOLCHAINS jar -PorespawnVerificationRepository="$mirror" --no-daemon --stacktrace)
-          osjar="$orespawn/build/libs/OreSpawn-4.1.0.121011.jar"
-          bmjar="$basemetals/build/libs/BaseMetals-3.1.2.121011.jar"
-          test -f "$osjar" && test -f "$bmjar"
-          echo "orespawn=$osjar" >> "$GITHUB_OUTPUT"
-          echo "basemetals=$bmjar" >> "$GITHUB_OUTPUT"
-          echo "mavenizer=$mavenizer" >> "$GITHUB_OUTPUT"
-      - name: Build and audit release artifacts
-        run: >-
-          ./gradlew $MMD_GRADLE_TOOLCHAINS clean check build javadoc verifyReleaseDependencies verifyReleaseArtifacts
-          writeReleaseChecksums verifyEclipseProductionClasspath
-          -PbaseMetalsDeobfJar=${{ steps.dependencies.outputs.basemetals }}
-          -PoreSpawnDeobfJar=${{ steps.dependencies.outputs.orespawn }}
-          -Pforge52MavenizerJar=${{ steps.dependencies.outputs.mavenizer }}
-          --no-daemon --stacktrace
-      - name: Upload audited release candidate
+          chmod +x gradlew
+          ./gradlew $MMD_GRADLE_TOOLCHAINS -I .github/pinned-native-inputs.gradle \
+            clean check build javadoc verifyReleaseDependencies verifyReleaseArtifacts \
+            writeReleaseChecksums verifyEclipseProductionClasspath \
+            "-PbaseMetalsJar=$BASE_METALS_JAR" "-PmmdlibJar=$MMDLIB_JAR" "-PoreSpawnJar=$ORESPAWN_JAR" \
+            --no-daemon --stacktrace
+      - name: Upload CI build, not release approval
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: basePower-1.21.1-${{ github.sha }}
+          name: basePower-1.21.1-neo-${{ github.sha }}-unapproved
           if-no-files-found: error
           retention-days: 30
           path: |
-            build/libs/basePower-2.4.14.121011.jar
-            build/libs/basePower-2.4.14.121011-sources.jar
-            build/libs/basePower-2.4.14.121011-javadoc.jar
+            build/libs/basePower-${{ env.POWER_VERSION }}.jar
+            build/libs/basePower-${{ env.POWER_VERSION }}-sources.jar
+            build/libs/basePower-${{ env.POWER_VERSION }}-javadoc.jar
             build/release/SHA256SUMS
             CHANGELOG.txt
       - name: Upload diagnostics on failure
         if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: basePower-1.21.1-diagnostics-${{ github.sha }}
+          name: basePower-1211-neo-diagnostics-${{ github.sha }}
           if-no-files-found: ignore
           retention-days: 14
           path: |
             build/test-results/**
             build/reports/**
-            build/*-run/logs/**
-            build/problems/**
+      - name: Record remaining local delivery gates
+        if: always()
+        shell: pwsh
+        run: |
+          'Dependency inputs are public and hash-pinned. Hosted checks do not replace packaged gameplay, migration, endurance, rendered-client checks or manual acceptance.' | Add-Content $env:GITHUB_STEP_SUMMARY

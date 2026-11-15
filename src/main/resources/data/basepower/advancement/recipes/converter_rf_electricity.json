@@ -6,7 +6,7 @@
       "conditions": {
         "items": [
           {
-            "items": "#forge:power_supply_units"
+            "items": "#c:power_supply_units"
           }
         ]
       }
@@ -16,7 +16,7 @@
       "conditions": {
         "items": [
           {
-            "items": "#forge:frames/steel"
+            "items": "#c:frames/steel"
           }
         ]
       }

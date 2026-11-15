@@ -1,3 +1,16 @@
+basePower 2.4.19.121012 (Minecraft 1.21.1 / NeoForge)
+
+- Port the shared APIs, menus, rendering, capabilities, networking and migration hooks to NeoForge 21.1.265 and Java 21.
+- Build with native ModDevGradle 2.0.148 and the pinned Gradle 9.8.0 wrapper.
+- Keep Eclipse refreshes from adding duplicate resource folders, and check repeated refreshes during validation.
+- Keep copied-world test setup out of Eclipse sync; test worlds still require explicit selection before a test launch.
+- Use MMDLib crushing recipes and common c tags without replacing machinery or changing balance; respect recipe deletion.
+- Keep registry identities and saved payloads, including engine-owned ForgeData to NeoForgeData migration, locks and fluid components.
+- Keep salvaged parts available in dungeon and mineshaft chests in Apocalyptic mode, using NeoForge's loot-modifier index.
+- Keep oil buckets bound to source fluids and refresh machine capabilities after unloading and reloading chunks.
+- Require the published Base Metals 4.0.1.121012+Neo, MMDLib 2.0.2.121012+Neo and OreSpawn 4.1.1.121012 releases.
+- Pin the reviewed migration hook and public dependency hashes so local builds and CI use the same inputs.
+
 basePower 2.4.14.121011 (Minecraft 1.21.1)
 
 - Bring basePower to Forge 52 and Java 21, keeping existing blocks, items and machine data.

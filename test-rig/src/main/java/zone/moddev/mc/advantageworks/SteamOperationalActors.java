@@ -1,5 +1,7 @@
 package zone.moddev.mc.advantageworks;
 
+import net.minecraft.core.registries.BuiltInRegistries;
+
 import com.mojang.authlib.GameProfile;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -23,7 +25,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.GameType;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraft.core.registries.Registries;
 
 /** Per-case entities: no shared fake-player factory identity or mutable counters. */
 final class SteamOperationalActors {
@@ -77,7 +79,7 @@ final class SteamOperationalActors {
                             BlockState state = c.world.getBlockState(c.at(8, y, 8));
                             c.record("shaft/" + y, state.toString());
                             if (movedUp && y <= 6) {
-                                c.require("basesteam:platform".equals(String.valueOf(net.minecraftforge.registries.ForgeRegistries.BLOCKS.getKey(state.getBlock()))),
+                                c.require("basesteam:platform".equals(String.valueOf(BuiltInRegistries.BLOCK.getKey(state.getBlock()))),
                                         "Raised shaft contains physical platform segment " + y);
                                 IntegerProperty height = (IntegerProperty) state.getBlock().getStateDefinition().getProperty("height");
                                 c.require(height != null && state.getValue(height) == (y == 6 ? 4 : 0),
@@ -127,7 +129,7 @@ final class SteamOperationalActors {
                         };
                         shot.player.gameMode.changeGameModeForPlayer(GameType.SURVIVAL);
                         shot.player.moveTo(muzzle.getX() + 0.5, muzzle.getY(), muzzle.getZ() + 0.5, 0, 0);
-                        Item weapon = ForgeRegistries.ITEMS.getValue(ResourceLocation.parse("basesteam:musket"));
+                        Item weapon = zone.moddev.mc.basepower.util.RegistryValues.find(BuiltInRegistries.ITEM, ResourceLocation.parse("basesteam:musket"));
                         c.require(weapon != null && weapon != net.minecraft.world.item.Items.AIR, "Native musket is registered");
                         shot.weapon = new ItemStack(weapon);
                         shot.player.setItemInHand(InteractionHand.MAIN_HAND, shot.weapon);
@@ -135,7 +137,7 @@ final class SteamOperationalActors {
                         if (mode.equals("powderless")) enchant(c, shot.weapon, "basesteam:powderless");
                         if (mode.equals("infinity")) enchant(c, shot.weapon, "minecraft:infinity");
                         if (mode.equals("last-cartridge") || mode.equals("infinity")) {
-                            Item cartridge = ForgeRegistries.ITEMS.getValue(ResourceLocation.parse("basesteam:blackpowder_cartridge"));
+                            Item cartridge = zone.moddev.mc.basepower.util.RegistryValues.find(BuiltInRegistries.ITEM, ResourceLocation.parse("basesteam:blackpowder_cartridge"));
                             c.require(cartridge != null && cartridge != net.minecraft.world.item.Items.AIR, "Cartridge is registered");
                             shot.player.getInventory().setItem(1, new ItemStack(cartridge));
                         }

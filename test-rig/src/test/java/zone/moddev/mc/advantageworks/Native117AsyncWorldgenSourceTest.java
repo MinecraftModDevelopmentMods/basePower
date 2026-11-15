@@ -53,7 +53,7 @@ public class Native117AsyncWorldgenSourceTest {
         int end = controller.indexOf("List<String> stationIdsWithAll()");
         assertFalse("Population and count must not block the native server tick",
                 controller.substring(start, end).contains("world.getChunk("));
-        Path adapter = Path.of("src/main/java/zone/moddev/mc/advantageworks/Native117WorldgenAccess.java");
+        Path adapter = zone.moddev.mc.advantageworks.unit.TestProject.path("src/main/java/zone/moddev/mc/advantageworks/Native117WorldgenAccess.java");
         assertTrue("A native async adapter must own the FULL futures", Files.isRegularFile(adapter));
         String nativeSource = Files.readString(adapter, StandardCharsets.UTF_8);
         assertTrue(nativeSource.matches("(?s).*getChunkFuture\\(.*ChunkStatus\\.FULL,\\s*true\\).*"));
@@ -83,6 +83,6 @@ public class Native117AsyncWorldgenSourceTest {
     }
 
     private static String source(String name) throws Exception {
-        return Files.readString(Path.of("src/main/java/zone/moddev/mc/advantageworks", name), StandardCharsets.UTF_8);
+        return Files.readString(zone.moddev.mc.advantageworks.unit.TestProject.path("src/main/java/zone/moddev/mc/advantageworks", name), StandardCharsets.UTF_8);
     }
 }

@@ -342,7 +342,7 @@ public final class WorksRunner {
                 "-DlibraryDirectory=libraries", "cpw.mods.bootstraplauncher.BootstrapLauncher",
                 "--launchTarget forgeserver", "--fml.forgeVersion " + (native1201 ? "47.4.10" : native118 ? "40.3.0" : "37.1.1"),
                 "--fml.mcVersion " + (native1201 ? "1.20.1" : native118 ? "1.18.2" : "1.17.1"),
-                "--fml.forgeGroup net.minecraftforge",
+                "--fml.forgeGroup net.neoforged.neoforge",
                 "--fml.mcpVersion " + (native1201 ? "20230612.114412" : native118 ? "20220404.173914" : "20210706.113038")));
         if (native118 || native1201) expected.addAll(Arrays.asList(
                 "--add-opens java.base/java.lang.invoke=cpw.mods.securejarhandler",

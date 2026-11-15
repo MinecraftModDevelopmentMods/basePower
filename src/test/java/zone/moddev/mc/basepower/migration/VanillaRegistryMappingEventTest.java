@@ -1,153 +1,65 @@
 package zone.moddev.mc.basepower.migration;
 
-import java.lang.reflect.Proxy;
-import java.util.Collections;
-import net.minecraft.resources.ResourceLocation;
+import com.mojang.serialization.Lifecycle;
+import cyano.poweradvantage.api.migration.LegacyMigrationApi;
+import java.lang.reflect.Constructor;
+import net.minecraft.core.MappedRegistry;
 import net.minecraft.core.Registry;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
-import net.minecraftforge.registries.MissingMappingsEvent;
-import net.minecraftforge.registries.IForgeRegistry;
+import net.minecraft.resources.ResourceLocation;
+import net.neoforged.neoforge.registries.RegisterEvent;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
+/** NeoForge uses native aliases, not Forge's staging-registry MissingMappingsEvent. */
 public class VanillaRegistryMappingEventTest {
-    private static final ResourceLocation SOURCE = ResourceLocation.parse("minecraft:zombie_pigman_spawn_egg");
-    private static final ResourceLocation TARGET = ResourceLocation.parse("minecraft:zombified_piglin_spawn_egg");
+    private static ResourceLocation id(String value) { return ResourceLocation.parse(value); }
 
-    @Test public void resolvesTheTargetFromActiveNotTheIncompleteStagingRegistry() {
-        Entry target = new Entry();
-        IForgeRegistry<Entry> staging = registry(null, false), active = registry(target, true);
-        MissingMappingsEvent.Mapping<Entry> mapping = new MissingMappingsEvent.Mapping<>(staging, active, SOURCE, 42);
-        VanillaRegistryRemaps.remap(event(staging, mapping), active);
-        assertEquals(MissingMappingsEvent.Action.REMAP, property(mapping, "action"));
-        assertSame(target, property(mapping, "target"));
-        assertEquals(42, mapping.getId());
+    private static Registry<String> registry() {
+        LegacyMigrationApi.registerNamespaceAlias("poweradvantage", "basepower");
+        @SuppressWarnings("unchecked")
+        ResourceKey<? extends Registry<String>> key = (ResourceKey<? extends Registry<String>>) (ResourceKey<?>) Registries.ITEM;
+        Registry<String> registry = new MappedRegistry<>(key, Lifecycle.stable());
+        Registry.register(registry, id("basepower:fixture"), "fixture");
+        return registry;
     }
 
-    @Test public void aLaterExplicitForgeDecisionOverridesTheCompatibilityMapping() {
-        IForgeRegistry<Entry> active = registry(new Entry(), true);
-        MissingMappingsEvent.Mapping<Entry> mapping = new MissingMappingsEvent.Mapping<>(active, active, SOURCE, 42);
-        var bus = net.minecraftforge.eventbus.api.BusBuilder.builder().build();
-        bus.addListener(net.minecraftforge.eventbus.api.EventPriority.HIGHEST,
-                (MissingMappingsEvent event) -> VanillaRegistryRemaps.remap(event, active));
-        bus.addListener(net.minecraftforge.eventbus.api.EventPriority.NORMAL,
-                (MissingMappingsEvent event) -> mapping.ignore());
-        bus.start();
-        bus.post(event(active, mapping));
-        assertEquals(MissingMappingsEvent.Action.IGNORE, property(mapping, "action"));
+    private static void register(Registry<?> registry) throws Exception {
+        Constructor<RegisterEvent> ctor = RegisterEvent.class.getDeclaredConstructor(ResourceKey.class, Registry.class);
+        ctor.setAccessible(true);
+        VanillaRegistryRemaps.registerAliases(ctor.newInstance(registry.key(), registry));
     }
 
-    @Test public void leavesUnrecognizedEntriesUnresolvedForForgeToReport() {
-        IForgeRegistry<Entry> active = registry(new Entry(), true);
-        MissingMappingsEvent.Mapping<Entry> mapping = new MissingMappingsEvent.Mapping<>(active, active,
-                ResourceLocation.parse("othermod:zombie_pigman_spawn_egg"), 42);
-        VanillaRegistryRemaps.remap(event(active, mapping), active);
-        assertEquals(MissingMappingsEvent.Action.DEFAULT, property(mapping, "action"));
+    @Test public void legacyNamespaceResolvesTheSameLiveNativeValue() throws Exception {
+        Registry<String> registry = registry(); register(registry);
+        assertEquals("fixture", registry.get(id("poweradvantage:fixture")));
+        assertEquals("fixture", registry.get(id("basepower:fixture")));
     }
 
-    @Test public void neverSubstitutesARegistryDefaultForAMissingTarget() {
-        IForgeRegistry<Entry> absent = registry(new Entry(), false);
-        MissingMappingsEvent.Mapping<Entry> mapping = new MissingMappingsEvent.Mapping<>(absent, absent, SOURCE, 42);
-        try {
-            VanillaRegistryRemaps.remap(event(absent, mapping), absent);
-            fail("A registry default must not replace the missing item");
-        } catch (IllegalStateException expected) {
-            assertEquals(MissingMappingsEvent.Action.DEFAULT, property(mapping, "action"));
-        }
+    @Test public void aliasesDoNotReplaceARealRegistration() throws Exception {
+        Registry<String> registry = registry();
+        Registry.register(registry, id("poweradvantage:fixture"), "existing");
+        register(registry);
+        assertEquals("existing", registry.get(id("poweradvantage:fixture")));
     }
 
-    @Test public void retiresOnlyTheTwoNonSerializedVanillaMemoryIndexes() {
-        IForgeRegistry<Entry> active = registry(null, false, "minecraft:memory_module_type");
-        for (String name : new String[] {"golem_last_seen_time", "opened_doors"}) {
-            MissingMappingsEvent.Mapping<Entry> mapping = new MissingMappingsEvent.Mapping<>(active, active,
-                    ResourceLocation.fromNamespaceAndPath("minecraft", name), 42);
-            MissingMappingsEvent event = new MissingMappingsEvent(key("minecraft:memory_module_type"),
-                    active, Collections.singletonList(mapping));
-            VanillaRegistryRemaps.remap(event, active);
-            assertEquals(MissingMappingsEvent.Action.IGNORE, property(mapping, "action"));
-            assertNull(property(mapping, "target"));
-        }
+    @Test public void registrationDoesNotInventUnknownReplacementItems() throws Exception {
+        Registry<String> registry = registry(); register(registry);
+        assertTrue(registry.getOptional(id("poweradvantage:absent")).isEmpty());
+        assertTrue(registry.getOptional(id("example:fixture")).isEmpty());
     }
 
-    @Test public void neverRetiresOtherModsOrCurrentMemoryTypes() {
-        ResourceLocation registry = ResourceLocation.parse("minecraft:memory_module_type");
-        assertFalse(VanillaRegistryRemaps.retiredTransientMemory(registry, ResourceLocation.parse("othermod:opened_doors")));
-        assertFalse(VanillaRegistryRemaps.retiredTransientMemory(registry, ResourceLocation.parse("minecraft:golem_detected_recently")));
-        assertFalse(VanillaRegistryRemaps.retiredTransientMemory(ResourceLocation.parse("minecraft:item"),
-                ResourceLocation.parse("minecraft:opened_doors")));
+    @Test public void registryAliasesAreIdempotent() throws Exception {
+        Registry<String> registry = registry(); register(registry); register(registry);
+        assertEquals("fixture", registry.get(id("poweradvantage:fixture")));
+        assertEquals(1, registry.size());
     }
 
-    @Test public void retiresOnlyTheTwoPointsOfInterestRemovedByVanilla() {
-        IForgeRegistry<Entry> active = registry(null, false, "minecraft:point_of_interest_type");
-        for (String id : new String[] {"minecraft:nitwit", "minecraft:unemployed", "minecraft:home", "othermod:nitwit"}) {
-            var mapping = new MissingMappingsEvent.Mapping<>(active, active, ResourceLocation.parse(id), 42);
-            VanillaRegistryRemaps.remap(event(active, mapping), active);
-            boolean retired = id.equals("minecraft:nitwit") || id.equals("minecraft:unemployed");
-            assertEquals(id, retired ? MissingMappingsEvent.Action.IGNORE : MissingMappingsEvent.Action.DEFAULT,
-                    property(mapping, "action"));
-            assertNull(property(mapping, "target"));
-        }
+    @Test public void foreignNamespacesRemainUntouched() throws Exception {
+        Registry<String> registry = registry();
+        Registry.register(registry, id("example:fixture"), "foreign"); register(registry);
+        assertEquals("foreign", registry.get(id("example:fixture")));
+        assertEquals(2, registry.size());
     }
-
-    @Test public void retiresOnlyTheRemovedVanillaEmptyPotionIndex() {
-        IForgeRegistry<Entry> active = registry(null, false, "minecraft:potion");
-        for (String id : new String[] {"minecraft:empty", "minecraft:water", "othermod:empty"}) {
-            var mapping = new MissingMappingsEvent.Mapping<>(active, active, ResourceLocation.parse(id), 42);
-            VanillaRegistryRemaps.remap(event(active, mapping), active);
-            assertEquals(id, id.equals("minecraft:empty") ? MissingMappingsEvent.Action.IGNORE
-                    : MissingMappingsEvent.Action.DEFAULT, property(mapping, "action"));
-            assertNull(property(mapping, "target"));
-        }
-    }
-
-    @Test public void movedPaintingsRetireOnlyTheirKnownStaticIndexes() {
-        IForgeRegistry<Entry> active = registry(null, false, "minecraft:painting_variant");
-        for (String id : new String[] {"minecraft:alban", "minecraft:aztec", "minecraft:unknown", "othermod:alban"}) {
-            var mapping = new MissingMappingsEvent.Mapping<>(active, active, ResourceLocation.parse(id), 42);
-            VanillaRegistryRemaps.remap(event(active, mapping), active);
-            assertEquals(id, id.equals("minecraft:alban") || id.equals("minecraft:aztec")
-                    ? MissingMappingsEvent.Action.IGNORE : MissingMappingsEvent.Action.DEFAULT, property(mapping, "action"));
-            assertNull(property(mapping, "target"));
-        }
-    }
-
-    private static MissingMappingsEvent event(IForgeRegistry<Entry> staging, MissingMappingsEvent.Mapping<Entry> mapping) {
-        return new MissingMappingsEvent(staging.getRegistryKey(), staging, Collections.singletonList(mapping));
-    }
-
-    private static ResourceKey<Registry<Entry>> key(String id) {
-        return ResourceKey.createRegistryKey(ResourceLocation.parse(id));
-    }
-
-    // Forge keeps the result fields package-private for its snapshot loader.
-    private static Object property(MissingMappingsEvent.Mapping<Entry> mapping, String name) {
-        try {
-            var field = mapping.getClass().getDeclaredField(name);
-            field.setAccessible(true);
-            return field.get(mapping);
-        } catch (ReflectiveOperationException failure) {
-            throw new AssertionError(failure);
-        }
-    }
-
-    private static IForgeRegistry<Entry> registry(Entry target, boolean contains) {
-        return registry(target, contains, "minecraft:item");
-    }
-
-    @SuppressWarnings("unchecked")
-    private static IForgeRegistry<Entry> registry(Entry target, boolean contains, String id) {
-        return (IForgeRegistry<Entry>) Proxy.newProxyInstance(IForgeRegistry.class.getClassLoader(),
-                new Class<?>[] {IForgeRegistry.class}, (proxy, method, args) -> {
-                    switch (method.getName()) {
-                        case "getRegistryKey": return key(id);
-                        case "getRegistryName": return ResourceLocation.parse(id);
-                        case "containsKey": return contains && TARGET.equals(args[0]);
-                        case "getValue": return target;
-                        case "getKey": return args[0] == target ? TARGET : null;
-                        default: throw new UnsupportedOperationException(method.getName());
-                    }
-                });
-    }
-
-    private static final class Entry {}
 }

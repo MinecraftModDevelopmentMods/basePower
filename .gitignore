@@ -20,6 +20,7 @@
 /eclipse/
 /run/
 /run-data/
+/config/
 /run.*
 /$run/
 /eula.txt

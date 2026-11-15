@@ -6,7 +6,7 @@ import java.lang.reflect.Method;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.players.PlayerList;
 import net.minecraft.world.level.storage.PlayerDataStorage;
-import net.minecraftforge.fml.util.ObfuscationReflectionHelper;
+import net.neoforged.fml.util.ObfuscationReflectionHelper;
 
 final class Native117PlayerIo {
     private static final Method SAVE = findSave();

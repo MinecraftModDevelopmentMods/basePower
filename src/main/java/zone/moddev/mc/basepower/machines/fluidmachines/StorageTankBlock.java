@@ -1,5 +1,7 @@
 package zone.moddev.mc.basepower.machines.fluidmachines;
 
+import net.minecraft.core.registries.BuiltInRegistries;
+
 import java.util.List;
 
 import javax.annotation.Nullable;
@@ -57,7 +59,7 @@ public class StorageTankBlock extends BlockSimpleFluidMachine {
         ItemStack stack = new ItemStack(this);
         if (tile.getTank().getFluidAmount() > 0) {
             CompoundTag tag = new CompoundTag();
-            net.minecraft.resources.ResourceLocation id = net.minecraftforge.registries.ForgeRegistries.FLUIDS
+            net.minecraft.resources.ResourceLocation id = BuiltInRegistries.FLUID
                     .getKey(tile.getTank().getFluid().getFluid());
             if (id != null) tag.putString("FluidID", id.toString());
             tag.putInt("Volume", tile.getTank().getFluidAmount());

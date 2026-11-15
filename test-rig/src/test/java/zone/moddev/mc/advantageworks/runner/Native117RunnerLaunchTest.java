@@ -47,7 +47,7 @@ public class Native117RunnerLaunchTest {
                 "--add-exports java.base/sun.security.util=cpw.mods.securejarhandler",
                 "-DignoreList=runtime.jar", "-DlibraryDirectory=libraries", "-DlegacyClassPath=" + LIBRARY,
                 "cpw.mods.bootstraplauncher.BootstrapLauncher", "--launchTarget forgeserver",
-                "--fml.forgeVersion 37.1.1", "--fml.mcVersion 1.17.1", "--fml.forgeGroup net.minecraftforge",
+                "--fml.forgeVersion 37.1.1", "--fml.mcVersion 1.17.1", "--fml.forgeGroup net.neoforged.neoforge",
                 "--fml.mcpVersion 20210706.113038") + "\n";
     }
 

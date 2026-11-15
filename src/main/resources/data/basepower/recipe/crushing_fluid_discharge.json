@@ -1,5 +1,5 @@
 {
-  "type": "basemetals:crushing",
+  "type": "mmdlib:crushing",
   "ingredient": {
     "item": "basepower:fluid_discharge"
   },
@@ -7,17 +7,19 @@
     "id": "basepower:fluid_pipe",
     "count": 2
   },
-  "forge:condition": {
-    "type": "forge:and",
-    "values": [
-      {
-        "type": "forge:mod_loaded",
-        "modid": "basemetals"
-      },
-      {
-        "type": "basepower:recipe_mode",
-        "mode": "APOCALYPTIC"
-      }
-    ]
-  }
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:and",
+      "values": [
+        {
+          "type": "neoforge:mod_loaded",
+          "modid": "basemetals"
+        },
+        {
+          "type": "basepower:recipe_mode",
+          "mode": "APOCALYPTIC"
+        }
+      ]
+    }
+  ]
 }

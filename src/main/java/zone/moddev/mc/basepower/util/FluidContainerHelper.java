@@ -1,5 +1,7 @@
 package zone.moddev.mc.basepower.util;
 
+import net.minecraft.core.registries.BuiltInRegistries;
+
 import cyano.poweradvantage.api.fluid.IAdvantageFluidHandler;
 import java.util.Optional;
 import net.minecraft.world.item.BucketItem;
@@ -12,12 +14,12 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.FluidUtil;
-import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
-import net.minecraftforge.fluids.capability.IFluidHandlerItem;
-import net.minecraftforge.fluids.capability.wrappers.FluidBucketWrapper;
+import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.FluidUtil;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction;
+import net.neoforged.neoforge.fluids.capability.IFluidHandlerItem;
+import net.neoforged.neoforge.fluids.capability.wrappers.FluidBucketWrapper;
 
 /** Uses Forge's container handling for buckets and capability-based fluid containers. */
 public final class FluidContainerHelper {
@@ -51,16 +53,16 @@ public final class FluidContainerHelper {
     }
 
     private static Optional<IFluidHandlerItem> itemHandler(ItemStack stack) {
-        // Forge 50's FluidUtil#getFluidHandler(ItemStack) is a stub. Use its standard
-        // bucket adapter directly and accept explicit providers from other items.
-        if (stack.getItem() instanceof BucketItem) return Optional.of(new FluidBucketWrapper(stack));
-        var provider = stack.getItem().getCapabilityProvider(stack);
-        return provider == null ? Optional.empty() : provider.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).resolve();
+        return Optional.ofNullable(stack.getCapability(Capabilities.FluidHandler.ITEM));
     }
 
     public static Fluid fluidForBucket(Item bucketItem) {
-        for (Fluid fluid : net.minecraftforge.registries.ForgeRegistries.FLUIDS) {
-            if (fluid.getBucket() == bucketItem && bucketItem != Items.BUCKET) return fluid;
+        if (bucketItem instanceof BucketItem bucket) {
+            return bucket.content == net.minecraft.world.level.material.Fluids.EMPTY ? null : bucket.content;
+        }
+        for (Fluid fluid : BuiltInRegistries.FLUID) {
+            if (fluid.getBucket() == bucketItem && bucketItem != Items.BUCKET)
+                return fluid instanceof net.minecraft.world.level.material.FlowingFluid flowing ? flowing.getSource() : fluid;
         }
         return null;
     }
