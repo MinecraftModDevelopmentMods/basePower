@@ -5,7 +5,7 @@ import net.minecraft.server.packs.PackResources;
 import net.minecraft.server.packs.PackSelectionConfig;
 import net.minecraft.server.packs.PackType;
 import net.minecraft.server.packs.repository.Pack;
-import net.minecraftforge.event.AddPackFindersEvent;
+import net.neoforged.neoforge.event.AddPackFindersEvent;
 
 /** Config-dependent aliases resolved by the server's native tag reload. */
 public final class MaterialTags {

@@ -1,5 +1,7 @@
 package zone.moddev.mc.advantageworks;
 
+import net.minecraft.core.registries.BuiltInRegistries;
+
 import cyano.poweradvantage.api.fluid.FluidStack;
 import cyano.poweradvantage.api.fluid.FluidTank;
 import java.util.List;
@@ -8,8 +10,8 @@ import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.fluids.capability.IFluidHandler;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler;
+import net.minecraft.core.registries.Registries;
 
 /** Independent finite inputs, ordinary world ticks, and material/energy outcomes. */
 final class SteamOperationalCases {
@@ -60,12 +62,10 @@ final class SteamOperationalCases {
 
     // This is an actual face-capability insertion, not c.tank's direct reserve seeding.
     private static void fill(MachineContext c, String id, int amount) {
-        Fluid fluid = ForgeRegistries.FLUIDS.getValue(ResourceLocation.parse(id));
+        Fluid fluid = zone.moddev.mc.basepower.util.RegistryValues.find(BuiltInRegistries.FLUID, ResourceLocation.parse(id));
         c.require(fluid != null, "Registered input fluid " + id);
-        IFluidHandler handler = c.tile(X, Y, Z).getCapability(
-                net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER, Direction.UP)
-                .orElseThrow(() -> new IllegalStateException("Missing Steam input fluid capability"));
-        int accepted = handler.fill(new net.minecraftforge.fluids.FluidStack(fluid, amount),
+        IFluidHandler handler = WorksCapabilities.fluid(c.tile(X, Y, Z), Direction.UP);
+        int accepted = handler.fill(new net.neoforged.neoforge.fluids.FluidStack(fluid, amount),
                 IFluidHandler.FluidAction.EXECUTE);
         c.record("capability/input/" + id, accepted);
         c.require(accepted == amount, "UP fluid capability accepts exactly " + amount + " mB of " + id);
@@ -78,7 +78,7 @@ final class SteamOperationalCases {
         else if (key.equals("TankOut")) getter = "getOutputTank";
         else throw new IllegalArgumentException("Unknown Steam reserve tank " + key);
         FluidTank tank = tank(c, getter);
-        Fluid type = ForgeRegistries.FLUIDS.getValue(ResourceLocation.parse(fluid));
+        Fluid type = zone.moddev.mc.basepower.util.RegistryValues.find(BuiltInRegistries.FLUID, ResourceLocation.parse(fluid));
         c.require(type != null && amount > 0 && amount <= tank.getCapacity(), "Valid finite setup reserve for " + key);
         // Replace the complete tank value: recursively merged NBT retains an old Empty marker.
         tank.setFluid(new FluidStack(type, amount));
@@ -90,7 +90,7 @@ final class SteamOperationalCases {
 
     private static void slot(MachineContext c, int index, String item, int count) {
         ItemStack stack = c.inventory(X, Y, Z).getItem(index);
-        String actual = stack.isEmpty() ? "empty" : String.valueOf(net.minecraftforge.registries.ForgeRegistries.ITEMS.getKey(stack.getItem()));
+        String actual = stack.isEmpty() ? "empty" : String.valueOf(BuiltInRegistries.ITEM.getKey(stack.getItem()));
         c.record("slot/" + index, actual + ":" + stack.getCount());
         c.require(count == 0 ? stack.isEmpty()
                 : actual.equals(item) && stack.getCount() == count,
@@ -100,7 +100,7 @@ final class SteamOperationalCases {
     private static void fluid(MachineContext c, String getter, String expected, int count) {
         FluidTank tank = tank(c, getter);
         String id = tank.getFluidAmount() == 0 ? "empty"
-                : String.valueOf(ForgeRegistries.FLUIDS.getKey(tank.getFluid().getFluid()));
+                : String.valueOf(BuiltInRegistries.FLUID.getKey(tank.getFluid().getFluid()));
         c.record(getter + "/fluid", id);
         c.record(getter + "/amount", tank.getFluidAmount());
         c.require(tank.getFluidAmount() == count && (count == 0 || expected.equals(id)),
@@ -292,10 +292,8 @@ final class SteamOperationalCases {
                     fluid(c, "getOutputTank", "basepower:refined_oil", 0); });
         add(cases, "still-invalid-fluid", "A real capability rejects water as still feedstock.", 120,
                 c -> { machine(c, "steam_still"); supply(c, 500);
-                    IFluidHandler handler = c.tile(X, Y, Z).getCapability(
-                            net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER, Direction.UP)
-                            .orElseThrow(() -> new IllegalStateException("Missing still fluid capability"));
-                    int accepted = handler.fill(new net.minecraftforge.fluids.FluidStack(net.minecraft.world.level.material.Fluids.WATER, 100),
+                    IFluidHandler handler = WorksCapabilities.fluid(c.tile(X, Y, Z), Direction.UP);
+                    int accepted = handler.fill(new net.neoforged.neoforge.fluids.FluidStack(net.minecraft.world.level.material.Fluids.WATER, 100),
                             IFluidHandler.FluidAction.EXECUTE);
                     c.record("capability/rejected-water", accepted);
                     c.require(accepted == 0, "Water is rejected by the still input capability"); },
@@ -322,7 +320,7 @@ final class SteamOperationalCases {
     }
 
     private static boolean blockIs(MachineContext c, int x, int y, int z, String id) {
-        String actual = String.valueOf(net.minecraftforge.registries.ForgeRegistries.BLOCKS.getKey(c.world.getBlockState(c.at(x, y, z)).getBlock()));
+        String actual = String.valueOf(BuiltInRegistries.BLOCK.getKey(c.world.getBlockState(c.at(x, y, z)).getBlock()));
         c.record("block/" + x + "/" + y + "/" + z, actual);
         return actual.equals(id);
     }

@@ -16,12 +16,13 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.common.extensions.IForgeMenuType;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.common.extensions.IMenuTypeExtension;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.RegisterEvent;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
+import net.neoforged.neoforge.registries.RegisterEvent;
 import zone.moddev.mc.basepower.PowerAdvantage;
 
 import java.util.Map;
@@ -48,9 +49,9 @@ public final class MachineGUIRegistry {
     public void removeGUI(int id) { DEFINITIONS.remove(id); }
 
     public static void registerTypes(RegisterEvent event) {
-        if (!ForgeRegistries.Keys.MENU_TYPES.equals(event.getRegistryKey())) return;
-        TYPE = IForgeMenuType.create(MachineGUIRegistry::createClientContainer);
-        event.register(ForgeRegistries.Keys.MENU_TYPES, ResourceLocation.fromNamespaceAndPath(PowerAdvantage.MODID, "machine"), () -> TYPE);
+        if (!Registries.MENU.equals(event.getRegistryKey())) return;
+        TYPE = IMenuTypeExtension.create(MachineGUIRegistry::createClientContainer);
+        event.register(Registries.MENU, ResourceLocation.fromNamespaceAndPath(PowerAdvantage.MODID, "machine"), () -> TYPE);
     }
 
     private static SimpleMachineGUI.Container createClientContainer(
@@ -75,8 +76,8 @@ public final class MachineGUIRegistry {
     }
 
     @OnlyIn(Dist.CLIENT)
-    public static void registerScreens() {
-        MenuScreens.<SimpleMachineGUI.Container, SimpleMachineGUI.GUIContainer>register(TYPE,
+    public static void registerScreens(net.neoforged.neoforge.client.event.RegisterMenuScreensEvent event) {
+        event.<SimpleMachineGUI.Container, SimpleMachineGUI.GUIContainer>register(TYPE,
                 (container, inventory, title) -> container.createScreen(inventory, title));
     }
 

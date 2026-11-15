@@ -1,0 +1,96 @@
+import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
+import java.security.MessageDigest
+import java.nio.channels.FileChannel
+import java.nio.file.StandardOpenOption
+
+// Test-only source/output; never attached to production archives or the resource probe.
+def integrationRoot = providers.gradleProperty('clientIntegrationDirectory')
+        .orElse('build/client-integration/UNSELECTED').map { file(it) }
+def compileIntegration = tasks.register('compileNativeClientIntegration', JavaCompile) {
+    dependsOn tasks.named('classes')
+    source fileTree('test-rig/client-integration/java') { include '**/*.java' }
+    classpath = files(sourceSets.main.output, sourceSets.main.compileClasspath)
+    destinationDirectory = layout.buildDirectory.dir('client-integration-helper/classes')
+    options.release = 21
+    options.encoding = 'UTF-8'
+}
+def integrationJar = tasks.register('nativeClientIntegrationJar', Jar) {
+    dependsOn compileIntegration
+    archiveFileName = 'native-client-integration.jar'
+    destinationDirectory = layout.buildDirectory.dir('client-integration-helper')
+    from compileIntegration.flatMap { it.destinationDirectory }
+    from 'test-rig/client-integration/resources'
+}
+neoForge.runs.create('clientIntegration') {
+    client()
+    // This copied-world probe needs explicit Gradle properties, not an IDE launch.
+    disableIdeRun()
+    gameDirectory = layout.dir(integrationRoot)
+    systemProperty 'advantageworks.clientIntegration', 'true'
+    jvmArguments.addAll '-XX:ActiveProcessorCount=4', '-Xmx3G'
+}
+def prepareIntegration = tasks.register('prepareNativeClientIntegration') {
+    dependsOn integrationJar
+    doLast {
+        if (!providers.gradleProperty('clientIntegrationDirectory').isPresent()) throw new GradleException('Select an explicit disposable clientIntegrationDirectory')
+        File root = integrationRoot.get().canonicalFile
+        File allowed = layout.buildDirectory.dir('client-integration').get().asFile.canonicalFile
+        if (!root.toPath().startsWith(allowed.toPath()) || root == allowed) throw new GradleException('Use a marked subdirectory of build/client-integration')
+        String phase = providers.gradleProperty('clientIntegrationPhase').getOrElse('initial')
+        if (!(phase in ['initial', 'reload'])) throw new GradleException('Invalid client integration phase')
+        def hash = { File input -> MessageDigest.getInstance('SHA-256').digest(input.bytes).encodeHex().toString() }
+        File markerFile = new File(root, 'client-integration.allow.json')
+        Map marker
+        if (phase == 'initial') {
+            if (root.exists()) throw new GradleException('Retain prior integration evidence; choose a fresh directory')
+            File source = file(providers.gradleProperty('clientIntegrationSourceWorld').get()).canonicalFile
+            if (source.parentFile.name != 'release-20261115-operations-a' || source.name != 'AdvantageWorksMigration') throw new GradleException('Only the closed release-operations copied world is approved by this adapter')
+            File report = new File(source.parentFile, 'native1211neo-machine-operation-results.json')
+            Map qualification = new JsonSlurper().parse(report) as Map
+            if (qualification.status != 'PASS') throw new GradleException('Source operations world did not pass')
+            FileChannel.open(new File(source, 'session.lock').toPath(), StandardOpenOption.READ, StandardOpenOption.WRITE).withCloseable { channel ->
+                def lock = channel.tryLock()
+                if (lock == null) throw new GradleException('Source world is live; refusing to copy it')
+                try {
+                    Map sourceHashes = fileTree(source) { exclude 'session.lock' }.files.collectEntries { [(it.canonicalPath): hash(it)] }
+                    copy { from source; exclude 'session.lock'; into new File(root, 'saves/ClientIntegrationWorld') }
+                    copy { from new File(source.parentFile, 'config'); into new File(root, 'config') }
+                    sourceHashes.each { path, sha -> if (hash(new File(path)) != sha) throw new GradleException('Source world changed during copy') }
+                    marker = [schema: 1, disposable: true, sourceWorld: source.canonicalPath,
+                              sourceWorldSha256: sourceHashes, sourceReportSha256: hash(report), inputSha256: [:]]
+                    new File(root, 'options.txt').setText('onboardAccessibility:false\npauseOnLostFocus:false\n', 'UTF-8')
+                } finally { lock.release() }
+            }
+        } else {
+            marker = new JsonSlurper().parse(markerFile) as Map
+            File previous = new File(root, 'client-integration-initial.json')
+            if (!previous.isFile() || new JsonSlurper().parse(previous).status != 'PASS') throw new GradleException('Initial full-process proof is required before reload')
+        }
+        if (new File(root, 'client-integration-' + phase + '.json').exists()) throw new GradleException('Refusing to overwrite a phase receipt')
+        File mods = new File(root, 'mods')
+        mods.mkdirs()
+        def expansionFiles = [file('../SteamAdvantage/SteamAdvantage/build/libs/baseSteam-2.2.20.121012.jar'),
+                              file('../ElectricAdvantage/ElectricAdvantage/build/libs/baseElectric-2.2.20.121012.jar'), integrationJar.get().archiveFile.get().asFile]
+        def managed = expansionFiles.collect { it.name }.toSet()
+        if (fileTree(mods).files.any { !managed.contains(it.name) }) throw new GradleException('Unexpected integration mods')
+        expansionFiles.each { input -> copy { from input; into mods } }
+        Map inputs = (sourceSets.main.output.files.findAll { it.isDirectory() }.collectMany { fileTree(it).files } +
+                sourceSets.main.runtimeClasspath.files.findAll { it.isFile() } + expansionFiles + fileTree(mods).files).unique().collectEntries { [(it.canonicalPath): hash(it)] }
+        if (phase == 'reload' && marker.inputSha256 != inputs) throw new GradleException('Runtime inputs changed between full client processes')
+        marker.inputSha256 = inputs
+        marker.phase = phase
+        markerFile.setText(JsonOutput.prettyPrint(JsonOutput.toJson(marker)) + '\n', 'UTF-8')
+    }
+}
+neoForge.runs.clientIntegration.taskBefore prepareIntegration
+// ModDevGradle uses prepareClientIntegrationRun during sync to write arguments.
+// World copying belongs only on the actual launch through taskBefore above.
+tasks.named('runClientIntegration') {
+    doLast {
+        File root = integrationRoot.get()
+        String phase = providers.gradleProperty('clientIntegrationPhase').getOrElse('initial')
+        File receipt = new File(root, 'client-integration-' + phase + '.json')
+        if (!receipt.isFile() || new JsonSlurper().parse(receipt).status != 'PASS') throw new GradleException('Native integrated-client phase did not qualify; retain all evidence')
+    }
+}

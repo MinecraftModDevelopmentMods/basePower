@@ -25,14 +25,14 @@ public class StarchRecipeTest {
 
     @Test public void existingCrushingKeepsBothPotatoesAndItsOneToOneRatio() throws Exception {
         JsonObject recipe = read("crushing_potato_starch");
-        assertEquals("basemetals:crushing", recipe.get("type").getAsString());
+        assertEquals("mmdlib:crushing", recipe.get("type").getAsString());
         assertEquals(potatoes(), items(recipe.getAsJsonArray("ingredient")));
         assertEquals("basepower:starch", recipe.getAsJsonObject("result").get("id").getAsString());
         assertEquals(1, recipe.getAsJsonObject("result").get("count").getAsInt());
     }
 
     private static JsonObject read(String name) throws Exception {
-        return new JsonParser().parse(new String(Files.readAllBytes(Paths.get(
+        return new JsonParser().parse(new String(Files.readAllBytes(zone.moddev.mc.advantageworks.unit.TestProject.path(
                 "src/main/resources/data/basepower/recipe/" + name + ".json")), StandardCharsets.UTF_8)).getAsJsonObject();
     }
     private static Set<String> potatoes() {

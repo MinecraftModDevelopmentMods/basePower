@@ -20,9 +20,9 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayerGameMode;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.RegisterCommandsEvent;
+import net.neoforged.neoforge.common.NeoForge;
+
+import net.neoforged.neoforge.event.RegisterCommandsEvent;
 
 /** Real server player-file adapter and saved-entity witnesses; not a client login. */
 final class ActorProbe {
@@ -34,9 +34,9 @@ final class ActorProbe {
     static void register() {
         if (!MARKER.isFile()) return;
         ActorProbe probe = new ActorProbe();
-        MinecraftForge.EVENT_BUS.addListener(probe::tick);
-        MinecraftForge.EVENT_BUS.addListener(probe::entityJoining);
-        MinecraftForge.EVENT_BUS.addListener(probe::starting);
+        WorksLevelTick.listen(NeoForge.EVENT_BUS, probe::tick);
+        NeoForge.EVENT_BUS.addListener(probe::entityJoining);
+        NeoForge.EVENT_BUS.addListener(probe::starting);
     }
 
     private boolean frozen(net.minecraft.world.level.Level world) {
@@ -45,20 +45,20 @@ final class ActorProbe {
 
     static boolean witnessed(Entity entity) { return NativeEntityData.containsString(entity, "AdvWorksActor"); }
 
-    private void tick(TickEvent.LevelTickEvent event) {
+    private void tick(WorksLevelTick event) {
         if (!(event.level instanceof ServerLevel)) return;
-        if (event.phase == TickEvent.Phase.START && frozen(event.level)) {
+        if (event.phase == WorksLevelTick.Phase.START && frozen(event.level)) {
             NativeEntityHold held = heldActors.computeIfAbsent(event.level, key -> new NativeEntityHold());
             Native117Worlds.entities((ServerLevel) event.level).filter(ActorProbe::witnessed)
                     .forEach(held::hold);
             heldActors.put(event.level, held);
-        } else if (event.phase == TickEvent.Phase.END) {
+        } else if (event.phase == WorksLevelTick.Phase.END) {
             NativeEntityHold held = heldActors.remove(event.level);
             if (held != null) held.restore();
         }
     }
 
-    private void entityJoining(net.minecraftforge.event.entity.EntityJoinLevelEvent event) {
+    private void entityJoining(net.neoforged.neoforge.event.entity.EntityJoinLevelEvent event) {
         if (event.getLevel() instanceof ServerLevel && frozen(event.getLevel())
                 && witnessed(event.getEntity())) {
             heldActors.computeIfAbsent(event.getLevel(), key -> new NativeEntityHold()).hold(event.getEntity());
@@ -112,11 +112,11 @@ final class ActorProbe {
         JsonArray entities = new JsonArray();
         for (Entity entity : Native117Worlds.entities(world).collect(java.util.stream.Collectors.toList())) {
             if (!witnessed(entity)) continue;
-            if (operation.equals("operate")) entity.canUpdate(true);
+            if (operation.equals("operate")) WorksEntityUpdates.set(entity, true);
             CompoundTag nbt = new CompoundTag();
             if (!entity.saveAsPassenger(nbt)) throw new IllegalStateException("Could not serialize actor");
             JsonObject entry = encode(nbt);
-            entry.addProperty("witness", nbt.getCompound("ForgeData").getString("AdvWorksActor"));
+            entry.addProperty("witness", nbt.getCompound("NeoForgeData").getString("AdvWorksActor"));
             entry.addProperty("ticksExisted", entity.tickCount);
             entities.add(entry);
         }

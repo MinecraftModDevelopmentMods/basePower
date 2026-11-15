@@ -1,5 +1,7 @@
 package zone.moddev.mc.basepower.migration;
 
+import net.minecraft.core.registries.BuiltInRegistries;
+
 import com.mojang.serialization.Dynamic;
 import com.mojang.serialization.JsonOps;
 import net.minecraft.SharedConstants;
@@ -21,7 +23,7 @@ public class VanillaRegistryRemapsTest {
             var actual = VanillaRegistryRemaps.replacement(registry,
                     net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("minecraft", pair[0]));
             assertEquals(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("minecraft", pair[1]), actual);
-            assertTrue(net.minecraftforge.registries.ForgeRegistries.SOUND_EVENTS.containsKey(actual));
+            assertTrue(BuiltInRegistries.SOUND_EVENT.containsKey(actual));
         }
         assertNull(VanillaRegistryRemaps.replacement(registry,
                 net.minecraft.resources.ResourceLocation.parse("othermod:block.trial_spawner.charge_activate")));

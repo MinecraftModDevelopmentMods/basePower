@@ -6,9 +6,9 @@ import cyano.poweradvantage.api.fluid.IAdvantageFluidHandler;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.core.Direction;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.fluids.capability.IFluidHandler;
-import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
+import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction;
 
 /** A side-bound foreign capability; reacquire it after removal or capability invalidation. */
 final class AdvantageFluidAdapter implements IAdvantageFluidHandler {
@@ -21,7 +21,8 @@ final class AdvantageFluidAdapter implements IAdvantageFluidHandler {
     }
 
     private IFluidHandler handler() {
-        return tile.isRemoved() ? null : tile.getCapability(ForgeCapabilities.FLUID_HANDLER, side).orElse(null);
+        return tile.isRemoved() || tile.getLevel() == null ? null
+                : tile.getLevel().getCapability(Capabilities.FluidHandler.BLOCK, tile.getBlockPos(), side);
     }
 
     @Override public FluidTankInfo[] getTankInfo(Direction ignored) {
@@ -54,7 +55,7 @@ final class AdvantageFluidAdapter implements IAdvantageFluidHandler {
     @Override public boolean canFill(Direction ignored, Fluid fluid) {
         IFluidHandler handler = handler();
         if (handler == null || fluid == null) return false;
-        net.minecraftforge.fluids.FluidStack probe = new net.minecraftforge.fluids.FluidStack(fluid, 1);
+        net.neoforged.neoforge.fluids.FluidStack probe = new net.neoforged.neoforge.fluids.FluidStack(fluid, 1);
         for (int i = 0; i < handler.getTanks(); i++) if (handler.isFluidValid(i, probe)) return true;
         return false;
     }

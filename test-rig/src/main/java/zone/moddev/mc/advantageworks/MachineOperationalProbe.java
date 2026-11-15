@@ -1,5 +1,7 @@
 package zone.moddev.mc.advantageworks;
 
+import net.minecraft.core.registries.BuiltInRegistries;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
@@ -21,9 +23,9 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.GameRules;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.RegisterCommandsEvent;
-import net.minecraftforge.event.TickEvent;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.RegisterCommandsEvent;
+
 
 /** Natural world ticks and recorded finite resources; never drives tickUpdate directly. */
 final class MachineOperationalProbe {
@@ -48,13 +50,13 @@ final class MachineOperationalProbe {
     static void register() {
         if (!MARKER.isFile()) return;
         MachineOperationalProbe probe = new MachineOperationalProbe();
-        MinecraftForge.EVENT_BUS.addListener(probe::commands);
-        MinecraftForge.EVENT_BUS.addListener(probe::tick);
-        MinecraftForge.EVENT_BUS.addListener(probe::chunkLoaded);
-        MinecraftForge.EVENT_BUS.addListener(probe::entityJoining);
+        NeoForge.EVENT_BUS.addListener(probe::commands);
+        WorksLevelTick.listen(NeoForge.EVENT_BUS, probe::tick);
+        NeoForge.EVENT_BUS.addListener(probe::chunkLoaded);
+        NeoForge.EVENT_BUS.addListener(probe::entityJoining);
     }
 
-    private void chunkLoaded(net.minecraftforge.event.level.ChunkEvent.Load event) {
+    private void chunkLoaded(net.neoforged.neoforge.event.level.ChunkEvent.Load event) {
         if (paused && event.getLevel() instanceof ServerLevel) {
             ServerLevel loaded = (ServerLevel) event.getLevel();
             if (loaded.dimension() == net.minecraft.world.level.Level.OVERWORLD) {
@@ -63,7 +65,7 @@ final class MachineOperationalProbe {
         }
     }
 
-    private void entityJoining(net.minecraftforge.event.entity.EntityJoinLevelEvent event) {
+    private void entityJoining(net.neoforged.neoforge.event.entity.EntityJoinLevelEvent event) {
         if (paused && event.getLevel() instanceof ServerLevel
                 && event.getLevel().dimension() == net.minecraft.world.level.Level.OVERWORLD
                 && !(event.getEntity() instanceof net.minecraft.world.entity.player.Player)) {
@@ -152,14 +154,14 @@ final class MachineOperationalProbe {
         } catch (Throwable failure) { fail(run, "setup", failure); }
     }
 
-    private void tick(TickEvent.LevelTickEvent event) {
+    private void tick(WorksLevelTick event) {
         if (event.level.isClientSide || !(event.level instanceof ServerLevel)
                 || event.level.dimension() != net.minecraft.world.level.Level.OVERWORLD) return;
         ServerLevel current = (ServerLevel) event.level;
-        if (event.phase == TickEvent.Phase.START && paused) {
+        if (event.phase == WorksLevelTick.Phase.START && paused) {
             held.addAll(NativeBlockEntityTicks.drain(current));
             for (Entity entity : current.getAllEntities()) if (!(entity instanceof net.minecraft.world.entity.player.Player)) heldEntities.hold(entity);
-        } else if (event.phase == TickEvent.Phase.END) {
+        } else if (event.phase == WorksLevelTick.Phase.END) {
             NativeBlockEntityTicks.restore(current, held); heldEntities.restore();
             if (current != world) return;
             if (inspectionCases != null) {
@@ -276,7 +278,7 @@ final class MachineOperationalProbe {
                     if (pos.getX() < 50000 || pos.getX() > 100000 || pos.getY() < 79 || pos.getY() > 111
                             || pos.getZ() < 50000 || pos.getZ() > 50031) throw new IllegalArgumentException("Saved position escaped proving ground");
                     actual.addProperty("x", pos.getX()); actual.addProperty("y", pos.getY()); actual.addProperty("z", pos.getZ());
-                    actual.addProperty("block", net.minecraftforge.registries.ForgeRegistries.BLOCKS.getKey(world.getBlockState(pos).getBlock()).toString());
+                    actual.addProperty("block", BuiltInRegistries.BLOCK.getKey(world.getBlockState(pos).getBlock()).toString());
                     actual.addProperty("state", world.getBlockState(pos).toString());
                     BlockEntity tile = world.getBlockEntity(pos);
                     if (tile != null) actual.addProperty("nbt", WorksBlockData.save(tile).toString());

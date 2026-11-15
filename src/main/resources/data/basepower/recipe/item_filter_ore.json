@@ -10,7 +10,7 @@
       "item": "basepower:item_conveyor"
     },
     "y": {
-      "tag": "forge:ingots/gold"
+      "tag": "c:ingots/gold"
     },
     "z": {
       "item": "minecraft:oak_pressure_plate"
@@ -20,8 +20,10 @@
     "id": "basepower:item_filter_ore"
   },
   "group": "basepower:item_filter_ore",
-  "forge:condition": {
-    "type": "basepower:tag_not_empty",
-    "tag": "forge:ingots/gold"
-  }
+  "neoforge:conditions": [
+    {
+      "type": "basepower:tag_not_empty",
+      "tag": "c:ingots/gold"
+    }
+  ]
 }

@@ -1,5 +1,7 @@
 package zone.moddev.mc.advantageworks;
 
+import net.minecraft.core.registries.BuiltInRegistries;
+
 import java.util.Comparator;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -13,7 +15,7 @@ import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.chunk.status.ChunkStatus;
 import net.minecraft.world.level.chunk.LevelChunk;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraft.core.registries.Registries;
 
 final class Native117WorldgenAccess implements WorldgenSamplingJob.WorldAccess {
     private static final TicketType<ChunkPos> TICKET = TicketType.create(
@@ -71,7 +73,7 @@ final class Native117WorldgenAccess implements WorldgenSamplingJob.WorldAccess {
             }
 
             @Override public String blockName(int blockX, int y, int blockZ) {
-                ResourceLocation id = ForgeRegistries.BLOCKS.getKey(
+                ResourceLocation id = BuiltInRegistries.BLOCK.getKey(
                         chunk.getBlockState(cursor.set(blockX, y, blockZ)).getBlock());
                 return id == null ? null : id.toString();
             }

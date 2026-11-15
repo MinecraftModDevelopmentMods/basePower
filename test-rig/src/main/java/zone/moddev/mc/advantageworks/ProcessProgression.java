@@ -1,5 +1,7 @@
 package zone.moddev.mc.advantageworks;
 
+import net.minecraft.core.registries.BuiltInRegistries;
+
 import com.google.gson.JsonObject;
 import com.google.gson.JsonArray;
 import cyano.poweradvantage.api.ConduitType;
@@ -28,7 +30,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraft.core.registries.Registries;
 import zone.moddev.mc.basepower.init.Fluids;
 import zone.moddev.mc.basepower.machines.fluidmachines.StillTileEntity;
 import zone.moddev.mc.basepower.util.FluidContainerHelper;
@@ -66,8 +68,8 @@ final class ProcessProgression {
             entity.setItem(ItemStack.EMPTY);
             entity.discard();
         }
-        String hammer = known.keySet().stream().filter(key -> key.startsWith("basemetals:")
-                && key.endsWith("_crackhammer")).findFirst().orElseThrow(() -> new IllegalStateException("No craftable hammer"));
+        String hammer = known.keySet().stream().filter(ProcessProgression::hammerIdentity)
+                .findFirst().orElseThrow(() -> new IllegalStateException("No craftable hammer"));
         player.getInventory().clearContent();
         player.setItemInHand(InteractionHand.MAIN_HAND, stack(hammer));
         player.setShiftKeyDown(false);
@@ -91,17 +93,20 @@ final class ProcessProgression {
         require(HammerQueryGate.ready(accepted, source.isRemoved(),
                 attempt.get("sourceMatchesInput").getAsBoolean(), before),
                 "Live hammer setup not query-ready " + recipe);
-        InteractionResult action = player.getMainHandItem().getItem().useOn(
-                new UseOnContext(player, InteractionHand.MAIN_HAND, new net.minecraft.world.phys.BlockHitResult(
+        var click = new net.neoforged.neoforge.event.entity.player.PlayerInteractEvent.RightClickBlock(
+                player, InteractionHand.MAIN_HAND, pos, new net.minecraft.world.phys.BlockHitResult(
                         new net.minecraft.world.phys.Vec3(pos.getX() + 0.5D, pos.getY() + 1D, pos.getZ() + 0.5D),
-                        Direction.UP, pos, false)));
-        attempt.addProperty("action", action.name());
-        attempt.addProperty("success", action == InteractionResult.CONSUME);
+                        Direction.UP, pos, false));
+        // MMDLib binds the tool through NeoForge's event bridge, not Item.useOn.
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(click);
+        attempt.addProperty("action", click.getCancellationResult().name());
+        attempt.addProperty("dispatch", "NeoForge.PlayerInteractEvent.RightClickBlock");
+        attempt.addProperty("success", source.isRemoved() && source.getItem().isEmpty());
         attempt.addProperty("sourceConsumed", source.getItem().isEmpty());
         attempt.addProperty("damageIsOne", player.getMainHandItem().getDamageValue() == 1);
         attempt.add("after", hammerSnapshot(world, player, pos, area, source));
         System.out.println("ADVHAMMER AFTER " + attempt);
-        require(action == InteractionResult.CONSUME && source.getItem().isEmpty()
+        require(source.isRemoved() && source.getItem().isEmpty()
                 && player.getMainHandItem().getDamageValue() == 1, "Live hammer failed " + recipe);
         int produced = 0;
         for (ItemEntity entity : world.getEntitiesOfClass(ItemEntity.class, area)) {
@@ -120,17 +125,16 @@ final class ProcessProgression {
     private static JsonObject hammerRecipeSelection(ServerLevel world, ItemStack hammer, ItemStack input,
             String requestedRecipe) {
         JsonObject selection = new JsonObject();
-        selection.addProperty("selector", "RecipeManager.getRecipeFor(basemetals:crushing)");
+        selection.addProperty("selector", "RecipeManager.getRecipeFor(mmdlib:crushing)");
         selection.addProperty("inputNbt", input.saveOptional(world.registryAccess()).toString());
         selection.addProperty("recipeManagerIdentity", System.identityHashCode(world.getRecipeManager()));
         selection.addProperty("requestedIdPresent",
                 world.getRecipeManager().byKey(ResourceLocation.parse(requestedRecipe)).isPresent());
         try {
-            Class<?> hammerClass = hammer.getItem().getClass();
-            if (!hammerClass.getName().equals("zone.moddev.mc.basemetals.content.CrackhammerItem"))
-                throw new IllegalStateException("Unexpected hammer class " + hammerClass.getName());
+            if (!(hammer.getItem() instanceof zone.moddev.mc.lib.common.runtime.MaterialBacked))
+                throw new IllegalStateException("Hammer is not bound to an MMDLib material");
             RecipeType<?> type = net.minecraft.core.registries.BuiltInRegistries.RECIPE_TYPE
-                    .getOptional(ResourceLocation.fromNamespaceAndPath("basemetals", "crushing")).orElseThrow();
+                    .getOptional(ResourceLocation.fromNamespaceAndPath("mmdlib", "crushing")).orElseThrow();
             net.minecraft.world.item.crafting.RecipeHolder<?> selected = world.getRecipeManager().getRecipeFor(
                     (RecipeType<Recipe<net.minecraft.world.item.crafting.SingleRecipeInput>>) type,
                     new net.minecraft.world.item.crafting.SingleRecipeInput(input.copy()), world).orElse(null);
@@ -192,13 +196,17 @@ final class ProcessProgression {
     static boolean canCrush(Map<String, JsonObject> known, ItemStack input) {
         if (input.getItem() instanceof BlockItem) {
             for (String id : known.keySet()) {
-                if (id.startsWith("basemetals:") && id.endsWith("_crackhammer")
+                if (hammerIdentity(id)
                         && stack(id).isCorrectToolForDrops(((BlockItem) input.getItem()).getBlock().defaultBlockState())) return true;
             }
             return (has(known, "basesteam:steam_crusher", "basesteam:steam_boiler_coal", "minecraft:water_bucket"))
                     || has(known, "baseelectric:electric_crusher", "baseelectric:hydroelectric_generator", "minecraft:water_bucket");
         }
         return true;
+    }
+
+    static boolean hammerIdentity(String id) {
+        return (id.startsWith("basemetals:") || id.startsWith("mmdlib:")) && id.endsWith("_crackhammer");
     }
 
     static boolean advance(ServerLevel world, ServerPlayer player, Map<String, JsonObject> known, JsonObject fixture) {
@@ -323,7 +331,7 @@ final class ProcessProgression {
                 && p[i] <= bounds.getAsJsonArray("max").get(i).getAsInt(), "Machine fixture escaped its bounds");
         world.setBlockAndUpdate(pos, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState());
         world.removeBlockEntity(pos);
-        net.minecraft.world.level.block.Block material = ForgeRegistries.BLOCKS.getValue(ResourceLocation.parse(block));
+        net.minecraft.world.level.block.Block material = zone.moddev.mc.basepower.util.RegistryValues.find(BuiltInRegistries.BLOCK, ResourceLocation.parse(block));
         require(material != null, "Missing machine/fluid " + block);
         world.setBlockAndUpdate(pos, material.defaultBlockState());
         BlockEntity clean = world.getBlockEntity(pos);

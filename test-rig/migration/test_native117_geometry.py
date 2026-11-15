@@ -9,8 +9,9 @@ import unittest
 import tempfile
 import zipfile
 
-from historical_test_inputs import (ACTIVE_ADAPTERS, ADVANTAGE117, BASE117_ADAPTERS,
+from historical_test_inputs import (ACTIVE_ADAPTERS, ADVANTAGE117,
                                     RIG, git_blob, oracle_bytes)
+from native1211neo_preservation import require_active_adapter
 from native117_geometry import (ENGINE_SOURCES, FORGE_VERSION, MCP_VERSION, MINECRAFT_VERSION,
                                 SOURCE_ARCHIVE_SHA256, SOURCE_SHA256, require_geometry,
                                 verify_engine_sources)
@@ -238,10 +239,7 @@ class PortContracts(unittest.TestCase):
     def test_active_port_adapters_are_separately_guarded(self):
         for name in sorted(ACTIVE_ADAPTERS):
             with self.subTest(path=name):
-                # The active overview was revised in the audited 1.18 harness port.
-                baseline = "edc43a9" if name == "README.md" else BASE117_ADAPTERS
-                self.assertEqual(git_blob(baseline, name).replace(b"\r\n", b"\n"),
-                                 (RIG / name).read_bytes().replace(b"\r\n", b"\n"))
+                require_active_adapter(name, (RIG / name).read_bytes())
 
     def test_ledger_cannot_refingerprint_or_exempt_historical_oracles(self):
         ledger = json.loads((RIG / "migration/native117-historical-inputs.json").read_text())

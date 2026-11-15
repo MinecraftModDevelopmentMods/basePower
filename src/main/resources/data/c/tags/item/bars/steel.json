@@ -1,0 +1,9 @@
+{
+  "replace": false,
+  "values": [
+    {
+      "id": "basemetals:steel_bars",
+      "required": false
+    }
+  ]
+}

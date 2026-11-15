@@ -16,7 +16,7 @@ final class NativeEntityHold {
             held.put(entity, state);
             state.gate.hold(entity, this);
         }
-        entity.canUpdate(false);
+        WorksEntityUpdates.set(entity, false);
     }
 
     void restore() {

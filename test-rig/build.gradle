@@ -1,332 +1,82 @@
-import org.apache.tools.ant.filters.FixCrLfFilter
-
+import java.security.MessageDigest
 plugins {
     id 'java'
-    id 'net.minecraftforge.gradle' version '7.0.34'
+    id 'net.neoforged.moddev' version '2.0.148'
 }
-
-ext.forge52MavenizerDefault = '../../../../MinecraftMineralogy/OS1211/OreSpawn/ci-fixtures/tools/minecraft-mavenizer-0.5.21-orespawn-compat.jar'
-apply from: '../gradle/forge52-mavenizer.gradle'
-
-// Saves, pinned inputs and evidence are siblings, never Gradle cleanup targets.
-layout.buildDirectory = layout.projectDirectory.dir('build/gradle')
-tasks.named('clean', Delete) {
-    doFirst {
-        File expected = file('build/gradle').canonicalFile
-        if (layout.buildDirectory.get().asFile.canonicalFile != expected
-                || targetFiles.files.any { it.canonicalFile != expected }) {
-            throw new GradleException('Refusing to clean outside the isolated harness compiler output')
-        }
-    }
-}
-
 group = 'zone.moddev.mc.advantageworks'
-version = project.harness_version
+version = harness_version
 base.archivesName = 'AdvantageWorksTestHarness'
-
-java {
-    toolchain.languageVersion = JavaLanguageVersion.of(21)
-}
-
-tasks.withType(JavaCompile).configureEach {
-    javaCompiler = javaToolchains.compilerFor {
-        languageVersion = JavaLanguageVersion.of(21)
-    }
-    sourceCompatibility = JavaVersion.VERSION_21
-    targetCompatibility = JavaVersion.VERSION_21
-    options.encoding = 'UTF-8'
-    options.compilerArgs.addAll(['-Xmaxerrs', '1000'])
-}
-
-tasks.withType(AbstractArchiveTask).configureEach {
-    preserveFileTimestamps = false
-    reproducibleFileOrder = true
-}
-
+// Generated worlds and sealed evidence are siblings, never clean-task targets.
+layout.buildDirectory = layout.projectDirectory.dir('build/gradle')
+java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 sourceSets {
     main.java.srcDir 'shared-probe'
     test.java.srcDir 'unit-support'
-    // Preserve the 1.15 source oracle; its native 1.16 API copy runs instead.
+    test.java.srcDir 'src/runner/java'
+    // Retain the historical 1.15 oracle; Native117HarvestIsolationTest runs its native counterpart.
     test.java.exclude '**/NativeHarvestIsolationTest.java'
-    runner {
-        java.srcDir 'src/runner/java'
-        resources.srcDir 'src/runner/resources'
-    }
+    runner { java.srcDir 'src/runner/java'; resources.srcDir 'src/runner/resources' }
 }
-
-minecraft {
-    mappings channel: project.mapping_channel, version: project.mapping_version
-}
-
-repositories {
-    minecraft.mavenizer(it)
-    maven fg.forgeMaven
-    maven fg.minecraftLibsMaven
-    mavenCentral()
-    maven {
-        name = 'MinecraftLibraries'
-        url = 'https://libraries.minecraft.net/'
-    }
-}
-
-def powerCompileJar = file(project.findProperty('powerAdvantageReleaseJar')
-        ?: '../build/libs/basePower-2.4.14.121011.jar')
-def exploratoryPowerSha = providers.gradleProperty('worksExploratoryPowerSha256')
-def powerCompileSha = exploratoryPowerSha.orElse(providers.gradleProperty('works_power_sha256'))
-
+repositories { mavenCentral(); maven { url = 'https://maven.moddev.zone/releases' } }
+def powerJar = file(providers.gradleProperty('powerAdvantageReleaseJar')
+        .getOrElse('../build/libs/basePower-2.4.19.121012.jar'))
 dependencies {
-    implementation minecraft.dependency(
-            "net.minecraftforge:forge:${project.minecraft_version}-${project.forge_version}")
+    implementation files(powerJar)
+    implementation 'zone.moddev.mc.basemetals:BaseMetals:4.0.1.121012+Neo'
+    implementation 'zone.moddev.mc.lib:mmdlib:2.0.2.121012+Neo'
+    implementation 'zone.moddev.mc.orespawn:OreSpawn:4.1.1.121012'
     runnerImplementation 'com.google.code.gson:gson:2.8.0'
-    testImplementation sourceSets.runner.output
     testImplementation 'junit:junit:4.13.2'
-    compileOnly files(powerCompileJar)
+    testRuntimeOnly 'org.junit.vintage:junit-vintage-engine:5.11.4'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
-
-def compileUnitBootstrap = tasks.register('compileUnitBootstrap', JavaCompile) {
-    source fileTree('unit-bootstrap')
-    classpath = files()
-    destinationDirectory = layout.buildDirectory.dir('unit-bootstrap/classes')
+neoForge {
+    version = '21.1.265'
+    mods { advantageworkstest { sourceSet sourceSets.main } }
+    unitTest { enable(); testedMod = mods.advantageworkstest }
 }
-def unitBootstrapJar = tasks.register('unitBootstrapJar', Jar) {
-    dependsOn compileUnitBootstrap
-    archiveFileName = 'forge-native-unit-bootstrap.jar'
-    destinationDirectory = layout.buildDirectory.dir('unit-bootstrap')
-    from compileUnitBootstrap.flatMap { it.destinationDirectory }
-    manifest.attributes('Premain-Class': 'zone.moddev.mc.advantageworks.unit.ForgeCapabilityBootstrap')
-}
-tasks.withType(Test).configureEach {
-    dependsOn unitBootstrapJar
-    doFirst { jvmArgs "-javaagent:${unitBootstrapJar.get().archiveFile.get().asFile}" }
-}
-
-tasks.register('verifyWorksCompileInputPin') {
-    group = 'verification'
-    description = 'Checks the exact parent-supplied Power API artifact before harness compilation.'
-    inputs.file(powerCompileJar)
-    inputs.property('powerSha256', powerCompileSha.orElse(''))
-    doLast {
-        if (!powerCompileJar.isFile()) throw new GradleException("Missing 1.21.1 Power compile input: ${powerCompileJar}")
-        if (!(powerCompileSha.getOrElse('') ==~ /[A-Fa-f0-9]{64}/)) {
-            throw new GradleException('Missing or invalid Power SHA-256 pin')
-        }
-        String actual = java.security.MessageDigest.getInstance('SHA-256')
-                .digest(powerCompileJar.bytes).encodeHex().toString().toUpperCase(Locale.ROOT)
-        if (!actual.equalsIgnoreCase(powerCompileSha.get())) {
-            throw new GradleException("Power compile input changed: ${actual}; obtain a new parent pin")
-        }
-        String status = exploratoryPowerSha.isPresent() ? 'EXPLORATORY_UNQUALIFIED' : 'Pinned'
-        logger.lifecycle("${status} Power compile/runtime input: ${actual}")
-    }
-}
-
-tasks.named('compileJava') { dependsOn tasks.named('verifyWorksCompileInputPin') }
+neoForge.addModdingDependenciesTo(sourceSets.test)
 
 tasks.named('test', Test) {
-    def temp = layout.buildDirectory.dir('test-temp')
-    doFirst { temp.get().asFile.mkdirs() }
-    systemProperty 'java.io.tmpdir', temp.get().asFile.absolutePath
+    useJUnitPlatform()
+    maxHeapSize = '2G'
+    maxParallelForks = 1
+    systemProperty 'advantage.test.projectDir', projectDir.absolutePath
+    jvmArgs '-XX:ActiveProcessorCount=4'
+    testLogging { events 'failed'; exceptionFormat = 'short' }
+}
+tasks.withType(JavaCompile).configureEach {
+    options.release = 21
+    options.encoding = 'UTF-8'
+    options.compilerArgs.addAll(['-Xmaxerrs','1000'])
+}
+tasks.withType(AbstractArchiveTask).configureEach { preserveFileTimestamps = false; reproducibleFileOrder = true }
+
+tasks.named('clean', Delete) {
+    doFirst {
+        File expected = layout.projectDirectory.dir('build/gradle').asFile.canonicalFile
+        if (targetFiles.files.any { it.canonicalFile != expected })
+            throw new GradleException('Refusing to clean outside the isolated harness compiler output')
+    }
 }
 
-tasks.named('processResources', ProcessResources) {
-    filteringCharset = 'UTF-8'
+tasks.named('processRunnerResources') {
+    from('src/main/resources') { include 'assets/advantageworkstest/works/flat-generator.json' }
+}
+tasks.named('processResources') {
     inputs.property('version', project.version)
-    inputs.property('mcversion', project.minecraft_version)
-    filesMatching('META-INF/mods.toml') {
-        expand version: project.version
-    }
-    filesMatching(['**/*.json', '**/*.info', '**/*.properties', '**/*.md']) {
-        filter(FixCrLfFilter,
-                eol: FixCrLfFilter.CrLf.newInstance('lf'),
-                eof: FixCrLfFilter.AddAsisRemove.newInstance('asis'))
-    }
+    filesMatching('META-INF/neoforge.mods.toml') { expand version: project.version }
 }
-
 tasks.named('jar', Jar) {
-    manifest {
-        attributes([
-                'Implementation-Title': base.archivesName.get(),
-                'Implementation-Version': project.version,
-                'Built-On': "${project.minecraft_version}-${project.forge_version}",
-                'Power-Input-Status': 'EXPLORATORY_UNQUALIFIED',
-                'Power-Input-SHA256': powerCompileSha.getOrElse('').toUpperCase(Locale.ROOT)
-        ])
-    }
+    inputs.file(powerJar)
+    manifest.attributes('Implementation-Version': project.version, 'Built-On': '1.21.1-NeoForge-21.1.265',
+            'Power-Input-Status': 'EXPLORATORY_UNQUALIFIED',
+            'Power-Input-SHA256': MessageDigest.getInstance('SHA-256').digest(powerJar.bytes).encodeHex().toString().toUpperCase(Locale.ROOT))
 }
-
-tasks.named('processRunnerResources', ProcessResources) {
-    from('src/main/resources') {
-        include 'assets/advantageworkstest/works/flat-generator.json'
-    }
-}
-
 tasks.register('runnerJar', Jar) {
     dependsOn tasks.named('runnerClasses')
     archiveClassifier = 'runner'
     from sourceSets.runner.output
     manifest.attributes('Main-Class': 'zone.moddev.mc.advantageworks.runner.WorksRunner')
 }
-
-tasks.named('assemble') {
-    dependsOn tasks.named('runnerJar')
-}
-
-def configurePreparedSeedArgs = { JavaExec task ->
-    def options = [
-            worksServerSeed: '--prepared-server-seed',
-            worksServerInventory: '--prepared-server-seed-inventory',
-            worksServerInventorySha256: '--prepared-server-seed-sha256'
-    ]
-    options.each { key, option ->
-        if (project.hasProperty(key)) {
-            String value = project.property(key).toString()
-            task.args option, key.endsWith('Sha256') ? value : file(value).absolutePath
-        }
-    }
-}
-
-def registerWorksRunner = { String taskName, String profileName, boolean automated, String taskDescription ->
-    tasks.register(taskName, JavaExec) {
-        group = 'verification'
-        description = taskDescription
-        dependsOn tasks.named('jar')
-        dependsOn tasks.named('runnerClasses')
-        classpath = sourceSets.runner.runtimeClasspath
-        mainClass = 'zone.moddev.mc.advantageworks.runner.WorksRunner'
-        if (!automated) standardInput = System.in
-        doFirst { JavaExec task ->
-            String pin = providers.gradleProperty('worksProfileFile').orNull
-            if (!pin) throw new GradleException("Generate the pinned ${profileName} profile with migration/native1211.py profile and set -PworksProfileFile")
-            File profile = file(pin)
-            if (new groovy.json.JsonSlurper().parse(profile).name != profileName) {
-                throw new GradleException("Expected profile ${profileName}: ${profile}")
-            }
-            args '--profile', profile.absolutePath
-            configurePreparedSeedArgs(task)
-        }
-        if (automated) args '--automated'
-        if (project.hasProperty('worksStations')) {
-            args '--stations', project.property('worksStations').toString()
-        }
-        if (project.hasProperty('worksRunSeconds')) {
-            args '--run-seconds', project.property('worksRunSeconds').toString()
-        }
-        if (project.hasProperty('worksServerPort')) {
-            args '--server-port', project.property('worksServerPort').toString()
-        }
-    }
-}
-
-registerWorksRunner('runWorksDev', 'dev-core', false,
-        'Builds and launches a disposable interactive 1.21.1 Advantage Works development server.')
-registerWorksRunner('verifyWorksDev', 'dev-core', true,
-        'Generates, checks, restarts, and rechecks the disposable development works.')
-registerWorksRunner('verifyWorksTechProgression', 'dev-core-tech-progression', true,
-        'Checks registration and construction with TECH_PROGRESSION recipes.')
-registerWorksRunner('verifyWorksApocalyptic', 'dev-core-apocalyptic', true,
-        'Checks registration and construction with APOCALYPTIC recipes.')
-registerWorksRunner('verifyWorksPackagedCurrent', 'packaged-current', true,
-        'Runs packaged Advantage mods with current BaseMetals and pinned OreSpawn 4.')
-registerWorksRunner('verifyWorksPackagedDecoupled', 'packaged-decoupled', true,
-        'Runs packaged Advantage mods without BaseMetals or Mineralogy, retaining required OreSpawn 4.')
-registerWorksRunner('verifyWorksPackagedMineralogy', 'packaged-mineralogy', true,
-        'Runs Mineralogy crude oil through packaged Power distillation and Steam boilers.')
-registerWorksRunner('verifyWorksPackagedOptionalPower', 'packaged-optional-power', true,
-        'Exercises the preserved RF- and Tech Reborn-labelled converter IDs through Forge Energy.')
-registerWorksRunner('verifyWorksWorldgenAdvantage', 'worldgen-advantage', true,
-        'Samples Advantage fallback ores and desert oil, then verifies profile overrides through restart.')
-registerWorksRunner('verifyWorksWorldgenMineralogy', 'worldgen-mineralogy', true,
-        'Samples Mineralogy-owned sulfur/ocean oil and Advantage fallbacks through restart.')
-registerWorksRunner('verifyWorksWorldgenLegacyImport', 'worldgen-legacy-import', true,
-        'Imports legacy Power/Electric OreSpawn files and rejects duplicate active modern rules.')
-registerWorksRunner('runWorksPackagedCurrent', 'packaged-current', false,
-        'Launches the complete packaged works on localhost for manual inspection.')
-
-tasks.register('verifyWorksNative1211Inputs', JavaExec) {
-    group = 'verification'
-    description = 'Checks 1.21.1 candidate identities and hashes without creating or opening a world.'
-    dependsOn tasks.named('runnerClasses'), tasks.named('jar')
-    classpath = sourceSets.runner.runtimeClasspath
-    mainClass = 'zone.moddev.mc.advantageworks.runner.WorksRunner'
-    doFirst { JavaExec task ->
-        String pin = providers.gradleProperty('worksProfileFile').orNull
-        if (!pin) throw new GradleException('Set -PworksProfileFile to a generated Forge 52 profile')
-        args '--profile', file(pin).absolutePath, '--validate-only'
-        configurePreparedSeedArgs(task)
-    }
-}
-
-tasks.register('verifyHarnessIsolation') {
-    group = 'verification'
-    description = 'Confirms the PowerAdvantage release contains no test-harness content.'
-    doLast {
-        File powerJar = powerCompileJar
-        if (!powerJar.isFile()) {
-            throw new GradleException("Build PowerAdvantage first: ${powerJar}")
-        }
-        def forbidden = ['zone/moddev/mc/advantageworks/', 'assets/advantageworkstest/']
-        def zip = new java.util.zip.ZipFile(powerJar)
-        try {
-            def leaked = zip.entries().findAll { entry -> forbidden.any { entry.name.startsWith(it) } }
-            if (leaked) {
-                throw new GradleException("Harness content leaked into PowerAdvantage: ${leaked*.name}")
-            }
-        } finally {
-            zip.close()
-        }
-    }
-}
-
-tasks.named('check') {
-    dependsOn tasks.named('verifyHarnessIsolation')
-}
-
-def nativeControlClasspath = configurations.compileClasspath.minus(files(powerCompileJar))
-def compileUnitSupport = tasks.register('compileUnitSupport', JavaCompile) {
-    source fileTree('unit-support')
-    classpath = nativeControlClasspath
-    destinationDirectory = layout.buildDirectory.dir('unit-support/classes')
-}
-tasks.register('verifyForge52UnitBootstrap', JavaExec) {
-    group = 'verification'
-    dependsOn compileUnitSupport, unitBootstrapJar
-    classpath = files(compileUnitSupport.flatMap { it.destinationDirectory }) + nativeControlClasspath
-    mainClass = 'zone.moddev.mc.advantageworks.unit.Forge52UnitControl'
-    javaLauncher = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(21) }
-    doFirst { jvmArgs "-javaagent:${unitBootstrapJar.get().archiveFile.get().asFile}" }
-}
-def compilePlatformControls = tasks.register('compilePlatformControls', JavaCompile) {
-    source fileTree('platform-controls')
-    dependsOn compileUnitSupport
-    classpath = nativeControlClasspath + files(compileUnitSupport.flatMap { it.destinationDirectory })
-    destinationDirectory = layout.buildDirectory.dir('platform-controls/classes')
-}
-tasks.register('verifyNativeWolfPlatform', JavaExec) {
-    group = 'verification'
-    dependsOn compilePlatformControls, unitBootstrapJar
-    classpath = files(compilePlatformControls.flatMap { it.destinationDirectory },
-            compileUnitSupport.flatMap { it.destinationDirectory }) + nativeControlClasspath
-    mainClass = 'NativeWolfPlatformControl'
-    javaLauncher = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(21) }
-    doFirst {
-        def output = providers.gradleProperty('nativeControlOutput').orNull
-        if (!output || file(output).exists()) throw new GradleException('Supply a new -PnativeControlOutput directory')
-        args file(output).absolutePath
-        jvmArgs "-javaagent:${unitBootstrapJar.get().archiveFile.get().asFile}"
-    }
-}
-
-tasks.register('verifyNativeLeashKnotPlatform', JavaExec) {
-    group = 'verification'
-    dependsOn compilePlatformControls, unitBootstrapJar
-    classpath = files(compilePlatformControls.flatMap { it.destinationDirectory },
-            compileUnitSupport.flatMap { it.destinationDirectory }) + nativeControlClasspath
-    mainClass = 'NativeLeashKnotPlatformControl'
-    javaLauncher = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(21) }
-    doFirst {
-        def output = providers.gradleProperty('nativeControlOutput').orNull
-        if (!output || file(output).exists()) throw new GradleException('Supply a new -PnativeControlOutput directory')
-        args file(output).absolutePath
-        jvmArgs "-javaagent:${unitBootstrapJar.get().archiveFile.get().asFile}"
-    }
-}
+tasks.named('assemble') { dependsOn tasks.named('runnerJar') }

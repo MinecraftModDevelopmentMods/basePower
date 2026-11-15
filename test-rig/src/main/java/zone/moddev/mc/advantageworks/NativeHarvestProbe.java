@@ -1,5 +1,7 @@
 package zone.moddev.mc.advantageworks;
 
+import net.minecraft.core.registries.BuiltInRegistries;
+
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -34,9 +36,9 @@ import net.minecraft.world.phys.shapes.BooleanOp;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.level.GameType;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.RegisterCommandsEvent;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.RegisterCommandsEvent;
+import net.minecraft.core.registries.Registries;
 
 /** Actual survival harvesting, not loot-JSON presence or a synthetic getDrops call. */
 final class NativeHarvestProbe {
@@ -44,7 +46,7 @@ final class NativeHarvestProbe {
     private static final BlockPos POS = new BlockPos(1200, 8, 1024);
 
     static void register() {
-        if (MARKER.isFile()) MinecraftForge.EVENT_BUS.addListener(new NativeHarvestProbe()::starting);
+        if (MARKER.isFile()) NeoForge.EVENT_BUS.addListener(new NativeHarvestProbe()::starting);
     }
 
     private void starting(RegisterCommandsEvent event) {
@@ -78,8 +80,8 @@ final class NativeHarvestProbe {
         row.add("dropEvidence", dropEvidence);
         try {
             ResourceLocation key = ResourceLocation.parse(blockId);
-            require(ForgeRegistries.BLOCKS.containsKey(key), "Missing real block: " + blockId);
-            Block block = ForgeRegistries.BLOCKS.getValue(key);
+            require(BuiltInRegistries.BLOCK.containsKey(key), "Missing real block: " + blockId);
+            Block block = zone.moddev.mc.basepower.util.RegistryValues.find(BuiltInRegistries.BLOCK, key);
             player.gameMode.changeGameModeForPlayer(GameType.SURVIVAL);
             for (int trial = 0; trial < trials; trial++) {
                 JsonObject evidence = new JsonObject();
@@ -137,7 +139,7 @@ final class NativeHarvestProbe {
                     JsonObject actual = new JsonObject();
                     actual.addProperty("entityId", entity.getId());
                     actual.addProperty("uuid", entity.getUUID().toString());
-                    actual.addProperty("item", net.minecraftforge.registries.ForgeRegistries.ITEMS.getKey(entity.getItem().getItem()).toString());
+                    actual.addProperty("item", BuiltInRegistries.ITEM.getKey(entity.getItem().getItem()).toString());
                     actual.addProperty("count", entity.getItem().getCount());
                     actual.addProperty("removed", entity.isRemoved());
                     actualDrops.add(actual);
@@ -146,7 +148,7 @@ final class NativeHarvestProbe {
                 int count = 0;
                 for (ItemEntity entity : drops) {
                     ItemStack stack = entity.getItem();
-                    require(net.minecraftforge.registries.ForgeRegistries.ITEMS.getKey(stack.getItem()).toString().equals(dropId), "Wrong actual drop: " + stack);
+                    require(BuiltInRegistries.ITEM.getKey(stack.getItem()).toString().equals(dropId), "Wrong actual drop: " + stack);
                     count += stack.getCount();
                 }
                 require(count >= minimum && count <= maximum, "Actual drop quantity changed: " + count);
@@ -204,7 +206,7 @@ final class NativeHarvestProbe {
         JsonObject solar = new JsonObject();
         solar.addProperty("id", "solar/native-solidity");
         try {
-            Block block = ForgeRegistries.BLOCKS.getValue(ResourceLocation.parse("baseelectric:photovoltaic_generator"));
+            Block block = zone.moddev.mc.basepower.util.RegistryValues.find(BuiltInRegistries.BLOCK, ResourceLocation.parse("baseelectric:photovoltaic_generator"));
             require(block != null && block != net.minecraft.world.level.block.Blocks.AIR, "Missing native photovoltaic block");
             world.setBlock(POS, block.defaultBlockState(), 2);
             require(world.getBlockState(POS).canOcclude(), "Legacy photovoltaic solid=true was lost");

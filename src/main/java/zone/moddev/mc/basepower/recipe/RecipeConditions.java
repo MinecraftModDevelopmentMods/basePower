@@ -6,17 +6,18 @@ import com.mojang.serialization.MapCodec;
 import java.util.Locale;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.ItemTags;
-import net.minecraftforge.common.crafting.conditions.ICondition;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.registries.DeferredRegister;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.neoforge.common.conditions.ICondition;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.neoforge.registries.DeferredRegister;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import zone.moddev.mc.basepower.PowerAdvantage;
 import zone.moddev.mc.basepower.RecipeMode;
 
 /** Forge recipe conditions for the existing modes and optional material tags. */
 public final class RecipeConditions {
     private static final DeferredRegister<MapCodec<? extends ICondition>> SERIALIZERS =
-            DeferredRegister.create(ForgeRegistries.Keys.CONDITION_SERIALIZERS, PowerAdvantage.MODID);
+            DeferredRegister.create(net.neoforged.neoforge.registries.NeoForgeRegistries.Keys.CONDITION_CODECS, PowerAdvantage.MODID);
 
     static {
         SERIALIZERS.register("recipe_mode", () -> Mode.MATCH);
@@ -38,7 +39,7 @@ public final class RecipeConditions {
         }
 
         @Override public MapCodec<Mode> codec() { return match ? MATCH : MISMATCH; }
-        @Override public boolean test(IContext context, DynamicOps<?> ops) {
+        @Override public boolean test(IContext context) {
             return (PowerAdvantage.recipeMode == RecipeMode.valueOf(mode.toUpperCase(Locale.ROOT))) == match;
         }
     }
@@ -52,7 +53,7 @@ public final class RecipeConditions {
         }
 
         @Override public MapCodec<Material> codec() { return empty ? EMPTY : NOT_EMPTY; }
-        @Override public boolean test(IContext context, DynamicOps<?> ops) {
+        @Override public boolean test(IContext context) {
             return context.getTag(ItemTags.create(tag)).isEmpty() == empty;
         }
     }

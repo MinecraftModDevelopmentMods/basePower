@@ -8,7 +8,7 @@ import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.WaterFluid;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.core.Direction;
-import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction;
 import org.junit.Test;
 import org.junit.BeforeClass;
 import static org.junit.Assert.*;
@@ -25,30 +25,30 @@ public class ForgeFluidAdapterTest {
         TankHandler tank = new TankHandler();
         int[] changes = {0};
         ForgeFluidAdapter adapter = new ForgeFluidAdapter(tank, Direction.NORTH, () -> changes[0]++);
-        net.minecraftforge.fluids.FluidStack offered = new net.minecraftforge.fluids.FluidStack(WATER, 1500);
+        net.neoforged.neoforge.fluids.FluidStack offered = new net.neoforged.neoforge.fluids.FluidStack(WATER, 1500);
         CompoundTag tag = new CompoundTag();
         tag.putString("Owner", "preserve-me");
-        offered.setTag(tag);
+        offered.set(net.minecraft.core.component.DataComponents.CUSTOM_DATA, net.minecraft.world.item.component.CustomData.of(tag));
         assertEquals(1000, adapter.fill(offered, FluidAction.SIMULATE));
         assertEquals(0, tank.tank.getFluidAmount());
         assertEquals(0, changes[0]);
         assertEquals(1000, adapter.fill(offered, FluidAction.EXECUTE));
         assertEquals(1000, tank.tank.getFluidAmount());
         assertEquals(1500, offered.getAmount());
-        assertEquals(tag, offered.getTag());
+        assertEquals(tag, offered.getOrDefault(net.minecraft.core.component.DataComponents.CUSTOM_DATA, net.minecraft.world.item.component.CustomData.EMPTY).copyTag());
         assertEquals(1, changes[0]);
         tank.tank.getFluid().tag.putString("Owner", "changed-in-tank");
-        assertEquals("preserve-me", offered.getTag().getString("Owner"));
+        assertEquals("preserve-me", offered.getOrDefault(net.minecraft.core.component.DataComponents.CUSTOM_DATA, net.minecraft.world.item.component.CustomData.EMPTY).copyTag().getString("Owner"));
     }
 
     @Test public void keepsSidedRestrictionsAndRejectsEmptyOrInvalidRequests() {
         TankHandler tank = new TankHandler();
         ForgeFluidAdapter adapter = new ForgeFluidAdapter(tank, Direction.SOUTH, () -> fail("Changed blocked tank"));
-        assertFalse(adapter.isFluidValid(0, new net.minecraftforge.fluids.FluidStack(WATER, 10)));
-        assertEquals(0, adapter.fill(new net.minecraftforge.fluids.FluidStack(WATER, 10), FluidAction.EXECUTE));
-        assertEquals(0, adapter.fill(net.minecraftforge.fluids.FluidStack.EMPTY, FluidAction.EXECUTE));
+        assertFalse(adapter.isFluidValid(0, new net.neoforged.neoforge.fluids.FluidStack(WATER, 10)));
+        assertEquals(0, adapter.fill(new net.neoforged.neoforge.fluids.FluidStack(WATER, 10), FluidAction.EXECUTE));
+        assertEquals(0, adapter.fill(net.neoforged.neoforge.fluids.FluidStack.EMPTY, FluidAction.EXECUTE));
         assertTrue(adapter.drain(-1, FluidAction.EXECUTE).isEmpty());
-        assertTrue(adapter.drain(net.minecraftforge.fluids.FluidStack.EMPTY, FluidAction.EXECUTE).isEmpty());
+        assertTrue(adapter.drain(net.neoforged.neoforge.fluids.FluidStack.EMPTY, FluidAction.EXECUTE).isEmpty());
         assertEquals(0, adapter.getTankCapacity(-1));
         assertTrue(adapter.getFluidInTank(8).isEmpty());
     }
@@ -58,13 +58,13 @@ public class ForgeFluidAdapterTest {
         tank.tank.fill(new FluidStack(WATER, 900), true);
         int[] changes = {0};
         ForgeFluidAdapter adapter = new ForgeFluidAdapter(tank, Direction.NORTH, () -> changes[0]++);
-        net.minecraftforge.fluids.FluidStack view = adapter.getFluidInTank(0);
+        net.neoforged.neoforge.fluids.FluidStack view = adapter.getFluidInTank(0);
         view.setAmount(1);
         assertEquals(900, tank.tank.getFluidAmount());
         assertEquals(300, adapter.drain(300, FluidAction.SIMULATE).getAmount());
         assertEquals(900, tank.tank.getFluidAmount());
         assertEquals(0, changes[0]);
-        net.minecraftforge.fluids.FluidStack request = new net.minecraftforge.fluids.FluidStack(WATER, 250);
+        net.neoforged.neoforge.fluids.FluidStack request = new net.neoforged.neoforge.fluids.FluidStack(WATER, 250);
         assertEquals(250, adapter.drain(request, FluidAction.EXECUTE).getAmount());
         assertEquals(250, request.getAmount());
         assertEquals(650, tank.tank.getFluidAmount());
@@ -77,12 +77,12 @@ public class ForgeFluidAdapterTest {
         FluidStack source = new FluidStack(WATER, 700);
         source.tag = new CompoundTag();
         source.tag.putInt("batch", 7);
-        net.minecraftforge.fluids.FluidStack nativeStack = ForgeFluidAdapter.toForge(source);
+        net.neoforged.neoforge.fluids.FluidStack nativeStack = ForgeFluidAdapter.toForge(source);
         FluidStack copy = ForgeFluidAdapter.fromForge(nativeStack);
         copy.tag.putInt("batch", 8);
         assertEquals(7, source.tag.getInt("batch"));
-        assertEquals(7, nativeStack.getTag().getInt("batch"));
-        assertNull(ForgeFluidAdapter.fromForge(net.minecraftforge.fluids.FluidStack.EMPTY));
+        assertEquals(7, nativeStack.getOrDefault(net.minecraft.core.component.DataComponents.CUSTOM_DATA, net.minecraft.world.item.component.CustomData.EMPTY).copyTag().getInt("batch"));
+        assertNull(ForgeFluidAdapter.fromForge(net.neoforged.neoforge.fluids.FluidStack.EMPTY));
         assertTrue(ForgeFluidAdapter.toForge(null).isEmpty());
     }
 

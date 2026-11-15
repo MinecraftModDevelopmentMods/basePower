@@ -2,6 +2,6 @@
   "replace": false,
   "values": [
     "minecraft:iron_bars",
-    "#forge:bars/steel"
+    "#c:bars/steel"
   ]
 }

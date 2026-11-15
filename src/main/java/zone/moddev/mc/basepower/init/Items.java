@@ -7,15 +7,16 @@ import java.util.Set;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.BucketItem;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.RegisterEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
+import net.neoforged.neoforge.registries.RegisterEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.Mod;
 import zone.moddev.mc.basepower.PowerAdvantage;
 import zone.moddev.mc.basepower.items.RotationTool;
 
 /** Stable item registry for PowerAdvantage 1.13. */
-@Mod.EventBusSubscriber(modid = PowerAdvantage.MODID, bus = Mod.EventBusSubscriber.Bus.MOD)
+@net.neoforged.fml.common.EventBusSubscriber(modid = PowerAdvantage.MODID, bus = net.neoforged.fml.common.EventBusSubscriber.Bus.MOD)
 public final class Items {
     public static Item starch;
     public static Item bioplastic_ingot;
@@ -55,9 +56,9 @@ public final class Items {
 
     @SubscribeEvent
     public static void register(RegisterEvent event) {
-        if (!ForgeRegistries.Keys.ITEMS.equals(event.getRegistryKey())) return;
+        if (!Registries.ITEM.equals(event.getRegistryKey())) return;
         init();
-        event.register(ForgeRegistries.Keys.ITEMS, helper -> allItems.forEach((id, item) ->
+        event.register(Registries.ITEM, helper -> allItems.forEach((id, item) ->
                 helper.register(ResourceLocation.fromNamespaceAndPath(PowerAdvantage.MODID, id), ItemGroups.show(item))));
     }
 

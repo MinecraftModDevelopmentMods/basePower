@@ -11,7 +11,8 @@ public final class FluidHandlerHelper {
     public static IAdvantageFluidHandler getHandler(BlockEntity tileEntity, Direction face) {
         if (tileEntity == null || tileEntity.isRemoved()) return null;
         if (tileEntity instanceof IAdvantageFluidHandler) return (IAdvantageFluidHandler) tileEntity;
-        return tileEntity.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER, face).isPresent()
+        return tileEntity.getLevel() != null && tileEntity.getLevel().getCapability(
+                net.neoforged.neoforge.capabilities.Capabilities.FluidHandler.BLOCK, tileEntity.getBlockPos(), face) != null
                 ? new AdvantageFluidAdapter(tileEntity, face) : null;
     }
 

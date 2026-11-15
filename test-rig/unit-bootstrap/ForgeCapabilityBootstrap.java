@@ -38,7 +38,7 @@ public final class ForgeCapabilityBootstrap {
                     if (modLoader) {
                         addLoaderFixture(loader, nodeType, node, asmName);
                     } else if (event) {
-                        Class<?> transformer = Class.forName("net.minecraftforge.eventbus.EventSubclassTransformer", true, loader);
+                        Class<?> transformer = Class.forName("net.neoforged.bus.EventSubclassTransformer", true, loader);
                         var transformed = (java.util.Optional<?>) transformer.getMethod("transform", nodeType, asmType)
                                 .invoke(transformer.getConstructor().newInstance(), node, asmName);
                         if (transformed.isEmpty()) return null;
@@ -48,7 +48,7 @@ public final class ForgeCapabilityBootstrap {
                                 "cpw.mods.modlauncher.serviceapi.ILaunchPluginService$Phase", true, loader);
                         Object phase = phaseType.getField("BEFORE").get(null);
                         Class<?> pluginType = Class.forName(
-                                "net.minecraftforge.fml.common.asm.CapabilityTokenSubclass", true, loader);
+                                "net.neoforged.fml.common.asm.CapabilityTokenSubclass", true, loader);
                         pluginType.getMethod("processClassWithFlags", phaseType, nodeType, asmType, String.class)
                                 .invoke(pluginType.getConstructor().newInstance(), phase, node, asmName, "junit");
                     }
@@ -95,12 +95,12 @@ public final class ForgeCapabilityBootstrap {
 
     public static void beforeModLoader(Class<?> owner) throws ReflectiveOperationException {
         ClassLoader loader = owner.getClassLoader();
-        Class<?> fml = Class.forName("net.minecraftforge.fml.loading.FMLLoader", true, loader);
+        Class<?> fml = Class.forName("net.neoforged.fml.loading.FMLLoader", true, loader);
         if (fml.getMethod("getLoadingModList").invoke(null) != null) {
             throw new IllegalStateException("The JUnit agent must not run inside a real Forge launch");
         }
-        Class<?> loading = Class.forName("net.minecraftforge.fml.loading.LoadingModList", true, loader);
-        Class<?> earlyError = Class.forName("net.minecraftforge.fml.loading.EarlyLoadingException", true, loader);
+        Class<?> loading = Class.forName("net.neoforged.fml.loading.LoadingModList", true, loader);
+        Class<?> earlyError = Class.forName("net.neoforged.fml.loading.EarlyLoadingException", true, loader);
         Object emptyDiscovery = loading.getMethod("of", List.class, List.class, earlyError)
                 .invoke(null, List.of(), List.of(), null);
         loading.getMethod("setBrokenFiles", List.class).invoke(emptyDiscovery, List.of());
@@ -119,7 +119,7 @@ public final class ForgeCapabilityBootstrap {
 
     public static void afterModLoader(Object loader) throws ReflectiveOperationException {
         Class<?> owner = loader.getClass();
-        Class<?> mods = Class.forName("net.minecraftforge.fml.ModList", true, owner.getClassLoader());
+        Class<?> mods = Class.forName("net.neoforged.fml.ModList", true, owner.getClassLoader());
         Object emptyMods = mods.getMethod("of", List.class, List.class).invoke(null, List.of(), List.of());
         var setLoaded = mods.getDeclaredMethod("setLoadedMods", List.class);
         setLoaded.setAccessible(true);

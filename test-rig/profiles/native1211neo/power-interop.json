@@ -1,0 +1,28 @@
+{
+  "name": "power-interop",
+  "mode": "packaged",
+  "minecraftVersion": "1.21.1",
+  "loader": "neoforge",
+  "neoforgeVersion": "21.1.265",
+  "qualificationStatus": "EXPLORATORY_UNQUALIFIED",
+  "mods": [
+    {
+      "id": "basemetals",
+      "version": "4.0.1.121012+Neo",
+      "path": "../../../_deps/1211neo/public/BaseMetals-4.0.1.121012+Neo.jar",
+      "sha256": "B4BB1CBCD54DFCF2EC8465ACE82715EDCCC5BF1E5C15E14C627AE7CC58E8FED1"
+    },
+    {
+      "id": "mmdlib",
+      "version": "2.0.2.121012+Neo",
+      "path": "../../../_deps/1211neo/public/mmdlib-2.0.2.121012+Neo.jar",
+      "sha256": "EE417C82D588B0050A49709B6430CF836315E71E4DB2DF4036D3735454BC5311"
+    },
+    {
+      "id": "orespawn",
+      "version": "4.1.1.121012",
+      "path": "../../../_deps/1211neo/public/OreSpawn-4.1.1.121012.jar",
+      "sha256": "BF02244E25B5FBF89CCAD45F41B2624B850D4BBCB70CF66822249BA233A00976"
+    }
+  ]
+}

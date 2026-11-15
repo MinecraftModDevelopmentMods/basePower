@@ -1,5 +1,5 @@
 {
-  "type": "basemetals:crushing",
+  "type": "mmdlib:crushing",
   "ingredient": {
     "item": "basepower:item_filter_inventory"
   },
@@ -7,21 +7,23 @@
     "id": "basemetals:steel_plate",
     "count": 1
   },
-  "forge:condition": {
-    "type": "forge:and",
-    "values": [
-      {
-        "type": "forge:mod_loaded",
-        "modid": "basemetals"
-      },
-      {
-        "type": "basepower:recipe_mode",
-        "mode": "APOCALYPTIC"
-      },
-      {
-        "type": "basepower:tag_not_empty",
-        "tag": "forge:plates/steel"
-      }
-    ]
-  }
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:and",
+      "values": [
+        {
+          "type": "neoforge:mod_loaded",
+          "modid": "basemetals"
+        },
+        {
+          "type": "basepower:recipe_mode",
+          "mode": "APOCALYPTIC"
+        },
+        {
+          "type": "basepower:tag_not_empty",
+          "tag": "c:plates/steel"
+        }
+      ]
+    }
+  ]
 }

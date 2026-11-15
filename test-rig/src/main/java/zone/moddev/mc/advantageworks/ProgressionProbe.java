@@ -1,5 +1,7 @@
 package zone.moddev.mc.advantageworks;
 
+import net.minecraft.core.registries.BuiltInRegistries;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
@@ -45,10 +47,10 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.storage.loot.LootContext;
 import net.minecraft.world.level.storage.loot.LootParams;
-import net.minecraftforge.common.MinecraftForge;
+import net.neoforged.neoforge.common.NeoForge;
 import net.minecraft.world.item.crafting.RecipeType;
-import net.minecraftforge.event.RegisterCommandsEvent;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.neoforge.event.RegisterCommandsEvent;
+import net.minecraft.core.registries.Registries;
 import zone.moddev.mc.basepower.PowerAdvantage;
 import zone.moddev.mc.basepower.RecipeMode;
 
@@ -58,7 +60,7 @@ final class ProgressionProbe {
     private static final File MARKER = new File("advantage-progression.allow");
 
     static void register() {
-        if (MARKER.isFile()) MinecraftForge.EVENT_BUS.addListener(new ProgressionProbe()::starting);
+        if (MARKER.isFile()) NeoForge.EVENT_BUS.addListener(new ProgressionProbe()::starting);
     }
 
     private void starting(RegisterCommandsEvent event) {
@@ -98,7 +100,7 @@ final class ProgressionProbe {
         Set<String> executed = new LinkedHashSet<>();
         for (JsonElement seed : fixture.getAsJsonArray("naturalResources")) {
             String id = seed.getAsString();
-            Item item = ForgeRegistries.ITEMS.getValue(ResourceLocation.parse(id));
+            Item item = zone.moddev.mc.basepower.util.RegistryValues.find(BuiltInRegistries.ITEM, ResourceLocation.parse(id));
             if (item != null) acquire(known, player, new ItemStack(item), "natural_resource", Collections.emptyList());
         }
         JsonArray loot = new JsonArray();
@@ -137,10 +139,10 @@ final class ProgressionProbe {
                 String type = net.minecraft.core.registries.BuiltInRegistries.RECIPE_TYPE.getKey(recipe.getType()).toString();
                 boolean crafting = recipe.getType() == RecipeType.CRAFTING;
                 boolean smelting = recipe.getType() == RecipeType.SMELTING;
-                boolean crushing = type.equals("basemetals:crushing");
+                boolean crushing = type.equals("mmdlib:crushing");
                 if (!crafting && !smelting && !crushing) continue;
                 if (smelting && (!known.containsKey("minecraft:furnace") || !known.containsKey("minecraft:coal"))) continue;
-                if (crushing && known.keySet().stream().noneMatch(key -> key.startsWith("basemetals:") && key.endsWith("_crackhammer"))) continue;
+                if (crushing && known.keySet().stream().noneMatch(ProcessProgression::hammerIdentity)) continue;
                 List<ItemStack> ingredients = new ArrayList<>();
                 boolean possible = true;
                 for (Ingredient ingredient : recipe.getIngredients()) {
@@ -194,9 +196,9 @@ final class ProgressionProbe {
         JsonArray targets = new JsonArray();
         JsonObject exclusions = fixture.getAsJsonObject("exclusions");
         int blocked = 0;
-        for (Item item : ForgeRegistries.ITEMS.getValues()) {
-            if (!owned(net.minecraftforge.registries.ForgeRegistries.ITEMS.getKey(item))) continue;
-            String id = net.minecraftforge.registries.ForgeRegistries.ITEMS.getKey(item).toString();
+        for (Item item : BuiltInRegistries.ITEM) {
+            if (!owned(BuiltInRegistries.ITEM.getKey(item))) continue;
+            String id = BuiltInRegistries.ITEM.getKey(item).toString();
             JsonObject row = new JsonObject();
             row.addProperty("id", id);
             if (exclusions.has(id)) {
@@ -236,8 +238,8 @@ final class ProgressionProbe {
         JsonObject tags = new JsonObject();
         for (String name : new String[] {"wires", "dusts/carbon", "rubber", "plastic", "circuit_boards", "solder"}) {
             List<String> members = new ArrayList<>();
-            for (var item : net.minecraft.core.registries.BuiltInRegistries.ITEM.getTagOrEmpty(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", name))))
-                members.add(net.minecraftforge.registries.ForgeRegistries.ITEMS.getKey(item.value()).toString());
+            for (var item : net.minecraft.core.registries.BuiltInRegistries.ITEM.getTagOrEmpty(ItemTags.create(ResourceLocation.fromNamespaceAndPath("c", name))))
+                members.add(BuiltInRegistries.ITEM.getKey(item.value()).toString());
             Collections.sort(members);
             tags.add(name, JSON.toJsonTree(members));
         }
@@ -265,7 +267,7 @@ final class ProgressionProbe {
     }
 
     static ItemStack stack(String id) {
-        Item item = ForgeRegistries.ITEMS.getValue(ResourceLocation.parse(id));
+        Item item = zone.moddev.mc.basepower.util.RegistryValues.find(BuiltInRegistries.ITEM, ResourceLocation.parse(id));
         return item == null ? ItemStack.EMPTY : new ItemStack(item);
     }
 
@@ -288,11 +290,11 @@ final class ProgressionProbe {
         return typed.matches(input, world) ? typed.assemble(input, world.registryAccess()) : ItemStack.EMPTY;
     }
 
-    private static boolean advantage(ItemStack stack) { return !stack.isEmpty() && owned(net.minecraftforge.registries.ForgeRegistries.ITEMS.getKey(stack.getItem())); }
+    private static boolean advantage(ItemStack stack) { return !stack.isEmpty() && owned(BuiltInRegistries.ITEM.getKey(stack.getItem())); }
     private static boolean owned(ResourceLocation id) {
         return id != null && (id.getNamespace().equals("basepower") || id.getNamespace().equals("basesteam")
                 || id.getNamespace().equals("baseelectric"));
     }
-    static String id(ItemStack stack) { return net.minecraftforge.registries.ForgeRegistries.ITEMS.getKey(stack.getItem()).toString(); }
+    static String id(ItemStack stack) { return BuiltInRegistries.ITEM.getKey(stack.getItem()).toString(); }
     static void require(boolean value, String reason) { if (!value) throw new IllegalStateException(reason); }
 }

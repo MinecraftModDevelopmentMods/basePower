@@ -4,7 +4,6 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity;
-import net.minecraftforge.event.ForgeEventFactory;
 
 import java.util.*;
 import java.util.concurrent.locks.Lock;
@@ -142,8 +141,7 @@ public class FuelRegistry {
 		if(fuel == null || fuel.isEmpty()) return 0;
 		int custom = getInstance().getBurnTime(fuel);
 		if (custom > 0) return (short) Math.min(Short.MAX_VALUE, custom);
-		Integer vanilla = AbstractFurnaceBlockEntity.getFuel().get(fuel.getItem());
-		int burnTime = ForgeEventFactory.getItemBurnTime(fuel, vanilla == null ? 0 : vanilla.intValue(), net.minecraft.world.item.crafting.RecipeType.SMELTING);
+		int burnTime = fuel.getBurnTime(net.minecraft.world.item.crafting.RecipeType.SMELTING);
 		return (short) Math.min(Short.MAX_VALUE, Math.max(0, burnTime));
 	}
 

@@ -16,12 +16,12 @@ import static org.junit.Assert.*;
 
 public class NativePlatformContractTest {
     @Test public void onlyPreDatafixMigrationStillUsesACoremod() throws Exception {
-        String json = new String(Files.readAllBytes(Paths.get("src/main/resources/META-INF/coremods.json")), StandardCharsets.UTF_8);
+        String json = new String(Files.readAllBytes(zone.moddev.mc.advantageworks.unit.TestProject.path("src/main/resources/META-INF/coremods.json")), StandardCharsets.UTF_8);
         JsonObject coremods = new JsonParser().parse(json).getAsJsonObject();
         assertEquals(1, coremods.size());
         assertEquals("coremods/poweradvantage_118_migration.js", coremods.get("poweradvantage_118_migration").getAsString());
         for (String removed : new String[] {"oil_renderer", "material_tags", "parts_loot"})
-            assertFalse(Files.exists(Paths.get("src/main/resources/coremods/poweradvantage_" + removed + ".js")));
+            assertFalse(Files.exists(zone.moddev.mc.advantageworks.unit.TestProject.path("src/main/resources/coremods/poweradvantage_" + removed + ".js")));
     }
 
     @Test public void pinnedForgeFiresTagEventAfterBindingNativeCollections() throws Exception {
@@ -35,6 +35,7 @@ public class NativePlatformContractTest {
         int events = 0;
         for (MethodNode method : node.methods) {
             boolean installed = false;
+            boolean tagEventConstructed = false;
             for (AbstractInsnNode instruction : method.instructions.toArray()) {
                 if (instruction instanceof MethodInsnNode) {
                     MethodInsnNode call = (MethodInsnNode) instruction;
@@ -42,11 +43,16 @@ public class NativePlatformContractTest {
                         if (call.name.equals("forEach")) installed = true;
                     }
                 }
-                if (instruction instanceof MethodInsnNode call
-                        && call.owner.equals("net/minecraftforge/event/ForgeEventFactory")
-                        && call.name.equals("onTagsUpdated")) {
+                if (instruction instanceof org.objectweb.asm.tree.TypeInsnNode type
+                        && type.getOpcode() == org.objectweb.asm.Opcodes.NEW
+                        && type.desc.equals("net/neoforged/neoforge/event/TagsUpdatedEvent")) {
                     assertTrue("Bind tags before notifying observers", installed);
+                    tagEventConstructed = true;
+                }
+                if (instruction instanceof MethodInsnNode call && tagEventConstructed
+                        && call.owner.equals("net/neoforged/bus/api/IEventBus") && call.name.equals("post")) {
                     events++;
+                    tagEventConstructed = false;
                 }
             }
         }
@@ -59,8 +65,8 @@ public class NativePlatformContractTest {
         for (MethodNode method : node.methods) for (AbstractInsnNode instruction : method.instructions.toArray()) {
             if (instruction instanceof MethodInsnNode call) {
                 assertNotEquals("zone/moddev/mc/basepower/recipe/PartsLoot", call.owner);
-                if (call.owner.equals("net/minecraftforge/event/ForgeEventFactory")
-                        && call.name.equals("onLoadLootTable")) calls++;
+                if (call.owner.equals("net/neoforged/neoforge/event/EventHooks")
+                        && call.name.equals("loadLootTable")) calls++;
             }
         }
         assertEquals(1, calls);
@@ -68,7 +74,7 @@ public class NativePlatformContractTest {
 
     private static ClassNode read(String name) throws Exception {
         ClassNode node = new ClassNode();
-        try (InputStream input = NativePlatformContractTest.class.getResourceAsStream("/" + name + ".class")) {
+        try (InputStream input = zone.moddev.mc.advantageworks.unit.NativeClassResources.open("/" + name + ".class")) {
             assertNotNull(input);
             new ClassReader(input).accept(node, 0);
         }

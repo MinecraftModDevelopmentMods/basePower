@@ -1,5 +1,7 @@
 package zone.moddev.mc.advantageworks;
 
+import net.minecraft.core.registries.BuiltInRegistries;
+
 import com.google.gson.JsonObject;
 import cyano.poweradvantage.api.fluid.FluidNetworkApi;
 import cyano.poweradvantage.api.fluid.IAdvantageFluidHandler;
@@ -36,12 +38,12 @@ import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.core.Holder;
 import net.minecraft.tags.BiomeTags;
-import net.minecraftforge.common.Tags;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.fml.ModList;
-import net.minecraftforge.event.server.ServerStoppingEvent;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.neoforge.common.Tags;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.tick.ServerTickEvent;
+import net.neoforged.fml.ModList;
+import net.neoforged.neoforge.event.server.ServerStoppingEvent;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.world.level.material.Fluid;
 import cyano.poweradvantage.api.fluid.FluidStack;
 
@@ -71,8 +73,8 @@ final class WorksController {
     private final WorldgenSamplingJob.Slot worldgenJob = new WorldgenSamplingJob.Slot();
 
     private WorksController() {
-        MinecraftForge.EVENT_BUS.addListener(this::worldgenTick);
-        MinecraftForge.EVENT_BUS.addListener(this::worldgenStopping);
+        NeoForge.EVENT_BUS.addListener(this::worldgenTick);
+        NeoForge.EVENT_BUS.addListener(this::worldgenStopping);
     }
 
     static WorksController getInstance() {
@@ -222,8 +224,8 @@ final class WorksController {
         return "Queued worldgen sample with radius " + radius + " for bounded server-tick sampling";
     }
 
-    private synchronized void worldgenTick(TickEvent.ServerTickEvent event) {
-        if (event.phase != TickEvent.Phase.END || worldgenJob.current() == null) return;
+    private synchronized void worldgenTick(ServerTickEvent.Post event) {
+        if (worldgenJob.current() == null) return;
         WorldgenSamplingJob job = worldgenJob.current();
         job.tick();
         if (!job.finished()) return;
@@ -349,7 +351,7 @@ final class WorksController {
         for (BlockPos pos : positions) {
             Map<String, Object> block = new LinkedHashMap<>();
             BlockState state = world.getBlockState(pos);
-            ResourceLocation name = ForgeRegistries.BLOCKS.getKey(state.getBlock());
+            ResourceLocation name = BuiltInRegistries.BLOCK.getKey(state.getBlock());
             block.put("pos", Arrays.asList(pos.getX(), pos.getY(), pos.getZ()));
             block.put("block", name == null ? "unknown" : name.toString());
             block.put("state", state.toString());
@@ -700,7 +702,7 @@ final class WorksController {
                     world.addFreshEntity(entityItem);
                     break;
                 case "spawnEntity":
-                    EntityType<?> entityType = ForgeRegistries.ENTITY_TYPES.getValue(ResourceLocation.parse(action.entity));
+                    EntityType<?> entityType = zone.moddev.mc.basepower.util.RegistryValues.find(BuiltInRegistries.ENTITY_TYPE, ResourceLocation.parse(action.entity));
                     Entity entity = entityType == null ? null : entityType.create(world);
                     if (entity == null) throw new IllegalStateException("Unknown entity " + action.entity);
                     entity.setPos(pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5);
@@ -862,7 +864,7 @@ final class WorksController {
         if (name == null) return Blocks.AIR;
         String resolved = "minecraft:flowing_water".equals(name) ? "minecraft:water"
                 : "minecraft:stonebrick".equals(name) ? "minecraft:stone_bricks" : name;
-        Block value = ForgeRegistries.BLOCKS.getValue(ResourceLocation.parse(resolved));
+        Block value = zone.moddev.mc.basepower.util.RegistryValues.find(BuiltInRegistries.BLOCK, ResourceLocation.parse(resolved));
         return value == null ? Blocks.AIR : value;
     }
 
@@ -871,7 +873,7 @@ final class WorksController {
         String resolved = "minecraft:sapling".equals(name) ? "minecraft:oak_sapling"
                 : "minecraft:planks".equals(name) ? "minecraft:oak_planks" : name;
         ResourceLocation key = ResourceLocation.parse(resolved);
-        return ForgeRegistries.ITEMS.containsKey(key) ? ForgeRegistries.ITEMS.getValue(key) : null;
+        return BuiltInRegistries.ITEM.containsKey(key) ? zone.moddev.mc.basepower.util.RegistryValues.find(BuiltInRegistries.ITEM, key) : null;
     }
 
     private static IllegalStateException commandError(String message) {
@@ -915,6 +917,6 @@ final class WorksController {
     private static Block wool(int metadata) {
         String[] colors = {"white", "orange", "magenta", "light_blue", "yellow", "lime", "pink",
                 "gray", "light_gray", "cyan", "purple", "blue", "brown", "green", "red", "black"};
-        return ForgeRegistries.BLOCKS.getValue(ResourceLocation.fromNamespaceAndPath("minecraft", colors[metadata & 15] + "_wool"));
+        return zone.moddev.mc.basepower.util.RegistryValues.find(BuiltInRegistries.BLOCK, ResourceLocation.fromNamespaceAndPath("minecraft", colors[metadata & 15] + "_wool"));
     }
 }

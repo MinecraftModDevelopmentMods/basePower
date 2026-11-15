@@ -7,15 +7,17 @@
   ],
   "key": {
     "x": {
-      "tag": "forge:bars/steel"
+      "tag": "c:bars/steel"
     }
   },
   "result": {
     "id": "basepower:steel_frame"
   },
   "group": "basepower:steel_frame",
-  "forge:condition": {
-    "type": "basepower:tag_not_empty",
-    "tag": "forge:bars/steel"
-  }
+  "neoforge:conditions": [
+    {
+      "type": "basepower:tag_not_empty",
+      "tag": "c:bars/steel"
+    }
+  ]
 }

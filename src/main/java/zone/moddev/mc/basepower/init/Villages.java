@@ -4,7 +4,7 @@ import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.trading.MerchantOffer;
 import net.minecraft.world.item.trading.ItemCost;
-import net.minecraftforge.event.village.VillagerTradesEvent;
+import net.neoforged.neoforge.event.village.VillagerTradesEvent;
 
 /** The old farmer and toolsmith careers now have their own vanilla professions. */
 public final class Villages {

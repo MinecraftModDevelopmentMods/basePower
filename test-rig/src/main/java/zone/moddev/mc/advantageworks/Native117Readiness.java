@@ -15,9 +15,9 @@ import net.minecraft.commands.Commands;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.ChunkPos;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.RegisterCommandsEvent;
-import net.minecraftforge.event.TickEvent;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.RegisterCommandsEvent;
+
 
 /** Observes native chunk readiness; never loads chunks, constructs actors or changes world state. */
 final class Native117Readiness {
@@ -34,8 +34,8 @@ final class Native117Readiness {
     static void register() {
         if (!MARKER.isFile()) return;
         Native117Readiness probe = new Native117Readiness();
-        MinecraftForge.EVENT_BUS.addListener(probe::commands);
-        MinecraftForge.EVENT_BUS.addListener(probe::tick);
+        NeoForge.EVENT_BUS.addListener(probe::commands);
+        WorksLevelTick.listen(NeoForge.EVENT_BUS, probe::tick);
     }
 
     private void commands(RegisterCommandsEvent event) {
@@ -69,8 +69,8 @@ final class Native117Readiness {
         System.out.println("ADVREADINESS QUEUED " + label);
     }
 
-    private void tick(TickEvent.LevelTickEvent event) {
-        if (observation == null || event.phase != TickEvent.Phase.END || event.level != world) return;
+    private void tick(WorksLevelTick event) {
+        if (observation == null || event.phase != WorksLevelTick.Phase.END || event.level != world) return;
         List<State> states = new ArrayList<>();
         for (int x = observation.bounds.minX; x <= observation.bounds.maxX; x++) {
             for (int z = observation.bounds.minZ; z <= observation.bounds.maxZ; z++) {

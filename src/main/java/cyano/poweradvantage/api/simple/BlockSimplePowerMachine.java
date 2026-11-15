@@ -1,5 +1,7 @@
 package cyano.poweradvantage.api.simple;
 
+import net.minecraft.core.registries.BuiltInRegistries;
+
 import cyano.poweradvantage.api.*;
 import zone.moddev.mc.basepower.conduitnetwork.ConduitRegistry;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
@@ -34,7 +36,7 @@ int guiID = zone.moddev.mc.basepower.registry.MachineGUIRegistry.addGUI(new MySi
 Block myMachineBlock = new MyBlockSimplePowerSource(guiID,PowerAdvantage.getInstance());
 myMachineBlock.setTranslationKey(MODID+"."+"my_machine");
 myMachineBlock.setRegistryName(MODID, "my_machine");
-net.minecraftforge.fml.common.registry.ForgeRegistries.BLOCKS.register(myMachineBlock);
+net.neoforged.fml.common.registry.BuiltInRegistries.BLOCK.register(myMachineBlock);
  * </pre>
  * @author DrCyano
  *

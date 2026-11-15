@@ -19,7 +19,7 @@ import static org.junit.Assert.assertTrue;
 public class ProfileManifestTest {
     @Test
     public void profilesPinEverySuppliedArtifactAndCoverRecipeModes() throws Exception {
-        File directory = new File("profiles");
+        File directory = zone.moddev.mc.advantageworks.unit.TestProject.path("profiles").toFile();
         File[] profiles = directory.listFiles((dir, name) -> name.endsWith(".json"));
         assertNotNull(profiles);
         assertEquals(10, profiles.length);

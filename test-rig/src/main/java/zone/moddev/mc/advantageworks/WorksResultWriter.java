@@ -2,8 +2,8 @@ package zone.moddev.mc.advantageworks;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import net.minecraftforge.fml.ModList;
-import net.minecraftforge.forgespi.language.IModInfo;
+import net.neoforged.fml.ModList;
+import net.neoforged.neoforgespi.language.IModInfo;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -32,7 +32,11 @@ final class WorksResultWriter {
         document.put("format", 1);
         document.put("recordedAtUtc", utcNow());
         document.put("minecraft", net.minecraft.SharedConstants.getCurrentVersion().getName());
-        document.put("forge", net.minecraftforge.versions.forge.ForgeVersion.getVersion());
+        document.put("loader", "neoforge");
+        document.put("neoforge", net.neoforged.neoforge.internal.versions.neoforge.NeoForgeVersion.getVersion());
+        // Historical semantic readers use this field for the loader version.
+        // The explicit loader/neoforge fields above remain the authoritative identity.
+        document.put("forge", net.neoforged.neoforge.internal.versions.neoforge.NeoForgeVersion.getVersion());
         document.put("mods", loadedMods());
         document.put("station", stationId);
         document.put("kind", kind);

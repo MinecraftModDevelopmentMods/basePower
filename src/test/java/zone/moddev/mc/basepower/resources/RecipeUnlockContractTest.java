@@ -1,5 +1,7 @@
 package zone.moddev.mc.basepower.resources;
 
+import net.minecraft.core.registries.BuiltInRegistries;
+
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -22,9 +24,9 @@ import static org.junit.Assert.*;
 
 public class RecipeUnlockContractTest {
     private static final String MOD = "basepower";
-    private static final Path DATA = Paths.get("src/main/resources/data", MOD);
+    private static final Path DATA = zone.moddev.mc.advantageworks.unit.TestProject.path("src/main/resources/data", MOD);
     private static final Set<String> IGNORED = new LinkedHashSet<>(java.util.Arrays.asList(
-            "item:minecraft:stick", "item:minecraft:string", "item:minecraft:feather", "tag:forge:rods/wooden"));
+            "item:minecraft:stick", "item:minecraft:string", "item:minecraft:feather", "tag:c:rods/wooden"));
 
     @Test public void everyCraftingRecipeHasExactlyOneUnlockAndProcessingHasNone() throws IOException {
         Set<String> expected = new LinkedHashSet<>();

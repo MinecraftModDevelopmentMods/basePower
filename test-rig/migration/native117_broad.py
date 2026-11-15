@@ -228,7 +228,8 @@ def run_profile(args, profile, output, name, port, stations, *, native118_target
         verify = lambda: native_adapter.verify_runtime(runtime)
         require_boot = native_adapter.require_clean_log
         server_type, java = NativeBroadServer, args.java17
-        versions = dict(minecraft=native_adapter.MINECRAFT, forge=native_adapter.FORGE)
+        versions = {"minecraft": native_adapter.MINECRAFT,
+                    getattr(native_adapter, "LOADER_ID", "forge"): native_adapter.FORGE}
     configure_broad(runtime, port, getattr(native_adapter, "FLAT_SETTINGS", None))
     authorize_broad(runtime)
     result = dict(status="FAIL", profile=name, port=port, phases={})

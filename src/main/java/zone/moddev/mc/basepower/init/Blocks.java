@@ -17,10 +17,11 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.RegisterEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
+import net.neoforged.neoforge.registries.RegisterEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.Mod;
 import zone.moddev.mc.basepower.PowerAdvantage;
 import zone.moddev.mc.basepower.blocks.BlockFrame;
 import zone.moddev.mc.basepower.blocks.BlockPowerSwitch;
@@ -44,7 +45,7 @@ import zone.moddev.mc.basepower.machines.fluidmachines.StorageTankBlock;
 import zone.moddev.mc.basepower.machines.fluidmachines.modsupport.TerminalFluidPipeBlock;
 
 /** Stable block and block-item registry for the 1.13 port. */
-@Mod.EventBusSubscriber(modid = PowerAdvantage.MODID, bus = Mod.EventBusSubscriber.Bus.MOD)
+@net.neoforged.fml.common.EventBusSubscriber(modid = PowerAdvantage.MODID, bus = net.neoforged.fml.common.EventBusSubscriber.Bus.MOD)
 public final class Blocks {
     private static final float STEEL_BLAST_RESISTANCE = 37.5f;
     private static final Map<String, Block> ALL_BLOCKS = new LinkedHashMap<>();
@@ -135,17 +136,17 @@ public final class Blocks {
 
     @SubscribeEvent
     public static void registerBlocks(RegisterEvent event) {
-        if (!ForgeRegistries.Keys.BLOCKS.equals(event.getRegistryKey())) return;
+        if (!Registries.BLOCK.equals(event.getRegistryKey())) return;
         init();
-        event.register(ForgeRegistries.Keys.BLOCKS, helper -> ALL_BLOCKS.forEach((id, block) ->
+        event.register(Registries.BLOCK, helper -> ALL_BLOCKS.forEach((id, block) ->
                 helper.register(ResourceLocation.fromNamespaceAndPath(PowerAdvantage.MODID, id), block)));
     }
 
     @SubscribeEvent
     public static void registerBlockItems(RegisterEvent event) {
-        if (!ForgeRegistries.Keys.ITEMS.equals(event.getRegistryKey())) return;
+        if (!Registries.ITEM.equals(event.getRegistryKey())) return;
         init();
-        event.register(ForgeRegistries.Keys.ITEMS, helper -> ALL_BLOCKS.forEach((id, block) -> {
+        event.register(Registries.ITEM, helper -> ALL_BLOCKS.forEach((id, block) -> {
             BlockItem item = new BlockItem(block, new Item.Properties());
             if (!"fluid_pipe_terminal".equals(id) && !(block instanceof LiquidBlock)) {
                 ItemGroups.show(item);

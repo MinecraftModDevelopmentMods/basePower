@@ -1,0 +1,13 @@
+modLoader="javafml"
+loaderVersion="[4,)"
+license="GPL-3.0-only"
+[[mods]]
+modId="native1211neo_platform_controls"
+version="1.0.0"
+displayName="Independent NeoForge Platform Controls"
+[[dependencies.native1211neo_platform_controls]]
+modId="neoforge"
+type="required"
+versionRange="[21.1.265]"
+ordering="NONE"
+side="BOTH"

@@ -84,8 +84,8 @@ public class LifecycleNaturalTickObserverTest {
     }
 
     @Test public void observersCannotConstructProductionTilesOrForceADispatch() throws Exception {
-        String probe = Files.readString(Paths.get("src/main/java/zone/moddev/mc/advantageworks/LifecycleProbe.java"));
-        String observer = Files.readString(Paths.get("src/main/java/zone/moddev/mc/advantageworks/LifecycleNaturalTickObserver.java"));
+        String probe = Files.readString(zone.moddev.mc.advantageworks.unit.TestProject.path("src/main/java/zone/moddev/mc/advantageworks/LifecycleProbe.java"));
+        String observer = Files.readString(zone.moddev.mc.advantageworks.unit.TestProject.path("src/main/java/zone/moddev/mc/advantageworks/LifecycleNaturalTickObserver.java"));
         assertTrue(probe.contains("queueRoundTrip"));
         assertTrue(probe.contains("LevelChunk.EntityCreationType.CHECK"));
         assertFalse(probe.contains("tile.tick("));

@@ -6,7 +6,7 @@
       "conditions": {
         "items": [
           {
-            "items": "#forge:ingots/iron"
+            "items": "#c:ingots/iron"
           }
         ]
       }
@@ -16,7 +16,7 @@
       "conditions": {
         "items": [
           {
-            "items": "#forge:power_supply_units"
+            "items": "#c:power_supply_units"
           }
         ]
       }

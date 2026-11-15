@@ -1,7 +1,7 @@
 package zone.moddev.mc.basepower.machines.conveyors;
 
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.common.Tags;
+import net.neoforged.neoforge.common.Tags;
 import zone.moddev.mc.basepower.init.Entities;
 
 public class TileEntityOreFilter extends TileEntityConveyorFilter {

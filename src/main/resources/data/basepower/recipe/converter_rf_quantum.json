@@ -8,7 +8,7 @@
       "item": "minecraft:ender_pearl"
     },
     "y": {
-      "tag": "forge:frames/steel"
+      "tag": "c:frames/steel"
     },
     "z": {
       "item": "minecraft:redstone_block"
@@ -18,8 +18,10 @@
     "id": "basepower:converter_rf_quantum"
   },
   "group": "basepower:converter_rf_quantum",
-  "forge:condition": {
-    "type": "basepower:tag_not_empty",
-    "tag": "forge:frames/steel"
-  }
+  "neoforge:conditions": [
+    {
+      "type": "basepower:tag_not_empty",
+      "tag": "c:frames/steel"
+    }
+  ]
 }

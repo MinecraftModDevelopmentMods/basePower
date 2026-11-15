@@ -1,5 +1,7 @@
 package zone.moddev.mc.advantageworks;
 
+import net.minecraft.core.registries.BuiltInRegistries;
+
 import static org.junit.Assert.*;
 
 import com.google.gson.JsonArray;
@@ -72,7 +74,7 @@ public class ConnectedProbeObservationTest {
             assertEquals(before, NbtIo.readCompressed(new ByteArrayInputStream(
                     Base64.getDecoder().decode(row.get("nbtBase64").getAsString())), NbtAccounter.unlimitedHeap()));
             assertEquals(data == null ? "" : data.getString("AdvConnectedWitness"), row.get("witness").getAsString());
-            assertEquals(data != null, before.contains("ForgeData"));
+            assertEquals(data != null, before.contains("NeoForgeData"));
         }
     }
 
@@ -96,7 +98,7 @@ public class ConnectedProbeObservationTest {
             super.saveAdditional(tag, registries);
             // Forge 50 no longer stores opaque ForgeData for vanilla tiles.
             // This extension fixture proves the probe observes, but never allocates, the legacy witness.
-            if (persistentData != null) tag.put("ForgeData", persistentData.copy());
+            if (persistentData != null) tag.put("NeoForgeData", persistentData.copy());
         }
     }
 

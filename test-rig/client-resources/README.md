@@ -1,5 +1,44 @@
 # Native Client Resource Check
 
+## NeoForge 1.21.1 Local Port
+
+The probe Java and resources now target NeoForge 21.1.265 and Power
+2.4.19.121012, with Steam/Electric 2.2.20.121012. They compile against Java 21
+and the native ModDevGradle classpath. No Power Gradle build was started by the
+probe worker. The parent can rebuild `clientResourceProbeJar` in its own build.
+
+The complete body/import preservation test is bound to released Forge 1.21.1
+commit `8d9937b3c0c9ef28a231b90fc2ff6adfea1af733`, with explicit reviewed
+NeoForge adapters only. The 26 independent full-gauge sprite comparisons,
+351 combined caption cases and 355 deliberately broken caption controls remain
+unchanged. Static mutation tests do not establish rendered-client acceptance.
+
+Each recipe-book packet requires its own `recipes-<label>.registry.bin`,
+exported by that packet's NeoForge server boot. Encode
+`RegistryManager.takeSnapshot(RegistryManager.SnapshotType.SYNC_TO_CLIENT)`
+with `FriendlyByteBuf.writeMap`, resource-location keys and
+`RegistrySnapshot.STREAM_CODEC`. Each JSON report's `registrySnapshot` receipt
+binds schema 1, Minecraft 1.21.1, NeoForge 21.1.265, exact filenames, SHA-256,
+byte/registry/recipe counts, and `sameRegistries`. The probe validates that
+receipt and applies its handshake immediately before decoding that packet,
+checks the resulting IDs, and requires exact exhaustion of both buffers.
+Registry IDs may differ between server boots. A historical global snapshot,
+if retained, is only an unused reference and is never overwritten or reused
+to decode another boot's packet.
+NeoForge's `level.dat` does not contain Forge's historical `fml/Registries`
+snapshot. Do not substitute inferred IDs or historical Forge fixtures.
+
+The old Eclipse-based `run.ps1` below remains Forge-specific; it is not a
+qualified NeoForge launcher. Use the parent's native ModDev client launch with
+the probe jar and `-Dadvantageworks.clientResources=true`, adding
+`-Dadvantageworks.requireExtensions=true`,
+`-Dadvantageworks.machineGuiLayouts=true`, and
+`-Dadvantageworks.childRendererGeometry=true` for combined qualification.
+Keep the launch in a fresh disposable directory. Actual client pixels remain
+pending until that native run completes.
+
+## Historical Forge Runner
+
 This disposable Minecraft 1.21.1 / Forge 52.1.0 client checks models, textures,
 translations, recipe-book cells and machine screens after Minecraft loads them.
 It registers no gameplay content, opens no world and closes when finished.
@@ -55,8 +94,9 @@ Unrelated errors still fail.
 
 Pass the resulting `unlock` directory to the client. It must contain the three
 `recipes-*-sweep.bin` packets, matching successful JSON reports with
-`bookRecipes` and the generated world's `level.dat`. The client reads its
-registry snapshot before decoding the packets; it does not open the world.
+`bookRecipes`, their three matching registry sidecars, and the generated world's
+`level.dat`. The client applies each packet's bound snapshot before decoding it;
+it does not open the world.
 Historical or mismatched headers fail. Native recipe-book collections must
 group only identical outputs, retain every variant and render thirteen separate
 example cells with more than 1,000 colored framebuffer pixels. Without fixtures

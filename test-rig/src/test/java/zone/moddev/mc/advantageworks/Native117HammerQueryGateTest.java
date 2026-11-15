@@ -85,13 +85,13 @@ public class Native117HammerQueryGateTest {
         }
     }
     @Test public void singleCallStillUsesOriginalActionAndOutputAssertions() throws Exception {
-        String source = Files.readString(Path.of("src/main/java/zone/moddev/mc/advantageworks/ProcessProgression.java"));
+        String source = Files.readString(zone.moddev.mc.advantageworks.unit.TestProject.path("src/main/java/zone/moddev/mc/advantageworks/ProcessProgression.java"));
         String body = source.substring(source.indexOf("static void hammer("), source.indexOf("private static JsonObject hammerRecipeSelection("));
-        assertEquals(1, body.split("\\.useOn\\(", -1).length - 1);
+        assertEquals(1, body.split("EVENT_BUS.post\\(click\\)", -1).length - 1);
         assertTrue(body.indexOf("ADVHAMMER BEFORE") < body.indexOf("HammerQueryGate.ready("));
-        assertTrue(body.indexOf("HammerQueryGate.ready(") < body.indexOf(".useOn("));
-        assertTrue(body.indexOf(".useOn(") < body.indexOf("ADVHAMMER AFTER"));
-        assertTrue(body.contains("action == InteractionResult.CONSUME && source.getItem().isEmpty()"));
+        assertTrue(body.indexOf("HammerQueryGate.ready(") < body.indexOf("EVENT_BUS.post(click)"));
+        assertTrue(body.indexOf("EVENT_BUS.post(click)") < body.indexOf("ADVHAMMER AFTER"));
+        assertTrue(body.contains("source.isRemoved() && source.getItem().isEmpty()"));
         assertTrue(body.contains("player.getMainHandItem().getDamageValue() == 1, \"Live hammer failed \""));
         assertTrue(body.contains("id(entity.getItem()).equals(id(expected))"));
         assertTrue(body.contains("require(produced == expected.getCount()"));

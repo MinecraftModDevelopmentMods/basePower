@@ -4,7 +4,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.BonemealableBlock;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.common.IPlantable;
+import net.neoforged.neoforge.common.SpecialPlantable;
 import zone.moddev.mc.basepower.init.Entities;
 
 public class TileEntityPlantFilter extends TileEntityConveyorFilter {
@@ -13,10 +13,12 @@ public class TileEntityPlantFilter extends TileEntityConveyorFilter {
 	@Override
 	public boolean matchesFilter(ItemStack item) {
 		if (item == null) return false;
-		if (item.getItem() instanceof IPlantable) return true;
+		if (item.getItem() instanceof SpecialPlantable) return true;
 		if (item.getItem() instanceof BlockItem) {
 			Block b = ((BlockItem) item.getItem()).getBlock();
-			if (b instanceof IPlantable) return true;
+			if (b instanceof net.minecraft.world.level.block.BushBlock
+                    || b instanceof net.minecraft.world.level.block.CactusBlock
+                    || b instanceof net.minecraft.world.level.block.SugarCaneBlock) return true;
 			if (b instanceof BonemealableBlock) return true;
 
 		}

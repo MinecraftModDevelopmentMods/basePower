@@ -6,7 +6,7 @@
       "conditions": {
         "items": [
           {
-            "items": "#forge:ingots/plastic"
+            "items": "#c:ingots/plastic"
           }
         ]
       }
@@ -16,7 +16,7 @@
       "conditions": {
         "items": [
           {
-            "items": "#forge:pipes"
+            "items": "#c:pipes"
           }
         ]
       }

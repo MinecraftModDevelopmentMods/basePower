@@ -6,7 +6,7 @@ import cyano.poweradvantage.api.PowerConnectorContext;
 import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.core.Direction;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import net.neoforged.neoforge.capabilities.Capabilities;
 
 /**
  * Collection of utility methods
@@ -32,7 +32,8 @@ public abstract class PowerHelper {
 				BlockEntity tile = connection.world.getBlockEntity(connection.otherBlockPosition);
 				if (tile == null) return false;
 				for (Direction side : Direction.values()) {
-					if (tile.getCapability(ForgeCapabilities.ENERGY, side).isPresent()) return true;
+					if (tile.getLevel() != null && tile.getLevel().getCapability(
+                            Capabilities.EnergyStorage.BLOCK, tile.getBlockPos(), side) != null) return true;
 				}
 			}
 		}

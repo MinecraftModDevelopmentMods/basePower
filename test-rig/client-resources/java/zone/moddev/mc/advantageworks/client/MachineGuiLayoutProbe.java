@@ -1,5 +1,7 @@
 package zone.moddev.mc.advantageworks.client;
 
+import net.minecraft.core.registries.BuiltInRegistries;
+
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -36,7 +38,6 @@ import net.minecraft.world.Container;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.core.BlockPos;
-import net.minecraftforge.registries.ForgeRegistries;
 import zone.moddev.mc.basepower.registry.MachineGUIRegistry;
 import org.joml.Vector3f;
 
@@ -77,13 +78,13 @@ final class MachineGuiLayoutProbe {
             definitionsField.setAccessible(true);
             Map<?, ?> definitions = (Map<?, ?>) definitionsField.get(null);
             List<Block> blocks = new ArrayList<>();
-            ForgeRegistries.BLOCKS.forEach(block -> {
+            BuiltInRegistries.BLOCK.forEach(block -> {
                 if (block instanceof GUIBlock && ((GUIBlock) block).getGuiID() > 0) blocks.add(block);
             });
-            blocks.sort(Comparator.comparing(block -> ForgeRegistries.BLOCKS.getKey(block).toString()));
+            blocks.sort(Comparator.comparing(block -> BuiltInRegistries.BLOCK.getKey(block).toString()));
             for (Block block : blocks) {
                 JsonObject row = new JsonObject();
-                String id = ForgeRegistries.BLOCKS.getKey(block).toString();
+                String id = BuiltInRegistries.BLOCK.getKey(block).toString();
                 row.addProperty("block", id);
                 screens.add(row);
                 try {
@@ -364,7 +365,7 @@ final class MachineGuiLayoutProbe {
     private static void verifyHelperLimits(Minecraft minecraft, RecordingScreen screen) throws Exception {
         for (String name : new String[]{"zone.moddev.mc.baseelectric.gui.GUIHelper",
                 "zone.moddev.mc.basesteam.gui.GUIHelper"}) {
-            if (!net.minecraftforge.fml.ModList.get().isLoaded(name.contains("baseelectric") ? "baseelectric" : "basesteam")) continue;
+            if (!net.neoforged.fml.ModList.get().isLoaded(name.contains("baseelectric") ? "baseelectric" : "basesteam")) continue;
             String[] methods = name.contains("baseelectric") ? new String[]{"drawProgressBar"}
                     : new String[]{"drawDownArrowProgress", "drawFlameProgress"};
             for (String method : methods) {

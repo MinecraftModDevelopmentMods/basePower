@@ -13,12 +13,13 @@ import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.storage.loot.LootContext;
 import net.minecraft.world.level.storage.loot.predicates.LootItemCondition;
-import net.minecraftforge.common.loot.IGlobalLootModifier;
-import net.minecraftforge.common.loot.LootModifier;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.fml.ModList;
-import net.minecraftforge.registries.DeferredRegister;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.neoforge.common.loot.IGlobalLootModifier;
+import net.neoforged.neoforge.common.loot.LootModifier;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.ModList;
+import net.neoforged.neoforge.registries.DeferredRegister;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import zone.moddev.mc.basepower.PowerAdvantage;
 
 /** Adds Advantage parts to the selected vanilla chest tables, not to data-pack replacements. */
@@ -28,7 +29,7 @@ public final class PartsLoot extends LootModifier {
             "chests/stronghold_crossing", "chests/end_city_treasure");
     private static final List<String> MODS = List.of("basepower", "basesteam", "baseelectric");
     private static final DeferredRegister<MapCodec<? extends IGlobalLootModifier>> SERIALIZERS =
-            DeferredRegister.create(ForgeRegistries.Keys.GLOBAL_LOOT_MODIFIER_SERIALIZERS, PowerAdvantage.MODID);
+            DeferredRegister.create(net.neoforged.neoforge.registries.NeoForgeRegistries.Keys.GLOBAL_LOOT_MODIFIER_SERIALIZERS, PowerAdvantage.MODID);
     private static final MapCodec<PartsLoot> CODEC =
             RecordCodecBuilder.mapCodec(instance -> codecStart(instance).apply(instance, PartsLoot::new));
 

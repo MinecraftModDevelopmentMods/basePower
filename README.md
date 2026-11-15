@@ -1,134 +1,121 @@
 # basePower
 
-**Minecraft 1.21.1 (Forge), version 2.4.14.121011.**
-
-This version keeps the existing machines and saved-world data while updating
-to Forge 52 and Java 21. See the [1.21.1 test results](docs/1.21.1/TEST-RESULTS.md)
-for the checked upgrade routes, machine tests and remaining modpack limits.
-
-For the combined Eclipse test, use `runClientAllAdvantage.launch` in this
-project. It loads the matching baseSteam and baseElectric candidates. The
-[port record](docs/1.21.1/PORT-STATUS.md) separates the automated checks from
-the remaining manual gameplay and visual checks.
+**Minecraft 1.21.1 / NeoForge 21.1.265, version 2.4.19.121012.**
 
 basePower continues DrCyano's Power Advantage. It provides shared power,
-fluids and item transport for baseSteam and baseElectric.
+fluid handling and item transport for baseSteam and baseElectric. The historical
+`cyano.poweradvantage.api` package and existing registry identities remain in use.
 
-## Playing On 1.21.1
+This is the native NeoForge edition. Do not mix it with Forge builds of the same
+mods. The existing machines, recipes, world identities and legacy API remain in
+place. Keep backups when upgrading worlds; a successful build alone does not
+prove that an entire modpack can be upgraded safely.
 
-- Install [MMD OreSpawn 4.1.0.121011](https://www.curseforge.com/minecraft/mc-mods/mmd-orespawn/files/9189594) on both client and server.
-- Base Metals is optional for a new basePower world. For a world that already
-  uses Base Metals, keep it installed and use the matching Forge 1.21.1 build
-  `3.1.2.121011` or a later compatible Forge 52 release. Older Base Metals
-  builds do not have the shared upgrade hook.
-- baseSteam and baseElectric are separate mods. Use only their matching
-  1.21.1 builds. Additional Loot Tables is not needed for the built-in loot.
+## Required Dependencies
 
-**Back up the entire world before upgrading. Test only disposable copies.**
-The port keeps existing registry names and machine data. The upgrade checks
-use disposable copies of original Advantage and released base* saves, including
-connected machines, and check them again after a full restart. Check that the
-other mods in your world support 1.21.1 before you upgrade.
-The accepted [1.14 results](docs/1.14/BROADER-QUALIFICATION.md) are historical
-evidence, not qualification of this port or a whole modpack.
+All three dependencies are required on both client and server:
 
-Recipe-book discovery now follows relevant ingredients. See the [all-Advantage material checklist and automated discovery tests](docs/1.13/RECIPE-DISCOVERY.md). To regenerate the checked-in unlock JSON after changing recipes, run `node tools/generate-recipe-unlocks.js`; `check` rejects missing or stale ingredient criteria.
+| Dependency | Input For This Port | Status |
+| --- | --- | --- |
+| Base Metals | `zone.moddev.mc.basemetals:BaseMetals:4.0.1.121012+Neo` | Published release with the reviewed shared migration hook |
+| MMDLib | `zone.moddev.mc.lib:mmdlib:2.0.2.121012+Neo` | Published input; SHA-256 recorded in `gradle.properties` |
+| OreSpawn | `zone.moddev.mc.orespawn:OreSpawn:4.1.1.121012` | Published input; SHA-256 recorded in `gradle.properties` |
 
-The [manufacturing progression audit](docs/1.13/MANUFACTURING-PROGRESSION.md) traces survival parts from raw resources, including configured material aliases, processing, loot-only parts and automated restart checks.
+Base Metals **4.0.0.121012+Neo is not a substitute**. It lacks the migration
+extension used to preserve old Advantage machine and player data.
 
-## Building Minecraft 1.21.1
+The matching expansion versions are baseSteam and baseElectric
+**2.2.20.121012**. They remain separate mod jars; dependencies are not embedded.
+MMDLib supplies the shared crushing recipe contract, not replacement machinery.
+Recipe removal remains authoritative and drill mining keeps normal block drops.
 
-The build uses Forge 52.1.0, official `1.21.1` mappings,
-MCP `20240808.132146`, ForgeGradle 7.0.34 and Gradle 9.6.1.
-Use Java 21 for Gradle, compilation and Minecraft. Mavenizer also
-needs Java 25; the development launcher helper uses Java 8. Pass the installed homes using
-`-Porg.gradle.java.installations.paths=<java8>,<java21>,<java25>` and disable
-automatic discovery and downloads for a reproducibility check.
+For recipe discovery, collect vanilla copper ingots as well as Base Metals steel,
+lead, brass and tin. The published Base Metals copper tags use vanilla copper;
+an old Base Metals copper item alone may not trigger that ingredient's unlock.
 
-Use the pinned Base Metals `3.1.2.121011` and OreSpawn `4.1.0.121011` jars.
-The source pins and checksums are in `gradle.properties`.
-Forge 52 also needs the Mavenizer compatibility jar in the pinned OreSpawn
-checkout's `ci-fixtures/tools/` directory. It fixes decompiled Forge sources
-on a clean build and uses Java 25. It is not part of the mod or game runtime.
-Set `-Pforge52MavenizerJar=<path>` when that checkout is in another location.
-If Base Metals is installed, use the pinned 3.1.2 build when testing an upgrade. It lets
-both mods preserve old items and machines before Minecraft converts the
-chunk. An older Base Metals jar is not a substitute for this upgrade path.
+## Local Build
 
-Then run from the repository root:
+Use Java 21, ModDevGradle **2.0.148** and the SHA-pinned Gradle **9.8.0** wrapper.
+Java 8, Java 25, ForgeGradle, NeoGradle and the old Mavenizer are not part of this
+native build. Dependencies resolve from MMD Maven and are checked against their
+published SHA-256 values. A verified local copy may be selected with
+`-PbaseMetalsJar=<path>`; it must have the same hash.
 
-```text
-gradlew.bat clean check build javadoc genEclipseRuns eclipse isolateEclipseProductionRuns verifyReleaseDependencies verifyReleaseArtifacts writeReleaseChecksums verifyEclipseProductionClasspath
+```powershell
+$env:JAVA_HOME='C:/Users/johnb/.jdks/temurin-21.0.7+6'
+$env:GRADLE_USER_HOME='D:/PowerAdvantage/.gradle-power1211neo'
+./gradlew.bat check build javadoc verifyReleaseDependencies verifyReleaseArtifacts `
+  writeReleaseChecksums
 ```
 
-The default dependency jars are:
+Do not start a second Power Gradle process while that cache is in use. This
+command is documentation, not evidence that the current candidate passed it.
+The local artifact checks bind all three dependency hashes to `gradle.properties`.
+Keep failed receipts, disposable worlds and frozen inputs; avoid routine `clean` during a
+qualification campaign. Outputs are under `build/libs`.
 
-```text
-D:\BaseMetals\.verification-basemetals1211\Advantage shared hook\build\libs\BaseMetals-3.1.2.121011.jar
-D:\MinecraftMineralogy\OS1211\OreSpawn\build\libs\OreSpawn-4.1.0.121011.jar
+## Eclipse And Client
+
+Import this existing checkout as a Gradle project with Java 21. Use the Gradle
+Tasks view for native `runClient` and `runServer`; old Forge `.launch` files and
+their launcher helper are not applicable. `runClientAllAdvantage` uses the two
+separate expansion jars, selected by `-PsteamAdvantageDeobfJar=<jar>` and
+`-PelectricAdvantageDeobfJar=<jar>`. Always select a fresh disposable run directory
+with `-PpowerAdvantageRunDirectory=<new directory>` when testing.
+
+Run `verifyEclipseProductionClasspath verifyEclipseEcj` to check the generated
+project with Eclipse's own compiler, including separate production/test outputs
+and deliberately broken isolation controls. The checks also reject duplicate
+classpath entries and exercise three consecutive classpath merges, as happens
+during repeated Buildship refreshes. Use a new `-PeclipseEcjRunId=<id>`
+for each run so earlier diagnostics are retained. The combined Gradle launch
+stages the expansions as separate mods; tests are not part of the player jars.
+The audits also run NeoForge's actual IDE synchronization tasks without opting
+into a disposable test world. Copied-world integration tests run only through
+their explicitly configured Gradle command, not during an Eclipse refresh.
+
+The [client-resource probe](test-rig/client-resources/README.md) retains independent
+full-gauge sprite comparisons, caption pixels and negative controls. Its Java
+compilation and static preservation checks are not rendered-client acceptance.
+Native recipe-book fixtures require a server registry-handshake export; historical
+Forge registry snapshots cannot stand in for it.
+
+## Hosted CI Bootstrap
+
+CI and CodeQL use native ModDevGradle with one Java 21 toolchain. They read
+[the three-dependency lock](.github/native-dependencies.json), verify approved
+source ancestry where recorded, download exact public jars, check SHA-256 and
+NeoForge metadata, and require the BM migration-hook entry. The build consumes
+those verified files instead of resolving replacement copies independently.
+
+The lock records the merged Base Metals source and the exact public Maven
+artifacts. `HOSTED_INPUTS_READY` means those dependency inputs can be reproduced;
+it is not gameplay or release approval. The offline guard tests are:
+
+```powershell
+./.github/test-native-dependencies.ps1
+./.github/verify-native-dependencies.ps1 -ValidateOnly
 ```
 
-Other layouts can pass `-PbaseMetalsDeobfJar=<path>` and `-PoreSpawnDeobfJar=<path>`.
-Dependencies are never embedded in PowerAdvantage artifacts.
+Both commands must pass before hosted builds. Heavy
+packaged gameplay and historic-world qualification stay local. Release-tag
+validation additionally rejects `release_player_sha256=UNQUALIFIED`; publication
+still requires explicit approval and the guarded default-branch release workflow.
 
-Dependency checksums and source commits are recorded in `gradle.properties`.
-Unknown artifacts fail the dependency audit. The release audit also rejects a
-player jar that differs from the frozen test kit. Hosted CI requires the Base
-Metals pin to be on its upstream `master-1.21.1` branch; a locally tested pin
-does not qualify a hosted build.
+## Saved Worlds
 
-Release jars are written to `build/libs`. Forge 52 uses the same mod jar for play
-and development; `deobfJar` is kept as a task alias for older build scripts.
+Back up the entire save and work only on disposable copies. Keeping names, NBT,
+inventory data and migration hooks is necessary, not proof that a route is safe.
+The native port translates engine-owned `ForgeData` into `NeoForgeData` while
+preserving its payload, including nested block-entity item data. Attribute remaps,
+fluid components, locks and capability lifetimes require the same frozen candidate
+as the packaged and restart tests. Unknown third-party registry mappings require
+their owning compatible mod rather than silent deletion.
 
-For Eclipse, import this repository as an existing Gradle project and run:
+The older [migration guide](docs/1.13/MIGRATION.md) and
+[Forge 1.21.1 results](docs/1.21.1/TEST-RESULTS.md) are historical context only.
+They are not acceptance receipts for this checkout or an entire modpack.
 
-```text
-gradlew.bat cleanEclipse verifyEclipseProductionClasspath
-```
-
-Refresh the project in Eclipse, allow its Java build to finish, and launch the generated `runClient.launch`. Eclipse launches discover the mod from `bin/main`; command-line Gradle launches use `build/forge-run-mod-classes/main`. The Eclipse audit checks that discovery points at the same production output Eclipse compiles into, preventing a client that starts without PowerAdvantage.
-
-Eclipse copies production resources from `build/resources/main`, not directly from `src/main/resources`. This prevents its builder from overwriting the expanded `mods.toml` with raw `${version}` placeholders. After updating this setup, use **Gradle > Refresh Gradle Project**, then **Project > Clean** before relaunching. After editing resources or version properties, run `processResources` or refresh the Gradle project before the Eclipse build. See the [metadata regression notes](docs/1.13/ECLIPSE-METADATA.md).
-
-To prepare a combined client, build the baseSteam and baseElectric `2.2.15.121011` jars,
-run `gradlew.bat prepareCombinedEclipseLaunch`, refresh Eclipse, then launch
-`runClientAllAdvantage.launch`. Inputs must match
-`test-rig/profiles/native1211/dev-core.json`; alternative layouts can pass
-`-PsteamAdvantageDeobfJar=<path>` and `-PelectricAdvantageDeobfJar=<path>`.
-The ordinary `runClient.launch` remains Power-only. Both use the `run` directory;
-preparing a launch does not copy, open or qualify a save.
-
-`check` and the Eclipse audit verify that Java files are in the directories
-matching their packages. They also read every development runtime jar entry
-and check its size and CRC to catch damaged cached dependencies.
-
-Keep Eclipse's access-restriction checks enabled and use Java 21 for its project
-JRE and Minecraft launches. Check visuals, menus and recipe discovery against the
-same jars used for the automated machine tests.
-
-## Compatibility
-
-The implementation namespace is `zone.moddev.mc.basepower`. The historical
-`cyano.poweradvantage.api` package remains available. The port keeps basePower's
-registry names and saved machine data and maps the older Power Advantage names.
-The test record distinguishes state preservation, real operation and changes
-made by Minecraft itself.
-
-The upgrade path prepares stored items before vanilla flattening and converts
-entities individually, so a mod entity cannot prevent a nearby pet's UUID and
-ownership from being migrated. Old vanilla registry names are remapped explicitly;
-unknown mod mappings still require their own compatible mod rather than being
-silently discarded.
-Legacy Forge swimming speed, name-tag distance, gravity and player reach use
-their native registry names without discarding saved values or modifiers.
-
-The port uses native dimension registry keys, block-entity factories and tickers,
-capabilities and menus. Config-dependent material aliases are additive server
-data-pack tags. The shared pre-flattening migration hook remains necessary;
-its presence is not proof that an upgrade is safe.
-
-The [legacy migration guide](docs/1.13/MIGRATION.md) describes the earlier protocols.
-The [Advantage Works 1.20.1 guide](test-rig/NATIVE1201.md) describes the prior
-qualification and the checks carried into 1.21.1.
-
-The historical 1.10 handbook remains on the [1.10.2 branch](https://github.com/MinecraftModDevelopmentMods/PowerAdvantage/blob/master-1.10.2/docs/1.10/README.md).
+See the [NeoForge test and manual-check notes](docs/1.21.1-neoforge/TEST-RESULTS.md)
+for this candidate. Heavy tests run locally; no publication or manual acceptance
+is implied by a successful build.

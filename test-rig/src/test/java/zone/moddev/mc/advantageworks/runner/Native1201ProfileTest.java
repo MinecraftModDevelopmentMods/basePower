@@ -15,7 +15,7 @@ public class Native1201ProfileTest {
 
     @Test public void flatGeneratorSettingsSurviveLoadingServerProperties() throws Exception {
         var profile = WorksRunner.readNative1201Profile(
-                new File("profiles/native1201/packaged-optional-power.json"));
+                zone.moddev.mc.advantageworks.unit.TestProject.path("profiles/native1201/packaged-optional-power.json").toFile());
         File runtime = temporary.newFolder();
         WorksRunner.writeRuntimeFiles(runtime, profile);
 

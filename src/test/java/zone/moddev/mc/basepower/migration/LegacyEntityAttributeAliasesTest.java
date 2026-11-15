@@ -21,7 +21,7 @@ import net.minecraft.util.datafix.DataFixTypes;
 import net.minecraft.util.datafix.fixes.References;
 import net.minecraft.server.Bootstrap;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraftforge.common.ForgeMod;
+import net.neoforged.neoforge.common.NeoForgeMod;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -41,7 +41,7 @@ public class LegacyEntityAttributeAliasesTest {
         LegacyEntityDataFixes.finish(root);
         CompoundTag actual = root.getCompound("Level").getList("Entities", 10).getCompound(0);
         CompoundTag expected = before.copy();
-        expected.getList("Attributes", 10).getCompound(0).putString("Name", "forge:swim_speed");
+        expected.getList("Attributes", 10).getCompound(0).putString("Name", "neoforge:swim_speed");
         expected = LegacyForgeAttributeRegistryTest.nativeAttributeRecord(expected);
         assertEquals(expected, actual);
         assertEquals(before, entity);
@@ -53,7 +53,7 @@ public class LegacyEntityAttributeAliasesTest {
         LegacyEntityDataFixes.finish(root);
         CompoundTag attribute = root.getCompound("Level").getList("Entities", 10).getCompound(0)
                 .getList("attributes", 10).getCompound(0);
-        assertEquals("forge:swim_speed", attribute.getString("id"));
+        assertEquals("neoforge:swim_speed", attribute.getString("id"));
         assertEquals(2D, attribute.getDouble("base"), 0D);
         assertEquals("keep-attribute-field", attribute.getString("PrivateNote"));
         CompoundTag modifier = attribute.getList("modifiers", 10).getCompound(0);
@@ -73,7 +73,7 @@ public class LegacyEntityAttributeAliasesTest {
         CompoundTag root = chunk(parent);
         LegacyEntityDataFixes.prepare(root); LegacyEntityDataFixes.finish(root);
         CompoundTag actual = root.getCompound("Level").getList("Entities", 10).getCompound(0);
-        assertEquals("forge:swim_speed", actual.getList("Passengers", 10).getCompound(0)
+        assertEquals("neoforge:swim_speed", actual.getList("Passengers", 10).getCompound(0)
                 .getList("attributes", 10).getCompound(0).getString("id"));
         assertEquals(foreign, actual.getCompound("PrivateData"));
         assertEquals(foreign, actual.getCompound("ForgeData"));
@@ -81,12 +81,12 @@ public class LegacyEntityAttributeAliasesTest {
     }
 
     @Test public void rejectsLegacyNativeCollisionWithoutChangingChunk() {
-        assertCollision("forge.swimSpeed", "forge:swim_speed");
+        assertCollision("forge.swimSpeed", "neoforge:swim_speed");
     }
 
     @Test public void rejectsDuplicateLegacyOrNativeAliasWithoutChangingChunk() {
         assertCollision("forge.swimSpeed", "forge.swimSpeed");
-        assertCollision("forge:swim_speed", "forge:swim_speed");
+        assertCollision("neoforge:swim_speed", "neoforge:swim_speed");
     }
 
     @Test public void exactAliasDoesNotRenameOtherForgeOrUnknownAttributes() {
@@ -131,16 +131,16 @@ public class LegacyEntityAttributeAliasesTest {
         CompoundTag source = player(vehicle), expected = source.copy();
         CompoundTag result = LegacyPlayerDataFixes.update(new RecordingFixer(value -> {
             CompoundTag rootVehicle = value.getCompound("RootVehicle").getCompound("Entity");
-            assertEquals("forge:swim_speed", rootVehicle.getList("Attributes", 10).getCompound(0).getString("Name"));
-            assertEquals("forge:swim_speed", rootVehicle.getList("Passengers", 10).getCompound(0)
+            assertEquals("neoforge:swim_speed", rootVehicle.getList("Attributes", 10).getCompound(0).getString("Name"));
+            assertEquals("neoforge:swim_speed", rootVehicle.getList("Passengers", 10).getCompound(0)
                     .getList("Attributes", 10).getCompound(0).getString("Name"));
             return value;
         }), DataFixTypes.PLAYER, source, 512);
         assertEquals(expected, source);
         expected.getCompound("RootVehicle").getCompound("Entity").getList("Attributes", 10)
-                .getCompound(0).putString("Name", "forge:swim_speed");
+                .getCompound(0).putString("Name", "neoforge:swim_speed");
         expected.getCompound("RootVehicle").getCompound("Entity").getList("Passengers", 10).getCompound(0)
-                .getList("Attributes", 10).getCompound(0).putString("Name", "forge:swim_speed");
+                .getList("Attributes", 10).getCompound(0).putString("Name", "neoforge:swim_speed");
         assertEquals(expected, result);
     }
 
@@ -161,7 +161,7 @@ public class LegacyEntityAttributeAliasesTest {
     @Test public void rootVehiclePassengerCollisionFailsWithoutChangingPlayer() {
         CompoundTag vehicle = entity("example:vehicle", true);
         CompoundTag child = entity("example:seat", true);
-        CompoundTag duplicate = attribute(false); duplicate.putString("Name", "forge:swim_speed");
+        CompoundTag duplicate = attribute(false); duplicate.putString("Name", "neoforge:swim_speed");
         child.getList("Attributes", 10).add(duplicate);
         ListTag passengers = new ListTag(); passengers.add(child); vehicle.put("Passengers", passengers);
         CompoundTag player = player(vehicle), before = player.copy();
@@ -179,7 +179,7 @@ public class LegacyEntityAttributeAliasesTest {
         CompoundTag fixed = result.getCompound("RootVehicle").getCompound("Entity");
         for (CompoundTag actual : new CompoundTag[] {fixed, fixed.getList("Passengers", 10).getCompound(0)}) {
             CompoundTag attribute = actual.getList("attributes", 10).getCompound(0);
-            assertEquals("forge:swim_speed", attribute.getString("id"));
+            assertEquals("neoforge:swim_speed", attribute.getString("id"));
             assertEquals(2D, attribute.getDouble("base"), 0D);
             assertEquals("minecraft:" + MODIFIER, attribute.getList("modifiers", 10).getCompound(0).getString("id"));
         }
@@ -194,7 +194,7 @@ public class LegacyEntityAttributeAliasesTest {
         CompoundTag before = player.copy();
         CompoundTag result = LegacyPlayerDataFixes.update(DataFixers.getDataFixer(), DataFixTypes.PLAYER, player, 1343);
         CompoundTag attribute = result.getList("attributes", 10).getCompound(0);
-        assertEquals("forge:swim_speed", attribute.getString("id"));
+        assertEquals("neoforge:swim_speed", attribute.getString("id"));
         assertEquals(2D, attribute.getDouble("base"), 0D);
         assertEquals("minecraft:" + MODIFIER, attribute.getList("modifiers", 10).getCompound(0).getString("id"));
         assertEquals("keep-attribute-field", attribute.getString("PrivateNote"));
@@ -206,7 +206,7 @@ public class LegacyEntityAttributeAliasesTest {
     @Test public void ownPlayerAttributeCollisionFailsWithoutMutatingCaller() {
         CompoundTag player = player(entity("example:vehicle", true));
         ListTag attributes = entity("example:attributes", true).getList("Attributes", 10);
-        CompoundTag duplicate = attribute(false); duplicate.putString("Name", "forge:swim_speed"); attributes.add(duplicate);
+        CompoundTag duplicate = attribute(false); duplicate.putString("Name", "neoforge:swim_speed"); attributes.add(duplicate);
         player.put("Attributes", attributes);
         CompoundTag before = player.copy();
         try {
@@ -232,7 +232,7 @@ public class LegacyEntityAttributeAliasesTest {
                 new Dynamic<>(NbtOps.INSTANCE, source.copy()), 1343,
                 SharedConstants.getCurrentVersion().getDataVersion().getVersion()).getValue();
         Wolf before = new Wolf(EntityType.WOLF, world); before.load(red);
-        var swimSpeed = ForgeMod.SWIM_SPEED.getHolder().orElseThrow();
+        var swimSpeed = NeoForgeMod.SWIM_SPEED;
         assertEquals(1D, before.getAttribute(swimSpeed).getBaseValue(), 0D);
         CompoundTag root = chunk(source);
         LegacyEntityDataFixes.prepare(root); LegacyEntityDataFixes.finish(root);

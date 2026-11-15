@@ -13,9 +13,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
-import net.minecraftforge.registries.DeferredRegister;
-import net.minecraftforge.registries.ForgeRegistry;
-import net.minecraftforge.registries.RegisterEvent;
+import net.neoforged.neoforge.registries.DeferredRegister;
+import net.neoforged.neoforge.registries.RegisterEvent;
 import org.junit.Test;
 import zone.moddev.mc.basepower.init.ItemGroups;
 import static org.junit.Assert.*;
@@ -26,18 +25,14 @@ public class CreativeTabInitializationTest {
         net.minecraft.server.Bootstrap.bootStrap();
         assertSame(Items.STICK, ItemGroups.show(Items.STICK));
         var registry = new MappedRegistry<>(Registries.CREATIVE_MODE_TAB, Lifecycle.stable());
-        var event = RegisterEvent.class.getDeclaredConstructor(ResourceKey.class, ForgeRegistry.class, Registry.class);
+        var event = RegisterEvent.class.getDeclaredConstructor(ResourceKey.class, Registry.class);
         event.setAccessible(true);
         // Plain JUnit runs without the ModLauncher event bus transformer.
         var tabs = ItemGroups.class.getDeclaredField("TABS");
         tabs.setAccessible(true);
-        var dispatcher = Class.forName("net.minecraftforge.registries.DeferredRegister$EventDispatcher");
-        var constructor = dispatcher.getDeclaredConstructor(DeferredRegister.class);
-        constructor.setAccessible(true);
-        var handleEvent = dispatcher.getDeclaredMethod("handleEvent", RegisterEvent.class);
+        var handleEvent = DeferredRegister.class.getDeclaredMethod("addEntries", RegisterEvent.class);
         handleEvent.setAccessible(true);
-        handleEvent.invoke(constructor.newInstance(tabs.get(null)),
-                event.newInstance(Registries.CREATIVE_MODE_TAB, null, registry));
+        handleEvent.invoke(tabs.get(null), event.newInstance(Registries.CREATIVE_MODE_TAB, registry));
         ItemGroups.show(Items.IRON_INGOT);
         ItemGroups.show(Items.STICK);
         var id = ResourceLocation.parse("basepower:machines");

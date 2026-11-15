@@ -11,9 +11,9 @@ public class Native117CommandRegistrationTest {
         for (String name : new String[] {"ActorProbe", "AdvantageWorksMod", "DimensionEntityProbe",
                 "ConnectedProbe", "NativeHarvestProbe", "LifecycleProbe", "MigrationProbe",
                 "RecipeUnlockProbe", "ProgressionProbe", "NativeInteropProbe"}) {
-            String source = new String(Files.readAllBytes(Paths.get(
+            String source = new String(Files.readAllBytes(zone.moddev.mc.advantageworks.unit.TestProject.path(
                     "src/main/java/zone/moddev/mc/advantageworks/" + name + ".java")), StandardCharsets.UTF_8);
-            assertTrue(name, source.contains("import net.minecraftforge.event.RegisterCommandsEvent;"));
+            assertTrue(name, source.contains("import net.neoforged.neoforge.event.RegisterCommandsEvent;"));
             assertTrue(name, source.contains("(RegisterCommandsEvent event)"));
             assertTrue(name, source.contains("event.getDispatcher()"));
             assertFalse(name, source.contains("ServerStartingEvent"));

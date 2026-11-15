@@ -13,7 +13,7 @@ import static org.junit.Assert.*;
 public class Native117ProfileTest {
     @Test
     public void profilesSeparateUnqualifiedDestinationsFromHistoricalSources() throws Exception {
-        File[] files = new File("profiles/native117").listFiles((dir, name) -> name.endsWith(".json"));
+        File[] files = zone.moddev.mc.advantageworks.unit.TestProject.path("profiles/native117").toFile().listFiles((dir, name) -> name.endsWith(".json"));
         assertNotNull(files);
         assertEquals(10, files.length);
         int ported = 0, blocked = 0;
@@ -29,7 +29,7 @@ public class Native117ProfileTest {
             assertEquals(64, raw.getAsJsonObject("forge").get("sha256").getAsString().length());
             String source = raw.get("legacySourceProfile").getAsString();
             assertTrue(source, source.startsWith("../../../PA113/PowerAdvantage/test-rig/profiles/"));
-            assertEquals(new File(".").getCanonicalFile(), WorksRunner.findTestRig(file));
+            assertEquals(zone.moddev.mc.advantageworks.unit.TestProject.path(".").toFile().getCanonicalFile(), WorksRunner.findTestRig(file));
             if (raw.get("portStatus").getAsString().equals("UNPORTED")) {
                 blocked++;
                 try { WorksRunner.readNative117Profile(file); fail("Unported profile was accepted: " + file); }
@@ -96,7 +96,7 @@ public class Native117ProfileTest {
     @Test
     public void historical114CannotBeLaunchedAsNative117() throws Exception {
         try {
-            WorksRunner.readNative117Profile(new File("profiles/native114/packaged-current.json"));
+            WorksRunner.readNative117Profile(zone.moddev.mc.advantageworks.unit.TestProject.path("profiles/native114/packaged-current.json").toFile());
             fail("Historical 1.14.4 profile must not launch native117");
         } catch (IllegalArgumentException expected) {
             assertTrue(expected.getMessage().contains("Historical source profile"));
@@ -106,7 +106,7 @@ public class Native117ProfileTest {
     @Test
     public void historicalQualificationCannotBeLaunchedAsNative117() throws Exception {
         try {
-            WorksRunner.readNative117Profile(new File("profiles/packaged-current.json"));
+            WorksRunner.readNative117Profile(zone.moddev.mc.advantageworks.unit.TestProject.path("profiles/packaged-current.json").toFile());
             fail("Historical 1.13.2 profile must not launch native117");
         } catch (IllegalArgumentException expected) {
             assertTrue(expected.getMessage().contains("Historical source profile"));

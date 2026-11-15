@@ -1,11 +1,13 @@
 package zone.moddev.mc.basepower.compat;
 
+import net.minecraft.core.registries.BuiltInRegistries;
+
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.fml.ModList;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.fml.ModList;
+import net.minecraft.core.registries.Registries;
 import zone.moddev.mc.basepower.PowerAdvantage;
 
 /**
@@ -26,11 +28,11 @@ public final class BaseMetalsCompat {
     }
 
     public static void addCrusherRecipe(Block input, ItemStack output) {
-        PowerAdvantage.LOGGER.debug("Crushing recipe for {} is supplied as data", net.minecraftforge.registries.ForgeRegistries.BLOCKS.getKey(input));
+        PowerAdvantage.LOGGER.debug("Crushing recipe for {} is supplied as data", BuiltInRegistries.BLOCK.getKey(input));
     }
 
     public static ItemStack getSteelPlate() {
-        Item item = ForgeRegistries.ITEMS.getValue(ResourceLocation.fromNamespaceAndPath("basemetals", "steel_plate"));
+        Item item = zone.moddev.mc.basepower.util.RegistryValues.find(BuiltInRegistries.ITEM, ResourceLocation.fromNamespaceAndPath("basemetals", "steel_plate"));
         return item == null ? null : new ItemStack(item);
     }
 

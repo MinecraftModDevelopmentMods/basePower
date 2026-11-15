@@ -1,0 +1,20 @@
+import org.apache.tools.ant.filters.FixCrLfFilter
+
+tasks.named('javadoc', Javadoc) {
+    doLast {
+        // Windows JDKs ship pointer files here; include the real notices on
+        // every platform so the documentation archive is complete and stable.
+        File notices = new File(javadocTool.get().metadata.installationPath.asFile, 'legal/java.base')
+        ['ADDITIONAL_LICENSE_INFO', 'ASSEMBLY_EXCEPTION', 'LICENSE'].each { name ->
+            File notice = new File(notices, name)
+            if (!notice.isFile()) throw new GradleException('Missing JDK legal notice: ' + notice)
+            new File(destinationDir, 'legal/' + name).bytes = notice.bytes
+        }
+    }
+}
+
+tasks.named('javadocJar', Jar) {
+    filesMatching(['**/*.html', '**/*.css', '**/*.js', '**/*.json', '**/*.svg', '**/*.txt', 'element-list', 'legal/**']) {
+        filter(FixCrLfFilter, eol: FixCrLfFilter.CrLf.newInstance('lf'))
+    }
+}

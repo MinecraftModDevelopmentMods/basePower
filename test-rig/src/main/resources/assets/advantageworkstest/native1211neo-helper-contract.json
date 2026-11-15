@@ -1,0 +1,27 @@
+{
+  "format": 1,
+  "policy": "native1211neo-leash-knot-nosave-v1",
+  "minecraftVersion": "1.21.1",
+  "dataVersion": 3955,
+  "neoForgeVersion": "21.1.247",
+  "nativeClass": "net.minecraft.world.entity.decoration.LeashFenceKnotEntity",
+  "registryId": "minecraft:leash_knot",
+  "canSerialize": false,
+  "rootWriterAccepted": false,
+  "observationalUuidPreserved": true,
+  "observationalStateUnchanged": true,
+  "noPower": true,
+  "noServer": true,
+  "noTicks": true,
+  "nativeMethodsUnmodified": true,
+  "nativeClassSha256": {
+    "net.minecraft.world.entity.Entity": "4F65B7D5D4628E9F10A6A23E5A0F68814520D8019F4BC001924CD752C00EED84",
+    "net.minecraft.world.entity.EntityType": "48C9761C2756859BF6734D6D623532E382FA78D52F73E33A6671C8A9FEF2CB8D",
+    "net.minecraft.world.entity.decoration.LeashFenceKnotEntity": "0DB8878F853679C3E3F69F4BBFDC3DA2821DE9A8547EF76874E49717DC57E082"
+  },
+  "loadedMods": {
+    "minecraft": "1.21.1",
+    "native1211neo_platform_controls": "1.0.0",
+    "neoforge": "21.1.247"
+  }
+}

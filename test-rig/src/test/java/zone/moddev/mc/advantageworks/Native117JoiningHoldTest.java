@@ -9,7 +9,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.vehicle.Boat;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.event.entity.EntityJoinLevelEvent;
+import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -27,13 +27,13 @@ public class Native117JoiningHoldTest {
         Method joining = MachineOperationalProbe.class.getDeclaredMethod("entityJoining", EntityJoinLevelEvent.class);
         joining.setAccessible(true);
         joining.invoke(probe, new EntityJoinLevelEvent(boat, world));
-        assertFalse(boat.canUpdate());
+        assertFalse(WorksEntityUpdates.get(boat));
         // Repeated START enumeration must not replace the pre-join state.
         Field field = MachineOperationalProbe.class.getDeclaredField("heldEntities"); field.setAccessible(true);
         NativeEntityHold hold = (NativeEntityHold) field.get(probe);
         hold.hold(boat);
         hold.restore();
-        assertTrue(boat.canUpdate());
+        assertTrue(WorksEntityUpdates.get(boat));
         assertEquals(17, boat.tickCount);
         assertEquals(identity, boat.getUUID());
         assertSame(world, boat.level());
@@ -49,15 +49,15 @@ public class Native117JoiningHoldTest {
         Method joining = MachineOperationalProbe.class.getDeclaredMethod("entityJoining", EntityJoinLevelEvent.class);
         joining.setAccessible(true);
         joining.invoke(probe, new EntityJoinLevelEvent(boat, world));
-        assertTrue(boat.canUpdate());
+        assertTrue(WorksEntityUpdates.get(boat));
     }
 
     @Test public void previouslyDisabledActorRemainsDisabledAfterHold() throws Exception {
         Boat boat = new Boat(EntityType.BOAT, Native117EntityContextTest.world(Level.OVERWORLD));
-        boat.canUpdate(false);
+        WorksEntityUpdates.set(boat, false);
         NativeEntityHold hold = new NativeEntityHold();
         hold.hold(boat); hold.hold(boat); hold.restore();
-        assertFalse(boat.canUpdate());
+        assertFalse(WorksEntityUpdates.get(boat));
     }
 
     @Test public void nativeTickDriftCannotBeHiddenByRestoringTheCounter() throws Exception {

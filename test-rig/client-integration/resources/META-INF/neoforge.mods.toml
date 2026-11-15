@@ -1,0 +1,13 @@
+modLoader="javafml"
+loaderVersion="[4,)"
+license="GPL-3.0-only"
+[[mods]]
+modId="advantage_client_integration"
+version="1.0.0"
+displayName="Marked Native Client Integration"
+[[dependencies.advantage_client_integration]]
+modId="basepower"
+type="required"
+versionRange="[2.4.19.121012]"
+ordering="AFTER"
+side="CLIENT"

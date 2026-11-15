@@ -1,5 +1,7 @@
 package zone.moddev.mc.advantageworks.client;
 
+import net.minecraft.core.registries.BuiltInRegistries;
+
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -24,7 +26,6 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.registries.ForgeRegistries;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -63,9 +64,9 @@ final class ChildRendererGeometryProbe {
             drill(minecraft, cases);
             turret(minecraft, cases);
             run(cases, "hydroturbine-registration", row -> {
-                EntityType<?> type = ForgeRegistries.ENTITY_TYPES.getValue(ResourceLocation.parse("baseelectric:hydroturbine"));
+                EntityType<?> type = zone.moddev.mc.basepower.util.RegistryValues.find(BuiltInRegistries.ENTITY_TYPE, ResourceLocation.parse("baseelectric:hydroturbine"));
                 require(type != null, "Missing registered hydroturbine type");
-                EntityRenderer<?> renderer = minecraft.getEntityRenderDispatcher().renderers.get(type);
+                EntityRenderer<?> renderer = registeredEntityRenderer(minecraft, type);
                 require(renderer != null && TURBINE_RENDERER.equals(renderer.getClass().getName()), "Missing production hydroturbine renderer");
                 row.addProperty("renderer", renderer.getClass().getName());
                 ResourceLocation texture = (ResourceLocation) valueOfType(renderer, ResourceLocation.class);
@@ -175,9 +176,9 @@ final class ChildRendererGeometryProbe {
     }
 
     private static BlockEntity tile(String id) {
-        BlockEntityType<?> type = ForgeRegistries.BLOCK_ENTITY_TYPES.getValue(ResourceLocation.parse(id));
+        BlockEntityType<?> type = zone.moddev.mc.basepower.util.RegistryValues.find(BuiltInRegistries.BLOCK_ENTITY_TYPE, ResourceLocation.parse(id));
         require(type != null, "Missing registered tile type " + id);
-        net.minecraft.world.level.block.state.BlockState state = ForgeRegistries.BLOCKS.getValues().stream()
+        net.minecraft.world.level.block.state.BlockState state = BuiltInRegistries.BLOCK.stream()
                 .map(net.minecraft.world.level.block.Block::defaultBlockState).filter(type::isValid).findFirst()
                 .orElseThrow(() -> new IllegalStateException("No valid native block state for " + id));
         BlockEntity tile = type.create(net.minecraft.core.BlockPos.ZERO, state);
@@ -335,6 +336,13 @@ final class ChildRendererGeometryProbe {
         }
     }
 
+    private static EntityRenderer<?> registeredEntityRenderer(Minecraft minecraft, EntityType<?> type)
+            throws ReflectiveOperationException {
+        var field = net.minecraft.client.renderer.entity.EntityRenderDispatcher.class.getDeclaredField("renderers");
+        field.setAccessible(true);
+        return (EntityRenderer<?>) ((java.util.Map<?, ?>) field.get(minecraft.getEntityRenderDispatcher())).get(type);
+    }
+
     private static Object valueOfType(Object object, Class<?> type) throws IllegalAccessException {
         Field found = null;
         for (Class<?> owner = object.getClass(); owner != null; owner = owner.getSuperclass()) for (Field field : owner.getDeclaredFields()) {
@@ -364,7 +372,7 @@ final class ChildRendererGeometryProbe {
     private static int offset(VertexFormat format, VertexFormatElement.Usage usage, int index) {
         for (int i = 0; i < format.getElements().size(); i++) {
             VertexFormatElement element = format.getElements().get(i);
-            if (element.usage() == usage && element.index() == index) return format.getOffset(i);
+            if (element.usage() == usage && element.index() == index) return format.getOffset(element);
         }
         throw new IllegalStateException("Native vertex format lacks " + usage + " " + index);
     }

@@ -1,5 +1,7 @@
 package zone.moddev.mc.advantageworks;
 
+import net.minecraft.core.registries.BuiltInRegistries;
+
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -23,14 +25,16 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.energy.IEnergyStorage;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.IFluidHandler;
-import net.minecraftforge.event.RegisterCommandsEvent;
-import net.minecraftforge.items.IItemHandler;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.capabilities.BlockCapabilityCache;
+import net.neoforged.neoforge.capabilities.Capabilities;
+import java.util.concurrent.atomic.AtomicInteger;
+import net.neoforged.neoforge.energy.IEnergyStorage;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler;
+import net.neoforged.neoforge.event.RegisterCommandsEvent;
+import net.neoforged.neoforge.items.IItemHandler;
+import net.minecraft.core.registries.Registries;
 import zone.moddev.mc.basepower.machines.conveyors.BlockConveyor;
 import zone.moddev.mc.basepower.machines.conveyors.TileEntityConveyor;
 import zone.moddev.mc.basepower.machines.fluidmachines.StorageTankTileEntity;
@@ -43,7 +47,7 @@ final class NativeInteropProbe {
     private static final BlockPos BELT = new BlockPos(1040, 8, 1024);
 
     static void register() {
-        if (MARKER.isFile()) MinecraftForge.EVENT_BUS.addListener(new NativeInteropProbe()::starting);
+        if (MARKER.isFile()) NeoForge.EVENT_BUS.addListener(new NativeInteropProbe()::starting);
     }
 
     private void starting(RegisterCommandsEvent event) {
@@ -78,8 +82,8 @@ final class NativeInteropProbe {
 
     private static Block block(String id) {
         ResourceLocation key = ResourceLocation.parse(id);
-        require(ForgeRegistries.BLOCKS.containsKey(key), "Missing registry entry: " + id);
-        return ForgeRegistries.BLOCKS.getValue(key);
+        require(BuiltInRegistries.BLOCK.containsKey(key), "Missing registry entry: " + id);
+        return zone.moddev.mc.basepower.util.RegistryValues.find(BuiltInRegistries.BLOCK, key);
     }
 
     private static void place(ServerLevel world, BlockPos pos, BlockState state) {
@@ -90,8 +94,8 @@ final class NativeInteropProbe {
     }
 
     private static IFluidHandler fluid(BlockEntity tile) {
-        return tile.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER, Direction.UP)
-                .orElseThrow(() -> new AssertionError("Missing native fluid capability"));
+        require(tile != null && tile.getLevel() instanceof ServerLevel, "Fluid witness must be placed in a server world");
+        return WorksCapabilities.fluid(tile, Direction.UP);
     }
 
     private static void energy(ServerLevel world, JsonArray checks) {
@@ -104,8 +108,8 @@ final class NativeInteropProbe {
             place(world, pos, block("basepower:" + id).defaultBlockState());
             TileEntityRFConverter tile = (TileEntityRFConverter) world.getBlockEntity(pos);
             check(checks, id + "/capability", () -> {
-                IEnergyStorage storage = tile.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.ENERGY, Direction.NORTH)
-                        .orElseThrow(() -> new AssertionError("Missing Forge Energy capability"));
+                IEnergyStorage storage = world.getCapability(Capabilities.EnergyStorage.BLOCK, pos, Direction.NORTH);
+                require(storage != null, "Missing native energy capability");
                 require(storage == tile, "Capability does not expose the live converter");
                 require(storage.receiveEnergy(-1, false) == 0 && storage.extractEnergy(-1, false) == 0,
                         "Negative transfers accepted");
@@ -142,13 +146,25 @@ final class NativeInteropProbe {
                         "Reverse conversion lost energy: before=" + before + ", after=" + after);
             });
             check(checks, id + "/invalidation", () -> {
-                LazyOptional<IEnergyStorage> old = tile.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.ENERGY, Direction.NORTH);
-                require(old.isPresent(), "Missing original capability");
+                AtomicInteger invalidations = new AtomicInteger();
+                var cache = BlockCapabilityCache.create(Capabilities.EnergyStorage.BLOCK, world, pos,
+                        Direction.NORTH, () -> true, invalidations::incrementAndGet);
+                IEnergyStorage old = cache.getCapability();
+                require(old != null && old == world.getCapability(Capabilities.EnergyStorage.BLOCK, pos, Direction.NORTH),
+                        "Cache does not expose the placed converter's live capability");
                 world.setBlock(pos, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
-                require(!old.isPresent(), "Removed converter still exposes its stale capability");
+                require(invalidations.get() > 0, "Removing a converter did not invalidate the native cache");
+                require(cache.getCapability() == null
+                        && world.getCapability(Capabilities.EnergyStorage.BLOCK, pos, Direction.NORTH) == null,
+                        "Removed converter still exposes its stale capability");
+                int removed = invalidations.get();
                 world.setBlock(pos, block("basepower:" + id).defaultBlockState(), 3);
-                LazyOptional<IEnergyStorage> replacement = world.getBlockEntity(pos).getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.ENERGY, Direction.NORTH);
-                require(replacement.isPresent() && replacement != old, "Replacement did not expose a fresh capability");
+                require(invalidations.get() > removed, "Replacement did not invalidate the cached missing capability");
+                IEnergyStorage replacement = cache.getCapability();
+                require(replacement != null && replacement != old
+                        && replacement == world.getCapability(Capabilities.EnergyStorage.BLOCK, pos, Direction.NORTH)
+                        && replacement.getEnergyStored() == 0,
+                        "Replacement did not expose a fresh, empty live converter");
             });
         }
     }
@@ -173,9 +189,15 @@ final class NativeInteropProbe {
                     && tank.getFluidInTank(0).getAmount() == 500, "Drain lost fluid or identity");
         });
         check(checks, "portable-tank/native-break-drop-and-replace", () -> {
-            LazyOptional<IFluidHandler> old = tile.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER, Direction.UP);
+            AtomicInteger invalidations = new AtomicInteger();
+            var cache = BlockCapabilityCache.create(Capabilities.FluidHandler.BLOCK, world, TANK,
+                    Direction.UP, () -> true, invalidations::incrementAndGet);
+            IFluidHandler old = cache.getCapability();
+            require(old != null && old.getFluidInTank(0).getAmount() == 500, "Missing seeded tank capability");
             require(world.destroyBlock(TANK, true), "Native block destruction failed");
-            require(!old.isPresent(), "Removed tank still exposes a stale capability");
+            require(invalidations.get() > 0 && cache.getCapability() == null
+                    && world.getCapability(Capabilities.FluidHandler.BLOCK, TANK, Direction.UP) == null,
+                    "Removed tank still exposes a stale native cached capability");
             List<ItemEntity> drops = world.getEntitiesOfClass(ItemEntity.class, new AABB(TANK).inflate(2));
             require(drops.size() == 1, "Expected exactly one portable tank drop; got " + drops.size());
             ItemStack item = drops.get(0).getItem().copy();
@@ -183,10 +205,13 @@ final class NativeInteropProbe {
                     && WorksItemData.read(item).getString("FluidID").equals("minecraft:water")
                     && WorksItemData.read(item).getInt("Volume") == 500, "Native loot lost portable fluid NBT: " + item);
             drops.get(0).discard();
+            int removed = invalidations.get();
             world.setBlock(TANK, block.defaultBlockState(), 3);
             block.setPlacedBy(world, TANK, block.defaultBlockState(),
                     WorksOfflinePlayer.sentinel(world), item);
-            require(fluid(world.getBlockEntity(TANK)).getFluidInTank(0).getAmount() == 500,
+            require(invalidations.get() > removed && cache.getCapability() != old
+                    && cache.getCapability() == fluid(world.getBlockEntity(TANK))
+                    && cache.getCapability().getFluidInTank(0).getAmount() == 500,
                     "Replacing native drop did not restore exactly 500 mB");
         });
     }
@@ -220,84 +245,101 @@ final class NativeInteropProbe {
         });
     }
 
-    private static final class CallbackTank extends StorageTankTileEntity {
-        CallbackTank() { super(BlockPos.ZERO, zone.moddev.mc.basepower.init.Blocks.storage_tank.defaultBlockState()); }
-        void reviveNativeCapabilities() { super.reviveCaps(); }
-    }
-
-    private static CallbackTank callbackTank() {
-        require(net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER != null
-                && net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER != null,
-                "Forge did not inject native fluid and item capability tokens");
-        require((Object) net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER != net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER,
+    private static StorageTankTileEntity callbackTank(ServerLevel world, BlockPos pos) {
+        require((Object) Capabilities.FluidHandler.BLOCK != Capabilities.ItemHandler.BLOCK,
                 "Native fluid and item capability tokens alias each other");
-        CallbackTank tile = new CallbackTank();
-        require(tile.getLevel() == null && !tile.isRemoved(), "Callback fixture is not a fresh standalone tank");
+        place(world, pos, zone.moddev.mc.basepower.init.Blocks.storage_tank.defaultBlockState());
+        StorageTankTileEntity tile = (StorageTankTileEntity) world.getBlockEntity(pos);
+        require(tile != null && tile.getLevel() == world && !tile.isRemoved(), "Callback tank is not placed in the live world");
         cyano.poweradvantage.api.fluid.FluidStack contents =
                 new cyano.poweradvantage.api.fluid.FluidStack(net.minecraft.world.level.material.Fluids.WATER, 500);
         contents.tag = new CompoundTag();
-        contents.tag.putString("InteropWitness", "native117-callback");
+        contents.tag.putString("InteropWitness", "native1211-callback");
         tile.getTank().setFluid(contents);
+        tile.setChanged();
         return tile;
     }
 
-    private static void requireUnavailable(CallbackTank tile) {
+    private static void requireUnavailable(ServerLevel world, StorageTankTileEntity tile) {
+        require(world.isLoaded(tile.getBlockPos()) && world.getBlockEntity(tile.getBlockPos()) == tile,
+                "Callback witness must remain installed in a loaded world position");
         for (Direction face : Direction.values()) {
-            require(!tile.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER, face).isPresent()
-                    && !tile.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER, face).isPresent(),
+            require(world.getCapability(Capabilities.FluidHandler.BLOCK, tile.getBlockPos(), face) == null
+                    && world.getCapability(Capabilities.ItemHandler.BLOCK, tile.getBlockPos(), face) == null,
                     "Unloaded callback tank recreated a sided capability: " + face);
         }
-        require(!tile.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER, null).isPresent()
-                && !tile.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER, null).isPresent(),
+        require(world.getCapability(Capabilities.FluidHandler.BLOCK, tile.getBlockPos(), null) == null
+                && world.getCapability(Capabilities.ItemHandler.BLOCK, tile.getBlockPos(), null) == null,
                 "Unloaded callback tank recreated an unsided capability");
     }
 
-    private static void capabilityCallbacks(JsonArray checks) {
-        // These unplaced tanks witness native callbacks, not physical chunk unloading.
+    private static void capabilityCallbacks(ServerLevel world, JsonArray checks) {
+        // These placed-world witnesses invoke lifecycle callbacks; they do not claim a physical chunk unload.
         check(checks, "capability/native-chunk-unloaded-callback", () -> {
-            CallbackTank tile = callbackTank();
-            LazyOptional<IFluidHandler> oldFluid = tile.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER, Direction.UP);
-            LazyOptional<IItemHandler> oldItems = tile.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER, Direction.DOWN);
-            require(oldFluid.isPresent() && oldItems.isPresent(), "Standalone tank lacks native capability wrappers");
+            BlockPos pos = new BlockPos(1092, 8, 1024);
+            StorageTankTileEntity tile = callbackTank(world, pos);
+            AtomicInteger fluidInvalidations = new AtomicInteger();
+            AtomicInteger itemInvalidations = new AtomicInteger();
+            var fluidCache = BlockCapabilityCache.create(Capabilities.FluidHandler.BLOCK, world, pos,
+                    Direction.UP, () -> true, fluidInvalidations::incrementAndGet);
+            var itemCache = BlockCapabilityCache.create(Capabilities.ItemHandler.BLOCK, world, pos,
+                    Direction.DOWN, () -> true, itemInvalidations::incrementAndGet);
+            require(fluidCache.getCapability() != null && itemCache.getCapability() != null,
+                    "Placed tank lacks native fluid and item capabilities");
             CompoundTag contents = tile.getTank().writeToNBT(new CompoundTag());
             tile.onChunkUnloaded();
-            require(!tile.isRemoved(), "Native unload callback unexpectedly marked the standalone tank removed");
-            require(!oldFluid.isPresent() && !oldItems.isPresent(), "Unload callback left old optionals valid");
-            requireUnavailable(tile);
+            require(!tile.isRemoved(), "Native unload callback unexpectedly marked the placed tank removed");
+            require(fluidInvalidations.get() > 0 && itemInvalidations.get() > 0,
+                    "Unload callback did not notify both native capability caches");
+            require(fluidCache.getCapability() == null && itemCache.getCapability() == null,
+                    "Unload callback left cached fluid or item capabilities available");
+            requireUnavailable(world, tile);
             require(contents.equals(tile.getTank().writeToNBT(new CompoundTag()))
                     && tile.getContainerSize() == 0 && tile.isEmpty(), "Unload callback changed tank contents");
         });
         check(checks, "capability/native-clear-removed-and-revive", () -> {
             for (boolean clearRemoved : new boolean[] {true, false}) {
-                CallbackTank tile = callbackTank();
-                LazyOptional<IFluidHandler> oldFluid = tile.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER, Direction.UP);
-                LazyOptional<IItemHandler> oldItems = tile.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER, Direction.DOWN);
-                IFluidHandler oldFluidWrapper = oldFluid.orElseThrow(() -> new AssertionError("Missing original fluid wrapper"));
-                IItemHandler oldItemWrapper = oldItems.orElseThrow(() -> new AssertionError("Missing original item wrapper"));
-                FluidStack before = oldFluidWrapper.getFluidInTank(0);
+                BlockPos pos = new BlockPos(clearRemoved ? 1094 : 1096, 8, 1024);
+                StorageTankTileEntity tile = callbackTank(world, pos);
+                AtomicInteger fluidInvalidations = new AtomicInteger();
+                AtomicInteger itemInvalidations = new AtomicInteger();
+                var fluidCache = BlockCapabilityCache.create(Capabilities.FluidHandler.BLOCK, world, pos,
+                        Direction.UP, () -> true, fluidInvalidations::incrementAndGet);
+                var itemCache = BlockCapabilityCache.create(Capabilities.ItemHandler.BLOCK, world, pos,
+                        Direction.DOWN, () -> true, itemInvalidations::incrementAndGet);
+                IFluidHandler oldFluid = fluidCache.getCapability();
+                IItemHandler oldItems = itemCache.getCapability();
+                require(oldFluid != null && oldItems != null, "Missing original placed-world wrappers");
+                FluidStack before = oldFluid.getFluidInTank(0);
+                var custom = before.get(net.minecraft.core.component.DataComponents.CUSTOM_DATA);
                 require(before.getFluid() == net.minecraft.world.level.material.Fluids.WATER && before.getAmount() == 500
-                        && before.hasTag() && before.getTag().getString("InteropWitness").equals("native117-callback")
-                        && oldItemWrapper.getSlots() == 0, "Standalone wrappers do not expose the seeded tank contents");
+                        && custom != null && custom.copyTag().getString("InteropWitness").equals("native1211-callback")
+                        && oldItems.getSlots() == 0, "Native wrappers do not expose the seeded tank contents");
                 CompoundTag contents = tile.getTank().writeToNBT(new CompoundTag());
-                CompoundTag exposedFluid = before.writeToNBT(new CompoundTag());
+                var exposedFluid = before.save(world.registryAccess());
                 tile.onChunkUnloaded();
-                require(!tile.isRemoved() && !oldFluid.isPresent() && !oldItems.isPresent(),
+                require(!tile.isRemoved() && fluidInvalidations.get() > 0 && itemInvalidations.get() > 0,
                         "Revival fixture was not invalidated while unremoved");
-                requireUnavailable(tile);
+                require(fluidCache.getCapability() == null && itemCache.getCapability() == null,
+                        "Invalidated tank remained available through its caches");
+                requireUnavailable(world, tile);
+                int fluidMissing = fluidInvalidations.get();
+                int itemsMissing = itemInvalidations.get();
                 if (clearRemoved) tile.clearRemoved();
-                else tile.reviveNativeCapabilities();
-                LazyOptional<IFluidHandler> currentFluid = tile.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER, Direction.UP);
-                LazyOptional<IItemHandler> currentItems = tile.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER, Direction.DOWN);
-                IFluidHandler currentFluidWrapper = currentFluid.orElseThrow(() -> new AssertionError("Revival did not restore fluid capability"));
-                IItemHandler currentItemWrapper = currentItems.orElseThrow(() -> new AssertionError("Revival did not restore item capability"));
-                require(!tile.isRemoved() && currentFluid != oldFluid && currentItems != oldItems
-                        && currentFluidWrapper != oldFluidWrapper && currentItemWrapper != oldItemWrapper,
-                        "Native revival did not create fresh fluid and item wrappers; clearRemoved=" + clearRemoved);
-                require(!oldFluid.isPresent() && !oldItems.isPresent(), "Native revival revalidated old optionals");
+                else tile.reviveCaps();
+                require(fluidInvalidations.get() > fluidMissing && itemInvalidations.get() > itemsMissing,
+                        "Native revival did not invalidate cached missing capabilities; clearRemoved=" + clearRemoved);
+                IFluidHandler currentFluid = fluidCache.getCapability();
+                IItemHandler currentItems = itemCache.getCapability();
+                require(!tile.isRemoved() && currentFluid != null && currentItems != null
+                        && currentFluid != oldFluid && currentItems != oldItems
+                        && currentFluid == world.getCapability(Capabilities.FluidHandler.BLOCK, pos, Direction.UP)
+                        && currentItems == world.getCapability(Capabilities.ItemHandler.BLOCK, pos, Direction.DOWN),
+                        "Native revival did not re-query fresh live wrappers; clearRemoved=" + clearRemoved);
                 require(contents.equals(tile.getTank().writeToNBT(new CompoundTag()))
-                        && exposedFluid.equals(currentFluidWrapper.getFluidInTank(0).writeToNBT(new CompoundTag()))
-                        && currentItemWrapper.getSlots() == 0 && tile.getContainerSize() == 0 && tile.isEmpty(),
-                        "Native revival changed fluid identity, amount, tag or empty item contents");
+                        && exposedFluid.equals(currentFluid.getFluidInTank(0).save(world.registryAccess()))
+                        && currentItems.getSlots() == 0 && tile.getContainerSize() == 0 && tile.isEmpty(),
+                        "Native revival changed fluid identity, amount, components or empty item contents");
             }
         });
     }
@@ -310,7 +352,7 @@ final class NativeInteropProbe {
             energy(world, checks);
             tank(world, checks);
             locks(world, checks);
-            capabilityCallbacks(checks);
+            capabilityCallbacks(world, checks);
         } else {
             check(checks, "portable-tank/full-process-restart", () -> {
                 FluidStack stack = fluid(world.getBlockEntity(TANK)).getFluidInTank(0);
@@ -329,10 +371,13 @@ final class NativeInteropProbe {
         report.addProperty("status", java.util.stream.StreamSupport.stream(checks.spliterator(), false)
                 .allMatch(row -> row.getAsJsonObject().get("status").getAsString().equals("PASS")) ? "PASS" : "FAIL");
         report.add("checks", checks);
-        if (net.minecraftforge.fml.ModList.get().isLoaded("basemetals")) {
+        if (net.neoforged.fml.ModList.get().isLoaded("basemetals")) {
             JsonArray shared = new JsonArray();
             check(shared, "basemetals/native-power-crushing", () -> sharedCrushing(world));
             report.add("sharedChecks", shared);
+            if (java.util.stream.StreamSupport.stream(shared.spliterator(), false)
+                    .anyMatch(row -> !row.getAsJsonObject().get("status").getAsString().equals("PASS")))
+                report.addProperty("status", "FAIL");
         }
         File destination = new File("advantage-works-results", "native-interop-" + phase + ".json");
         require(!destination.exists(), "Refusing to overwrite interop evidence");
@@ -344,16 +389,16 @@ final class NativeInteropProbe {
     private static void sharedCrushing(ServerLevel world) {
         ResourceLocation recipeId = ResourceLocation.fromNamespaceAndPath("basepower", "crushing_potato_starch");
         var holder = world.getRecipeManager().byKey(recipeId).orElseThrow(
-                () -> new AssertionError("Missing Power recipe under Base Metals crushing: " + recipeId));
+                () -> new AssertionError("Missing Power recipe under shared MMDLib crushing: " + recipeId));
         var recipe = (net.minecraft.world.item.crafting.Recipe<net.minecraft.world.item.crafting.SingleRecipeInput>) holder.value();
         var type = net.minecraft.core.registries.BuiltInRegistries.RECIPE_TYPE.getKey(recipe.getType());
-        require(ResourceLocation.fromNamespaceAndPath("basemetals", "crushing").equals(type), "Wrong loaded crushing type: " + type);
+        require(ResourceLocation.fromNamespaceAndPath("mmdlib", "crushing").equals(type), "Wrong loaded crushing type: " + type);
         for (var potato : List.of(net.minecraft.world.item.Items.POTATO, net.minecraft.world.item.Items.POISONOUS_POTATO)) {
             var input = new net.minecraft.world.item.crafting.SingleRecipeInput(new ItemStack(potato, 3));
             require(recipe.matches(input, world), "Shared crusher rejected " + potato);
             ItemStack result = recipe.assemble(input, world.registryAccess());
             require(result.getCount() == 1 && ResourceLocation.fromNamespaceAndPath("basepower", "starch").equals(
-                    ForgeRegistries.ITEMS.getKey(result.getItem())), "Incorrect shared crushing result: " + result);
+                    BuiltInRegistries.ITEM.getKey(result.getItem())), "Incorrect shared crushing result: " + result);
             require(input.getItem(0).getCount() == 3, "Assembling a recipe preview mutated its input");
         }
         require(!recipe.matches(new net.minecraft.world.item.crafting.SingleRecipeInput(new ItemStack(net.minecraft.world.item.Items.DIRT)), world),

@@ -19,7 +19,7 @@ import net.minecraft.server.packs.metadata.MetadataSectionSerializer;
 import net.minecraft.server.packs.metadata.pack.PackMetadataSection;
 import net.minecraft.server.packs.resources.IoSupplier;
 import net.minecraft.server.packs.repository.PackSource;
-import net.minecraftforge.fml.ModList;
+import net.neoforged.fml.ModList;
 import zone.moddev.mc.basepower.PowerAdvantage;
 import zone.moddev.mc.basepower.RecipeMode;
 
@@ -46,7 +46,7 @@ final class MaterialPolicyPack implements PackResources {
         if (normalSolder) {
             for (String metal : new String[] {"lead", "tin", "silver"}) {
                 JsonObject optional = new JsonObject();
-                optional.addProperty("id", "#forge:ingots/" + metal);
+                optional.addProperty("id", "#c:ingots/" + metal);
                 optional.addProperty("required", false);
                 solder.add(optional);
             }
@@ -58,7 +58,7 @@ final class MaterialPolicyPack implements PackResources {
         JsonObject tag = new JsonObject();
         tag.addProperty("replace", false);
         tag.add("values", values);
-        resources.put(ResourceLocation.fromNamespaceAndPath("forge", "tags/item/" + path + ".json"), tag.toString());
+        resources.put(ResourceLocation.fromNamespaceAndPath("c", "tags/item/" + path + ".json"), tag.toString());
     }
 
     @Override public IoSupplier<InputStream> getRootResource(String... names) { return null; }
@@ -77,7 +77,7 @@ final class MaterialPolicyPack implements PackResources {
         }
     }
     @Override public Set<String> getNamespaces(PackType type) {
-        return type == PackType.SERVER_DATA ? Collections.singleton("forge") : Collections.emptySet();
+        return type == PackType.SERVER_DATA ? Collections.singleton("c") : Collections.emptySet();
     }
     @Override @SuppressWarnings("unchecked")
     public <T> T getMetadataSection(MetadataSectionSerializer<T> serializer) {

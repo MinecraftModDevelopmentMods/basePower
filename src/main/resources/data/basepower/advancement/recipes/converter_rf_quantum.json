@@ -18,7 +18,7 @@
       "conditions": {
         "items": [
           {
-            "items": "#forge:frames/steel"
+            "items": "#c:frames/steel"
           }
         ]
       }

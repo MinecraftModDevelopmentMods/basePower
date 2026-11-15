@@ -25,7 +25,7 @@ public class Native117RedstoneReadinessTest {
     }
 
     @Test public void runtimeRecordsActualQueriesAndNeverWaitsForTheExpectedResult() throws Exception {
-        String source = Files.readString(Paths.get("src/main/java/zone/moddev/mc/advantageworks/RedstoneReloadProbe.java"),
+        String source = Files.readString(zone.moddev.mc.advantageworks.unit.TestProject.path("src/main/java/zone/moddev/mc/advantageworks/RedstoneReloadProbe.java"),
                 StandardCharsets.UTF_8);
         int start = source.indexOf("private boolean ready(String stage)");
         int end = source.indexOf("private void construct(Witness witness)", start);

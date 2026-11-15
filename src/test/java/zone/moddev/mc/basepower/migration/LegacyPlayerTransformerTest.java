@@ -21,7 +21,7 @@ import net.minecraft.server.Bootstrap;
 import net.minecraft.util.datafix.DataFixers;
 import net.minecraft.util.datafix.fixes.References;
 import net.minecraft.world.level.validation.DirectoryValidator;
-import net.minecraftforge.fml.ModList;
+import net.neoforged.fml.ModList;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;

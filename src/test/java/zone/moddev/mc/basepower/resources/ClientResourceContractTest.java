@@ -19,7 +19,7 @@ import java.util.stream.Stream;
 import static org.junit.Assert.*;
 
 public class ClientResourceContractTest {
-    private static final Path ROOT = Paths.get("src/main/resources");
+    private static final Path ROOT = zone.moddev.mc.advantageworks.unit.TestProject.path("src/main/resources");
     private static final Path ASSETS = ROOT.resolve("assets/basepower");
 
     @Test public void blockstatesResolveLiteralModelPaths() throws IOException {

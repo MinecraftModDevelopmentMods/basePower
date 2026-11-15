@@ -3,8 +3,8 @@ package zone.moddev.mc.basepower.config;
 import java.util.Arrays;
 import java.util.Locale;
 
-import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.fml.config.ModConfig;
+import net.neoforged.neoforge.common.ModConfigSpec;
+import net.neoforged.fml.config.ModConfig;
 import cyano.poweradvantage.api.FluidCategoryRegistry;
 import zone.moddev.mc.basepower.PowerAdvantage;
 import zone.moddev.mc.basepower.RecipeMode;
@@ -13,20 +13,20 @@ import zone.moddev.mc.basepower.RecipeMode;
 public final class PowerAdvantageConfig {
     private static final String DEFAULT_DISTILLATION = "2*crude_oil->1*refined_oil";
 
-    public static final ForgeConfigSpec SPEC;
-    public static final ForgeConfigSpec.ConfigValue<String> RECIPE_MODE;
-    public static final ForgeConfigSpec.DoubleValue CHEST_LOOT_FACTOR;
-    public static final ForgeConfigSpec.BooleanValue PLASTIC_IS_RUBBER;
-    public static final ForgeConfigSpec.BooleanValue USE_OTHER_FLUIDS;
-    public static final ForgeConfigSpec.ConfigValue<String> DISTILLER_RECIPES;
-    public static final ForgeConfigSpec.ConfigValue<String> ADDITIONAL_CRUDE_OIL_ALIASES;
-    public static final ForgeConfigSpec.ConfigValue<String> RF_CONVERSIONS;
-    public static final ForgeConfigSpec.ConfigValue<String> TECH_REBORN_CONVERSIONS;
+    public static final ModConfigSpec SPEC;
+    public static final ModConfigSpec.ConfigValue<String> RECIPE_MODE;
+    public static final ModConfigSpec.DoubleValue CHEST_LOOT_FACTOR;
+    public static final ModConfigSpec.BooleanValue PLASTIC_IS_RUBBER;
+    public static final ModConfigSpec.BooleanValue USE_OTHER_FLUIDS;
+    public static final ModConfigSpec.ConfigValue<String> DISTILLER_RECIPES;
+    public static final ModConfigSpec.ConfigValue<String> ADDITIONAL_CRUDE_OIL_ALIASES;
+    public static final ModConfigSpec.ConfigValue<String> RF_CONVERSIONS;
+    public static final ModConfigSpec.ConfigValue<String> TECH_REBORN_CONVERSIONS;
 
     private static boolean loaded;
 
     static {
-        ForgeConfigSpec.Builder builder = new ForgeConfigSpec.Builder();
+        ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
         builder.push("options");
         RECIPE_MODE = builder.comment("NORMAL, TECH_PROGRESSION, or APOCALYPTIC. Restart after changing.")
                 .worldRestart().define("recipeMode", "NORMAL");
@@ -55,7 +55,7 @@ public final class PowerAdvantageConfig {
 
     private PowerAdvantageConfig() {}
 
-    public static void onConfigLoading(net.minecraftforge.fml.event.config.ModConfigEvent.Loading event) {
+    public static void onConfigLoading(net.neoforged.fml.event.config.ModConfigEvent.Loading event) {
         if (event.getConfig().getSpec() != SPEC) return;
         loaded = true;
         apply();

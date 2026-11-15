@@ -35,7 +35,7 @@ public class MaterialTagsTest {
     }
 
     private static Set<Item> resolve(MaterialPolicyPack pack, String path, String userEntries) throws Exception {
-        var resource = ResourceLocation.fromNamespaceAndPath("forge", "tags/item/" + path + ".json");
+        var resource = ResourceLocation.fromNamespaceAndPath("c", "tags/item/" + path + ".json");
         JsonObject policy;
         try (var reader = new InputStreamReader(pack.getResource(PackType.SERVER_DATA, resource).get(),
                 StandardCharsets.UTF_8)) {
@@ -45,7 +45,7 @@ public class MaterialTagsTest {
         Map<String, Item> items = Map.of("minecraft:stick", Items.STICK, "minecraft:redstone", Items.REDSTONE,
                 "basepower:bioplastic_ingot", Items.APPLE);
         Map<String, List<Item>> tags = Map.of(
-                "forge:ingots/lead", List.of(Items.IRON_INGOT), "forge:ingots/tin", List.of(Items.GOLD_INGOT));
+                "c:ingots/lead", List.of(Items.IRON_INGOT), "c:ingots/tin", List.of(Items.GOLD_INGOT));
         return NativeTestTags.resolve(id -> items.get(id.toString()), id -> tags.get(id.toString()),
                 policy, JsonParser.parseString("{\"values\":" + userEntries + "}"));
     }

@@ -14,7 +14,7 @@ import net.minecraft.nbt.NbtAccounter;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.fml.ModList;
+import net.neoforged.fml.ModList;
 
 /** Translate renamed mods before vanilla selects packs or Forge reads its saved mod list. */
 public final class LegacyWorldMetadata {

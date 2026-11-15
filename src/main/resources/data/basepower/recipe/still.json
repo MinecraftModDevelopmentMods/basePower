@@ -9,7 +9,7 @@
       "item": "minecraft:bucket"
     },
     "p": {
-      "tag": "forge:pipes"
+      "tag": "c:pipes"
     },
     "f": {
       "item": "minecraft:furnace"
@@ -19,8 +19,10 @@
     "id": "basepower:still"
   },
   "group": "basepower:still",
-  "forge:condition": {
-    "type": "basepower:tag_not_empty",
-    "tag": "forge:pipes"
-  }
+  "neoforge:conditions": [
+    {
+      "type": "basepower:tag_not_empty",
+      "tag": "c:pipes"
+    }
+  ]
 }

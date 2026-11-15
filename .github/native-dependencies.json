@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "status": "HOSTED_INPUTS_READY",
+  "reason": "All three dependencies are public. Base Metals PR #545 is merged and its release jar matches CurseForge, Maven and GitHub downloads.",
+  "target": {
+    "minecraft": "1.21.1",
+    "neoforge": "21.1.265",
+    "java": "21",
+    "moddev": "2.0.148",
+    "gradle": "9.8.0",
+    "releaseBranch": "master-1.21.1-neo"
+  },
+  "dependencies": [
+    {
+      "id": "basemetals",
+      "group": "zone.moddev.mc.basemetals",
+      "artifact": "BaseMetals",
+      "versionProperty": "basemetals_version",
+      "hashProperty": "basemetals_deobf_sha256",
+      "version": "4.0.1.121012+Neo",
+      "mavenVersion": "4.0.1.121012+Neo",
+      "modVersion": "4.0.1.121012+Neo",
+      "sha256": "B4BB1CBCD54DFCF2EC8465ACE82715EDCCC5BF1E5C15E14C627AE7CC58E8FED1",
+      "state": "PUBLISHED",
+      "source": {
+        "repository": "MinecraftModDevelopmentMods/BaseMetals",
+        "branch": "master-1.21.1-neo",
+        "commit": "39b240bb0d9f80997847ab4df70a2dd23e6ea826",
+        "baselineCommit": "4d63af931292e5020a5e0a3ddbd73a87ab1f410f"
+      },
+      "requiredEntry": "zone/moddev/mc/basemetals/migration/LegacyWorldDataHook.class"
+    },
+    {
+      "id": "mmdlib",
+      "group": "zone.moddev.mc.lib",
+      "artifact": "mmdlib",
+      "versionProperty": "mmdlib_version",
+      "hashProperty": "mmdlib_sha256",
+      "version": "2.0.2.121012+Neo",
+      "mavenVersion": "2.0.2.121012+Neo",
+      "modVersion": "2.0.2.121012+Neo",
+      "sha256": "EE417C82D588B0050A49709B6430CF836315E71E4DB2DF4036D3735454BC5311",
+      "state": "PUBLISHED"
+    },
+    {
+      "id": "orespawn",
+      "group": "zone.moddev.mc.orespawn",
+      "artifact": "OreSpawn",
+      "versionProperty": "orespawn_version",
+      "hashProperty": "orespawn_deobf_sha256",
+      "version": "4.1.1.121012",
+      "mavenVersion": "4.1.1.121012",
+      "modVersion": "4.1.1.121012",
+      "sha256": "BF02244E25B5FBF89CCAD45F41B2624B850D4BBCB70CF66822249BA233A00976",
+      "state": "PUBLISHED",
+      "source": {
+        "repository": "MinecraftModDevelopmentMods/OreSpawn",
+        "branch": "master-1.21.1-neo",
+        "commit": "f141ae56ea69e4c9f7f8ebd7697b933a91ee5001"
+      }
+    }
+  ]
+}

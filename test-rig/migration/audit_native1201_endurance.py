@@ -15,13 +15,14 @@ import native1201
 
 def replay(run, profile, specification, *, adapter=native1201):
     suffix = adapter.MINECRAFT.replace(".", "")
-    receipt = run / f"native{suffix}-endurance-results.json"
+    receipt = run / getattr(adapter, "RECEIPT_NAME", f"native{suffix}-endurance-results.json")
     report = read_json(receipt)
-    modes = (f"fresh{suffix}", f"retained-upgrade-native{suffix}")
+    modes = getattr(adapter, "MODES", (f"fresh{suffix}", f"retained-upgrade-native{suffix}"))
     parse = getattr(adapter, "parse_snapshot", endurance.parse_snapshot)
     verify_batch = getattr(adapter, "verify_batch", None)
     require = endurance.require
-    recorded_forge = report.get("forge", native1201.FORGE if adapter is native1201 else None)
+    recorded_forge = report.get(getattr(adapter, "LOADER_VERSION_KEY", "forge"),
+                                native1201.FORGE if adapter is native1201 else None)
     require(report["status"] == "PASS" and (report["minecraft"], recorded_forge) == (adapter.MINECRAFT, adapter.FORGE)
             and report["duration_seconds"] == 1800 and report["interval_seconds"] == 60
             and report["retained_unchanged"] is True and set(report["profiles"]) == set(modes),
@@ -56,6 +57,8 @@ def replay(run, profile, specification, *, adapter=native1201):
 
         def snapshot(station, label):
             document = read_json(station_path / f"{station}-checkpoint-{label}.json")
+            if hasattr(adapter, "validate_checkpoint"):
+                adapter.validate_checkpoint(document)
             require(document["minecraft"] == adapter.MINECRAFT and document["forge"] == adapter.FORGE
                     and all(document["mods"].get(key) == value for key, value in mod_versions.items()),
                     mode + ": checkpoint runtime differs from profile")

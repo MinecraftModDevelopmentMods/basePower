@@ -20,8 +20,10 @@ final class LegacyEntityDataFixes {
     private static final String STAGED = "AdvantageLegacyEntityDataFix";
     // Forge moved these saved identities into its attribute registry in 1.16.
     private static final String[][] FORGE_ATTRIBUTES = {
-        {"forge.swimSpeed", "forge:swim_speed"},
-        {"forge.nameTagDistance", "forge:nametag_distance"},
+        {"forge.swimSpeed", "neoforge:swim_speed"},
+        {"forge:swim_speed", "neoforge:swim_speed"},
+        {"forge.nameTagDistance", "neoforge:nametag_distance"},
+        {"forge:nametag_distance", "neoforge:nametag_distance"},
         {"forge.entity_gravity", "minecraft:generic.gravity"},
         {"forge:entity_gravity", "minecraft:generic.gravity"},
         {"generic.reachDistance", "minecraft:player.block_interaction_range"},
@@ -33,6 +35,7 @@ final class LegacyEntityDataFixes {
     private LegacyEntityDataFixes() {}
 
     static void prepare(CompoundTag root) {
+        renameNativeAttributes(root);
         if (root.contains(STAGED)) return;
         int version = root.contains("DataVersion", 99) ? root.getInt("DataVersion") : -1;
         int current = SharedConstants.getCurrentVersion().getDataVersion().getVersion();
@@ -108,6 +111,7 @@ final class LegacyEntityDataFixes {
     }
 
     static void preparePlayerAttributes(CompoundTag player) {
+        renameNativeAttributes(player);
         renameForgeAttributes(player);
         if (!player.contains("RootVehicle")) return;
         if (!player.contains("RootVehicle", 10)) throw new IllegalStateException("Malformed player RootVehicle");
@@ -124,6 +128,28 @@ final class LegacyEntityDataFixes {
         ListTag passengers = entity.getList("Passengers", 10);
         for (int index = 0; index < passengers.size(); index++) {
             prepareAttributeTree(passengers.getCompound(index));
+        }
+    }
+
+    static void renameNativeAttributes(Tag value) {
+        if (value instanceof CompoundTag compound) {
+            if (compound.contains("attributes", Tag.TAG_LIST)) {
+                ListTag attributes = compound.getList("attributes", Tag.TAG_COMPOUND);
+                for (String[] alias : FORGE_ATTRIBUTES) {
+                    CompoundTag legacy = null;
+                    int found = 0;
+                    for (Tag entry : attributes) {
+                        CompoundTag attribute = (CompoundTag) entry;
+                        if (attribute.getString("id").equals(alias[0])) { legacy = attribute; found++; }
+                        else if (attribute.getString("id").equals(alias[1])) found++;
+                    }
+                    if (found > 1) throw new IllegalStateException("Ambiguous native attribute: " + alias[1]);
+                    if (legacy != null) legacy.putString("id", alias[1]);
+                }
+            }
+            for (String key : java.util.List.copyOf(compound.getAllKeys())) renameNativeAttributes(compound.get(key));
+        } else if (value instanceof ListTag list) {
+            for (Tag child : list) renameNativeAttributes(child);
         }
     }
 

@@ -1,5 +1,7 @@
 package zone.moddev.mc.basepower.migration;
 
+import net.minecraft.core.registries.BuiltInRegistries;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -35,8 +37,8 @@ import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtUtils;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.datafix.fixes.BlockStateData;
-import net.minecraftforge.fml.util.ObfuscationReflectionHelper;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.fml.util.ObfuscationReflectionHelper;
+import net.minecraft.core.registries.Registries;
 import zone.moddev.mc.basepower.PowerAdvantage;
 
 /**
@@ -205,7 +207,7 @@ public final class LegacyWorldDataHook {
 
     static synchronized boolean prepareExternalPayload(CompoundTag payload, boolean player) {
         CompoundTag before = player ? payload.copy() : null;
-        int changed = migrateLegacyNbt(payload);
+        int changed = migrateLegacyNbt(payload) + NativePersistentData.prepare(payload, player);
         if (player) LegacyEntityDataFixes.preparePlayerAttributes(payload);
         return changed > 0 || (player && !before.equals(payload));
     }
@@ -233,7 +235,7 @@ public final class LegacyWorldDataHook {
                 if (original == null) continue;
                 ResourceLocation target = LegacyMigrationApi.blockTarget(original);
                 if (target.equals(original)) continue;
-                if (!ForgeRegistries.BLOCKS.containsKey(target)) {
+                if (!BuiltInRegistries.BLOCK.containsKey(target)) {
                     throw new IllegalStateException("No replacement for saved Advantage block " + original);
                 }
                 blockState.putString("Name", target.toString());
@@ -344,8 +346,8 @@ public final class LegacyWorldDataHook {
         int mapped = 0;
         for (Map.Entry<ResourceLocation, Integer> entry : ids.entrySet()) {
             ResourceLocation target = LegacyMigrationApi.blockTarget(entry.getKey());
-            Block block = ForgeRegistries.BLOCKS.getValue(target);
-            if (!ForgeRegistries.BLOCKS.containsKey(target) || block == null) {
+            Block block = zone.moddev.mc.basepower.util.RegistryValues.find(BuiltInRegistries.BLOCK, target);
+            if (!BuiltInRegistries.BLOCK.containsKey(target) || block == null) {
                 throw new IllegalStateException("No Advantage replacement for legacy block " + entry.getKey()
                         + " (expected " + target + ")");
             }
@@ -428,6 +430,11 @@ public final class LegacyWorldDataHook {
     }
 
     private static int migrateLegacyNbt(Tag value) {
+        return (value instanceof CompoundTag root ? NativePersistentData.prepare(root, false) : 0)
+                + migrateLegacyIdentities(value);
+    }
+
+    private static int migrateLegacyIdentities(Tag value) {
         int changed = 0;
         if (value instanceof CompoundTag) {
             CompoundTag compound = (CompoundTag) value;
@@ -462,7 +469,7 @@ public final class LegacyWorldDataHook {
                 if (oldId != null && LegacyMigrationApi.handlesNamespace(oldId.getNamespace())) {
                     ResourceLocation target = LegacyMigrationApi.itemTarget(oldId);
                     if (!target.equals(oldId)) {
-                        if (!ForgeRegistries.ITEMS.containsKey(target)) {
+                        if (!BuiltInRegistries.ITEM.containsKey(target)) {
                             throw new IllegalStateException("No replacement for saved Advantage item "
                                     + oldId + " (expected " + target + ")");
                         }
@@ -488,11 +495,11 @@ public final class LegacyWorldDataHook {
             if (LegacyMigrationApi.migrateRegisteredNbt(compound)) changed++;
             for (String key : new ArrayList<>(compound.getAllKeys())) {
                 Tag child = compound.get(key);
-                if (child != null) changed += migrateLegacyNbt(child);
+                if (child != null) changed += migrateLegacyIdentities(child);
             }
         } else if (value instanceof ListTag) {
             ListTag list = (ListTag) value;
-            for (int index = 0; index < list.size(); index++) changed += migrateLegacyNbt(list.get(index));
+            for (int index = 0; index < list.size(); index++) changed += migrateLegacyIdentities(list.get(index));
         }
         return changed;
     }

@@ -1,5 +1,7 @@
 package zone.moddev.mc.advantageworks;
 
+import net.minecraft.core.registries.BuiltInRegistries;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
@@ -18,10 +20,10 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.level.LevelEvent;
-import net.minecraftforge.event.RegisterCommandsEvent;
+import net.neoforged.neoforge.common.NeoForge;
+
+import net.neoforged.neoforge.event.level.LevelEvent;
+import net.neoforged.neoforge.event.RegisterCommandsEvent;
 
 /** Read-only state witnesses in explicitly marked disposable migration worlds. */
 final class MigrationProbe {
@@ -31,19 +33,19 @@ final class MigrationProbe {
     static void register() {
         if (!MARKER.isFile()) return;
         MigrationProbe probe = new MigrationProbe();
-        MinecraftForge.EVENT_BUS.addListener(probe::load);
-        MinecraftForge.EVENT_BUS.addListener(probe::tick);
-        MinecraftForge.EVENT_BUS.addListener(probe::chunkLoaded);
-        MinecraftForge.EVENT_BUS.addListener(probe::starting);
+        NeoForge.EVENT_BUS.addListener(probe::load);
+        WorksLevelTick.listen(NeoForge.EVENT_BUS, probe::tick);
+        NeoForge.EVENT_BUS.addListener(probe::chunkLoaded);
+        NeoForge.EVENT_BUS.addListener(probe::starting);
     }
 
     private void load(LevelEvent.Load event) {
         if (event.getLevel() instanceof Level) freeze((Level) event.getLevel());
     }
-    private void tick(TickEvent.LevelTickEvent event) {
-        if (event.phase == TickEvent.Phase.START) freeze(event.level);
+    private void tick(WorksLevelTick event) {
+        if (event.phase == WorksLevelTick.Phase.START) freeze(event.level);
     }
-    private void chunkLoaded(net.minecraftforge.event.level.ChunkEvent.Load event) {
+    private void chunkLoaded(net.neoforged.neoforge.event.level.ChunkEvent.Load event) {
         if (event.getLevel() instanceof Level) freeze((Level) event.getLevel());
     }
     private void freeze(Level world) {
@@ -75,7 +77,7 @@ final class MigrationProbe {
             JsonObject entry = JSON.fromJson(JSON.toJson(element), JsonObject.class);
             BlockPos pos = new BlockPos(entry.get("x").getAsInt(), entry.get("y").getAsInt(), entry.get("z").getAsInt());
             BlockState state = world.getBlockState(pos);
-            entry.addProperty("actualName", net.minecraftforge.registries.ForgeRegistries.BLOCKS.getKey(state.getBlock()).toString());
+            entry.addProperty("actualName", BuiltInRegistries.BLOCK.getKey(state.getBlock()).toString());
             JsonObject properties = new JsonObject();
             for (Property<?> property : state.getProperties()) {
                 properties.addProperty(property.getName(), state.getValue(property).toString().toLowerCase(Locale.ROOT));
