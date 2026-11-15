@@ -22,13 +22,13 @@ include the reviewed shared migration hook.
 | --- | --- |
 | basePower 2.4.19.121012 | `E9ED662E15C3510E2A48CE85448D3D39C6EF2667208F29EB281791200507F77E` |
 | baseSteam 2.2.20.121012 | `AD4BACD5158252F4AE257DF694098E47E7C309B21BFD9F583AF6A18E569FABB9` |
-| baseElectric 2.2.20.121012 | `61457EDF8B1C097AE17805DCC26CB7E0F4F661208B777A0B53C56BB383EEDA85` |
+| baseElectric 2.2.20.121012 | `BC866F83F55FAD289EC36808D33A71B2602B8062EB71FC2E80C9CE3B0495F6D8` |
 
 ## Results
 
 | Check | Result |
 | --- | --- |
-| Power / Steam / Electric unit tests | 236 / 230 / 108 passed |
+| Power / Steam / Electric unit tests | 236 / 231 / 110 passed |
 | Test-harness Java / Python regression tests | 339 / 2,338 passed |
 | Steam / Electric native GameTests | 10 / 21 passed |
 | Independent native controls | 3 passed |
@@ -98,8 +98,28 @@ The local release record under
 `D:/PowerAdvantage/_verification/base-1211neo-release-20261115` binds the exact
 jars, profiles and passing receipts. Failed attempts remain alongside the final
 results. The hammer fixture correction changes only three test-harness class
-files; a separate hash-pinned profile covers that check. The player jars remain
-identical throughout the gameplay, migration and endurance runs.
+files; a separate hash-pinned profile covers that check. The initial Electric
+player jar was
+`61457EDF8B1C097AE17805DCC26CB7E0F4F661208B777A0B53C56BB383EEDA85`.
+Its first hosted archive audit correctly rejected a Windows/Linux difference:
+62 recipe JSON files had CRLF rather than LF endings. Resource processing now
+uses UTF-8 and LF on both platforms. All 95 class files, TOML and other
+resources are byte-identical; all 331 JSON documents have identical values.
+The final player digest is the `BC866...` value above. Its sources and Javadoc
+archives are unchanged, and all three archives match hosted Linux builds.
+
+The final Electric jar received fresh packaged machine, upgrade, recipe,
+unloading, drilling, generation and endurance checks under the `lf-a` run names.
+The two new endurance worlds also passed independent checkpoint replay after
+complete process restarts. Earlier receipts and the rejected jar are retained;
+they are not substituted for these new headless runs.
+
+The rendered development-client results above predate this recipe-packaging
+correction. They are retained evidence for unchanged client code, models,
+textures, language and GUI resources, not a fresh packaged-jar client run.
+The current launcher still uses loose Power output, so no new exact-jar-bound
+visual or integrated-client receipt is claimed. Packaged dedicated-server
+restart and saved-state checks were repeated on the final jars.
 
 Real-player interaction, live turbine motion, resource packs and third-party
 modpacks still benefit from ordinary playtesting. The Metal Fluid Tank retains
